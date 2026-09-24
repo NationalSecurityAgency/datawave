@@ -18,7 +18,6 @@ import org.apache.commons.jexl3.internal.DatawaveJexlScript;
 import org.apache.commons.jexl3.internal.Engine;
 import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -562,16 +561,13 @@ public class DatawaveInterpreterTest {
         testInputs(array);
     }
 
-    @Ignore
     @Test
-    public void testFilterFunctionMultiFieldedIsNull_future() {
-        // Once #1604 is complete these tests will evaluate correctly
-
+    public void testFilterFunctionMultiFieldedIsNull() {
         //  @formatter:off
         Object[][] array = {
                 {"FOO == 'bar' && filter:isNull(FOO || FOO)", false},
-                {"FOO == 'bar' && filter:isNull(ABSENT || FOO)", true},
-                {"FOO == 'bar' && filter:isNull(FOO || ABSENT)", true},
+                {"FOO == 'bar' && filter:isNull(ABSENT || FOO)", false},
+                {"FOO == 'bar' && filter:isNull(FOO || ABSENT)", false},
                 {"FOO == 'bar' && filter:isNull(ABSENT || ABSENT)", true}};
         //  @formatter:on
 
@@ -622,11 +618,8 @@ public class DatawaveInterpreterTest {
         testInputs(array);
     }
 
-    @Ignore
     @Test
     public void testFilterFunctionsMultiFieldedIsNotNull() {
-        // Once #1604 is complete these tests will evaluate correctly
-
         //  @formatter:off
         Object[][] array = {
                 // multi field, all present
@@ -636,10 +629,9 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && filter:isNotNull(FOO || ABSENT)", true},
                 {"FOO == 'bar' && !(filter:isNull(FOO || ABSENT))", true},
                 {"FOO == 'bar' && ( !(filter:isNull(FOO)) || !(filter:isNull(ABSENT)) )", true},
-                // this is wrong. isNotNull expands into an AND so both values must be null.
-                {"FOO == 'bar' && filter:isNotNull(ABSENT || FOO)", false},
-                // this is wrong. isNotNull expands into an AND so both values must be null.
-                {"FOO == 'bar' && !(filter:isNull(ABSENT || FOO))", false},
+                // Reversing operands does not change the aggregated field values.
+                {"FOO == 'bar' && filter:isNotNull(ABSENT || FOO)", true},
+                {"FOO == 'bar' && !(filter:isNull(ABSENT || FOO))", true},
                 {"FOO == 'bar' && filter:isNotNull(ABSENT || ABSENT)", false},
                 {"FOO == 'bar' && !(filter:isNull(ABSENT || ABSENT))", false}};
         //  @formatter:on

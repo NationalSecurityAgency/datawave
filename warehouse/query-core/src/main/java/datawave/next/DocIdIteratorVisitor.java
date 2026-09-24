@@ -3,7 +3,6 @@ package datawave.next;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -136,21 +135,18 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             }
         }
 
-        if (!positive.isEmpty() && !negative.isEmpty()) {
-            log.trace("union of negated and positive terms will not be executed");
-            return null;
-        }
-
-        if (positive.isEmpty() && !negative.isEmpty()) {
-            log.trace("union of negated terms will not be executed");
+        ScanResult context = data instanceof ScanResult ? (ScanResult) data : null;
+        if (!negative.isEmpty() && context == null) {
+            log.trace("union containing negated terms cannot be executed without external context");
             return null;
         }
 
         ScanResult result = null;
+        boolean hasUnsupportedPositive = false;
         for (JexlNode child : positive) {
             // union passes in external context
             Object o = child.jjtAccept(this, data);
-            if (o instanceof ScanResult) {
+            if (o instanceof ScanResult && o != data) {
                 ScanResult scanResult = (ScanResult) o;
                 if (result == null) {
                     result = scanResult;
@@ -158,10 +154,41 @@ public class DocIdIteratorVisitor extends BaseVisitor {
                     result.union(scanResult);
                 }
             } else {
+                hasUnsupportedPositive = true;
                 if (log.isTraceEnabled()) {
                     log.trace("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
                 }
             }
+        }
+
+        for (JexlNode child : negative) {
+            // The enclosing intersection supplies the universe for a negated union branch.
+            ScanResult complement = copyForComplement(context);
+            Object o = child.jjtAccept(this, context);
+            // A nested expression that cannot be executed returns its input context. A partially
+            // executable composite returns candidates marked as unsafe to subtract.
+            if (o instanceof ScanResult && o != context) {
+                complement.subtractConfirmedMatches((ScanResult) o);
+            } else {
+                complement.setSubtractionSafe(false);
+            }
+
+            if (result == null) {
+                result = complement;
+            } else {
+                result.union(complement);
+            }
+        }
+
+        if (result != null && hasUnsupportedPositive) {
+            // Executable union branches are confirmed matches, but they are not the complete union
+            // when another branch could not be evaluated.
+            result.setMatchComplete(false);
+        }
+
+        if (result != null) {
+            // A composite union cannot safely use a leaf iterator's source type for partial intersection.
+            result.setSource(null);
         }
 
         if (result == null) {
@@ -176,6 +203,15 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             log.trace("union: [{}] found {} hits", JexlStringBuildingVisitor.buildQuery(node), result.getResults().size());
         }
         return result;
+    }
+
+    private ScanResult copyForComplement(ScanResult source) {
+        ScanResult copy = new ScanResult(allowPartialIntersections);
+        copy.addKeys(source.getResults());
+        copy.setSubtractionSafe(source.isSubtractionSafe());
+        copy.setMatchComplete(source.isMatchComplete());
+        copy.setTimeout(source.isTimeout());
+        return copy;
     }
 
     /*
@@ -204,10 +240,16 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
         // positive terms first
         ScanResult result = null;
+        boolean hasUnsupportedPositive = false;
         for (JexlNode child : positive) {
             // intersections drive their own context
-            Object o = child.jjtAccept(this, result);
-            if (!(o instanceof ScanResult)) {
+            Object scanContext = result;
+            if (result != null && !result.isMatchComplete()) {
+                scanContext = data instanceof ScanResult && ((ScanResult) data).isMatchComplete() ? data : null;
+            }
+            Object o = child.jjtAccept(this, scanContext);
+            if (!(o instanceof ScanResult) || o == scanContext) {
+                hasUnsupportedPositive = true;
                 if (log.isDebugEnabled()) {
                     log.debug("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
                 }
@@ -215,11 +257,11 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             }
 
             ScanResult scanResult = (ScanResult) o;
-            if (scanResult.getResults().isEmpty()) {
+            if (scanResult.getResults().isEmpty() && scanResult.isMatchComplete()) {
                 if (log.isDebugEnabled()) {
                     log.debug("short circuit intersection, child returned zero hits");
                 }
-                return new HashSet<>();
+                return scanResult;
             }
 
             if (result == null) {
@@ -228,7 +270,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
                 // scan results know how to handle partial intersections, as in the case of a timeout
                 result.intersect(scanResult);
 
-                if (result.getResults().isEmpty()) {
+                if (result.getResults().isEmpty() && result.isMatchComplete()) {
                     if (log.isDebugEnabled()) {
                         log.debug("short circuit intersection, no ids exist after merge");
                     }
@@ -237,13 +279,28 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             }
         }
 
+        if (result != null && hasUnsupportedPositive) {
+            // Executable children still provide useful candidates, but they do not prove that the
+            // candidates satisfy this conjunction when another positive child was not evaluated.
+            result.setSubtractionSafe(false);
+        }
+
+        if (result != null && result.getResults().isEmpty()) {
+            // An incomplete empty candidate set cannot safely bound a negated child. Return it to an enclosing intersection, where a complete anchor can
+            // replace it with a conservative candidate universe.
+            return result;
+        }
+
         // TODO: handle the case of all negations (A && (B || (!C && !D)))
 
         // now process negations
         for (JexlNode child : negative) {
             // intersections drive their own context
             Object o = child.jjtAccept(this, result);
-            if (!(o instanceof ScanResult)) {
+            if (!(o instanceof ScanResult) || o == result) {
+                if (result != null) {
+                    result.setSubtractionSafe(false);
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
                 }
@@ -251,6 +308,10 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             }
 
             ScanResult scanResult = (ScanResult) o;
+            if (result != null && !result.getResults().isEmpty()) {
+                result.subtractConfirmedMatches(scanResult);
+            }
+
             if (scanResult.getResults().isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("negated term in intersection, child returned zero hits");
@@ -260,11 +321,6 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
             // uncomment for exceptions
             // Preconditions.checkNotNull(ids);
-            if (result != null && !result.getResults().isEmpty()) {
-                // results can be removed even for a partial scan of a negated term
-                result.getResults().removeAll(scanResult.getResults());
-            }
-
             if (result != null && result.getResults().isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("no ids exist for intersection after processing merge, short circuit return");

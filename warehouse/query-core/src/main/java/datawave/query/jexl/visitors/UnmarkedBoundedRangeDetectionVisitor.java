@@ -52,6 +52,11 @@ public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
             return data;
         }
 
+        // Do not inspect ranges inside delayed predicate markers.
+        if (instance.isDelayedPredicate()) {
+            return data;
+        }
+
         // check for a range that is not marked
         LiteralRange<?> range = JexlASTHelper.findRange().notDelayed().notMarked().getRange(node);
         if (range != null && range.isBounded()) {

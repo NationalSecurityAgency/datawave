@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -30,12 +31,13 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -73,11 +75,16 @@ import datawave.microservice.query.QueryImpl;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.validate.MinimalReferenceExpressionsVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
 import datawave.query.util.AbstractQueryTest;
+import datawave.query.util.QueryStopwatch;
 import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -449,20 +456,35 @@ public class CompositeIndexTest extends AbstractQueryTest {
         runGeoQuery(rangeLogic, query, 9);
     }
 
-    // the bounded range is fixed by the QueryPropertyMarkerSourceConsolidator
-    // if ASTValidation is enabled the query will fail on the first visitor, InvertSwappedNodes
-    @Disabled
     @Test
-    public void testRecordOfIncorrectQueryStringWorking() throws Exception {
-        // original "((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355'))";
+    public void testUnwrappedMarkerSourcesConsolidatedBeforeAstValidation() throws Exception {
         String query = "(((_Bounded_ = true) && GEO >= '0500aa' && GEO <= '050355'))";
         ShardQueryLogic rangeLogic = getShardQueryLogic(false);
+        AtomicBoolean markerCheckedBeforeInvert = new AtomicBoolean();
+        DefaultQueryPlanner planner = new DefaultQueryPlanner((DefaultQueryPlanner) rangeLogic.getQueryPlanner()) {
+            @Override
+            protected ASTJexlScript timedInvertSwappedNodes(QueryStopwatch timers, ASTJexlScript script) throws DatawaveQueryException {
+                QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(script.jjtGetChild(0));
+                assertTrue(marker.isType(QueryPropertyMarker.MarkerType.BOUNDED_RANGE));
+                assertEquals(1, marker.totalSources());
+                assertTrue(JexlASTHelper.dereference(marker.getSource()) instanceof ASTAndNode);
+                assertEquals(2, JexlASTHelper.dereference(marker.getSource()).jjtGetNumChildren());
+                assertTrue(MinimalReferenceExpressionsVisitor.validate(script));
+                markerCheckedBeforeInvert.set(true);
+                return super.timedInvertSwappedNodes(timers, script);
+            }
+        };
+        rangeLogic.setQueryPlanner(planner);
+        planner.getVisitorManager().setValidateAst(true);
+
         if (!rangeLogic.isUseDocumentScheduler()) {
             List<QueryData> queries = getQueryRanges(rangeLogic, query);
             assertEquals(1, queries.size());
+            assertTrue(markerCheckedBeforeInvert.get());
         }
 
         runGeoQuery(rangeLogic, query, 1);
+        assertTrue(markerCheckedBeforeInvert.get());
     }
 
     @Test

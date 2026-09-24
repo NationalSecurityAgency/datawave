@@ -149,6 +149,7 @@ import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
+import datawave.query.jexl.visitors.RemoveExtraReferenceExpressionsVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.RewriteNullFunctionsVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
@@ -909,6 +910,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch.stop();
         }
 
+        // Normalize markers supplied directly in the query before the first AST-validating visitor runs.
+        config.setQueryTree(timedFixQueryPropertyMarkers(timers, config.getQueryTree()));
+
         // groom the query so that any nodes with the literal on the left and the identifier on
         // the right will be re-ordered to simplify subsequent processing
 
@@ -947,7 +951,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         config.setQueryTree(timedFixNegativeNumbers(timers, config.getQueryTree()));
 
-        // Fix any query property markers that have multiple unwrapped sources.
+        // Fix any query property markers introduced by the preceding transformations.
         config.setQueryTree(timedFixQueryPropertyMarkers(timers, config.getQueryTree()));
 
         // Ensure that all ASTIdentifier nodes (field names) are upper-case to be consistent with what is enforced at ingest time
@@ -1789,7 +1793,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
             throw new DatawaveFatalQueryException(qe);
         }
-        return visitorManager.timedVisit(timers, "Expand Composite Terms", () -> (ExpandCompositeTerms.expandTerms(config, script)));
+        return visitorManager.timedVisit(timers, "Expand Composite Terms",
+                        () -> (ASTJexlScript) RemoveExtraReferenceExpressionsVisitor.remove(ExpandCompositeTerms.expandTerms(config, script)));
     }
 
     protected ASTJexlScript timedPruneGeoWaveTerms(QueryStopwatch timers, ASTJexlScript script, MetadataHelper metadataHelper) throws DatawaveQueryException {
@@ -2036,6 +2041,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         ASTJexlScript queryTree;
         try {
             queryTree = JexlASTHelper.parseAndFlattenJexlQuery(query);
+            queryTree = (ASTJexlScript) RemoveExtraReferenceExpressionsVisitor.remove(queryTree);
             ValidPatternVisitor.check(queryTree);
             ValidComparisonVisitor.check(queryTree);
         } catch (StackOverflowError soe) {
