@@ -1,7 +1,6 @@
 package datawave.ingest.mapreduce.job;
 
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.BULK_IMPORT_MODE_CONFIG;
-import static datawave.ingest.mapreduce.job.MultiRFileOutputFormatter.findContainingSplits;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -159,8 +158,6 @@ public class MultiRFileOutputFormatterTest {
         }
     }
 
-    private Map<String,Set<LoadPlan>> tableLoadPlans = new HashMap<>();
-
     private ArrayList<Text> getSplits() {
         var arr = new ArrayList<Text>();
         arr.add(new Text("20170601_0")); // 0
@@ -235,7 +232,7 @@ public class MultiRFileOutputFormatterTest {
         expectedExtents.add(new LoadPlan.TableSplits(new Text("20170603_0b"), new Text("20170603_0c")));
 
         List<Text> tableSplits = getSplits();
-        Set<LoadPlan.TableSplits> extents = rfileRows.stream().map(row -> findContainingSplits(row, tableSplits))
+        Set<LoadPlan.TableSplits> extents = rfileRows.stream().map(row -> SplitsFile.findContainingSplits(row, tableSplits))
                         .collect(Collectors.toCollection(HashSet::new));
 
         assertEquals(expectedExtents, extents);
@@ -460,14 +457,6 @@ public class MultiRFileOutputFormatterTest {
             }
 
             @Override
-            protected Map<Text,String> getShardLocations(String tableName) throws IOException {
-                Map<Text,String> locations = new HashMap<>();
-                locations.put(new Text("20100101_1"), "server1");
-                locations.put(new Text("20100101_2"), "server2");
-                return locations;
-            }
-
-            @Override
             protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf, String table) {
                 filenames.add(filename);
                 return new SizeTrackingWriter(null) {
@@ -515,6 +504,9 @@ public class MultiRFileOutputFormatterTest {
 
     @Test
     public void testTableSeparationWithFilePerShardLoc() throws IOException, InterruptedException {
+        conf.set("shard.fallback.name.20100101_1", "server1");
+        conf.set("shard.fallback.name.20100101_2", "server2");
+
         MultiRFileOutputFormatter.setGenerateMapFilePerShardLocation(conf, true);
         RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
         writeShardPairs(writer, 2);
@@ -542,6 +534,9 @@ public class MultiRFileOutputFormatterTest {
 
     @Test
     public void testRFileFileSizeLimitWithFilePerShardLoc() throws IOException, InterruptedException {
+        conf.set("shard.fallback.name.20100101_1", "server1");
+        conf.set("shard.fallback.name.20100101_2", "server2");
+
         MultiRFileOutputFormatter.setGenerateMapFilePerShardLocation(conf, true);
         // each key we write is 16 characters total, so a limit of 32 should allow two keys per file
         MultiRFileOutputFormatter.setRFileLimits(conf, 0, 32);
@@ -568,6 +563,9 @@ public class MultiRFileOutputFormatterTest {
 
     @Test
     public void testRFileEntrySizeLimitWithFilePerShardLoc() throws IOException, InterruptedException {
+        conf.set("shard.fallback.name.20100101_1", "server1");
+        conf.set("shard.fallback.name.20100101_2", "server2");
+
         MultiRFileOutputFormatter.setRFileLimits(conf, 1, 0);
         MultiRFileOutputFormatter.setGenerateMapFilePerShardLocation(conf, true);
         RecordWriter<BulkIngestKey,Value> writer = createWriter(formatter, conf);
@@ -612,5 +610,14 @@ public class MultiRFileOutputFormatterTest {
 
     private void assertNumFileNames(int expectedNumFiles) {
         assertEquals(filenames.toString(), expectedNumFiles, filenames.size());
+    }
+
+    private void setConfiguration(Configuration conf, int count) {
+        conf.set("mapred.output.dir", "/tmp");
+        conf.set(SplitsFile.CONFIGURED_SHARDED_TABLE_NAMES, TableName.SHARD);
+
+        for (int i = 1; i <= count; i++) {
+            conf.set(String.format("shard.fallback.name.20100101_%d", i), "server" + i);
+        }
     }
 }
