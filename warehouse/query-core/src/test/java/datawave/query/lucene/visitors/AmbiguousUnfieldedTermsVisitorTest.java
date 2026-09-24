@@ -11,6 +11,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -86,7 +87,7 @@ class AmbiguousUnfieldedTermsVisitorTest {
     }
 
     /**
-     * Test a query with quoted phrases. Only unquoted unfielded terms are expected.
+     * Test a query with quoted phrases.
      */
     @ParameterizedTest
     @ValueSource(strings = {"OR", "AND"})
@@ -94,7 +95,22 @@ class AmbiguousUnfieldedTermsVisitorTest {
         givenQuery("FOO:\"abc\" " + junction + " \"def\"");
         givenJunction(junction);
 
-        // Do not expect any results.
+        expectNode("FOO:\"abc\" " + junction + "\"def\"");
+
+        assertResult();
+    }
+
+    /**
+     * Test a query with quoted and unquoted phrases.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"OR", "AND"})
+    void testQueryWithQuotedAndUnquotedPhrases(String junction) throws QueryNodeParseException {
+        givenQuery("FOO:\"abc\" " + junction + " \"def\" " + junction + " ghi");
+        givenJunction(junction);
+
+        expectNode("FOO:\"abc\" " + junction + "\"def\" " + junction + " ghi");
+
         assertResult();
     }
 
@@ -136,6 +152,31 @@ class AmbiguousUnfieldedTermsVisitorTest {
         // Expect the terms.
         expectNode("FOO:abc " + junction + " def");
 
+        assertResult();
+    }
+
+    /**
+     * Test a query with a fielded term and a non-fielded term that are implied to be AND'd, with the target junction AND.
+     */
+    @Test
+    void testQueryWithImpliedAndGivenJunctionAND() throws QueryNodeParseException {
+        givenQuery("FOO:abc def");
+        givenJunction("AND");
+
+        expectNode("FOO:abc def");
+
+        assertResult();
+    }
+
+    /**
+     * Test a query with a fielded term and a non-fielded term that are implied to be AND'd, with the target junction OR.
+     */
+    @Test
+    void testQueryWithImpliedAndGivenJunctionOR() throws QueryNodeParseException {
+        givenQuery("FOO:abc def");
+        givenJunction("OR");
+
+        // Do not expect any results.
         assertResult();
     }
 
@@ -229,21 +270,45 @@ class AmbiguousUnfieldedTermsVisitorTest {
         assertResult();
     }
 
-    /**
-     * Test a query with a variety of ambiguous phrases.
-     */
     @ParameterizedTest
     @ValueSource(strings = {"OR", "AND"})
-    void testMixedComplexityQuery(String junction) throws QueryNodeParseException {
-        String otherJunction = junction.equals("OR") ? "AND" : "OR";
-        givenQuery("FOO:aaa " + otherJunction + " bbb " + otherJunction + " (BAR:aaa " + junction + " bbb " + junction + " ccc " + junction
-                        + " HAT:\"ear\" nose) " + junction + " (aaa " + junction + " bbb " + junction + " VEE:eee " + junction + " 123 " + junction + " (gee "
-                        + junction + " \"wiz\")) " + otherJunction + " (EGG:yolk " + junction + " shell)");
+    void testConsecutiveAmbiguousPhrasesWithDifferingFields(String junction) throws QueryNodeParseException {
+        givenQuery("FOO:aaa " + junction + " \"def\" " + junction + " HAT:\"ear\" " + junction + " nose");
         givenJunction(junction);
 
-        expectNode("BAR:aaa " + junction + " bbb " + junction + " ccc");
-        expectNode("VEE:eee " + junction + " 123");
-        expectNode("(EGG:yolk " + junction + " shell)");
+        expectNode("FOO:aaa " + junction + " \"def\"");
+        expectNode("HAT:\"ear\" " + junction + " nose");
+
+        assertResult();
+    }
+
+    /**
+     * Test a query with a variety of ambiguous phrases with the target junction AND.
+     */
+    @Test
+    void testMixedComplexityQueryWithTargetJunctionAND() throws QueryNodeParseException {
+        givenQuery("FOO:aaa OR bbb OR (BAR:aaa AND bbb AND ccc AND HAT:\"ear\" nose) AND (aaa AND bbb AND VEE:eee AND 123 AND (gee AND \"wiz\")) OR (EGG:yolk AND shell)");
+        givenJunction("AND");
+
+        expectNode("BAR:aaa AND bbb AND ccc");
+        expectNode("HAT:\"ear\" AND nose");
+        expectNode("VEE:eee AND 123 AND (gee AND \"wiz\")");
+        expectNode("(EGG:yolk AND shell)");
+
+        assertResult();
+    }
+
+    /**
+     * Test a query with a variety of ambiguous phrases with the target junction OR.
+     */
+    @Test
+    void testMixedComplexityQueryWithTargetJunctionOR() throws QueryNodeParseException {
+        givenQuery("FOO:aaa AND bbb AND (BAR:aaa OR bbb OR ccc OR HAT:\"ear\" nose) OR (aaa OR bbb OR VEE:eee OR 123 OR (gee OR \"wiz\")) AND (EGG:yolk OR shell)");
+        givenJunction("OR");
+
+        expectNode("BAR:aaa OR bbb OR ccc");
+        expectNode("VEE:eee OR 123 OR (gee OR \"wiz\")");
+        expectNode("(EGG:yolk OR shell)");
 
         assertResult();
     }

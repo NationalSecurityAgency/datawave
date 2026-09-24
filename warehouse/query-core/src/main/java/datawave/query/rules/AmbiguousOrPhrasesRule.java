@@ -5,12 +5,12 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
+import org.apache.lucene.queryparser.flexible.core.nodes.QuotedFieldQueryNode;
 
-import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
 import datawave.query.lucene.visitors.AmbiguousUnfieldedTermsVisitor;
 import datawave.query.lucene.visitors.BaseVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
+import datawave.query.lucene.visitors.LuceneUtils;
 
 /**
  * An implementation of {@link QueryRule} that checks a LUCENE query for any fielded terms with unfielded terms directly ORed with it afterward. For example:
@@ -23,9 +23,6 @@ import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 public class AmbiguousOrPhrasesRule extends ShardQueryRule {
 
     private static final Logger log = Logger.getLogger(AmbiguousOrPhrasesRule.class);
-    private static final EscapeQuerySyntax escapedSyntax = new EscapeQuerySyntaxImpl();
-
-    public AmbiguousOrPhrasesRule() {}
 
     public AmbiguousOrPhrasesRule(String name) {
         super(name);
@@ -64,14 +61,8 @@ public class AmbiguousOrPhrasesRule extends ShardQueryRule {
 
     // Returns a formatted message for the node.
     private String formatMessage(QueryNode node) {
-        // @formatter:off
-        return new StringBuilder()
-                        .append("Ambiguous unfielded terms OR'd with fielded term detected: ")
-                        .append(LuceneQueryStringBuildingVisitor.build(node))
-                        .append(" Recommended: ")
-                        .append(CorrectFormatVisitor.format(node))
-                        .toString();
-        // @formatter:on
+        return "Ambiguous unfielded terms OR'd with fielded term detected: " + LuceneQueryStringBuildingVisitor.build(node) + ". Recommended: "
+                        + CorrectFormatVisitor.format(node);
     }
 
     private static class CorrectFormatVisitor extends BaseVisitor {
@@ -85,9 +76,20 @@ public class AmbiguousOrPhrasesRule extends ShardQueryRule {
         public Object visit(FieldQueryNode node, Object data) {
             String field = node.getFieldAsString();
             if (field.isEmpty()) {
-                ((StringBuilder) data).append(" OR ").append(node.getTextAsString());
+                ((StringBuilder) data).append(" OR ").append(LuceneUtils.escape(node.getText()));
             } else {
-                ((StringBuilder) data).append(field).append(":(").append(node.getTextAsString());
+                ((StringBuilder) data).append(field).append(":(").append(LuceneUtils.escape(node.getText()));
+            }
+            return data;
+        }
+
+        @Override
+        public Object visit(QuotedFieldQueryNode node, Object data) {
+            String field = node.getFieldAsString();
+            if (field.isEmpty()) {
+                ((StringBuilder) data).append(" OR \"").append(LuceneUtils.escapeQuoted(node.getText())).append("\"");
+            } else {
+                ((StringBuilder) data).append(field).append(":(\"").append(LuceneUtils.escapeQuoted(node.getText())).append("\"");
             }
             return data;
         }
