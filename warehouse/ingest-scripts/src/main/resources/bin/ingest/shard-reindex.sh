@@ -57,8 +57,9 @@ export HADOOP_OPTS="-Dfile.encoding=UTF8 -Duser.timezone=GMT $HADOOP_INGEST_OPTS
 RESOURCES=$(echo ${INGEST_CONFIG[@]} | tr ' ' ',')
 
 CMD="$INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.mapreduce.job.reindex.ShardReindexJob --cacheDir $JOB_CACHE_DIR --cacheJars $LIBJARS --username $USERNAME --password $PASSWORD --instance $WAREHOUSE_INSTANCE_NAME --zookeepers $WAREHOUSE_ZOOKEEPERS --reducers $REDUCERS --outputDir $OUTPUT_DIR --workDir $WORKDIR --resources $RESOURCES  --sourceHdfs $INGEST_HDFS_NAME_NODE --destHdfs $INGEST_HDFS_NAME_NODE $EXTRA_OPTS"
+DISPLAY_CMD="$INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.mapreduce.job.reindex.ShardReindexJob --cacheDir $JOB_CACHE_DIR --cacheJars $LIBJARS --username $USERNAME --password REDACTED --instance $WAREHOUSE_INSTANCE_NAME --zookeepers $WAREHOUSE_ZOOKEEPERS --reducers $REDUCERS --outputDir $OUTPUT_DIR --workDir $WORKDIR --resources $RESOURCES  --sourceHdfs $INGEST_HDFS_NAME_NODE --destHdfs $INGEST_HDFS_NAME_NODE $EXTRA_OPTS"
 
-echo $CMD
+echo "$DISPLAY_CMD"
 $CMD
 
 RETURN_CODE=$?
