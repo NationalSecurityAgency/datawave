@@ -3633,4 +3633,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     public void setMultDocPerGroup(boolean value) {
         getConfig().getGroupFields().setOneDocPerGroup(!value);
     }
+
+    public void setWebserverOnlyUniqueFields(Set<String> webserverOnlyUniqueFields) {
+        getConfig().setWebserverOnlyUniqueFields(webserverOnlyUniqueFields);
+    }
 }
