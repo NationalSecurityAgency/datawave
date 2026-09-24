@@ -1,19 +1,31 @@
 package datawave.query.function;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static datawave.query.function.DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE;
+import static datawave.query.function.DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Maps;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -24,11 +36,18 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.DocumentFunctions;
 import datawave.query.jexl.functions.TermFrequencyList;
+import datawave.query.jexl.visitors.DocumentMatchFunctionVisitor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.Tuple3;
 
 public class JexlEvaluationTest {
+
+    public static final DocumentMatchContext.Limits TEST_DOCUMENT_MATCH_LIMITS = new DocumentMatchContext.Limits(1024, DEFAULT_MAX_DECODED_SIZE,
+                    DEFAULT_MAX_ENCODED_CONTEXT_SIZE);
 
     @Test
     public void testSimpleQuery() {
@@ -36,10 +55,7 @@ public class JexlEvaluationTest {
         Document d = new Document();
         d.put("FOO", new Content("bar", new Key("shard", "datatype\0uid"), true));
 
-        DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(Collections.singleton("FOO"), context);
-
-        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, contextFactory(d, Collections.singleton("FOO")));
     }
 
     @Test
@@ -49,10 +65,7 @@ public class JexlEvaluationTest {
         d.put("FOO", new Content("bar", new Key("shard", "datatype\0uid"), true));
         d.put("FOO", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
 
-        DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(Collections.singleton("FOO"), context);
-
-        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, contextFactory(d, Collections.singleton("FOO")));
     }
 
     @Test
@@ -61,16 +74,15 @@ public class JexlEvaluationTest {
         d.put("FOO", new Content("Bar", new Key("shard", "datatype\0uid"), true));
         d.put("FOO", new Numeric("123", new Key("shard", "datatype\0uid"), true));
 
-        DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(Collections.singleton("FOO"), context);
+        Supplier<DatawaveJexlContext> contextSupplier = contextFactory(d, Collections.singleton("FOO"));
 
         // match the original value
         String query = "FOO == 'bar' && FOO =~ '12.*'";
-        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, contextSupplier);
 
         // match the normalized value
         query = "FOO == 'bar' && FOO =~ '\\+cE1\\.2.*'";
-        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, contextSupplier);
     }
 
     @Test
@@ -81,10 +93,7 @@ public class JexlEvaluationTest {
         d.put("FOO", new Content("bar", new Key("shard", "datatype\0uid"), true));
         d.put("FOO", new Content("bazaar", new Key("shard", "datatype\0uid"), true));
 
-        DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(Collections.singleton("FOO"), context);
-
-        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, contextFactory(d, Collections.singleton("FOO")));
     }
 
     @Test
@@ -96,10 +105,7 @@ public class JexlEvaluationTest {
         d.put("FOO", hitTermSource);
         d.put("FOO", new Content("bazaar", new Key("shard", "datatype\0uid2"), true));
 
-        DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(Collections.singleton("FOO"), context);
-
-        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, contextFactory(d, Collections.singleton("FOO")));
 
         Attributes hitTerm = (Attributes) d.getDictionary().get("HIT_TERM");
         assertEquals(1, hitTerm.getAttributes().size());
@@ -151,10 +157,7 @@ public class JexlEvaluationTest {
 
     // Assume fields are {ANCHOR, FOO, FOO2} and a constant doc key
     private void evaluate(String query, Document d) {
-        DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(Arrays.asList("ANCHOR", "FOO", "FOO2", "FOO3"), context);
-
-        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, context);
+        assertEvaluation(query, new Key("shard", "datatype\0uid"), d, contextFactory(d, Arrays.asList("ANCHOR", "FOO", "FOO2", "FOO3")));
     }
 
     @Test
@@ -166,9 +169,6 @@ public class JexlEvaluationTest {
         map.put("red", buildTfList("TOKFIELD", 2));
         map.put("dog", buildTfList("TOKFIELD", 3));
 
-        DatawaveJexlContext context = new DatawaveJexlContext();
-        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(map));
-
         Key docKey = new Key("shard", "datatype\0uid");
 
         Document d = new Document();
@@ -176,9 +176,8 @@ public class JexlEvaluationTest {
         d.put("TOKFIELD", new Content("big", docKey, true));
         d.put("TOKFIELD", new Content("red", docKey, true));
         d.put("TOKFIELD", new Content("dog", docKey, true));
-        d.visit(Arrays.asList("FOO", "TOKFIELD"), context);
-
-        assertEvaluation(query, docKey, d, context);
+        assertEvaluation(query, docKey, d, contextFactory(d, Arrays.asList("FOO", "TOKFIELD"),
+                        ctx -> ctx.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(map))));
 
         // assert that "big red dog" came back in the hit terms
         boolean foundPhrase = false;
@@ -190,6 +189,128 @@ public class JexlEvaluationTest {
         }
         assertEquals(5, attrs.size());
         assertTrue(foundPhrase);
+    }
+
+    @Test
+    public void testDocumentMatchAddsDocumentAttribute() {
+        String query = "FOO == 'bar' && document:match('car')";
+        Key docKey = new Key("shard", "datatype\0uid");
+        Document d = new Document();
+        d.put("FOO", new Content("bar", docKey, true));
+
+        final List<Map.Entry<Key,Value>> entries = List
+                        .of(Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"), new Value(buildEncodedValue("scar car"))));
+        assertEvaluation(query, docKey, d, contextFactory(d, Collections.singleton("FOO"), ctx -> ctx
+                        .set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME, new DocumentMatchContext(entries, TEST_DOCUMENT_MATCH_LIMITS))));
+        assertEquals(Map.of("BODY", Map.of("car", List.of(1, 5))), getDocumentMatchesByView(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
+        assertEquals(new ColumnVisibility("A"), d.get(DocumentFunctions.DOCUMENT_MATCHES).getColumnVisibility());
+    }
+
+    @Test
+    public void testDocumentMatchAddsPerEntryDocumentAttributesAcrossCalls() {
+        String query = "FOO == 'bar' && document:match('BODY', 'car') && document:match('CONTENT2', 'lawyer')";
+        Key docKey = new Key("shard", "datatype\0uid");
+        Document d = new Document();
+        d.put("FOO", new Content("bar", docKey, true));
+
+        final List<Map.Entry<Key,Value>> entries = List.of(
+                        Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"), new Value(buildEncodedValue("scar car"))),
+                        Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0CONTENT2", "A"), new Value(buildEncodedValue("lawyer car"))));
+        assertEvaluation(query, docKey, d, contextFactory(d, Collections.singleton("FOO"), ctx -> ctx
+                        .set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME, new DocumentMatchContext(entries, TEST_DOCUMENT_MATCH_LIMITS))));
+        assertEquals(Map.of("BODY", Map.of("car", List.of(1, 5)), "CONTENT2", Map.of("lawyer", List.of(0))),
+                        getDocumentMatchesByView(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
+    }
+
+    @Test
+    public void testDocumentMatchAccumulatesCallsWithinSameEntry() {
+        String query = "FOO == 'bar' && document:match('BODY', 'car') && document:match('BODY', 'lawyer')";
+        Key docKey = new Key("shard", "datatype\0uid");
+        Document d = new Document();
+        d.put("FOO", new Content("bar", docKey, true));
+
+        final List<Map.Entry<Key,Value>> entries = List
+                        .of(Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"), new Value(buildEncodedValue("scar car lawyer"))));
+        assertEvaluation(query, docKey, d, contextFactory(d, Collections.singleton("FOO"), ctx -> ctx
+                        .set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME, new DocumentMatchContext(entries, TEST_DOCUMENT_MATCH_LIMITS))));
+        assertEquals(Map.of("BODY", Map.of("car", List.of(1, 5), "lawyer", List.of(9))), getDocumentMatchesByView(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
+    }
+
+    @Test
+    public void testDocumentMatchPreservesPerEntryVisibilities() {
+        String query = "FOO == 'bar' && document:match('BODY', 'car') && document:match('CONTENT2', 'lawyer')";
+        Key docKey = new Key("shard", "datatype\0uid");
+        Document d = new Document();
+        d.put("FOO", new Content("bar", docKey, true));
+
+        final List<Map.Entry<Key,Value>> entries = List.of(
+                        Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0BODY", "A"), new Value(buildEncodedValue("scar car"))),
+                        Maps.immutableEntry(new Key("row", "d", "datatype\0uid\0CONTENT2", "B"), new Value(buildEncodedValue("lawyer car"))));
+        assertEvaluation(query, docKey, d, contextFactory(d, Collections.singleton("FOO"), ctx -> ctx
+                        .set(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME, new DocumentMatchContext(entries, TEST_DOCUMENT_MATCH_LIMITS))));
+
+        assertEquals(Map.of("BODY", new ColumnVisibility("A"), "CONTENT2", new ColumnVisibility("B")),
+                        getDocumentMatchVisibilitiesByView(d.get(DocumentFunctions.DOCUMENT_MATCHES)));
+    }
+
+    private Map<String,Map<String,List<Integer>>> getDocumentMatchesByView(Attribute<?> attribute) {
+        Map<String,Map<String,List<Integer>>> values = new HashMap<>();
+        if (attribute instanceof Attributes) {
+            for (Attribute<? extends Comparable<?>> child : ((Attributes) attribute).getAttributes()) {
+                addDocumentMatch(values, ((Content) child).getContent());
+            }
+        } else {
+            addDocumentMatch(values, ((Content) attribute).getContent());
+        }
+        return values;
+    }
+
+    private Map<String,ColumnVisibility> getDocumentMatchVisibilitiesByView(Attribute<?> attribute) {
+        Map<String,ColumnVisibility> visibilities = new HashMap<>();
+        if (attribute instanceof Attributes) {
+            for (Attribute<? extends Comparable<?>> child : ((Attributes) attribute).getAttributes()) {
+                Content content = assertInstanceOf(Content.class, child);
+                visibilities.put(getDocumentMatchView(content.getContent()), content.getColumnVisibility());
+            }
+        } else {
+            Content content = assertInstanceOf(Content.class, attribute);
+            visibilities.put(getDocumentMatchView(content.getContent()), content.getColumnVisibility());
+        }
+        return visibilities;
+    }
+
+    private void addDocumentMatch(Map<String,Map<String,List<Integer>>> values, String json) {
+        JsonObject payload = JsonParser.parseString(json).getAsJsonObject();
+        String view = payload.get(DocumentMatchResults.VIEW_FIELD).getAsString();
+        JsonObject matches = payload.getAsJsonObject(DocumentMatchResults.MATCHES_FIELD);
+        Map<String,List<Integer>> offsetsBySearch = new HashMap<>();
+        for (Map.Entry<String,JsonElement> matchEntry : matches.entrySet()) {
+            List<Integer> offsets = new ArrayList<>();
+            for (JsonElement offset : matchEntry.getValue().getAsJsonArray()) {
+                offsets.add(offset.getAsInt());
+            }
+            offsetsBySearch.put(matchEntry.getKey(), offsets);
+        }
+        values.put(view, offsetsBySearch);
+    }
+
+    private String getDocumentMatchView(String json) {
+        return JsonParser.parseString(json).getAsJsonObject().get(DocumentMatchResults.VIEW_FIELD).getAsString();
+    }
+
+    private byte[] buildEncodedValue(String content) {
+        try {
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            java.io.OutputStream b64s = java.util.Base64.getEncoder().wrap(bos);
+            java.util.zip.GZIPOutputStream gzip = new java.util.zip.GZIPOutputStream(b64s);
+            gzip.write(content.getBytes());
+            gzip.close();
+            b64s.close();
+            bos.close();
+            return bos.toByteArray();
+        } catch (java.io.IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -286,25 +407,46 @@ public class JexlEvaluationTest {
         d.put("FIELD_C", new Content("zebra", docKey, true));
         d.put("FIELD_C", new Content("zephyr", docKey, true));
 
-        // populate context from doc
-        DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(Arrays.asList("FOO", "FIELD_A", "FIELD_B", "FIELD_C"), context);
-
-        assertEvaluation(query, docKey, d, context, expected);
+        assertEvaluation(query, docKey, d, contextFactory(d, Arrays.asList("FOO", "FIELD_A", "FIELD_B", "FIELD_C")), expected);
     }
 
-    private void assertEvaluation(String query, Key key, Document d, DatawaveJexlContext context) {
-        assertEvaluation(query, key, d, context, true);
+    private void assertEvaluation(String query, Key key, Document d, Supplier<DatawaveJexlContext> contextSupplier) {
+        assertEvaluation(query, key, d, contextSupplier, true);
     }
 
-    private void assertEvaluation(String query, Key key, Document d, DatawaveJexlContext context, boolean expected) {
-        JexlEvaluation evaluation = new JexlEvaluation(query);
-        boolean result = evaluation.apply(new Tuple3<>(key, d, context));
+    private void assertEvaluation(String query, Key key, Document d, Supplier<DatawaveJexlContext> contextSupplier, boolean expected) {
+        JexlEvaluation evaluation = new JexlEvaluation(rewriteDocumentMatchFunctions(query));
+        boolean result = evaluation.apply(new Tuple3<>(key, d, contextSupplier.get()));
         assertEquals(expected, result);
 
-        evaluation = new JexlEvaluation(query, new HitListArithmetic());
-        result = evaluation.apply(new Tuple3<>(key, d, context));
+        evaluation = new JexlEvaluation(rewriteDocumentMatchFunctions(query), new HitListArithmetic());
+        result = evaluation.apply(new Tuple3<>(key, d, contextSupplier.get()));
         assertEquals(expected, result);
+    }
+
+    private Supplier<DatawaveJexlContext> contextFactory(Document document, Collection<String> fields) {
+        return contextFactory(document, fields, context -> {});
+    }
+
+    private Supplier<DatawaveJexlContext> contextFactory(Document document, Collection<String> fields, Consumer<DatawaveJexlContext> customizer) {
+        return () -> {
+            DatawaveJexlContext context = new DatawaveJexlContext();
+            document.visit(fields, context);
+            customizer.accept(context);
+            return context;
+        };
+    }
+
+    private String rewriteDocumentMatchFunctions(String query) {
+        try {
+            ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+            if (!DocumentMatchFunctionVisitor.rewrite(script)) {
+                return query;
+            }
+            return JexlStringBuildingVisitor.buildQueryWithoutParse(script);
+        } catch (org.apache.commons.jexl3.parser.ParseException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private TermFrequencyList buildTfList(String field, int... offsets) {

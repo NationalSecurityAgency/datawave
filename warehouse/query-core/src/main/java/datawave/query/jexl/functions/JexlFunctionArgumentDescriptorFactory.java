@@ -9,6 +9,8 @@ import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.util.DateIndexHelper;
+import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -27,6 +29,10 @@ public interface JexlFunctionArgumentDescriptorFactory {
      */
     JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node);
 
+    /**
+     * Returned by {@link JexlArgumentDescriptor#getIndexQuery(datawave.query.config.ShardQueryConfiguration, MetadataHelper, DateIndexHelper, java.util.Set)}
+     * when index searching should be skipped for a function.
+     */
     JexlNode TRUE_NODE = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
 
     /** An encapsulation of methods that can be used with this interface */

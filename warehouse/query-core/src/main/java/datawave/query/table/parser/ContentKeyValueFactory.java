@@ -1,7 +1,9 @@
 package datawave.query.table.parser;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.zip.GZIPInputStream;
 
@@ -16,6 +18,7 @@ import datawave.query.Constants;
 import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
 
 public class ContentKeyValueFactory {
+    private static final int DECODE_BUFFER_SIZE = 4096;
 
     private static final Logger log = Logger.getLogger(ContentKeyValueFactory.class);
 
@@ -55,7 +58,7 @@ public class ContentKeyValueFactory {
 
     public static byte[] decodeAndDecompressContent(byte[] contents) {
         try {
-            contents = decompress(Base64.getMimeDecoder().decode(contents));
+            contents = decodeAndDecompressContent(contents, Integer.MAX_VALUE);
         } catch (IOException e) {
             log.error("Error decompressing Base64 encoded GZIPInputStream", e);
         } catch (Exception e) {
@@ -67,6 +70,22 @@ public class ContentKeyValueFactory {
             }
         }
         return contents;
+    }
+
+    public static String decodeAndDecompressContentAsString(byte[] contents, int maxDecodedSize) throws IOException {
+        return new String(decodeAndDecompressContent(contents, maxDecodedSize), StandardCharsets.UTF_8);
+    }
+
+    public static byte[] decodeAndDecompressContent(byte[] contents, int maxDecodedSize) throws IOException {
+        byte[] decoded = Base64.getMimeDecoder().decode(contents);
+        try {
+            return decompress(decoded, maxDecodedSize);
+        } catch (IOException e) {
+            if (decoded.length > maxDecodedSize) {
+                throw new IOException("Decoded d-column payload exceeded configured limit of " + maxDecodedSize + " bytes", e);
+            }
+            return decoded;
+        }
     }
 
     private static boolean isCompressed(byte[] compressed) {
@@ -81,6 +100,26 @@ public class ContentKeyValueFactory {
             }
         }
         return decompressed;
+    }
+
+    private static byte[] decompress(byte[] compressed, int maxDecompressedSize) throws IOException {
+        if (!isCompressed(compressed)) {
+            return compressed;
+        }
+
+        try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(compressed)); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[DECODE_BUFFER_SIZE];
+            int read;
+            int totalRead = 0;
+            while ((read = gzip.read(buffer)) >= 0) {
+                totalRead += read;
+                if (totalRead > maxDecompressedSize) {
+                    throw new IOException("Decoded d-column payload exceeded configured limit of " + maxDecompressedSize + " bytes");
+                }
+                baos.write(buffer, 0, read);
+            }
+            return baos.toByteArray();
+        }
     }
 
     public static class ContentKeyValue extends EventKeyValue {
