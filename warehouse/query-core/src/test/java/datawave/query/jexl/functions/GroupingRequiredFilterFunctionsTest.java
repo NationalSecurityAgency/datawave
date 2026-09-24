@@ -408,26 +408,37 @@ public class GroupingRequiredFilterFunctionsTest {
         public void testDefaultIndex() {
             givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_0.child_1", "FREDO"));
             givenArg(normalizeLcNoDiacriticsFilter("fredo"));
-            givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_0.child_0", "SANTINO"));
+            givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "SANTINO"));
             givenArg(normalizeLcNoDiacriticsFilter("santino"));
 
-            // Grouping context should have matched against parent_0.
+            // Grouping context should have matched against grandparent_0
             expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_0.child_1", "FREDO"));
-            expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_0.child_0", "SANTINO"));
+            expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "SANTINO"));
 
             assertResult();
         }
 
         @Test
-        public void testIndexOfOne() {
+        public void testIndexOfOneMiss() {
             givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_0.child_1", "FREDO"));
             givenArg(normalizeLcNoDiacriticsFilter("fredo"));
             givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "SANTINO"));
             givenArg(normalizeLcNoDiacriticsFilter("santino"));
             givenArg(1);
 
-            // Grouping context should have matched against grandparent_0.
-            expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_0.child_1", "FREDO"));
+            assertResult();
+        }
+
+        @Test
+        public void testIndexOfOneHit() {
+            givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_1", "FREDO"));
+            givenArg(normalizeLcNoDiacriticsFilter("fredo"));
+            givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "SANTINO"));
+            givenArg(normalizeLcNoDiacriticsFilter("santino"));
+            givenArg(1);
+
+            // Grouping context should have matched against grandparent_0.parent_1
+            expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_1", "FREDO"));
             expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "SANTINO"));
 
             assertResult();
@@ -437,16 +448,16 @@ public class GroupingRequiredFilterFunctionsTest {
         public void testPartialMatch() {
             // @formatter:off
             givenArg(Lists.newArrayList(
-                            lcNoDiacriticsTuple("NAME.grandparent_0.parent_0.child_1","FREDO"),
+                            lcNoDiacriticsTuple("NAME.grandparent_1.parent_0.child_1","FREDO"),
                             lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_1","FREDO")));
             givenArg(normalizeLcNoDiacriticsFilter("fredo"));
-            givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0","SANTINO"));
+            givenArg(lcNoDiacriticsTuple("NAME.grandparent_1.parent_1.child_0","SANTINO"));
             givenArg(normalizeLcNoDiacriticsFilter("SANTINO"));
             // @formatter:on
 
-            // Grouping context should have matched against parent_x. Only parent_1 found in commonality.
-            expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_1", "FREDO"));
-            expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "SANTINO"));
+            // Grouping context should have matched against grandparent_x. Only grandparent_1 found in commonality.
+            expect(lcNoDiacriticsTuple("NAME.grandparent_1.parent_0.child_1", "FREDO"));
+            expect(lcNoDiacriticsTuple("NAME.grandparent_1.parent_1.child_0", "SANTINO"));
 
             assertResult();
         }
@@ -455,17 +466,32 @@ public class GroupingRequiredFilterFunctionsTest {
         public void testPartialMatchWithIndexOfOne() {
             // @formatter:off
             givenArg(Lists.newArrayList(
-                            lcNoDiacriticsTuple("NAME.grandparent_0.parent_0.child_1","FREDO"),
-                            lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_1","FREDO")));
+                            lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_1","FREDO"),
+                            lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_2","FREDO")));
             givenArg(normalizeLcNoDiacriticsFilter("fredo"));
             givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0","SANTINO"));
             givenArg(normalizeLcNoDiacriticsFilter("SANTINO"));
             givenArg(1);
             // @formatter:on
 
-            // Grouping context should have matched against grandparent_0.
-            expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_0.child_1", "FREDO"));
+            // Grouping context should have matched against grandparent_0.parent_1
             expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_1", "FREDO"));
+            expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_2", "FREDO"));
+            expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "SANTINO"));
+
+            assertResult();
+        }
+
+        @Test
+        public void testIndexOfTwoHit() {
+            givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "FREDO"));
+            givenArg(normalizeLcNoDiacriticsFilter("fredo"));
+            givenArg(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "SANTINO"));
+            givenArg(normalizeLcNoDiacriticsFilter("santino"));
+            givenArg(2);
+
+            // Grouping context should have matched against grandparent_0.parent_1.child_0
+            expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "FREDO"));
             expect(lcNoDiacriticsTuple("NAME.grandparent_0.parent_1.child_0", "SANTINO"));
 
             assertResult();
