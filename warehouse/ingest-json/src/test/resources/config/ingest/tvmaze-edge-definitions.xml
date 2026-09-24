@@ -92,45 +92,5 @@ http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
             </set>
         </property>
     </bean>
-
-    <!-- Define the set of valid 'relationship' values -->
-    <bean id="protobufedge.table.relationships" class="org.springframework.beans.factory.config.SetFactoryBean">
-        <property name="targetSetClass" value="java.util.HashSet"/>
-        <property name="sourceSet">
-            <set>
-                <value>ACTOR</value>
-                <value>STATUS</value>
-                <value>CHARACTER</value>
-                <value>SHOW</value>
-                <value>TO</value>
-                <value>FROM</value>
-                <value>EQUIVALENCE</value>
-                <value>USERNAME</value>
-                <value>USERID</value>
-                <value>PAGEID</value>
-                <value>REVISIONID</value>
-                <value>CONTRIBUTORID</value>
-                <value>CONTRIBUTOR</value>
-                <value>COMMENT</value>
-                <value>USER</value>
-                <value>PAGE</value>
-                <value>REDIRECT</value>
-                <value>REVISION</value>
-            </set>
-        </property>
-    </bean>
-
-    <!-- Define the set of valid 'collection' values -->
-    <bean id="protobufedge.table.collections" class="org.springframework.beans.factory.config.SetFactoryBean">
-        <property name="targetSetClass" value="java.util.HashSet"/>
-        <property name="sourceSet">
-            <set>
-                <value>CSV_METADATA</value>
-                <value>TVMAZE_METADATA</value>
-                <value>WIKI_PAGE_METADATA</value>
-            </set>
-        </property>
-    </bean>
-
 </beans>
 
