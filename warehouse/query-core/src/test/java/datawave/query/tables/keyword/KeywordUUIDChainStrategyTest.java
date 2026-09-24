@@ -28,6 +28,9 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
 import datawave.data.type.NoOpType;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -64,7 +67,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         settings = new QueryImpl();
     }
 
-    public Entry<Key,Value> createDocument(String shard, String dt, String uid, String language, String identifier) {
+    public Entry<Key,Value> createDocument(String shard, String dt, String uid, String language, String identifier, Multimap<String,String> extra) {
         String colf = dt + "\0" + uid;
         Key documentKey = new Key(shard, colf, "", "ALL");
 
@@ -77,10 +80,18 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         d.put("FOO2", new TypeAttribute<>(new NoOpType("xx"), documentKey, true));
         d.put("BAR2", new TypeAttribute<>(new NoOpType("yy"), documentKey, true));
 
+        for (Entry<String,String> entry : extra.entries()) {
+            d.put(entry.getKey(), new TypeAttribute<>(new NoOpType(entry.getValue()), documentKey, true));
+        }
+
         Entry<Key,Document> entry = Map.entry(documentKey, d);
 
         DocumentSerializer serializer = DocumentSerialization.getDocumentSerializer(DocumentSerialization.DEFAULT_RETURN_TYPE);
         return serializer.apply(entry);
+    }
+
+    public Entry<Key,Value> createDocument(String shard, String dt, String uid, String language, String identifier) {
+        return createDocument(shard, dt, uid, language, identifier, HashMultimap.create(0, 0));
     }
 
     public Entry<Key,Value> createKeywordResults(String shard, String dt, String uid, String language, String identifier, String view, String visibility,
@@ -277,6 +288,231 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
             assertEquals("ENGLISH", keywordResults.getLanguage());
             assertNotNull(keywordResults.getKeywords().get("bird"));
         }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void languageFilterMalformedTest() {
+        settings.addParameter(CATEGORY_PARAMETER, "keyword.");
+
+        List<Entry<Key,Value>> input = List.of(createDocument("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345"));
+
+        KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
+
+        replayAll();
+
+        strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
+
+        verifyAll();
+    }
+
+    @Test
+    public void languageFilterMinimumTest() throws Exception {
+        settings.addParameter(CATEGORY_PARAMETER, "keyword.a");
+
+        List<Entry<Key,Value>> input = List.of(createDocument("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "A", "PAGE_ID:12345"));
+
+        LinkedHashMap<String,Double> results = new LinkedHashMap<>();
+        results.put("cat", 0.2);
+        results.put("cat food", 0.3);
+        results.put("dog", 0.4);
+
+        List<Entry<Key,Value>> intermediateInput = List
+                        .of(createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "A", "PAGE_ID:12345", "CONTENT", "PUBLIC", results));
+
+        KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
+        Capture<Query> intermediateSettings = Capture.newInstance();
+
+        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
+        mockLogic.setupQuery(eq(mockConfig));
+        expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+
+        replayAll();
+
+        Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
+
+        verifyAll();
+
+        assertEquals("DOCUMENT:20250412/test/-cvy0gj.tlf59s.-duxzua!PAGE_ID:12345%LANGUAGE:A", intermediateSettings.getValue().getQuery());
+
+        assertTrue(result.hasNext());
+        Entry<Key,Value> next = result.next();
+
+        assertEquals("20250412 d:test%00;-cvy0gj.tlf59s.-duxzua%00;CONTENT [] 9223372036854775807 false", next.getKey().toString());
+
+        KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
+        assertEquals("PAGE_ID:12345", keywordResults.getSource());
+        assertEquals("CONTENT", keywordResults.getView());
+        assertEquals("A", keywordResults.getLanguage());
+        assertEquals("PUBLIC", keywordResults.getVisibility());
+
+        assertNotNull(keywordResults.getKeywords().get("cat"));
+
+        assertFalse(result.hasNext());
+    }
+
+    @Test
+    public void languageFilterInclusiveTest() throws Exception {
+        settings.addParameter(CATEGORY_PARAMETER, "keyword.EnGlISh");
+
+        List<Entry<Key,Value>> input = List.of(createDocument("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345"));
+
+        LinkedHashMap<String,Double> results = new LinkedHashMap<>();
+        results.put("cat", 0.2);
+        results.put("cat food", 0.3);
+        results.put("dog", 0.4);
+
+        List<Entry<Key,Value>> intermediateInput = List
+                        .of(createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", "PUBLIC", results));
+
+        KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
+        Capture<Query> intermediateSettings = Capture.newInstance();
+
+        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
+        mockLogic.setupQuery(eq(mockConfig));
+        expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+
+        replayAll();
+
+        Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
+
+        verifyAll();
+
+        assertEquals("DOCUMENT:20250412/test/-cvy0gj.tlf59s.-duxzua!PAGE_ID:12345%LANGUAGE:ENGLISH", intermediateSettings.getValue().getQuery());
+
+        assertTrue(result.hasNext());
+        Entry<Key,Value> next = result.next();
+
+        assertEquals("20250412 d:test%00;-cvy0gj.tlf59s.-duxzua%00;CONTENT [] 9223372036854775807 false", next.getKey().toString());
+
+        KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
+        assertEquals("PAGE_ID:12345", keywordResults.getSource());
+        assertEquals("CONTENT", keywordResults.getView());
+        assertEquals("ENGLISH", keywordResults.getLanguage());
+        assertEquals("PUBLIC", keywordResults.getVisibility());
+
+        assertNotNull(keywordResults.getKeywords().get("cat"));
+
+        assertFalse(result.hasNext());
+    }
+
+    @Test
+    public void languageFilterExclusiveTest() throws Exception {
+        settings.addParameter(CATEGORY_PARAMETER, "keyword.nope");
+
+        List<Entry<Key,Value>> input = List.of(createDocument("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345"));
+
+        LinkedHashMap<String,Double> results = new LinkedHashMap<>();
+        results.put("cat", 0.2);
+        results.put("cat food", 0.3);
+        results.put("dog", 0.4);
+
+        List<Entry<Key,Value>> intermediateInput = List
+                        .of(createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", "PUBLIC", results));
+
+        KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
+
+        replayAll();
+
+        Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
+
+        verifyAll();
+
+        assertFalse(result.hasNext());
+    }
+
+    @Test
+    public void languagePartialFilterTest() throws Exception {
+        settings.addParameter(CATEGORY_PARAMETER, "keyword.EnGlISh");
+
+        List<Entry<Key,Value>> input = List.of(createDocument("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345"),
+                        createDocument("20250412", "test", "123.345.456", "alien", "PAGE_ID:7654321"));
+
+        LinkedHashMap<String,Double> results = new LinkedHashMap<>();
+        results.put("cat", 0.2);
+        results.put("cat food", 0.3);
+        results.put("dog", 0.4);
+
+        List<Entry<Key,Value>> intermediateInput = List
+                        .of(createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", "PUBLIC", results));
+
+        KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
+        Capture<Query> intermediateSettings = Capture.newInstance();
+
+        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
+        mockLogic.setupQuery(eq(mockConfig));
+        expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+
+        replayAll();
+
+        Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
+
+        verifyAll();
+
+        assertEquals("DOCUMENT:20250412/test/-cvy0gj.tlf59s.-duxzua!PAGE_ID:12345%LANGUAGE:ENGLISH", intermediateSettings.getValue().getQuery());
+
+        assertTrue(result.hasNext());
+        Entry<Key,Value> next = result.next();
+
+        assertEquals("20250412 d:test%00;-cvy0gj.tlf59s.-duxzua%00;CONTENT [] 9223372036854775807 false", next.getKey().toString());
+
+        KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
+        assertEquals("PAGE_ID:12345", keywordResults.getSource());
+        assertEquals("CONTENT", keywordResults.getView());
+        assertEquals("ENGLISH", keywordResults.getLanguage());
+        assertEquals("PUBLIC", keywordResults.getVisibility());
+
+        assertNotNull(keywordResults.getKeywords().get("cat"));
+
+        assertFalse(result.hasNext());
+    }
+
+    @Test
+    public void languageFilterMultiValuedTest() throws Exception {
+        settings.addParameter(CATEGORY_PARAMETER, "keyword.ABC");
+
+        Multimap<String,String> extraLanguages = HashMultimap.create();
+        extraLanguages.put("LANGUAGE", "abc");
+        extraLanguages.put("LANGUAGE", "def");
+
+        List<Entry<Key,Value>> input = List.of(createDocument("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", extraLanguages));
+
+        LinkedHashMap<String,Double> results = new LinkedHashMap<>();
+        results.put("cat", 0.2);
+        results.put("cat food", 0.3);
+        results.put("dog", 0.4);
+
+        List<Entry<Key,Value>> intermediateInput = List
+                        .of(createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ABC", "PAGE_ID:12345", "CONTENT", "PUBLIC", results));
+
+        KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
+        Capture<Query> intermediateSettings = Capture.newInstance();
+
+        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
+        mockLogic.setupQuery(eq(mockConfig));
+        expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+
+        replayAll();
+
+        Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
+
+        verifyAll();
+
+        assertEquals("DOCUMENT:20250412/test/-cvy0gj.tlf59s.-duxzua!PAGE_ID:12345%LANGUAGE:ABC", intermediateSettings.getValue().getQuery());
+
+        assertTrue(result.hasNext());
+        Entry<Key,Value> next = result.next();
+
+        assertEquals("20250412 d:test%00;-cvy0gj.tlf59s.-duxzua%00;CONTENT [] 9223372036854775807 false", next.getKey().toString());
+
+        KeywordResults keywordResults = KeywordResults.deserialize(next.getValue().get());
+        assertEquals("PAGE_ID:12345", keywordResults.getSource());
+        assertEquals("CONTENT", keywordResults.getView());
+        assertEquals("ABC", keywordResults.getLanguage());
+        assertEquals("PUBLIC", keywordResults.getVisibility());
+
+        assertNotNull(keywordResults.getKeywords().get("cat"));
+
+        assertFalse(result.hasNext());
     }
 
     @Test

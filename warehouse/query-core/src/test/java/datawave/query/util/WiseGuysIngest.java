@@ -149,6 +149,8 @@ public class WiseGuysIngest {
             mutation.put(datatype + "\u0000" + corleoneUID, "NUMBER" + "\u0000" + "25", columnVisibility, timeStamp + corleoneTimeStampDelta, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "GEO" + "\u0000" + "POINT(10 10)", columnVisibility, timeStamp + corleoneTimeStampDelta,
                             emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "LANGUAGE" + "\u0000" + "sicilian", columnVisibility, timeStamp + corleoneTimeStampDelta,
+                            emptyValue);
 
             mutation.put(datatype + "\u0000" + corleoneChildUID, "UUID.0" + "\u0000" + "ANDOLINI", columnVisibility, timeStamp + corleoneTimeStampDelta,
                             emptyValue);
