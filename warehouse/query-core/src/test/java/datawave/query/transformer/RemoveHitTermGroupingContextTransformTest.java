@@ -7,6 +7,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -93,6 +94,50 @@ public class RemoveHitTermGroupingContextTransformTest {
     }
 
     @Test
+    public void testHitTermsWithDifferentVisibilitiesAreNotMerged() {
+        ColumnVisibility other = new ColumnVisibility("PRIVATE");
+        Document d = documentWithHitTerms(hitTerm("TF.123:park", cv, 1L), hitTerm("TF.456:park", other, 1L));
+
+        apply(d);
+
+        Set<Attribute<? extends Comparable<?>>> hitTerms = ((Attributes) d.get(HIT_TERM_FIELD)).getAttributes();
+        assertEquals(2, hitTerms.size());
+        Set<ColumnVisibility> visibilities = new HashSet<>();
+        for (Attribute<?> attribute : hitTerms) {
+            assertEquals("TF:park", ((Content) attribute).getContent());
+            visibilities.add(attribute.getColumnVisibility());
+        }
+        assertEquals(Set.of(cv, other), visibilities);
+    }
+
+    @Test
+    public void testHitTermsWithDifferentTimestampsAreNotMerged() {
+        Document d = documentWithHitTerms(hitTerm("TF.123:park", cv, 1L), hitTerm("TF.456:park", cv, 2L));
+
+        apply(d);
+
+        Set<Attribute<? extends Comparable<?>>> hitTerms = ((Attributes) d.get(HIT_TERM_FIELD)).getAttributes();
+        assertEquals(2, hitTerms.size());
+        Set<Long> timestamps = new HashSet<>();
+        for (Attribute<?> attribute : hitTerms) {
+            assertEquals("TF:park", ((Content) attribute).getContent());
+            assertEquals(cv, attribute.getColumnVisibility());
+            timestamps.add(attribute.getTimestamp());
+        }
+        assertEquals(Set.of(1L, 2L), timestamps);
+    }
+
+    @Test
+    public void testHitTermsBeforeTheFirstRewriteAreKept() {
+        Document d = documentWithHitTerms("TF:park", "NAME:alice", "NAME.FOO.1:bob", "TF:lake");
+
+        apply(d);
+
+        assertEquals(Set.of("TF:park", "NAME:alice", "NAME:bob", "TF:lake"), hitTerms(d));
+        assertEquals(4, d.get(HIT_TERM_FIELD).size());
+    }
+
+    @Test
     public void testMetadataAndVisibilityArePreserved() {
         Document d = documentWithHitTerms("TF.123:to the park");
 
@@ -122,16 +167,29 @@ public class RemoveHitTermGroupingContextTransformTest {
     }
 
     private Document documentWithHitTerms(String... terms) {
+        Content[] hitTerms = new Content[terms.length];
+        for (int i = 0; i < terms.length; i++) {
+            hitTerms[i] = new Content(terms[i], docKey, true);
+            hitTerms[i].setColumnVisibility(cv);
+        }
+        return documentWithHitTerms(hitTerms);
+    }
+
+    private Document documentWithHitTerms(Content... hitTerms) {
         Attributes attributes = new Attributes(true);
-        for (String term : terms) {
-            Content hitTerm = new Content(term, docKey, true);
-            hitTerm.setColumnVisibility(cv);
+        for (Content hitTerm : hitTerms) {
             attributes.add(hitTerm);
         }
 
         Document d = new Document();
         d.put(HIT_TERM_FIELD, attributes);
         return d;
+    }
+
+    private Content hitTerm(String term, ColumnVisibility visibility, long timestamp) {
+        Content hitTerm = new Content(term, new Key("row", "dt\0uid", "", visibility, timestamp), true);
+        hitTerm.setColumnVisibility(visibility);
+        return hitTerm;
     }
 
     private void apply(Document d) {

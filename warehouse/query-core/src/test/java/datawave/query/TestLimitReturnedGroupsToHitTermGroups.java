@@ -219,7 +219,6 @@ public class TestLimitReturnedGroupsToHitTermGroups extends AbstractQueryTest {
         withQuery("CANINE == 'shepherd'");
         hitTermAssertions.withRequiredAllOf("CANINE.PET.13:shepherd");
 
-        // definitely should NOT include group 3
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "FISH.PET.13:tetra", "BIRD.PET.13:lovebird",
                         "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5", "SIZE.CANINE.WILD.1:90,26.5");
 
@@ -240,7 +239,6 @@ public class TestLimitReturnedGroupsToHitTermGroups extends AbstractQueryTest {
         withQuery("CANINE == 'shepherd'");
         hitTermAssertions.withRequiredAllOf("CANINE:shepherd");
 
-        // definitely should NOT include group 3
         Set<String> goodResults = Sets.newHashSet("CANINE.PET.13:shepherd", "CAT.PET.13:ragdoll", "FISH.PET.13:tetra", "BIRD.PET.13:lovebird",
                         "REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "SIZE.CANINE.3:20,12.5", "SIZE.CANINE.WILD.1:90,26.5");
 
