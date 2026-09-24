@@ -44,7 +44,7 @@
         <version.protostuff>1.6.2</version.protostuff>
         <version.springdoc>1.6.9</version.springdoc>
         <version.swagger>2.2.42</version.swagger>
-        <version.xnio>3.8.7.Final</version.xnio>
+        <version.xnio>3.8.14.Final</version.xnio>
         <version.zookeeper>3.9.2</version.zookeeper>
     </properties>
     <dependencyManagement>
