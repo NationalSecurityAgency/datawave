@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,7 +55,7 @@ public class SafeFileOutputCommitterTest {
 
     private static final String FILEOUTPUTCOMMITTER_ALGORITHM_VERSION = "mapreduce.fileoutputcommitter.algorithm.version";
     private static final Path outDir = new Path(System.getProperty("test.build.data", System.getProperty("java.io.tmpdir")),
-                    SafeFileOutputCommitterTest.class.getName());
+                    SafeFileOutputCommitterTest.class.getName() + "-" + UUID.randomUUID());
 
     private static final String SUB_DIR = "SUB_DIR";
     private static final Path OUT_SUB_DIR = new Path(outDir, SUB_DIR);
@@ -226,6 +227,8 @@ public class SafeFileOutputCommitterTest {
         // output file goes from empty to containing data:
         if (failedAttemptWritesData) {
             writeOutput(theRecordWriter, tContext1);
+        } else {
+            theRecordWriter.close(tContext1);
         }
 
         // Do not call commitTask for attempt #1

@@ -1,5 +1,6 @@
 package datawave.microservice.querymetric;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 import static datawave.microservice.querymetric.config.HazelcastMetricCacheConfiguration.INCOMING_METRICS;
@@ -15,7 +16,10 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import javax.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,11 +38,11 @@ import com.hazelcast.map.LocalMapStats;
 import datawave.microservice.querymetric.config.TimelyProperties;
 import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
 import datawave.microservice.querymetric.persistence.AccumuloMapStore;
-import datawave.util.timely.TcpClient;
-import datawave.util.timely.UdpClient;
 
 public class QueryMetricOperationsStats {
 
+    private static final Pattern TIMELY_WHITESPACE_PATTERN = Pattern.compile("\\s", Pattern.UNICODE_CHARACTER_CLASS);
+    private static final int MAX_UDP_METRIC_SIZE = 65_507;
     private Logger log = LoggerFactory.getLogger(getClass());
     private static final String RatePerSec_1_Min_Avg = ".RatePerSec_1_Min_Avg";
     private static final String RatePerSec_5_Min_Avg = ".RatePerSec_5_Min_Avg";
@@ -54,8 +58,9 @@ public class QueryMetricOperationsStats {
     private static final String Latency_999 = ".Latency_999";
     private Map<TIMERS,Timer> timerMap = new HashMap<>();
     private Map<METERS,Meter> meterMap = new HashMap<>();
-    private TcpClient timelyTcpClient;
-    private UdpClient timelyUdpClient;
+    private TimelyTcpClient timelyTcpClient;
+    private TimelyUdpClient timelyUdpClient;
+    private boolean timelyClientsShutdown;
 
     protected TimelyProperties timelyProperties;
     protected ShardTableQueryMetricHandler handler;
@@ -98,10 +103,11 @@ public class QueryMetricOperationsStats {
         if (this.timelyProperties.isEnabled()) {
             try {
                 if (timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
-                    this.timelyTcpClient = new TcpClient(timelyProperties.getHost(), timelyProperties.getPort());
+                    this.timelyTcpClient = new TimelyTcpClient(timelyProperties.getHost(), timelyProperties.getPort(),
+                                    timelyProperties.getConnectTimeoutMillis());
                     this.timelyTcpClient.open();
                 } else {
-                    this.timelyUdpClient = new UdpClient(timelyProperties.getHost(), timelyProperties.getPort());
+                    this.timelyUdpClient = new TimelyUdpClient(timelyProperties.getHost(), timelyProperties.getPort());
                     this.timelyUdpClient.open();
                 }
             } catch (Exception e) {
@@ -136,8 +142,8 @@ public class QueryMetricOperationsStats {
         }
     }
 
-    public void writeServiceStatsToTimely() {
-        if (this.timelyProperties.isEnabled()) {
+    public synchronized void writeServiceStatsToTimely() {
+        if (this.timelyProperties.isEnabled() && !timelyClientsShutdown) {
             List<String> serviceStatsToWriteToTimely = new ArrayList<>();
 
             long timestamp = System.currentTimeMillis();
@@ -149,26 +155,28 @@ public class QueryMetricOperationsStats {
                                 .add("put microservice.querymetric." + entry.getKey() + " " + timestamp + " " + entry.getValue() + getCommonTags() + "\n");
             });
             try {
+                if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.UDP)) {
+                    this.timelyUdpClient.open();
+                }
                 for (String metric : serviceStatsToWriteToTimely) {
                     if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
                         this.timelyTcpClient.write(metric);
-                    } else {
+                    } else if (!isOversizedUdpMetric(metric)) {
                         this.timelyUdpClient.write(metric);
                     }
                 }
-            } catch (Exception e) {
-                log.error("Exception writing metrics to Timely: " + e.getMessage());
-            } finally {
                 if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
                     this.timelyTcpClient.flush();
                 }
+            } catch (Exception e) {
+                log.error("Exception writing metrics to Timely: " + e.getMessage());
             }
         }
 
     }
 
-    public void writeQueryStatsToTimely() {
-        if (this.timelyProperties.isEnabled()) {
+    public synchronized void writeQueryStatsToTimely() {
+        if (this.timelyProperties.isEnabled() && !timelyClientsShutdown) {
             List<String> tempMetricsToWrite = new ArrayList<>();
             // add metrics to a new list so that issues with Timely don't indirectly
             // prevent the metric service from handling incoming metric updates
@@ -177,16 +185,29 @@ public class QueryMetricOperationsStats {
                 this.queryStatsToWriteToTimely.clear();
             }
             try {
+                if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.UDP)) {
+                    this.timelyUdpClient.open();
+                }
                 Iterator<String> itr = tempMetricsToWrite.iterator();
                 while (itr.hasNext()) {
                     String metric = itr.next();
                     if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
                         this.timelyTcpClient.write(metric);
                     } else {
+                        if (isOversizedUdpMetric(metric)) {
+                            itr.remove();
+                            continue;
+                        }
                         this.timelyUdpClient.write(metric);
                     }
-                    // remove metric if write is successful
-                    itr.remove();
+                    if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.UDP)) {
+                        // UDP sends each metric immediately, so a successful write can be removed.
+                        itr.remove();
+                    }
+                }
+                if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
+                    this.timelyTcpClient.flush();
+                    tempMetricsToWrite.clear();
                 }
             } catch (Exception e) {
                 log.error("Exception writing metrics to Timely: " + e.getMessage());
@@ -195,12 +216,45 @@ public class QueryMetricOperationsStats {
                 if (this.queryStatsToWriteToTimely.size() > 10000) {
                     this.queryStatsToWriteToTimely.clear();
                 }
-            } finally {
-                if (this.timelyProperties.getProtocol().equals(TimelyProperties.Protocol.TCP)) {
-                    this.timelyTcpClient.flush();
-                }
             }
         }
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        TimelyTcpClient tcpClient;
+        TimelyUdpClient udpClient;
+        synchronized (this) {
+            if (timelyClientsShutdown) {
+                return;
+            }
+            timelyClientsShutdown = true;
+            tcpClient = timelyTcpClient;
+            timelyTcpClient = null;
+            udpClient = timelyUdpClient;
+            timelyUdpClient = null;
+        }
+        closeTimelyClient("TCP", tcpClient);
+        closeTimelyClient("UDP", udpClient);
+    }
+
+    private void closeTimelyClient(String protocol, AutoCloseable client) {
+        if (client != null) {
+            try {
+                client.close();
+            } catch (Exception e) {
+                log.error("Exception closing Timely {} client: {}", protocol, e.getMessage(), e);
+            }
+        }
+    }
+
+    private boolean isOversizedUdpMetric(String metric) {
+        int metricSize = metric.getBytes(UTF_8).length;
+        if (metricSize > MAX_UDP_METRIC_SIZE) {
+            log.error("Skipping Timely UDP metric with {} UTF-8 bytes; maximum is {}", metricSize, MAX_UDP_METRIC_SIZE);
+            return true;
+        }
+        return false;
     }
 
     public Map<String,String> getLocalMapStats(LocalMapStats localMapStats) {
@@ -230,9 +284,14 @@ public class QueryMetricOperationsStats {
     }
 
     public Map<String,String> formatStats(Map<String,Double> stats, boolean useSeparators) {
-        DecimalFormat dFormat = useSeparators ? new DecimalFormat("#,##0.00") : new DecimalFormat("#0.00");
-        DecimalFormat nFormat = useSeparators ? new DecimalFormat("#,##0") : new DecimalFormat("#0");
         Map<String,String> formattedStats = new LinkedHashMap<>();
+        if (!useSeparators) {
+            stats.forEach((name, value) -> formattedStats.put(name, Double.toString(value)));
+            return formattedStats;
+        }
+
+        DecimalFormat dFormat = new DecimalFormat("#,##0.00");
+        DecimalFormat nFormat = new DecimalFormat("#,##0");
         stats.entrySet().forEach(e -> {
             if (e.getKey().contains("Latency")) {
                 formattedStats.put(e.getKey(), nFormat.format(e.getValue()));
@@ -266,35 +325,32 @@ public class QueryMetricOperationsStats {
             String queryType = queryMetric.getQueryType();
             if (queryType != null && queryType.equalsIgnoreCase("RunningQuery")) {
                 BaseQueryMetric.Lifecycle lifecycle = queryMetric.getLifecycle();
-                String host = queryMetric.getHost();
-                String user = queryMetric.getUser();
-                String logic = queryMetric.getQueryLogic();
+                String host = sanitizeTimelyToken(queryMetric.getHost());
+                String user = sanitizeTimelyToken(queryMetric.getUser());
+                String logic = sanitizeTimelyToken(queryMetric.getQueryLogic());
                 if (lifecycle.equals(BaseQueryMetric.Lifecycle.CLOSED) || lifecycle.equals(BaseQueryMetric.Lifecycle.CANCELLED)) {
                     long createDate = queryMetric.getCreateDate().getTime();
                     // write ELAPSED_TIME
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " HOST=" + host
-                                    + getCommonTags() + "\n");
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " USER=" + user
-                                    + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " HOST="
+                                    + host + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " USER="
+                                    + user + getCommonTags() + "\n");
                     this.queryStatsToWriteToTimely.add("put dw.query.metrics.ELAPSED_TIME " + createDate + " " + queryMetric.getElapsedTime() + " QUERY_LOGIC="
                                     + logic + getCommonTags() + "\n");
 
                     // write NUM_RESULTS
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " HOST=" + host
-                                    + getCommonTags() + "\n");
-                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " USER=" + user
-                                    + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " HOST="
+                                    + host + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " USER="
+                                    + user + getCommonTags() + "\n");
                     this.queryStatsToWriteToTimely.add("put dw.query.metrics.NUM_RESULTS " + createDate + " " + queryMetric.getNumResults() + " QUERY_LOGIC="
                                     + logic + getCommonTags() + "\n");
                 } else if (lifecycle.equals(BaseQueryMetric.Lifecycle.INITIALIZED)) {
                     // aggregate these metrics for later writing to timely
                     synchronized (this.hostCountMap) {
-                        Long hostCount = this.hostCountMap.get(host);
-                        this.hostCountMap.put(host, hostCount == null ? 1l : hostCount + 1);
-                        Long userCount = this.userCountMap.get(user);
-                        this.userCountMap.put(user, userCount == null ? 1l : userCount + 1);
-                        Long logicCount = this.logicCountMap.get(logic);
-                        this.logicCountMap.put(logic, logicCount == null ? 1l : logicCount + 1);
+                        this.hostCountMap.merge(host, 1L, Long::sum);
+                        this.userCountMap.merge(user, 1L, Long::sum);
+                        this.logicCountMap.merge(logic, 1L, Long::sum);
                     }
                 }
             }
@@ -306,10 +362,22 @@ public class QueryMetricOperationsStats {
         tags.putAll(this.timelyProperties.getTags());
         tags.putAll(this.staticTags);
         if (tags != null && !tags.isEmpty()) {
-            return " " + tags.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(" "));
+            Map<String,String> normalizedTags = new LinkedHashMap<>();
+            tags.forEach((key, value) -> {
+                String normalizedKey = sanitizeTimelyToken(key);
+                if (normalizedTags.putIfAbsent(normalizedKey, sanitizeTimelyToken(value)) != null) {
+                    throw new IllegalArgumentException("Timely tag names normalize to duplicate key: " + normalizedKey);
+                }
+            });
+            return " " + normalizedTags.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue())
+                            .collect(Collectors.joining(" "));
         } else {
             return "";
         }
+    }
+
+    static String sanitizeTimelyToken(String value) {
+        return TIMELY_WHITESPACE_PATTERN.matcher(String.valueOf(value)).replaceAll("_");
     }
 
     public void logServiceStats() {
@@ -342,8 +410,8 @@ public class QueryMetricOperationsStats {
                 });
                 this.userCountMap.clear();
                 this.logicCountMap.entrySet().forEach(entry -> {
-                    this.queryStatsToWriteToTimely.add(
-                                    "put dw.query.metrics.COUNT " + now + " " + entry.getValue() + " QUERY_LOGIC=" + entry.getKey() + getCommonTags() + "\n");
+                    this.queryStatsToWriteToTimely.add("put dw.query.metrics.COUNT " + now + " " + entry.getValue() + " QUERY_LOGIC="
+                                    + entry.getKey() + getCommonTags() + "\n");
                 });
                 this.logicCountMap.clear();
             }
