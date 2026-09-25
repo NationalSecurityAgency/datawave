@@ -354,7 +354,10 @@ function datawaveIngestCreateTableSplits() {
    info "Generating table splits in Accumulo"
 
    # Create the shard table splits
-   ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-shards-since.sh ${shardDateYYYYMMDD} ${numDays} "${shardTables}"
+   # create-shards-since.sh takes the table list as its fifth argument; the third
+   # and fourth are shardsPerSplit and the balancer delay. Pass those empty so
+   # they keep the script's own defaults.
+   ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-shards-since.sh ${shardDateYYYYMMDD} ${numDays} "" "" "${shardTables}"
 
    # Go ahead and pre-split the global index and reverse index tables
    ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/seed-index-splits.sh > /dev/null 2>&1
