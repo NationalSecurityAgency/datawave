@@ -2,6 +2,12 @@ name: Microservice Tests
 
 on:
   workflow_call:
+    inputs:
+      build_main:
+        description: Build checked-out main DataWave artifacts before testing microservices
+        required: false
+        type: boolean
+        default: true
 
 env:
   JAVA_VERSION: '11'
@@ -92,14 +98,21 @@ jobs:
         java-version: ${{env.JAVA_VERSION}}
         cache: 'maven'
         overwrite-settings: false
+    # Microservices consume main DataWave SNAPSHOT artifacts. Install the
+    # checked-out versions first, but leave testing and other verification to
+    # their dedicated workflow so this prerequisite stays as fast as possible.
+    - name: Build Main DataWave Dependencies
+      if: inputs.build_main
+      run: |
+        mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" ${{ needs.configure-runner.outputs.cache_settings }} -T0.5C install -Dutils -DskipMicroservices -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
     - name: Build and Run Unit Tests
       run: |
         cd microservices
-        mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dstarters -Dservices -Dutils -DskipITs -DskipFormat
+        mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Ddist -T0.5C clean install -Dsurefire.rerunFailingTestsCount=3 -Dstarters -Dservices -Dutils -DskipITs -DskipFormat
     - name: Run Integration Tests
       run: |
         cd microservices
-        mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dstarters -Dservices -Dutils -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
+        mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -T0.5C verify -Dfailsafe.rerunFailingTestsCount=3 -Dstarters -Dservices -Dutils -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
     # Always upload the raw surefire/failsafe XML so failures and flakes are inspectable.
     - name: Upload Test Reports
       if: always()
@@ -122,7 +135,5 @@ jobs:
         python3 .github/scripts/junit_flaky_report.py \
           --title 'Microservice Test Report' \
           'microservices/**/target/*-reports/TEST-*.xml'
-
-
 
 
