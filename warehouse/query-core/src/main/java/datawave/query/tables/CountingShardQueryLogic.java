@@ -14,10 +14,8 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResultPostprocessor;
 import datawave.microservice.query.Query;
 import datawave.next.CountScheduler;
-import datawave.next.SimpleQueryVisitor;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.QueryPlanner;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.shard.CountAggregatingIterator;
@@ -98,21 +96,32 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
-        // planner should already have run
-        QueryPlanner planner = getQueryPlanner();
-        if (planner instanceof DefaultQueryPlanner && config.getDocumentScannerConfig() != null && config.isUseDocumentScheduler()) {
-            DefaultQueryPlanner dqp = (DefaultQueryPlanner) planner;
-            boolean simple = SimpleQueryVisitor.validate(config.getQueryTree(), dqp.getIndexedFields(), dqp.getIndexOnlyFields());
-            if (simple) {
-                CountScheduler countScheduler = new CountScheduler(config);
-                countScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
-                return countScheduler;
-            }
+        if (useCountScheduler(config)) {
+            // planner should already have run
+            DefaultQueryPlanner dqp = (DefaultQueryPlanner) getQueryPlanner();
+            CountScheduler countScheduler = new CountScheduler(config);
+            countScheduler.setVisitorFunction(getVisitorFunction(dqp.getMetadataHelper()));
+            return countScheduler;
         }
 
         PushdownScheduler scheduler = new PushdownScheduler(config, this.metadataHelperFactory);
         scheduler.addSetting(new IteratorSetting(config.getBaseIteratorPriority() + 50, "counter", ResultCountingIterator.class.getName()));
         return scheduler;
+    }
+
+    /**
+     * Whether the count can be answered from the field index alone.
+     * <p>
+     * A full table scan is exactly the query the field index cannot bound, and bounding it is all the count scheduler does, so those queries go to the pushdown
+     * scheduler instead of failing the scan.
+     *
+     * @param config
+     *            the query configuration
+     * @return true if the count scheduler should run this query
+     */
+    protected boolean useCountScheduler(ShardQueryConfiguration config) {
+        return getQueryPlanner() instanceof DefaultQueryPlanner && config.getDocumentScannerConfig() != null && config.isUseDocumentScheduler()
+                        && !isFullTableScanEnabled();
     }
 
     /**
