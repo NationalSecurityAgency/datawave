@@ -519,15 +519,15 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
 
                 // Path path = new Path(file);
 
-                closeable.setInputStream(fs.open(path));
-
                 long length = fs.getFileStatus(path).getLen();
 
+                // fsPath() sets the input supplier itself, so an input() call
+                // ahead of it is discarded and its stream is opened for nothing.
+                // dropCacheBehind is on because these files are read once.
                 //@formatter:off
                 CachableBlockFile.CachableBuilder builder = new CachableBlockFile.CachableBuilder()
-                        .input(closeable.getInputStream(), CachableBlockFile.pathToCacheId(path))
                         .cryptoService(CRYPTO_SERVICE)
-                        .fsPath(fs, path)
+                        .fsPath(fs, path, true)
                         .length(length)
                         .conf(conf);
                 //@formatter:on
