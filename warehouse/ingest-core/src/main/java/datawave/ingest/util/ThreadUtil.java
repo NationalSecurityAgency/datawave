@@ -2,13 +2,16 @@ package datawave.ingest.util;
 
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.apache.log4j.Logger;
+
+import datawave.concurrent.ThreadUtils;
 
 /**
  * Utilities for working with ThreadPools.
  */
-public class ThreadUtil {
+public final class ThreadUtil {
 
     private static final Logger logger = Logger.getLogger(ThreadUtil.class);
 
@@ -22,7 +25,9 @@ public class ThreadUtil {
      * @param unit
      *            the time unit
      * @return true if all tasks completed, false, if we interrupted and continued.
+     * @deprecated replaced by {@link ThreadUtils#shutdownAndWait(ThreadPoolExecutor, long, TimeUnit)}
      */
+    @Deprecated
     public static boolean shutdownAndWait(ThreadPoolExecutor executor, long timeToWait, TimeUnit unit) {
         executor.shutdown();
         try {
@@ -51,7 +56,9 @@ public class ThreadUtil {
      * @param start
      *            the start time
      * @return time taken to complete all tasks
+     * @deprecated replaced by {@link ThreadUtils#waitForThreads(Consumer, ThreadPoolExecutor, String, int, long, long)}
      */
+    @Deprecated
     public static long waitForThreads(Logger log, ThreadPoolExecutor executor, String type, int poolSize, long workUnits, long start) {
         long cur = System.currentTimeMillis();
         int active = executor.getActiveCount();
