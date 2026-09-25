@@ -34,7 +34,10 @@ import datawave.ingest.table.aggregator.PropogatingCombiner;
  *
  * Initially the TotalAggregatingIterator, this class was a direct copy. At some point it was identified that there was an artifact where deletes would not be
  * propogated. As a result, this class becomes nearly identical to the DeletingIterator, whereby deletes are always propogated until a full major compaction.
+ *
+ * @deprecated in favor of {@link PropagatingIterator} with the correct spelling of propagate
  */
+@Deprecated
 public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
     public static final String ATTRIBUTE_NAME = "agg";

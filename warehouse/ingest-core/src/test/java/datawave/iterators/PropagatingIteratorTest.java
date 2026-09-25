@@ -39,8 +39,9 @@ import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
+import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
 
-public class PropogatingIteratorTest {
+public class PropagatingIteratorTest {
     private static final String SHARD = "20121002_1";
     private static final String FIELD_TO_AGGREGATE = "UUID";
     private static final long TIMESTAMP = 1349541830;
@@ -193,10 +194,10 @@ public class PropogatingIteratorTest {
 
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -229,10 +230,10 @@ public class PropogatingIteratorTest {
 
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -256,7 +257,7 @@ public class PropogatingIteratorTest {
     @Test(expected = NullPointerException.class)
     public void testNullOptions() throws IOException {
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -281,10 +282,10 @@ public class PropogatingIteratorTest {
 
     @Test(expected = NullPointerException.class)
     public void testNullEnvironment() throws IOException {
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         iter.init(createSourceWithTestData(), options, null);
 
@@ -292,7 +293,7 @@ public class PropogatingIteratorTest {
     }
 
     @Test
-    public void testForceNoPropogate() throws IOException {
+    public void testForceNoPropagate() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
 
         map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.0").build().toByteArray()));
@@ -302,10 +303,10 @@ public class PropogatingIteratorTest {
 
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(true);
 
@@ -331,7 +332,7 @@ public class PropogatingIteratorTest {
 
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
@@ -359,10 +360,10 @@ public class PropogatingIteratorTest {
     public void testDeleteAggregateFour() throws IOException {
         SortedMultiMapIterator data = createSourceWithTestData();
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -385,10 +386,10 @@ public class PropogatingIteratorTest {
     @Test
     public void testDeleteFullMajc() throws IOException {
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(true);
 
@@ -410,7 +411,7 @@ public class PropogatingIteratorTest {
 
     @Test(expected = NullPointerException.class)
     public void testDeepCopyCannotCopyUninitialized() {
-        PropogatingIterator uut = new PropogatingIterator();
+        PropagatingIterator uut = new PropagatingIterator();
         uut.deepCopy(new MockIteratorEnvironment(false));
     }
 
@@ -426,10 +427,10 @@ public class PropogatingIteratorTest {
 
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -463,10 +464,10 @@ public class PropogatingIteratorTest {
 
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -491,18 +492,18 @@ public class PropogatingIteratorTest {
     @Test(expected = NullPointerException.class)
     public void testNullOptionsWithInit() throws IOException {
         IteratorEnvironment env = new MockIteratorEnvironment(false);
-        new PropogatingIterator().init(createSourceWithTestData(), null, env);
+        new PropagatingIterator().init(createSourceWithTestData(), null, env);
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullEnvironmentWithInit() throws IOException {
         Map<String,String> options = Maps.newHashMap();
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
-        new PropogatingIterator().init(createSourceWithTestData(), options, null);
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        new PropagatingIterator().init(createSourceWithTestData(), options, null);
     }
 
     @Test
-    public void testForceNoPropogateWithDeepCopy() throws IOException {
+    public void testForceNoPropagateWithDeepCopy() throws IOException {
         TreeMultimap<Key,Value> map = TreeMultimap.create();
 
         map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.0").build().toByteArray()));
@@ -512,10 +513,10 @@ public class PropogatingIteratorTest {
 
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(true);
 
@@ -542,7 +543,7 @@ public class PropogatingIteratorTest {
 
         SortedMultiMapIterator data = new SortedMultiMapIterator(map);
 
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
@@ -569,10 +570,10 @@ public class PropogatingIteratorTest {
 
     @Test
     public void testDeleteAggregateFourWithDeepCopy() throws IOException {
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -595,10 +596,10 @@ public class PropogatingIteratorTest {
 
     @Test
     public void testDeleteFullMajcWithDeepCopy() throws IOException {
-        PropogatingIterator iter = new PropogatingIterator();
+        PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(true);
 
@@ -623,10 +624,10 @@ public class PropogatingIteratorTest {
     public void testDeleteFullMajcWithDeepCopyThreaded() throws IOException, InterruptedException, ExecutionException {
         SortedMultiMapIterator data = createSourceWithTestData();
 
-        final PropogatingIterator iter = new PropogatingIterator();
+        final PropagatingIterator iter = new PropagatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropagatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
         final IteratorEnvironment env = new MockIteratorEnvironment(true);
 
@@ -677,10 +678,10 @@ public class PropogatingIteratorTest {
         HashMap<String,String> emptyOptions = new HashMap<>();
         MockIteratorEnvironment env = new MockIteratorEnvironment(true);
 
-        PropogatingIterator propogatingIterator = new PropogatingIterator();
-        propogatingIterator.init(source, emptyOptions, env);
-        PropogatingIterator deepCopiedPropogatingIterator = propogatingIterator.deepCopy(env);
-        Assert.assertNotNull("PropogatingIterator default constructor failed to create a valid instance.", deepCopiedPropogatingIterator);
+        PropagatingIterator propagatingIterator = new PropagatingIterator();
+        propagatingIterator.init(source, emptyOptions, env);
+        PropagatingIterator deepCopiedPropagatingIterator = propagatingIterator.deepCopy(env);
+        Assert.assertNotNull("PropagatingIterator default constructor failed to create a valid instance.", deepCopiedPropagatingIterator);
     }
 
     @Test
@@ -689,22 +690,21 @@ public class PropogatingIteratorTest {
         HashMap<String,String> emptyOptions = new HashMap<>();
         MockIteratorEnvironment env = new MockIteratorEnvironment(true);
 
-        PropogatingIterator propogatingIterator = new PropogatingIterator(source, null);
-        propogatingIterator.init(source, emptyOptions, env);
-        PropogatingIterator deepCopiedPropogatingIterator = propogatingIterator.deepCopy(env);
-        Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", deepCopiedPropogatingIterator);
+        PropagatingIterator propagatingIterator = new PropagatingIterator(source, null);
+        propagatingIterator.init(source, emptyOptions, env);
+        PropagatingIterator deepCopiedPropagatingIterator = propagatingIterator.deepCopy(env);
+        Assert.assertNotNull("PropagatingIterator constructor failed to create a valid instance.", deepCopiedPropagatingIterator);
     }
 
     @Test
     public void testDefaultConstructor() {
-        PropogatingIterator uut = new PropogatingIterator();
-        Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", uut);
+        PropagatingIterator uut = new PropagatingIterator();
+        Assert.assertNotNull("PropagatingIterator constructor failed to create a valid instance.", uut);
     }
 
     @Test
     public void testConstructor() throws IOException {
-        PropogatingIterator uut = new PropogatingIterator(createSourceWithTestData(), null);
-        Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", uut);
+        PropagatingIterator uut = new PropagatingIterator(createSourceWithTestData(), null);
+        Assert.assertNotNull("PropagatingIterator constructor failed to create a valid instance.", uut);
     }
-
 }

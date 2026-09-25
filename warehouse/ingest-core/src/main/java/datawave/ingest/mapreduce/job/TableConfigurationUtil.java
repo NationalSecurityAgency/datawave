@@ -49,7 +49,7 @@ import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.iterator.ReducingIterator;
-import datawave.iterators.PropogatingIterator;
+import datawave.iterators.PropagatingIterator;
 import datawave.table.constants.TableName;
 
 /**
@@ -623,7 +623,7 @@ public class TableConfigurationUtil {
                     for (IteratorSetting iter : iters) {
 
                         Class<?> klass = Class.forName(iter.getIteratorClass());
-                        if (PropogatingIterator.class.isAssignableFrom(klass)) {
+                        if (PropagatingIterator.class.isAssignableFrom(klass)) {
                             Map<String,String> options = allOptions.get(iter.getName());
                             if (null != options) {
                                 aggregatorMap.put(iter.getPriority(), options);
