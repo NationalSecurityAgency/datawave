@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.RetryNTimes;
 import org.apache.curator.test.TestingServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +52,124 @@ class QueryLimiterTest {
     }
 
     /**
+     * Verify {@link QueryLimiter#checkForLimits(String, String, String)} returns {@link QueryLimiterResponse#hasNotMetLimit()} when the configuration for the
+     * QueryLimiter is null.
+     */
+    @Test
+    void testCheckForLimitsGivenNullConfig() throws Exception {
+        QueryLimiter limiter = new QueryLimiter();
+        limiter.setZookeeperConfig(server.getConnectString());
+        limiter.setHeartbeatCache(new QueryHeartbeatCache());
+        limiter.setup();
+
+        QueryLimiterResponse response = limiter.checkForLimits(userA, system1, tldQueryLogic);
+        assertThat(response).isEqualTo(QueryLimiterResponse.hasNotMetLimit());
+    }
+
+    /**
+     * Verify {@link QueryLimiter#checkForLimits(String, String, String)} returns {@link QueryLimiterResponse#hasNotMetLimit()} when the configured
+     * QueryLimitConfiguration has a value of 'false' for 'enabled'.
+     */
+    @Test
+    void testCheckForLimitsWhenDisabled() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(2);
+
+        QueryLimiter limiter = new QueryLimiter();
+        limiter.setZookeeperConfig(server.getConnectString());
+        limiter.setHeartbeatCache(new QueryHeartbeatCache());
+        limiter.setConfiguration(config);
+        limiter.setup();
+
+        try (ActiveQueryTracker tracker = new ActiveQueryTracker(server.getConnectString())) {
+            tracker.trackQuery(UUID.randomUUID().toString(), userA, system1, tldQueryLogic, true);
+            tracker.trackQuery(UUID.randomUUID().toString(), userA, system1, tldQueryLogic, true);
+
+            QueryLimiterResponse response = limiter.checkForLimits(userA, system1, tldQueryLogic);
+            assertThat(response).isEqualTo(QueryLimiterResponse.hasNotMetLimit());
+        }
+    }
+
+    /**
+     * Verify that queries are not tracked when the configured QueryLimitConfiguration has a value of 'false' for 'enabled'.
+     */
+    @Test
+    void testCountQueryTowardsLimitsWhenDisabled() throws Exception {
+        QueryLimitConfiguration config = new QueryLimitConfiguration();
+        config.setDefaultSystemQueryLimit(100);
+        config.setDefaultUserQueryLimit(5);
+
+        QueryHeartbeatCache heartbeatCache = new QueryHeartbeatCache();
+
+        QueryLimiter limiter = new QueryLimiter();
+        limiter.setZookeeperConfig(server.getConnectString());
+
+        limiter.setConfiguration(config);
+        limiter.setHeartbeatCache(heartbeatCache);
+        limiter.setup();
+        String queryId = UUID.randomUUID().toString();
+
+        assertThat(limiter.isEnforcingLimits()).isFalse();
+
+        if (limiter.getConfiguration() != null && !limiter.isEnforcingLimits()) {
+            limiter.countQueryTowardsLimits(queryId, userA, system1, tldQueryLogic);
+
+            // Verify a heartbeat was not added to the heartbeat cache.
+            assertThat(heartbeatCache.get(queryId)).isNull();
+
+            // @formatter:off
+            try (CuratorFramework client = CuratorFrameworkFactory.builder().connectString(server.getConnectString())
+                    .namespace("ActiveQueries")
+                    .sessionTimeoutMs(60000)
+                    .connectionTimeoutMs(60000)
+                    .retryPolicy(new RetryNTimes(10, 1000))
+                    .build()) {
+                client.start();
+                // Verify that the nodes for tracking the active queries were never created.
+                assertThat(client.checkExists().forPath("/users/" + userA.toLowerCase() + "/" + tldQueryLogic + "/" + queryId)).isNull();
+                assertThat(client.checkExists().forPath("/systems/" + system1 + "/" + tldQueryLogic + "/" + queryId)).isNull();
+            }
+            // @formatter:on
+        }
+    }
+
+    /**
+     * Verify that queries are not tracked when the configuration for the QueryLimiter is null.
+     */
+    @Test
+    void testCountQueryTowardsLimitsWhenConfigIsNull() throws Exception { // resolved
+        QueryHeartbeatCache heartbeatCache = new QueryHeartbeatCache();
+
+        QueryLimiter limiter = new QueryLimiter();
+        limiter.setZookeeperConfig(server.getConnectString());
+        limiter.setHeartbeatCache(heartbeatCache);
+        limiter.setup();
+        String queryId = UUID.randomUUID().toString();
+
+        if (limiter.getConfiguration() == null) {
+            limiter.countQueryTowardsLimits(queryId, userA, system1, tldQueryLogic);
+
+            // Verify a heartbeat was not added to the heartbeat cache.
+            assertThat(heartbeatCache.get(queryId)).isNull();
+
+            // @formatter:off
+            try (CuratorFramework client = CuratorFrameworkFactory.builder().connectString(server.getConnectString())
+                    .namespace("ActiveQueries")
+                    .sessionTimeoutMs(60000)
+                    .connectionTimeoutMs(60000)
+                    .retryPolicy(new RetryNTimes(10, 1000))
+                    .build()) {
+                client.start();
+                // Verify that the nodes for tracking the active queries were never created.
+                assertThat(client.checkExists().forPath("/users/" + userA.toLowerCase() + "/" + tldQueryLogic + "/" + queryId)).isNull();
+                assertThat(client.checkExists().forPath("/systems/" + system1 + "/" + tldQueryLogic + "/" + queryId)).isNull();
+            }
+            // @formatter:on
+        }
+    }
+
+    /**
      * Verify {@link QueryLimiter#setup()} throws an exception if given a default user query limit less than 1.
      */
     @Test
@@ -58,6 +179,7 @@ class QueryLimiterTest {
 
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultUserQueryLimit(0);
+        config.setEnabled(true);
         limiter.setConfiguration(config);
 
         assertThatThrownBy(limiter::setup).isInstanceOf(IllegalArgumentException.class).hasMessage("Default user query limit must be greater than 0");
@@ -75,6 +197,7 @@ class QueryLimiterTest {
         config.setDefaultUserQueryLimit(100);
         config.setDefaultSystemQueryLimit(5000);
         config.setInternalCacheMaxSize(0);
+        config.setEnabled(true);
         limiter.setConfiguration(config);
 
         assertThatThrownBy(limiter::setup).isInstanceOf(IllegalArgumentException.class).hasMessage("Internal cache max size must be greater than 0");
@@ -88,6 +211,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(5);
+        config.setEnabled(true);
         givenConfig(config);
 
         startQueries(1, userA, system1, tldQueryLogic);
@@ -112,6 +236,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(8);
         config.setDefaultUserQueryLimit(5);
+        config.setEnabled(true);
         givenConfig(config);
 
         startQueries(2, userA, system1, tldQueryLogic);
@@ -135,6 +260,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(10);
+        config.setEnabled(true);
 
         // Set a default limit of 3 TLDQueryLogic queries per user.
         QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
@@ -167,6 +293,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(5);
+        config.setEnabled(true);
 
         // Set a custom limit of 8 queries for userA.
         UserLimitConfiguration userConfig = new UserLimitConfiguration();
@@ -200,6 +327,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(10);
+        config.setEnabled(true);
 
         // Set a default limit of 5 TLDQueryLogic queries per user.
         QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
@@ -244,6 +372,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(25);
+        config.setEnabled(true);
 
         // Set a limit of 10 queries for system2.
         SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
@@ -276,6 +405,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(50);
+        config.setEnabled(true);
 
         // Set a default limit of 20 TLDQueryLogic queries per user.
         QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
@@ -321,6 +451,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(25);
+        config.setEnabled(true);
 
         // Set a limit of 10 queries for system2.
         SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
@@ -355,6 +486,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(50);
+        config.setEnabled(true);
 
         // Set a default limit of 20 TLDQueryLogic queries per user.
         QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
@@ -412,6 +544,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(20);
+        config.setEnabled(true);
 
         // Set a default limit of 20 TLDQueryLogic queries per user.
         QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
@@ -447,6 +580,7 @@ class QueryLimiterTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(10);
+        config.setEnabled(true);
         givenConfig(config);
 
         List<String> queryIds = startQueries(10, userA, system1, tldQueryLogic);

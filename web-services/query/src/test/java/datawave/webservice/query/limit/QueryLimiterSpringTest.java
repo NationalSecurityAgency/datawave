@@ -29,6 +29,8 @@ class QueryLimiterSpringTest {
 
         QueryLimitConfiguration config = limiter.getConfiguration();
         assertThat(config).isNotNull();
+        // verify that the default value of "enabled" is false
+        assertThat(config.isEnabled()).isFalse();
 
         assertThat(config.getDefaultUserQueryLimit()).isEqualTo(100);
         assertThat(config.getDefaultSystemQueryLimit()).isEqualTo(5000);

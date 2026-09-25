@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
@@ -37,6 +38,8 @@ public class QueryLimiter {
 
     // The tracker responsible for interfacing with Zookeeper.
     private ActiveQueryTracker activeQueryTracker;
+
+    private final AtomicBoolean activated = new AtomicBoolean(false);
 
     public static final String EMPTY_SYSTEM_FROM = "EMPTY_SYSTEM_FROM";
 
@@ -83,6 +86,15 @@ public class QueryLimiter {
     }
 
     /**
+     * Return whether this {@link QueryLimiter} is currently enforcing limits.
+     *
+     * @return true if this {@link QueryLimiter} is enforcing limits, or false otherwise
+     */
+    public boolean isEnforcingLimits() {
+        return activated.get();
+    }
+
+    /**
      * Validate the configuration and extract the query limits to enforce. In practice this should be marked as the init method for the {@link QueryLimiter}
      * instance configured in bean XMLs. For testing purposes, this method should be called after setting the zookeeper config and query limit configs.
      */
@@ -91,7 +103,7 @@ public class QueryLimiter {
             log.debug("Initializing with zookeeperConfig: '" + zookeeperConfig + "' and query limit config: " + configuration);
         }
 
-        if (this.configuration != null) {
+        if (this.configuration != null && this.configuration.isEnabled()) {
             if (this.configuration.getDefaultUserQueryLimit() < 1) {
                 throw new IllegalArgumentException("Default user query limit must be greater than 0");
             }
@@ -106,6 +118,8 @@ public class QueryLimiter {
                             configuration.getUserConfigs(), queryLogicGroupLimitProvider);
             this.systemLimitProvider = new SystemLimitProvider(configuration.getDefaultSystemQueryLimit(), configuration.getInternalCacheMaxSize(),
                             configuration.getSystemConfigs(), queryLogicGroupLimitProvider);
+            this.activated.set(true);
+
         } else {
             this.queryLogicGroupLimitProvider = null;
             this.userLimitProvider = null;
@@ -147,26 +161,31 @@ public class QueryLimiter {
      *             if an exception occurs
      */
     public QueryLimiterResponse checkForLimits(String userDn, String system, String queryLogic) throws Exception {
-        // Cast the user DN to lowercase to ensure a consistent format.
-        userDn = userDn.trim().toLowerCase();
+        if (isEnforcingLimits()) {
+            // Cast the user DN to lowercase to ensure a consistent format.
+            userDn = userDn.trim().toLowerCase();
 
-        // Do not cast the system or query logic to lowercase, they will be getting matched against regex patterns.
-        queryLogic = queryLogic.trim();
+            // Do not cast the system or query logic to lowercase, they will be getting matched against regex patterns.
+            queryLogic = queryLogic.trim();
 
-        // Ensure the system is non-null if empty
-        if (system == null || system.isBlank()) {
-            system = EMPTY_SYSTEM_FROM;
-        }
+            // Ensure the system is non-null if empty
+            if (system == null || system.isBlank()) {
+                system = EMPTY_SYSTEM_FROM;
+            }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
-        }
+            if (log.isDebugEnabled()) {
+                log.debug("Checking limits - userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic);
+            }
 
-        // Check if the snapshot reveals that any limits have been met.
-        LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
-        checker.checkLimits();
-        if (checker.metLimit) {
-            return QueryLimiterResponse.metLimit(checker.message);
+            // Check if the snapshot reveals that any limits have been met.
+            LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
+            checker.checkLimits();
+            if (checker.metLimit) {
+                return QueryLimiterResponse.metLimit(checker.message);
+            } else {
+                return QueryLimiterResponse.hasNotMetLimit();
+            }
+
         } else {
             return QueryLimiterResponse.hasNotMetLimit();
         }
@@ -187,21 +206,24 @@ public class QueryLimiter {
      *             if an error occurs
      */
     public void countQueryTowardsLimits(String queryId, String userDn, String system, String queryLogic) throws Exception {
-        if (log.isDebugEnabled()) {
-            log.debug("Start counting query " + queryId + " towards limits");
+        if (isEnforcingLimits()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Start counting query " + queryId + " towards limits");
+            }
+
+            userDn = userDn.trim().toLowerCase();
+            // Ensure the system is non-null if empty
+            if (system == null || system.isBlank()) {
+                system = EMPTY_SYSTEM_FROM;
+            }
+
+            boolean systemCountsTowardsUserLimits = systemLimitProvider.countsAgainstUserLimit(system);
+
+            QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
+            // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the
+            // heartbeat.
+            heartbeatCache.put(heartbeat);
         }
-
-        userDn = userDn.trim().toLowerCase();
-        // Ensure the system is non-null if empty
-        if (system == null || system.isBlank()) {
-            system = EMPTY_SYSTEM_FROM;
-        }
-
-        boolean systemCountsTowardsUserLimits = systemLimitProvider.countsAgainstUserLimit(system);
-
-        QueryHeartbeat heartbeat = getActiveQueryTracker().trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
-        // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the heartbeat.
-        heartbeatCache.put(heartbeat);
     }
 
     /**
