@@ -30,6 +30,7 @@ fi
 if [[ "$INGEST_HOST" == "localhost" || "$INGEST_HOST" == `hostname` || "$INGEST_HOST" == `hostname -s` ]]; then
 
   $INGEST_BIN/ingest/start-ingesters.sh $FORCE
+  exit $?
 
 else
 
@@ -37,6 +38,7 @@ else
   trap 'rm -f "$ingestHost"; exit $?' INT TERM EXIT
   echo $INGEST_HOST > $ingestHost
 
+  # Status is deliberately not propagated here: logging_pdsh returns an inverted status.
   logging_pdsh "${script_name}" -f 25 -w ^${ingestHost} "$INGEST_BIN/ingest/start-ingesters.sh $FORCE"
 
   rm $ingestHost

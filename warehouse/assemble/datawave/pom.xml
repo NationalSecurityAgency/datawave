@@ -12,6 +12,8 @@
     <properties>
         <!-- jkube kubernetes-maven-plugin only has access to project properties so we redefine them to properly render the Dockerfile-->
         <project.version>${project.version}</project.version>
+        <!-- set to true to skip verification of the staged ingest scripts' classpath -->
+        <skip.ingest.classpath.check>false</skip.ingest.classpath.check>
     </properties>
     <dependencies>
         <!-- To ensure a consistent version is loaded -->
@@ -479,6 +481,35 @@
                                             <directory>${project.basedir}/src/main/resources</directory>
                                         </resource>
                                     </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <!--
+                                    The ingest scripts resolve their jars by globbing lib/ at runtime, so a jar
+                                    dropped or renamed by a dependency change breaks them silently: the entry
+                                    expands to nothing and the failure only appears as a ClassNotFoundException
+                                    on a deployed cluster. This module is the only place the staged bin/ + lib/
+                                    layout those scripts expect actually exists, so the check runs here.
+                                    Set -Dskip.ingest.classpath.check to bypass it.
+                                -->
+                                <id>verify-ingest-classpath</id>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <phase>verify</phase>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <skip>${skip.ingest.classpath.check}</skip>
+                                    <arguments>
+                                        <argument>${project.basedir}/src/test/scripts/verify-ingest-classpath.sh</argument>
+                                        <argument>${project.build.directory}/archive</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>
