@@ -1,4 +1,4 @@
-package datawave.ingest.table.aggregator;
+package datawave.table.iterators;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -15,9 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import datawave.ingest.protobuf.Uid;
-import datawave.ingest.protobuf.Uid.List.Builder;
-import datawave.iterators.ValueCombiner;
+import datawave.table.protobuf.Uid;
+import datawave.table.protobuf.Uid.List.Builder;
 
 /**
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the
