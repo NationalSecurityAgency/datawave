@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import datawave.util.CompositeTimestamp;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -45,6 +44,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
 import datawave.query.model.Direction;
 import datawave.table.constants.TableName;
+import datawave.util.CompositeTimestamp;
 
 /**
  * <p>
@@ -1041,7 +1041,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     public static long trimToBeginningOfDay(long date) {
         return (date / MS_PER_DAY) * MS_PER_DAY;
     }
-
 
     /**
      * Creates a shard column key and does apply masking logic
