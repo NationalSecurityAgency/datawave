@@ -28,8 +28,8 @@ public class UnfieldedRegexIndexLookupHangTest extends BaseIndexLookupTest {
      */
     @Test
     public void defaultAnyFieldScanTimeoutIsFinite() {
-        assertEquals(TimeUnit.HOURS.toMillis(1), config.getMaxAnyFieldScanTimeMillis(),
-                        "default max any field scan time should be a finite bound, not Long.MAX_VALUE");
+        assertEquals(TimeUnit.MINUTES.toMillis(7), config.getMaxAnyFieldScanTimeMillis(),
+                        "default max any field scan time should be seven minutes, not Long.MAX_VALUE");
     }
 
     /**

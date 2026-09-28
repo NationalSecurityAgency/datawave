@@ -159,9 +159,9 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIndexBatchSize", 1100);
         defaultValues.put("allTermsIndexOnly", false);
         updatedValues.put("allTermsIndexOnly", true);
-        defaultValues.put("maxIndexScanTimeMillis", TimeUnit.HOURS.toMillis(1));
+        defaultValues.put("maxIndexScanTimeMillis", TimeUnit.MINUTES.toMillis(7));
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
-        defaultValues.put("maxAnyFieldScanTimeMillis", TimeUnit.HOURS.toMillis(1));
+        defaultValues.put("maxAnyFieldScanTimeMillis", TimeUnit.MINUTES.toMillis(7));
         updatedValues.put("maxAnyFieldScanTimeMillis", 100000L);
         defaultValues.put("useNewIndexLookups", false);
         updatedValues.put("useNewIndexLookups", true);

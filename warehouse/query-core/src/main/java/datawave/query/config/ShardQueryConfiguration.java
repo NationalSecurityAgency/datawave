@@ -104,13 +104,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxIndexBatchSize = 1000;
     private boolean allTermsIndexOnly;
     /**
-     * Default is one hour, not unbounded, so a stalled scan cannot block query planning indefinitely.
+     * Default is seven minutes, not unbounded, so a stalled scan cannot block query planning indefinitely.
      */
-    private long maxIndexScanTimeMillis = TimeUnit.HOURS.toMillis(1);
+    private long maxIndexScanTimeMillis = TimeUnit.MINUTES.toMillis(7);
     /**
-     * Default is one hour, not unbounded, so a stalled scan cannot block query planning indefinitely.
+     * Default is seven minutes, not unbounded, so a stalled scan cannot block query planning indefinitely.
      */
-    private long maxAnyFieldScanTimeMillis = TimeUnit.HOURS.toMillis(1);
+    private long maxAnyFieldScanTimeMillis = TimeUnit.MINUTES.toMillis(7);
     @Deprecated
     private boolean useNewIndexLookups = false;
 
