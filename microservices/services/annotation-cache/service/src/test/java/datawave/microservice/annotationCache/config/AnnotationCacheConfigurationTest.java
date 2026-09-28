@@ -1,9 +1,9 @@
 package datawave.microservice.annotationCache.config;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
-import static datawave.microservice.annotationCache.api.Constants.DOC_ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 
 import datawave.microservice.annotationCache.AnnotationMapStore;
@@ -49,16 +48,11 @@ class AnnotationCacheConfigurationTest {
         EntryListenerConfig listenerConfig = annotationConfig.getEntryListenerConfigs().iterator().next();
         assertSame(listener, listenerConfig.getImplementation());
         assertTrue(listenerConfig.isLocal());
-        assertTrue(listenerConfig.isIncludeValue());
+        assertFalse(listenerConfig.isIncludeValue());
 
         MapConfig fetchConfig = config.getMapConfig(FETCH_MAP + "*");
         assertEquals(300, fetchConfig.getTimeToLiveSeconds());
         assertEquals(0, fetchConfig.getMaxIdleSeconds());
-
-        MapConfig documentIndexConfig = config.getMapConfig(DOC_ANNOTATIONS_MAP);
-        assertEquals(0, documentIndexConfig.getTimeToLiveSeconds());
-        assertEquals(0, documentIndexConfig.getMaxIdleSeconds());
-        assertEquals(EvictionPolicy.NONE, documentIndexConfig.getEvictionConfig().getEvictionPolicy());
     }
 
     @Test

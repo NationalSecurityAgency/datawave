@@ -1,7 +1,6 @@
 package datawave.microservice.annotationCache.config;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
-import static datawave.microservice.annotationCache.api.Constants.DOC_ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
 
 import java.time.Duration;
@@ -13,7 +12,6 @@ import org.springframework.context.annotation.Configuration;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.Hazelcast;
@@ -56,13 +54,8 @@ public class AnnotationCacheConfiguration {
         storeConfig.setEnabled(true);
         storeConfig.setImplementation(annotationMapStore);
 
-        EntryListenerConfig listenerConfig = new EntryListenerConfig(annotationMapListener, true, true);
+        EntryListenerConfig listenerConfig = new EntryListenerConfig(annotationMapListener, true, false);
         annotationMapConfig.addEntryListenerConfig(listenerConfig);
-
-        MapConfig documentIndexConfig = config.getMapConfig(DOC_ANNOTATIONS_MAP);
-        documentIndexConfig.setTimeToLiveSeconds(0);
-        documentIndexConfig.setMaxIdleSeconds(0);
-        documentIndexConfig.getEvictionConfig().setEvictionPolicy(EvictionPolicy.NONE);
 
         MapConfig fetchMapConfig = config.getMapConfig(FETCH_MAP + "*");
         fetchMapConfig.setTimeToLiveSeconds(maxFetchAgeSeconds);

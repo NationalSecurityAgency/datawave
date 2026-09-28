@@ -1,7 +1,6 @@
 package datawave.microservice.annotationCache.config;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
-import static datawave.microservice.annotationCache.api.Constants.DOC_ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -9,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -28,7 +26,9 @@ import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.microservice.annotationCache.AnnotationMapStore;
 import datawave.microservice.annotationCache.AnnotationSyncListener;
 
-/** Exercises expiration and listener synchronization against a real embedded Hazelcast member. */
+/**
+ * Verifies configured annotation/fetch TTL behavior and single-member annotation-expiry invalidation. Cross-member listener propagation is tested separately.
+ */
 class AnnotationCacheExpirationIntegrationTest {
     private static final String CACHE_KEY = "UUID:document";
     private static final String ANNOTATION_MAP = ANNOTATIONS_MAP + CACHE_KEY;
@@ -42,11 +42,15 @@ class AnnotationCacheExpirationIntegrationTest {
         }
     }
 
+    /**
+     * Confirms fetch records expire before annotations, then verifies annotation expiry invalidates a deliberately longer-lived fetch record. This test focuses
+     * on TTL policy and local listener behavior; it does not test multi-member propagation.
+     */
     @Test
-    void expirationKeepsAnnotationIndexAndFetchRecordsConsistent() throws InterruptedException {
+    void annotationAndFetchExpirationRemainConsistent() throws InterruptedException {
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
-        properties.setMaxCacheAge(Duration.ofSeconds(2));
-        properties.setMaxFetchAge(Duration.ofSeconds(1));
+        properties.setMaxCacheAge(Duration.ofSeconds(5));
+        properties.setMaxFetchAge(Duration.ofSeconds(2));
 
         AnnotationSyncListener listener = new AnnotationSyncListener();
         Config config = isolatedConfig();
@@ -55,32 +59,25 @@ class AnnotationCacheExpirationIntegrationTest {
         listener.setHazelcastInstance(hazelcastInstance);
 
         IMap<String,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATION_MAP);
-        IMap<String,Set<String>> documentIndex = hazelcastInstance.getMap(DOC_ANNOTATIONS_MAP);
         IMap<String,String> fetchRecords = hazelcastInstance.getMap(FETCH_MAP + CACHE_KEY);
 
         annotations.set("first", annotationMessage("first"));
         fetchRecords.set("default-ttl", "record");
-
-        await("first annotation to be indexed", () -> Set.of("first").equals(documentIndex.get(CACHE_KEY)));
         await("fetch record to expire using its configured TTL", () -> fetchRecords.get("default-ttl") == null);
         assertNotNull(annotations.get("first"), "the longer-lived annotation should still be cached when the fetch record expires");
 
-        // Stagger the insertions to prove that expiration removes one ID without deleting a still-live annotation from the document index.
-        annotations.set("second", annotationMessage("second"));
-        await("second annotation to be indexed", () -> Set.of("first", "second").equals(documentIndex.get(CACHE_KEY)));
-
-        // This record deliberately outlives the annotation TTL; expiration of the first annotation must clear it through the listener.
+        // Expiration of an annotation invalidates document freshness state.
         fetchRecords.set("listener-invalidation", "record", 30, TimeUnit.SECONDS);
         await("first annotation to expire", () -> annotations.get("first") == null);
-        await("first ID to be removed and fetch records invalidated", () -> Set.of("second").equals(documentIndex.get(CACHE_KEY)) && fetchRecords.isEmpty());
-        assertNotNull(annotations.get("second"), "expiration of one annotation must not remove another live annotation");
+        await("fetch records to be invalidated after annotation expiration", fetchRecords::isEmpty);
 
+        annotations.set("second", annotationMessage("second"));
+        fetchRecords.set("second-invalidation", "record", 30, TimeUnit.SECONDS);
         await("second annotation to expire", () -> annotations.get("second") == null);
-        await("empty document index to be removed", () -> documentIndex.get(CACHE_KEY) == null);
+        await("fetch records to be invalidated after second annotation expiration", fetchRecords::isEmpty);
 
         assertNull(annotations.get("first"));
         assertNull(annotations.get("second"));
-        assertNull(documentIndex.get(CACHE_KEY));
         assertEquals(0, fetchRecords.size());
     }
 

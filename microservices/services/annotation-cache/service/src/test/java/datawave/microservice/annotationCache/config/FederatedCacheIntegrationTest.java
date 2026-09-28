@@ -1,7 +1,6 @@
 package datawave.microservice.annotationCache.config;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
-import static datawave.microservice.annotationCache.api.Constants.DOC_ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.PERSISTENCE_MODE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
@@ -18,7 +17,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.time.Duration;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -66,7 +64,7 @@ class FederatedCacheIntegrationTest {
     }
 
     @Test
-    void federatedInsertionUpdatesIndexWithoutRepublishingToMapStore() throws InterruptedException {
+    void federatedInsertionDoesNotRepublishToMapStore() throws InterruptedException {
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
         properties.setMaxCacheAge(Duration.ofSeconds(30));
         properties.setMaxFetchAge(Duration.ofSeconds(10));
@@ -79,12 +77,11 @@ class FederatedCacheIntegrationTest {
         listener.setHazelcastInstance(hazelcastInstance);
 
         IMap<String,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATION_MAP);
-        IMap<String,Set<String>> documentIndex = hazelcastInstance.getMap(DOC_ANNOTATIONS_MAP);
 
         AnnotationMessage localMessage = message(LOCAL_REGION, "local-annotation");
         annotations.set("local-annotation", localMessage);
         verify(mapStore).store("local-annotation", localMessage);
-        await("local annotation to be indexed", () -> Set.of("local-annotation").equals(documentIndex.get(CACHE_KEY)));
+        await("local annotation to be cached", () -> localMessage.equals(annotations.get("local-annotation")));
 
         RegionConfiguration region = new RegionConfiguration();
         region.setName(LOCAL_REGION);
@@ -98,8 +95,7 @@ class FederatedCacheIntegrationTest {
         AnnotationMessage remoteMessage = message(REMOTE_REGION, "remote-annotation");
         consumer.accept(remoteMessage);
 
-        await("remote annotation to be cached and indexed", () -> remoteMessage.equals(annotations.get("remote-annotation"))
-                        && Set.of("local-annotation", "remote-annotation").equals(documentIndex.get(CACHE_KEY)));
+        await("remote annotation to be cached", () -> remoteMessage.equals(annotations.get("remote-annotation")));
         verify(mapStore, after(250).never()).store(eq("remote-annotation"), any());
 
         EntryView<String,AnnotationMessage> entryView = annotations.getEntryView("remote-annotation");

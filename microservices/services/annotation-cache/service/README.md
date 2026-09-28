@@ -2,77 +2,65 @@
 
 ## Purpose
 
-This service provides the regional Hazelcast cache used by Sonicweb. Annotation entries are immutable and are keyed by annotation ID within a document-specific map:
+This service provides the regional Hazelcast cache used by Sonicweb. Annotation entries are immutable and are keyed by annotation ID inside a per-document map:
 
 ```text
 annotations:<idType>:<documentId>
-    <annotationId> -> AnnotationMessage
+    annotationId -> AnnotationMessage
+
+doc-fetch-record:<idType>:<documentId>
+    authorizationHash -> FetchRecord
 ```
 
-`doc-annotations` is a derived document-to-annotation-ID index. Fetch records are transient Sonicweb freshness metadata.
+There is no separate document-to-annotation-ID index. A document's annotation map is the source of truth for its cached annotations, and Sonicweb enumerates the map values when retrieving them.
 
 ## Write and federation model
 
-A local Sonicweb write is written to Hazelcast and published by `AnnotationMapStore` to RabbitMQ. RabbitMQ delivery is acknowledged before the write is considered accepted by this service; Accumulo persistence and regional federation are asynchronous consumers.
+A local Sonicweb write is placed in Hazelcast and published by `AnnotationMapStore` to RabbitMQ. RabbitMQ delivery is acknowledged before the write is considered accepted by this service; Accumulo persistence and regional federation are asynchronous consumers.
 
 Federated messages are consumed locally only when their `region.id` differs from the configured `region.name`. The message must also contain `id.type`, because `Annotation` contains the document ID but not the Sonicweb identifier type.
 
-Federated entries use `putTransient()` so they are not republished by the local `MapStore`. Duplicate delivery is expected and is safe because annotations are immutable and indexed by annotation ID.
+Federated entries use `putTransient()` so they are not republished by the local `MapStore`. Duplicate delivery is expected and is safe because annotations are immutable and keyed by annotation ID.
 
-## Synchronization
+Messages use these shared `AnnotationMessage.parameters` entries:
 
-`AnnotationSyncListener` maintains the derived index and invalidates fetch records when annotations are removed, evicted, or expired. `LoadCacheConsumer` also updates the index after federation, including when the annotation already exists, so it can repair a missed index event.
+```text
+id.type   - identifier type used in the Hazelcast document map name
+region.id - region in which the message originated
+```
 
-Index updates use an idempotent entry processor. The listener remains necessary for local writes and lifecycle events; consumer-side indexing is not a replacement for it.
+## Fetch freshness
 
-## Reconciliation
+Fetch records are transient Sonicweb freshness metadata, stored separately from annotation values. They expire using the configured fetch TTL. Removing, expiring, or evicting annotation entries clears fetch records for that document so the next Sonicweb read can consult permanent storage.
 
-`AnnotationCacheReconciler` periodically treats the `annotations:*` maps as authoritative and unions missing annotation IDs into `doc-annotations`. Reconciliation is intentionally add-only: stale IDs are measured and logged, while normal expiration/removal listeners remain responsible for deleting them. Repairing an index also invalidates that document's fetch records.
+After partition loss, member removal, or a split-brain merge event, `AnnotationCacheTopologyListener` clears tracked fetch maps once the cluster has settled. Annotation entries themselves are the complete read set, so there is no derived index to rebuild or reconcile.
 
-Only one Hazelcast member runs a reconciliation batch at a time. Work is bounded by `annotation-cache.reconciliation-max-maps-per-run`, and a distributed cursor allows later polls to finish the cycle. Reconciliation waits for the cluster to report a safe partition state.
-
-Member additions/removals, split-brain merges, failed replica migrations, and partition loss request an additional delayed pass. Partition loss and merge events also request global fetch-record invalidation so Sonicweb can consult permanent storage. These event triggers are debounced and do not replace the periodic pass.
-
-Configuration defaults:
+## Configuration
 
 ```yaml
 annotation-cache:
-  reconciliation-enabled: true
-  reconciliation-interval: 5m
-  reconciliation-settle-delay: 15s
-  reconciliation-max-maps-per-run: 1000
-  reconciliation-poll-interval-ms: 5000
+  max-cache-age: 1h
+  max-fetch-age: 5m
+  topology-monitoring-enabled: true
+  topology-settle-delay: 15s
+  topology-poll-interval-ms: 5000
 ```
 
-Sonicweb also performs targeted read repair when a document index is absent or empty while its annotation map contains entries.
+Annotation and fetch TTLs are validated at startup. Annotation TTL must be greater than or equal to fetch TTL.
 
-## Assumptions
+## Assumptions and guarantees
 
 - Annotation IDs identify immutable annotation content.
 - RabbitMQ delivery and federation are at-least-once; persistence consumers must tolerate duplicates.
 - A message originating in the local region is already present locally and is ignored by the federated consumer.
 - `region.name` is configured consistently for each deployment.
-- `id.type` and `region.id` are present on all newly produced messages.
-- Temporary index inconsistency is acceptable for the low-volume, human-scale workload.
-
-## Limitations
-
-- Annotation, index, and fetch-map changes are not one atomic transaction.
-- Hazelcast entry listeners are asynchronous. A newly inserted annotation may briefly be absent from the index; an expired annotation may briefly remain indexed.
-- Reconciliation is eventually consistent and add-only. It reports but does not remove stale index IDs, and a bounded cycle may require multiple polls.
-- Listener failures or member restarts can leave derived state stale unless a later event or repair operation corrects it.
-- A whole-map clear can race with concurrent additions.
-- Consumer retries can partially process a batched message before a later annotation fails.
-- `putTransient()` uses the annotation map's configured TTL/max-idle settings. Those settings must be configured consistently with Sonicweb cache expectations.
-
-## Protections
-
-- Federated inserts bypass local write-through to prevent RabbitMQ republishing loops.
-- Per-annotation locking prevents concurrent duplicate federation work within the local map.
-- Existing annotations are not overwritten.
-- Index additions are set-based and idempotent.
-- Index failures propagate to the message consumer so broker retry/dead-letter policy can handle them.
-- Annotation validation rejects missing document IDs, annotation IDs, regions, and identifier types.
-- Reconciliation rebuilds missing `doc-annotations` entries from the annotation maps and invalidates affected fetch records.
-- Topology and partition-loss events trigger delayed reconciliation after the cluster becomes safe.
+- `id.type` and `region.id` are present on newly produced messages.
 - Visibility and authorization decisions remain the responsibility of Sonicweb; this service does not authorize annotations.
+- Publisher confirmation means broker acceptance, not Accumulo persistence or federation completion.
+
+## Consistency notes
+
+- Annotation and fetch-record changes are not one atomic transaction.
+- Hazelcast entry listeners are asynchronous. Fetch invalidation after annotation removal can have a short delay; it is also explicitly performed by Sonicweb during local cache clearing.
+- A topology event may cause harmless extra backend reads because fetch records are discarded.
+- Per-document annotation and fetch maps remain distributed objects after their entries are cleared unless explicitly destroyed.
