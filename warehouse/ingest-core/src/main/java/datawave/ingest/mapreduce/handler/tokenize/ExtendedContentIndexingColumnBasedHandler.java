@@ -849,10 +849,11 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         // Colf: Field Name
         // Colq: Shard Id : DataType
         // Value: UID
+        Text colf = new Text(nFV.getIndexedFieldName());
         Text colq = new Text(shardId);
         TextUtil.textAppend(colq, this.eventDataTypeName, replacedMalformedUTF8);
 
-        Key k = ShardUtil.createIndexKey(nFV.getIndexedFieldValue(), nFV.getIndexedFieldName(), colq, visibility, event.getTimestamp(), deleteMode);
+        Key k = this.createIndexKey(nFV.getIndexedFieldValue().getBytes(), colf, colq, visibility, event.getTimestamp(), deleteMode);
 
         // Create a UID object for the Value
         Value val = createUidArray(eventUid, deleteMode);

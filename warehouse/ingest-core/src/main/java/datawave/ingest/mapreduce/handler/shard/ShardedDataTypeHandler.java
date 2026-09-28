@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -44,7 +43,6 @@ import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
 import datawave.query.model.Direction;
 import datawave.table.constants.TableName;
-import datawave.util.CompositeTimestamp;
 import datawave.util.TextUtil;
 
 /**
@@ -178,8 +176,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     // Config option name for all tables that are "sharded"
     public static final String SHARDED_TNAMES = "sharded.table.names";
-
-    private static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
 
     /**
      * The {@code 'fi'} column family prefix used for field index entries in the shard table (see {@link #createShardFieldIndexColumn}).
@@ -1029,16 +1025,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     public static long getIndexTimestamp(long ts) {
         return DateIndexUtil.getIndexTimestamp(ts);
-    }
-
-    /**
-     * Trim ms to the beginning of the day
-     *
-     * @param date
-     * @return the time at the beginning of the day
-     */
-    public static long trimToBeginningOfDay(long date) {
-        return (date / MS_PER_DAY) * MS_PER_DAY;
     }
 
     /**
