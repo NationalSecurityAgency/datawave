@@ -1028,9 +1028,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * @return the timestamp to be used for index entries
      */
     public static long getIndexTimestamp(long ts) {
-        long tsToDay = trimToBeginningOfDay(CompositeTimestamp.getEventDate(ts));
-        long ageOffToDay = trimToBeginningOfDay(CompositeTimestamp.getAgeOffDate(ts));
-        return CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
+        return DateIndexUtil.getIndexTimestamp(ts);
     }
 
     /**
