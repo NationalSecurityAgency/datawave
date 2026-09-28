@@ -5,17 +5,16 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-/** Retention policy for annotation-cache Hazelcast maps. */
+/** Retention and topology-recovery settings for annotation-cache Hazelcast maps. */
 @Configuration
 @ConfigurationProperties(prefix = "annotation-cache")
 public class AnnotationCacheProperties {
     private Duration maxCacheAge = Duration.ofHours(1);
     private Duration maxFetchAge = Duration.ofMinutes(5);
     private Duration federationLockWait = Duration.ofSeconds(5);
-    private boolean reconciliationEnabled = true;
-    private Duration reconciliationInterval = Duration.ofMinutes(5);
-    private Duration reconciliationSettleDelay = Duration.ofSeconds(15);
-    private int reconciliationMaxMapsPerRun = 1000;
+    private boolean topologyMonitoringEnabled = true;
+    private Duration topologySettleDelay = Duration.ofSeconds(15);
+    private long topologyPollIntervalMs = 5000;
 
     public Duration getMaxCacheAge() {
         return maxCacheAge;
@@ -41,35 +40,27 @@ public class AnnotationCacheProperties {
         this.federationLockWait = federationLockWait;
     }
 
-    public boolean isReconciliationEnabled() {
-        return reconciliationEnabled;
+    public boolean isTopologyMonitoringEnabled() {
+        return topologyMonitoringEnabled;
     }
 
-    public void setReconciliationEnabled(boolean reconciliationEnabled) {
-        this.reconciliationEnabled = reconciliationEnabled;
+    public void setTopologyMonitoringEnabled(boolean topologyMonitoringEnabled) {
+        this.topologyMonitoringEnabled = topologyMonitoringEnabled;
     }
 
-    public Duration getReconciliationInterval() {
-        return reconciliationInterval;
+    public Duration getTopologySettleDelay() {
+        return topologySettleDelay;
     }
 
-    public void setReconciliationInterval(Duration reconciliationInterval) {
-        this.reconciliationInterval = reconciliationInterval;
+    public void setTopologySettleDelay(Duration topologySettleDelay) {
+        this.topologySettleDelay = topologySettleDelay;
     }
 
-    public Duration getReconciliationSettleDelay() {
-        return reconciliationSettleDelay;
+    public long getTopologyPollIntervalMs() {
+        return topologyPollIntervalMs;
     }
 
-    public void setReconciliationSettleDelay(Duration reconciliationSettleDelay) {
-        this.reconciliationSettleDelay = reconciliationSettleDelay;
-    }
-
-    public int getReconciliationMaxMapsPerRun() {
-        return reconciliationMaxMapsPerRun;
-    }
-
-    public void setReconciliationMaxMapsPerRun(int reconciliationMaxMapsPerRun) {
-        this.reconciliationMaxMapsPerRun = reconciliationMaxMapsPerRun;
+    public void setTopologyPollIntervalMs(long topologyPollIntervalMs) {
+        this.topologyPollIntervalMs = topologyPollIntervalMs;
     }
 }

@@ -1,15 +1,12 @@
 package datawave.microservice.annotationCache.config;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
-import static datawave.microservice.annotationCache.api.Constants.DOC_ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -43,7 +40,7 @@ class AnnotationRemovalIntegrationTest {
     }
 
     @Test
-    void removeEvictClearAndEvictAllSynchronizeDerivedMaps() throws InterruptedException {
+    void removeEvictClearAndEvictAllInvalidateFetchRecords() throws InterruptedException {
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
         properties.setMaxCacheAge(Duration.ofSeconds(30));
         properties.setMaxFetchAge(Duration.ofSeconds(10));
@@ -55,39 +52,34 @@ class AnnotationRemovalIntegrationTest {
         listener.setHazelcastInstance(hazelcastInstance);
 
         IMap<String,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATION_MAP);
-        IMap<String,Set<String>> documentIndex = hazelcastInstance.getMap(DOC_ANNOTATIONS_MAP);
         IMap<String,String> fetchRecords = hazelcastInstance.getMap(FETCH_MAP + CACHE_KEY);
-
         annotations.set("first", annotationMessage("first"));
         annotations.set("second", annotationMessage("second"));
-        await("initial annotations to be indexed", () -> Set.of("first", "second").equals(documentIndex.get(CACHE_KEY)));
 
         fetchRecords.set("remove", "record", 30, TimeUnit.SECONDS);
         assertNotNull(annotations.remove("first"));
-        await("removed ID and fetch record to be synchronized", () -> Set.of("second").equals(documentIndex.get(CACHE_KEY)) && fetchRecords.isEmpty());
+        await("fetch records to be invalidated after annotation removal", fetchRecords::isEmpty);
+
         assertNotNull(annotations.get("second"));
 
         fetchRecords.set("evict", "record", 30, TimeUnit.SECONDS);
         assertTrue(annotations.evict("second"));
-        await("evicted final ID and fetch record to be synchronized", () -> documentIndex.get(CACHE_KEY) == null && fetchRecords.isEmpty());
+        await("fetch records to be invalidated after final annotation eviction", fetchRecords::isEmpty);
 
         annotations.set("third", annotationMessage("third"));
         annotations.set("fourth", annotationMessage("fourth"));
-        await("annotations to be indexed before clear", () -> Set.of("third", "fourth").equals(documentIndex.get(CACHE_KEY)));
         fetchRecords.set("clear", "record", 30, TimeUnit.SECONDS);
         annotations.clear();
-        await("map clear to remove the index and fetch records", () -> documentIndex.get(CACHE_KEY) == null && fetchRecords.isEmpty());
+        await("map clear to invalidate fetch records", fetchRecords::isEmpty);
         assertTrue(annotations.isEmpty());
 
         annotations.set("fifth", annotationMessage("fifth"));
         annotations.set("sixth", annotationMessage("sixth"));
-        await("annotations to be indexed before evictAll", () -> Set.of("fifth", "sixth").equals(documentIndex.get(CACHE_KEY)));
         fetchRecords.set("evict-all", "record", 30, TimeUnit.SECONDS);
         annotations.evictAll();
-        await("map eviction to remove the index and fetch records", () -> documentIndex.get(CACHE_KEY) == null && fetchRecords.isEmpty());
+        await("map eviction to invalidate fetch records", fetchRecords::isEmpty);
 
         assertTrue(annotations.isEmpty());
-        assertNull(documentIndex.get(CACHE_KEY));
         assertTrue(fetchRecords.isEmpty());
     }
 

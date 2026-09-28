@@ -1,7 +1,6 @@
 package datawave.microservice.annotationCache;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
-import static datawave.microservice.annotationCache.api.Constants.DOC_ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
 
@@ -22,7 +21,6 @@ import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.microservice.annotationCache.api.AnnotationStorageException;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
-import datawave.microservice.annotationCache.api.entryProcessor.AppendAnnotationIdProcessor;
 import datawave.microservice.annotationCache.config.AnnotationCacheProperties;
 
 /** Consumes federated annotation messages and makes them available in the local Hazelcast cache. */
@@ -83,7 +81,6 @@ public class LoadCacheConsumer {
 
         String mapName = ANNOTATIONS_MAP + idType + ":" + documentId;
         IMap<String,AnnotationMessage> annotationMap = hazelcastInstance.getMap(mapName);
-        IMap<String,java.util.Set<String>> documentIndex = hazelcastInstance.getMap(DOC_ANNOTATIONS_MAP);
 
         // The normal producer writes one annotation per message. Normalize a batched message so that every map key still contains exactly its annotation.
         AnnotationMessage cacheValue = annotationMessage.getAnnotationsCount() == 1 ? annotationMessage
@@ -116,7 +113,5 @@ public class LoadCacheConsumer {
             }
         }
 
-        // Keep the derived index update idempotent and perform it even when the annotation already existed. This repairs an index missed by a previous event.
-        documentIndex.executeOnKey(idType + ":" + documentId, new AppendAnnotationIdProcessor(annotationId));
     }
 }

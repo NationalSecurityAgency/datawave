@@ -1,7 +1,6 @@
 package datawave.microservice.annotationCache;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
-import static datawave.microservice.annotationCache.api.Constants.DOC_ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.PERSISTENCE_MODE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
@@ -19,7 +18,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.Set;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -48,7 +47,6 @@ class LoadCacheConsumerTest {
     private Config config;
     private RegionConfiguration regionConfiguration;
     private AnnotationCacheProperties properties;
-    private IMap<String,Set<String>> documentIndex;
     private Consumer<AnnotationMessage> consumer;
 
     @BeforeEach
@@ -56,8 +54,6 @@ class LoadCacheConsumerTest {
         hazelcastInstance = mock(HazelcastInstance.class);
         config = mock(Config.class);
         when(hazelcastInstance.getConfig()).thenReturn(config);
-        documentIndex = mock(IMap.class);
-        when(hazelcastInstance.<String,Set<String>> getMap(DOC_ANNOTATIONS_MAP)).thenReturn(documentIndex);
 
         regionConfiguration = new RegionConfiguration();
         regionConfiguration.setName(LOCAL_REGION);
@@ -178,7 +174,6 @@ class LoadCacheConsumerTest {
         verify(annotationMap).unlock("annotation");
         verify(annotationMap, never()).put(any(), any());
         verify(annotationMap, never()).set(any(), any());
-        verify(documentIndex).executeOnKey(eq(ID_TYPE + ":doc"), any());
     }
 
     @Test
@@ -191,7 +186,6 @@ class LoadCacheConsumerTest {
 
         verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
         verify(annotationMap).unlock("annotation");
-        verify(documentIndex).executeOnKey(eq(ID_TYPE + ":doc"), any());
         verifyNoInteractions(config);
     }
 
@@ -229,22 +223,10 @@ class LoadCacheConsumerTest {
 
         verify(firstMap).putTransient(eq("first"), any(AnnotationMessage.class), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
         verify(secondMap).putTransient(eq("second"), any(AnnotationMessage.class), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
-        verify(documentIndex).executeOnKey(eq(ID_TYPE + ":first-doc"), any());
-        verify(documentIndex).executeOnKey(eq(ID_TYPE + ":second-doc"), any());
     }
 
     @Test
-    void retriesWhenDocumentIndexUpdateFails() throws Exception {
-        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
-        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
-        doThrow(new IllegalStateException("index failure")).when(documentIndex).executeOnKey(eq(ID_TYPE + ":doc"), any());
-
-        assertThrows(IllegalStateException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
-        verify(annotationMap).putTransient(eq("annotation"), any(AnnotationMessage.class), eq(120L), eq(TimeUnit.SECONDS), eq(30L), eq(TimeUnit.SECONDS));
-    }
-
-    @Test
-    void repairsIndexForAnnotationAlreadyInCache() throws Exception {
+    void duplicateAnnotationIsNoOpWhenAlreadyCached() throws Exception {
         String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
         IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
         when(annotationMap.containsKey("annotation")).thenReturn(true);
@@ -252,7 +234,6 @@ class LoadCacheConsumerTest {
         consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation")));
 
         verify(annotationMap, never()).putTransient(any(), any(), anyLong(), any(), anyLong(), any());
-        verify(documentIndex).executeOnKey(eq(ID_TYPE + ":doc"), any());
     }
 
     @Test
@@ -266,7 +247,6 @@ class LoadCacheConsumerTest {
 
         assertThrows(AnnotationStorageException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
         verify(annotationMap, never()).unlock("annotation");
-        verify(documentIndex, never()).executeOnKey(any(), any());
     }
 
     @Test
@@ -295,7 +275,6 @@ class LoadCacheConsumerTest {
         assertThrows(IllegalStateException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
         verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
         verify(annotationMap).unlock("annotation");
-        verify(documentIndex, never()).executeOnKey(any(), any());
     }
 
     @SuppressWarnings("unchecked")
@@ -320,7 +299,7 @@ class LoadCacheConsumerTest {
                         .putParameters(REGION_ID_PARAMETER, region)
                         .putParameters(ID_TYPE_PARAMETER, idType)
                         .putParameters(PERSISTENCE_MODE_PARAMETER, PersistenceMode.WRITE_THROUGH.value())
-                        .addAllAnnotations(java.util.List.of(annotations))
+                        .addAllAnnotations(List.of(annotations))
                         .build();
         // @formatter:on
     }
