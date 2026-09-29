@@ -76,6 +76,7 @@ services:
     command: [resourcemanager]
     environment:
       - HADOOP_CONF_DIR=/stack
+      - YARN_CONF_DIR=/stack
     ports:
       - "8032:8032"
       - "8088:8088"
@@ -99,6 +100,7 @@ services:
     command: [nodemanager]
     environment:
       - HADOOP_CONF_DIR=/stack
+      - YARN_CONF_DIR=/stack
     ports:
       - "8042:8042"
     volumes:
