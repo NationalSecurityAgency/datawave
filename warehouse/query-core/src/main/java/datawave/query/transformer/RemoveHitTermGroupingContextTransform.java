@@ -1,7 +1,6 @@
 package datawave.query.transformer;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map.Entry;
 
 import javax.annotation.Nullable;
@@ -39,58 +38,29 @@ public class RemoveHitTermGroupingContextTransform extends DocumentTransform.Def
             return entry;
         }
 
-        Attributes rewritten = hitTerms instanceof Attributes ? rewriteHitTerms((Attributes) hitTerms) : rewriteHitTerm(hitTerms);
-        if (rewritten != null) {
-            document.remove(HIT_TERM_FIELD);
-            document.put(HIT_TERM_FIELD, rewritten);
-        }
+        document.remove(HIT_TERM_FIELD);
+        Attribute<? extends Comparable<?>> rewritten = rewriteHitTerms(hitTerms);
+        document.put(HIT_TERM_FIELD, rewritten);
 
         return entry;
     }
 
     /**
-     * Rewrites each hit term in a single pass. The common case is that nothing needs rewriting, so the replacement is not built until the first hit term that
-     * carries a grouping context is found.
-     *
-     * @return the rewritten hit terms, or null if none carried a grouping context
+     * Rewrites each hit term in a single pass.
      */
-    private Attributes rewriteHitTerms(Attributes hitTerms) {
-        Collection<Attribute<? extends Comparable<?>>> attributes = hitTerms.getRawAttributes();
-        Attributes rewritten = null;
-        int unchanged = 0;
-
-        for (Attribute<? extends Comparable<?>> attribute : attributes) {
-            Attribute<? extends Comparable<?>> hitTerm = rewrite(attribute);
-            if (rewritten == null) {
-                if (hitTerm == attribute) {
-                    unchanged++;
-                    continue;
-                }
-
-                // first rewrite, carry over the hit terms already passed
-                rewritten = new Attributes(hitTerms.isToKeep());
-                Iterator<Attribute<? extends Comparable<?>>> passed = attributes.iterator();
-                for (int i = 0; i < unchanged; i++) {
-                    rewritten.add(passed.next());
-                }
-            }
-            rewritten.add(hitTerm);
+    private Attribute<? extends Comparable<?>> rewriteHitTerms(Attribute<? extends Comparable<?>> hitTerms) {
+        if (!(hitTerms instanceof Attributes)) {
+            return rewrite(hitTerms);
         }
 
-        return rewritten;
-    }
+        Attributes attributes = (Attributes) hitTerms;
+        Collection<Attribute<? extends Comparable<?>>> rawAttributes = attributes.getRawAttributes();
+        Attributes rewritten = new Attributes(attributes.isToKeep());
 
-    /**
-     * @return the rewritten hit term wrapped in an {@link Attributes}, or null if it did not carry a grouping context
-     */
-    private Attributes rewriteHitTerm(Attribute<? extends Comparable<?>> attribute) {
-        Attribute<? extends Comparable<?>> hitTerm = rewrite(attribute);
-        if (hitTerm == attribute) {
-            return null;
+        for (Attribute<? extends Comparable<?>> attribute : rawAttributes) {
+            rewritten.add(rewrite(attribute));
         }
 
-        Attributes rewritten = new Attributes(attribute.isToKeep());
-        rewritten.add(hitTerm);
         return rewritten;
     }
 

@@ -3,7 +3,6 @@ package datawave.query.transformer;
 import static datawave.query.function.JexlEvaluation.HIT_TERM_FIELD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
@@ -49,11 +48,10 @@ public class RemoveHitTermGroupingContextTransformTest {
     @Test
     public void testHitTermWithoutGroupingContextIsUntouched() {
         Document d = documentWithHitTerms("TF:to the park");
-        Attribute<?> before = d.get(HIT_TERM_FIELD);
 
         apply(d);
 
-        assertSame(before, d.get(HIT_TERM_FIELD));
+        assertEquals(Collections.singleton("TF:to the park"), hitTerms(d));
     }
 
     @Test
@@ -68,11 +66,10 @@ public class RemoveHitTermGroupingContextTransformTest {
     @Test
     public void testDottedValueIsNotMistakenForGroupingContext() {
         Document d = documentWithHitTerms("TF:someplace.com");
-        Attribute<?> before = d.get(HIT_TERM_FIELD);
 
         apply(d);
 
-        assertSame(before, d.get(HIT_TERM_FIELD));
+        assertEquals(Collections.singleton("TF:someplace.com"), hitTerms(d));
     }
 
     @Test
