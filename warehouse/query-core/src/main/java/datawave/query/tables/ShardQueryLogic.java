@@ -184,7 +184,7 @@ import datawave.webservice.result.QueryValidationResponse;
  *
  * <pre>
  *  1. If there is no type specified for a field in the metadata table, then it defaults to using the NoOpType. The default
- *     can be overriden by calling setDefaultType()
+ *     can be overridden by calling setDefaultType()
  *  2. We support fields that are indexed, but not in the event. An example of this is for text documents, where the text is tokenized
  *     and indexed, but the tokens are not stored with the event.
  *  3. We support fields that have term frequency records in the shard table containing lists of offsets.  This would be for tokens
