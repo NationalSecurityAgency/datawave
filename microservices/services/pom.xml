@@ -163,6 +163,7 @@
             </activation>
             <modules>
                 <module>accumulo</module>
+                <module>annotation-cache</module>
                 <module>audit</module>
                 <module>authorization</module>
                 <module>config</module>
