@@ -31,6 +31,7 @@
     </distributionManagement>
     <properties>
         <container.registry>ghcr.io</container.registry>
+        <datawave.build.jdk.version.range>[17,18)</datawave.build.jdk.version.range>
         <image.prefix>datawave/</image.prefix>
         <java.version>17</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
@@ -598,7 +599,7 @@
                                     <onlyWhenRelease>true</onlyWhenRelease>
                                 </requireReleaseDeps>
                                 <requireJavaVersion>
-                                    <version>${java.version}</version>
+                                    <version>${datawave.build.jdk.version.range}</version>
                                 </requireJavaVersion>
                             </rules>
                             <fail>true</fail>
@@ -648,6 +649,12 @@
         </plugins>
     </build>
     <profiles>
+        <profile>
+            <id>java17</id>
+            <properties>
+                <datawave.build.jdk.version.range>[17,18)</datawave.build.jdk.version.range>
+            </properties>
+        </profile>
         <profile>
             <id>autoformat</id>
             <activation>

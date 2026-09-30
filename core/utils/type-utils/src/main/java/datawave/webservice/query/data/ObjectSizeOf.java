@@ -86,20 +86,21 @@ public interface ObjectSizeOf {
         public static final short REFERENCE = 4;
         // The size of the basic Number constructs (and Boolean and Character) is 16: roundUp(8 + primitiveSize)
         public static final short NUMBER_SIZE = 16;
+        private static final UnsafeAccess UNSAFE_ACCESS = initUnsafeAccess();
 
         // Class name cache to avoid flood of NoSuchMethodException on reflective "sizeInBytes" invocation
-        private static final Set<String> noSuchMethodCache = ConcurrentHashMap.newKeySet();
+        private static Set<String> noSuchMethodCache = ConcurrentHashMap.newKeySet();
 
         /**
          * Get the size of an object. Note that we want something relatively fast that gives us an order of magnitude here. The java Instrumentation agent
          * mechanism is a little too costly for general use here. This will look for the ObjectSizeOf interface and if implemented on the object will use that.
-         * Otherwise, it will do a simple navigation of the fields using reflection.
+         * Otherwise it will do a simple navigation of the fields using reflection.
          *
          * @param o
          * @return an approximation of the object size
          */
         public static long getObjectSize(Object o) {
-            return getObjectSize(o, new HashSet<>(), new Stack<>(), true);
+            return getObjectSize(o, new HashSet<ObjectInstance>(), new Stack<ObjectInstance>(), true);
         }
 
         public static long getObjectSize(Object o, Set<ObjectInstance> visited, Stack<ObjectInstance> stack, boolean useSizeInBytesMethod) {
@@ -125,7 +126,7 @@ public interface ObjectSizeOf {
                             } catch (NoSuchMethodException e) {
                                 noSuchMethodCache.add(o.getClass().getName());
                             } catch (Throwable t) {
-                                log.warn("Unexpected error invoking sizeInBytes on {}", o.getClass().getName(), t);
+                                log.warn("Unexpected error invoking sizeInBytes on " + o.getClass().getName(), t);
                             }
                         }
                         if (size == 0) {
@@ -164,18 +165,14 @@ public interface ObjectSizeOf {
                                                 size += getPrimitiveObjectSize(field.getType());
                                             } else {
                                                 size += REFERENCE;
-                                                boolean accessible = field.isAccessible();
                                                 try {
-                                                    field.setAccessible(true);
-                                                    Object fieldObject = field.get(o);
+                                                    Object fieldObject = getFieldValue(field, o);
                                                     if (fieldObject != null) {
                                                         stack.push(new ObjectInstance(fieldObject));
                                                     }
-                                                } catch (Exception e) {
+                                                } catch (Throwable t) {
                                                     // cannot get to field, so ignore it in this size calculation
-                                                    log.warn("Cannot access field {} on object {} due to error", field, c, e);
-                                                } finally {
-                                                    field.setAccessible(accessible);
+                                                    log.debug("Unable to access field {} on {}", field.getName(), o.getClass().getName(), t);
                                                 }
                                             }
                                         }
@@ -186,13 +183,62 @@ public interface ObjectSizeOf {
                             }
                         }
                     } catch (Throwable t) {
-                        log.error("Unable to determine object size for {}", o, t);
+                        log.error("Unable to determine object size for " + o);
                     }
                 }
                 totalSize += size;
             }
 
             return totalSize;
+        }
+
+        private static UnsafeAccess initUnsafeAccess() {
+            try {
+                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+                Field unsafeField = unsafeClass.getDeclaredField("theUnsafe");
+                unsafeField.setAccessible(true);
+                Object unsafe = unsafeField.get(null);
+                Method objectFieldOffset = unsafeClass.getMethod("objectFieldOffset", Field.class);
+                Method getObject = unsafeClass.getMethod("getObject", Object.class, long.class);
+                return new UnsafeAccess(unsafe, objectFieldOffset, getObject);
+            } catch (Throwable t) {
+                log.debug("Unable to initialize Unsafe for object sizing fallback", t);
+                return null;
+            }
+        }
+
+        private static Object getFieldValue(Field field, Object target) throws IllegalAccessException {
+            if (field.trySetAccessible()) {
+                return field.get(target);
+            }
+            if (UNSAFE_ACCESS != null) {
+                try {
+                    return UNSAFE_ACCESS.getObject(target, field);
+                } catch (ReflectiveOperationException e) {
+                    IllegalAccessException wrapped = new IllegalAccessException(
+                                    "Unable to access field " + field.getName() + " on " + target.getClass().getName());
+                    wrapped.initCause(e);
+                    throw wrapped;
+                }
+            }
+            throw new IllegalAccessException("Unable to access field " + field.getName() + " on " + target.getClass().getName());
+        }
+
+        private static class UnsafeAccess {
+            private final Object unsafe;
+            private final Method objectFieldOffset;
+            private final Method getObject;
+
+            private UnsafeAccess(Object unsafe, Method objectFieldOffset, Method getObject) {
+                this.unsafe = unsafe;
+                this.objectFieldOffset = objectFieldOffset;
+                this.getObject = getObject;
+            }
+
+            private Object getObject(Object target, Field field) throws ReflectiveOperationException {
+                long offset = (Long) objectFieldOffset.invoke(unsafe, field);
+                return getObject.invoke(unsafe, target, offset);
+            }
         }
 
         public static long roundUp(long size) {
@@ -212,7 +258,7 @@ public interface ObjectSizeOf {
                 return 2;
             } else if (primitiveType.equals(long.class) || primitiveType.equals(double.class)) {
                 return 8;
-            } else {
+            } else { // if (primitiveType.equals(void.class)) {
                 return 0;
             }
         }

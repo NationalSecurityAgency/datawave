@@ -23,6 +23,17 @@
             </modules>
         </profile>
         <profile>
+            <id>service-annotation</id>
+            <activation>
+                <property>
+                    <name>service-annotation</name>
+                </property>
+            </activation>
+            <modules>
+                <module>annotation</module>
+            </modules>
+        </profile>
+        <profile>
             <id>service-audit</id>
             <activation>
                 <property>
@@ -152,6 +163,7 @@
             </activation>
             <modules>
                 <module>accumulo</module>
+                <module>annotation</module>
                 <module>audit</module>
                 <module>authorization</module>
                 <module>config</module>
