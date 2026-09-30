@@ -115,7 +115,7 @@ jobs:
         username: ${{ secrets.GHCR_WRITE_USER_NAME }}
         password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
     - name: Scan ingest image
-      uses: aquasecurity/trivy-action@v0.33.0
+      uses: aquasecurity/trivy-action@v0.36.0
       continue-on-error: true
       with:
         #image-ref: '${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}/ingest-kubernetes:${{ steps.project-version.outputs.version }}'
