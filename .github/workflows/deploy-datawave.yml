@@ -119,7 +119,7 @@ jobs:
       continue-on-error: true
       with:
         #image-ref: '${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}/ingest-kubernetes:${{ steps.project-version.outputs.version }}'
-        image-ref: 'ghcr.io/nationalsecurityagency/datawave/ingest-kubernetes:${{ steps.project-version.outputs.version }}'
+        image-ref: 'ghcr.io/nationalsecurityagency/datawave/ingest-kubernetes:8.1.0'
         format: sarif
         output: trivy-ingest-results.sarif
         severity: CRITICAL,HIGH
@@ -129,7 +129,7 @@ jobs:
       continue-on-error: true
       with:
        # image-ref: '${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}/webservice-kubernetes:${{ steps.project-version.outputs.version }}'
-        image-ref: 'ghcr.io/nationalsecurityagency/datawave/webservice-kubernetes:${{ steps.project-version.outputs.version }}'
+        image-ref: 'ghcr.io/nationalsecurityagency/datawave/webservice-kubernetes:8.1.0'
         format: sarif
         output: trivy-webservice-results.sarif
         severity: CRITICAL,HIGH
