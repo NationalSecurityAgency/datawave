@@ -25,7 +25,7 @@ services:
 
   hdfs-nn:
     profiles: [datawave-stack]
-    image: &stack-image ghcr.io/nationalsecurityagency/datawave-stack-accumulo:${DATAWAVE_STACK_ACCUMULO_VERSION:-4.0.0-SNAPSHOT}
+    image: &stack-image ghcr.io/nationalsecurityagency/datawave-stack-accumulo:${DATAWAVE_STACK_ACCUMULO_VERSION:-4.0.0-alpha-1}
     user: hdfs
     entrypoint: ["/bin/bash", "/stack/start-hadoop.sh"]
     command: [namenode]

@@ -1,7 +1,7 @@
 # https://github.com/NationalSecurityAgency/datawave-stack-docker-images
 # This image already contains the Hadoop client/server binaries and ZooKeeper
 # client libraries required by the ingest distribution.
-ARG DATAWAVE_STACK_ACCUMULO_VERSION=4.0.0-SNAPSHOT
+ARG DATAWAVE_STACK_ACCUMULO_VERSION=4.0.0-alpha-1
 FROM ghcr.io/nationalsecurityagency/datawave-stack-accumulo:${DATAWAVE_STACK_ACCUMULO_VERSION}
 
 USER root
