@@ -9,6 +9,7 @@ on:
       - 'integration'
       - 'release/version*'
       - 'docker-images'
+      - 'add-trivvy-scans'
   workflow_dispatch:
 
 concurrency:
@@ -78,24 +79,24 @@ jobs:
         java-version: ${{env.JAVA_VERSION}}
         cache: 'maven'
         overwrite-settings: false
-    - name: Build and Push DataWave web/ingest images and packages
-      run: |
-        docker info
-        MVN_CMD="mvn --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Pkubernetes -Dmaven.build.cache.enabled=false -Dtar -Ddeploy -Ddist -Ddocker-release -Dutils -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true"
-        $MVN_CMD || {
-          # On tag builds, release artifacts already exist in the registry from when the release was
-          # cut. The resulting deploy conflict cascades and bans assemble-webservice, preventing the
-          # Docker image push. Retry skipping Maven artifact deployment to at least push the images.
-          if [[ "${{ github.ref_type }}" == "tag" ]]; then
-            echo "Deploy failed on tag build; retrying with -Dmaven.deploy.skip=true to push Docker images"
-            $MVN_CMD -Dmaven.deploy.skip=true
-          else
-            exit 1
-          fi
-        }
-    - name: Build and Push microservice images
-      run: |
-        mvn --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Dmaven.build.cache.enabled=false -Dmicroservice-docker -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true -Dmaven.deploy.skip=true
+    # - name: Build and Push DataWave web/ingest images and packages
+    #   run: |
+    #     docker info
+    #     MVN_CMD="mvn --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Pkubernetes -Dmaven.build.cache.enabled=false -Dtar -Ddeploy -Ddist -Ddocker-release -Dutils -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true"
+    #     $MVN_CMD || {
+    #       # On tag builds, release artifacts already exist in the registry from when the release was
+    #       # cut. The resulting deploy conflict cascades and bans assemble-webservice, preventing the
+    #       # Docker image push. Retry skipping Maven artifact deployment to at least push the images.
+    #       if [[ "${{ github.ref_type }}" == "tag" ]]; then
+    #         echo "Deploy failed on tag build; retrying with -Dmaven.deploy.skip=true to push Docker images"
+    #         $MVN_CMD -Dmaven.deploy.skip=true
+    #       else
+    #         exit 1
+    #       fi
+    #     }
+    # - name: Build and Push microservice images
+    #   run: |
+    #     mvn --show-version --batch-mode --errors --no-transfer-progress --fail-at-end clean deploy -Dmaven.build.cache.enabled=false -Dmicroservice-docker -Dservices -Dstarters -DskipTests -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true -Dmaven.deploy.skip=true
 
   scan-datawave-images:
     runs-on: ubuntu-latest
@@ -105,7 +106,8 @@ jobs:
       uses: actions/checkout@v6
     - name: Get image version
       id: project-version
-      run: echo "version=$(mvn --batch-mode help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_OUTPUT"
+ #     run: echo "version=$(mvn --batch-mode help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_OUTPUT"
+      run: echo "version=8.1.0"
     - name: Log in to the Container registry
       uses: docker/login-action@v4
       with:
@@ -113,7 +115,7 @@ jobs:
         username: ${{ secrets.GHCR_WRITE_USER_NAME }}
         password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
     - name: Scan ingest image
-      uses: aquasecurity/trivy-action@0.33.1
+      uses: aquasecurity/trivy-action@v0.33.0
       continue-on-error: true
       with:
         image-ref: '${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}/ingest-kubernetes:${{ steps.project-version.outputs.version }}'
