@@ -175,6 +175,7 @@
             <modules>
                 <module>accumulo</module>
                 <module>annotation</module>
+                <module>annotation-cache</module>
                 <module>audit</module>
                 <module>authorization</module>
                 <module>config</module>
