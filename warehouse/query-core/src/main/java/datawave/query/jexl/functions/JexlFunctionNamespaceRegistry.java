@@ -29,9 +29,6 @@ public class JexlFunctionNamespaceRegistry {
     }
 
     public static Map<String,Object> getConfiguredFunctions() {
-        // Do not reference commons-vfs2 classes here. Accumulo 4 removed VFS classloading and no
-        // longer ships commons-vfs2, and a NoClassDefFoundError raised inside a tserver scan thread
-        // during iterator initialization halts the tserver VM.
         ClassLoader thisClassLoader = JexlFunctionNamespaceRegistry.class.getClassLoader();
         log.debug("thisClassLoader is a :" + thisClassLoader.getClass());
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext();
