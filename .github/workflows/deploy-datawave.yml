@@ -100,7 +100,7 @@ jobs:
 
   scan-datawave-images:
     runs-on: ubuntu-latest
-    needs: deploy-packages-and-images
+   # needs: deploy-packages-and-images
     steps:
     - name: Checkout Code
       uses: actions/checkout@v6
