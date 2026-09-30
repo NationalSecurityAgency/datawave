@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -523,18 +524,22 @@ public class TestAnnotationControllerV1Delivery {
     public void testWriteAnnotation_SucceedsOnFirstAttempt() {
         configureImmediateAck();
         Annotation annotation = generateTestAnnotation();
+        Annotation expected = AnnotationUtils.injectAllHashes(annotation);
 
         Optional<Annotation> result = annotationController.writeAnnotation(annotation);
 
         assertTrue(result.isPresent());
-        assertEquals(AnnotationUtils.calculateAnnotationHash(annotation), result.get().getAnnotationId());
-        verify(annotationSink, times(1)).send(any());
+        assertEquals(expected, result.orElseThrow());
+        ArgumentCaptor<Message<AnnotationMessage>> captor = ArgumentCaptor.forClass(Message.class);
+        verify(annotationSink, times(1)).send(captor.capture());
+        assertEquals(List.of(expected), captor.getValue().getPayload().getAnnotationsList());
     }
 
     @Test
     public void testWriteAnnotation_RetriesUntilSendSucceeds() {
         // fail on the first two attempts, then succeed (with acknowledgement) on the third
         Annotation annotation = generateTestAnnotation();
+        Annotation expected = AnnotationUtils.injectAllHashes(annotation);
 
         AtomicInteger callCount = new AtomicInteger(0);
         when(annotationSink.send(any())).thenAnswer(invocation -> {
@@ -551,8 +556,10 @@ public class TestAnnotationControllerV1Delivery {
         Optional<Annotation> result = annotationController.writeAnnotation(annotation);
 
         assertTrue(result.isPresent());
-        assertEquals(AnnotationUtils.calculateAnnotationHash(annotation), result.get().getAnnotationId());
-        verify(annotationSink, times(3)).send(any());
+        assertEquals(expected, result.orElseThrow());
+        ArgumentCaptor<Message<AnnotationMessage>> captor = ArgumentCaptor.forClass(Message.class);
+        verify(annotationSink, times(3)).send(captor.capture());
+        captor.getAllValues().forEach(message -> assertEquals(List.of(expected), message.getPayload().getAnnotationsList()));
     }
 
     @Test
@@ -562,12 +569,15 @@ public class TestAnnotationControllerV1Delivery {
         setFileAnnotationWriter(fileWriter);
 
         Annotation annotation = generateTestAnnotation();
+        Annotation expected = AnnotationUtils.injectAllHashes(annotation);
         Optional<Annotation> result = annotationController.writeAnnotation(annotation);
 
         assertTrue(result.isPresent(), "should fall back to the file writer when all send attempts fail");
-        assertEquals(AnnotationUtils.calculateAnnotationHash(annotation), result.get().getAnnotationId());
-        verify(fileWriter, times(1)).write(any());
-        verify(annotationSink, times(annotationProperties.getRetry().getMaxAttempts())).send(any());
+        assertEquals(expected, result.orElseThrow());
+        verify(fileWriter, times(1)).write(expected);
+        ArgumentCaptor<Message<AnnotationMessage>> captor = ArgumentCaptor.forClass(Message.class);
+        verify(annotationSink, times(annotationProperties.getRetry().getMaxAttempts())).send(captor.capture());
+        captor.getAllValues().forEach(message -> assertEquals(List.of(expected), message.getPayload().getAnnotationsList()));
     }
 
     @Test

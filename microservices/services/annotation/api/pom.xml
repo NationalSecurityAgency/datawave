@@ -10,7 +10,7 @@
     <artifactId>annotation-api</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <properties>
-        <version.datawave>8.0.0</version.datawave>
+        <version.datawave>8.1.0</version.datawave>
     </properties>
     <dependencies>
         <dependency>

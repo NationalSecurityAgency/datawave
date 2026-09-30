@@ -19,16 +19,16 @@
     </scm>
     <properties>
         <start-class>datawave.microservice.annotation.AnnotationService</start-class>
-        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
+        <version.accumulo>2.1.5</version.accumulo>
         <version.commons-lang3>3.12.0</version.commons-lang3>
         <version.commons-pool>2.11.1</version.commons-pool>
-        <version.datawave.annotation-core>8.0.0</version.datawave.annotation-core>
-        <version.datawave.hazelcast-client>4.0.6</version.datawave.hazelcast-client>
-        <version.datawave.hazelcast-common>4.0.6</version.datawave.hazelcast-common>
-        <version.datawave.starter>4.0.9</version.datawave.starter>
+        <version.datawave.annotation-core>8.1.0</version.datawave.annotation-core>
+        <version.datawave.hazelcast-client>4.0.7</version.datawave.hazelcast-client>
+        <version.datawave.hazelcast-common>4.0.7</version.datawave.hazelcast-common>
+        <version.datawave.starter>4.0.13</version.datawave.starter>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
-        <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.6</version.in-memory-accumulo>
         <version.log4j>2.26.1</version.log4j>
         <version.log4j.latest.banned>2.25.3</version.log4j.latest.banned>
         <version.protobuf-java>3.16.3</version.protobuf-java>
