@@ -15,8 +15,9 @@
 
     <properties>
         <start-class>datawave.microservice.annotationCache.AnnotationCacheService</start-class>
-        <version.datawave>8.0.0</version.datawave>
+        <version.datawave>8.1.0</version.datawave>
         <version.datawave.annotation-cache-api>1.0.0-SNAPSHOT</version.datawave.annotation-cache-api>
+        <version.datawave.annotation-messaging>1.0.0-SNAPSHOT</version.datawave.annotation-messaging>
         <version.datawave.starter>4.0.9</version.datawave.starter>
         <version.hazelcast.service>4.0.5-SNAPSHOT</version.hazelcast.service>
     </properties>
@@ -64,6 +65,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>annotation-messaging</artifactId>
+            <version>${version.datawave.annotation-messaging}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>hazelcast-service</artifactId>
         </dependency>
         <dependency>
@@ -85,6 +91,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream-test-support</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
