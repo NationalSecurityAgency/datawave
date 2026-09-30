@@ -172,7 +172,7 @@ import datawave.webservice.result.QueryValidationResponse;
  * <h2>Constraints on Query Structure</h2> Queries that are sent to this class need to be formatted such that there is a space on either side of the operator.
  * We are rewriting the query in some cases and the current implementation is expecting a space on either side of the operator.
  *
- * <h2>Notes on Optimization</h2gst> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
+ * <h2>Notes on Optimization</h2> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
  *
  * <pre>
  *  1. An 'or' conjunction exists in the query but not all of the terms are indexed.
