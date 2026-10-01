@@ -7,7 +7,6 @@ import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARA
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -22,9 +21,6 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
 
 import datawave.annotation.protobuf.v1.AnnotationMessage;
@@ -32,13 +28,17 @@ import datawave.microservice.annotationCache.api.AnnotationStorageException;
 import datawave.microservice.annotationCache.api.PersistenceMode;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
 
+/**
+ * Publishes local write-through annotations to RabbitMQ before their map write is accepted for downstream services. A broker ACK is the acceptance boundary;
+ * surviving a broker restart also requires durable RabbitMQ exchange/queue topology and persistent message delivery. Cache-only, non-annotation, and
+ * remote-origin entries are not published. Invalid write-through metadata or a failed, returned, rejected, or unconfirmed publication causes the write to fail
+ * with {@link AnnotationStorageException}.
+ */
 @Component
-public class AnnotationMapStore implements MapStore<String,Object>, HazelcastInstanceAware, MapLoaderLifecycleSupport {
+public class AnnotationMapStore implements MapStore<String,Object> {
     public static final String AMQP_CORRELATION_DATA_HEADER = "amqp_correlationData";
     public static final String AMQP_PUBLISH_CONFIRM_CORRELATION_HEADER = "amqp_publishConfirmCorrelation";
     private static Logger log = LoggerFactory.getLogger(AnnotationMapStore.class);
-
-    private HazelcastInstance hazelcastInstance;
 
     private final AnnotationMessagePublisher publisher;
     private final String localRegion;
@@ -50,19 +50,6 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
         }
         this.localRegion = regionConfiguration.getName();
         log.info("Initialized annotation MapStore for region {}", localRegion);
-    }
-
-    // this is done by hazelcast to inject the instance
-    @Override
-    public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
-        this.hazelcastInstance = hazelcastInstance;
-        log.info("initialized map: " + mapName);
-    }
-
-    @Override
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.hazelcastInstance = hazelcastInstance;
-        log.info("set instance: " + hazelcastInstance);
     }
 
     /**
@@ -187,10 +174,5 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
     @Override
     public Iterable<String> loadAllKeys() {
         return null;
-    }
-
-    @Override
-    public void destroy() {
-
     }
 }
