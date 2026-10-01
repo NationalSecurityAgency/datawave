@@ -16,7 +16,7 @@ There is no separate document-to-annotation-ID index. A document's annotation ma
 
 ## Write and federation model
 
-A local Sonicweb write is placed in Hazelcast and published by `AnnotationMapStore` to RabbitMQ. RabbitMQ delivery is acknowledged before the write is considered accepted by this service; Accumulo persistence and regional federation are asynchronous consumers.
+For a local write-through, Hazelcast invokes `AnnotationMapStore`, which publishes to RabbitMQ and waits for a publisher ACK before returning. That ACK is the point at which the write is considered accepted by this service and safe for downstream services to consume. Cache-only and remote-origin entries are not republished by the MapStore.
 
 Federated messages are consumed locally only when their `region.id` differs from the configured `region.name`. The message must also contain `id.type`, because `Annotation` contains the document ID but not the Sonicweb identifier type.
 
@@ -56,7 +56,7 @@ Annotation and fetch TTLs are validated at startup. Annotation TTL must be great
 - `region.name` is configured consistently for each deployment.
 - `id.type` and `region.id` are present on newly produced messages; the MapStore rejects local write-through annotations missing either value before publishing.
 - Visibility and authorization decisions remain the responsibility of Sonicweb; this service does not authorize annotations.
-- Publisher confirmation means broker acceptance, not Accumulo persistence or federation completion.
+- A publisher confirm means broker acceptance, not Accumulo persistence or federation completion. Surviving a broker restart additionally requires durable exchange/queue topology and persistent message delivery.
 
 ## Consistency notes
 
