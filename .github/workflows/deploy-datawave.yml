@@ -101,45 +101,79 @@ jobs:
   scan-datawave-images:
     runs-on: ubuntu-latest
     needs: deploy-packages-and-images
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - image: datawave/ingest-kubernetes
+          category: trivy-ingest
+          pom: pom.xml
+        - image: datawave/webservice-kubernetes
+          category: trivy-webservice
+          pom: pom.xml
+        - image: datawave/accumulo-service
+          category: trivy-accumulo-service
+          pom: microservices/services/accumulo/service/pom.xml
+        - image: datawave/annotation-service
+          category: trivy-annotation-service
+          pom: microservices/services/annotation/service/pom.xml
+        - image: datawave/audit-service
+          category: trivy-audit-service
+          pom: microservices/services/audit/service/pom.xml
+        - image: datawave/authorization-service
+          category: trivy-authorization-service
+          pom: microservices/services/authorization/service/pom.xml
+        - image: datawave/config-service
+          category: trivy-config-service
+          pom: microservices/services/config/service/pom.xml
+        - image: datawave/dictionary-service
+          category: trivy-dictionary-service
+          pom: microservices/services/dictionary/service/pom.xml
+        - image: datawave/file-provider-service
+          category: trivy-file-provider-service
+          pom: microservices/services/file-provider/service/pom.xml
+        - image: datawave/hazelcast-service
+          category: trivy-hazelcast-service
+          pom: microservices/services/hazelcast/service/pom.xml
+        - image: datawave/mapreduce-query-service
+          category: trivy-mapreduce-query-service
+          pom: microservices/services/mapreduce-query/service/pom.xml
+        - image: datawave/modification-service
+          category: trivy-modification-service
+          pom: microservices/services/modification/service/pom.xml
+        - image: datawave/query-service
+          category: trivy-query-service
+          pom: microservices/services/query/service/pom.xml
+        - image: datawave/query-executor-service
+          category: trivy-query-executor-service
+          pom: microservices/services/query-executor/service/pom.xml
+        - image: datawave/query-metric-service
+          category: trivy-query-metric-service
+          pom: microservices/services/query-metric/service/pom.xml
     steps:
     - name: Checkout Code
       uses: actions/checkout@v6
     - name: Get image version
       id: project-version
-      run: echo "version=$(mvn --batch-mode help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_OUTPUT"
+      run: echo "version=$(mvn --batch-mode -f '${{ matrix.pom }}' help:evaluate -Dexpression=project.version -q -DforceStdout)" >> "$GITHUB_OUTPUT"
     - name: Log in to the Container registry
       uses: docker/login-action@v4
       with:
         registry: ${{ env.GITHUB_REGISTRY }}
         username: ${{ secrets.GHCR_WRITE_USER_NAME }}
         password: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
-    - name: Scan ingest image
+    - name: Scan ${{ matrix.image }} image
       uses: aquasecurity/trivy-action@v0.36.0
       continue-on-error: true
       with:
-        image-ref: '${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}/ingest-kubernetes:${{ steps.project-version.outputs.version }}'
+        image-ref: '${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}:${{ steps.project-version.outputs.version }}'
         format: sarif
-        output: trivy-ingest-results.sarif
+        output: trivy-results.sarif
         severity: CRITICAL,HIGH
         ignore-unfixed: true
-    - name: Scan webservice image
-      uses: aquasecurity/trivy-action@v0.36.0
-      continue-on-error: true
-      with:
-        image-ref: '${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}/webservice-kubernetes:${{ steps.project-version.outputs.version }}'
-        format: sarif
-        output: trivy-webservice-results.sarif
-        severity: CRITICAL,HIGH
-        ignore-unfixed: true
-    - name: Report ingest scan results
+    - name: Report scan results
       if: always()
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: trivy-ingest-results.sarif
-        category: trivy-ingest
-    - name: Report webservice scan results
-      if: always()
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: trivy-webservice-results.sarif
-        category: trivy-webservice
+        sarif_file: trivy-results.sarif
+        category: ${{ matrix.category }}
