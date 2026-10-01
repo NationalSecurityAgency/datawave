@@ -351,31 +351,31 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case QueryFunctions.SUM: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.SUM_FIELDS, JOINER.join(options));
+                    updateFieldsOption(optionsMap, QueryParameters.SUM_FIELDS, options);
                     return null;
                 }
                 case QueryFunctions.MAX: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.MAX_FIELDS, JOINER.join(options));
+                    updateFieldsOption(optionsMap, QueryParameters.MAX_FIELDS, options);
                     return null;
                 }
                 case QueryFunctions.MIN: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.MIN_FIELDS, JOINER.join(options));
+                    updateFieldsOption(optionsMap, QueryParameters.MIN_FIELDS, options);
                     return null;
                 }
                 case QueryFunctions.AVERAGE: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.AVERAGE_FIELDS, JOINER.join(options));
+                    updateFieldsOption(optionsMap, QueryParameters.AVERAGE_FIELDS, options);
                     return null;
                 }
                 case QueryFunctions.COUNT: {
                     List<String> options = new ArrayList<>();
                     this.visit(node, options);
-                    optionsMap.put(QueryParameters.COUNT_FIELDS, JOINER.join(options));
+                    updateFieldsOption(optionsMap, QueryParameters.COUNT_FIELDS, options);
                     return null;
                 }
                 case QueryFunctions.RENAME_FUNCTION: {
