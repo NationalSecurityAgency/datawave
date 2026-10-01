@@ -10,7 +10,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Setup rabbit topics and queues at startup time for minimal operation
+ * Declares the annotation-cache RabbitMQ topology: a durable {@code annotation} topic exchange, a durable {@code annotation.cache} queue, and a {@code #}
+ * binding that routes every message on the exchange to that queue. Durability preserves the exchange, queue, and binding across broker restarts; it does not by
+ * itself preserve messages or guarantee consumer processing. Those also depend on persistent message delivery, publisher confirmation, and consumer behavior.
  */
 @Configuration
 public class RabbitTopologyConfig {

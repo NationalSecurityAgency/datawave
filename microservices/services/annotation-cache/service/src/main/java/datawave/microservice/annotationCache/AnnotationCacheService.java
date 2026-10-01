@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConf
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+/** Application entry point for the regional annotation cache and its scheduled topology monitoring. */
 @EnableDiscoveryClient
 @EnableScheduling
 @SpringBootApplication(scanBasePackages = {"datawave.microservice"}, exclude = {ErrorMvcAutoConfiguration.class})

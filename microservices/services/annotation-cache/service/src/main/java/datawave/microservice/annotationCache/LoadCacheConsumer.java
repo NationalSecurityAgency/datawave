@@ -23,7 +23,10 @@ import datawave.microservice.annotationCache.api.AnnotationStorageException;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
 import datawave.microservice.annotationCache.config.AnnotationCacheProperties;
 
-/** Consumes federated annotation messages and makes them available in the local Hazelcast cache. */
+/**
+ * Consumes federated annotations and transiently caches them locally. Since they were already published in their source region, transient insertion avoids
+ * republishing them and creating a federation loop.
+ */
 @Configuration
 public class LoadCacheConsumer {
     private static final Logger log = LoggerFactory.getLogger(LoadCacheConsumer.class);
@@ -46,6 +49,12 @@ public class LoadCacheConsumer {
                         federationLockWait);
     }
 
+    /**
+     * Creates the message consumer. It ignores messages from this region, validates the origin and identifier-type metadata on federated messages, then
+     * processes each annotation individually.
+     *
+     * @return consumer for annotation messages from RabbitMQ
+     */
     @Bean
     public Consumer<AnnotationMessage> loadCache() {
         return annotationMessage -> {
@@ -69,6 +78,10 @@ public class LoadCacheConsumer {
         };
     }
 
+    /**
+     * Caches one annotation from a federated message in its per-document map. A distributed lock makes the check-and-insert idempotent across members;
+     * transient insertion avoids republishing the message through the local MapStore while retaining the map's configured expiration.
+     */
     private void addToCache(String idType, AnnotationMessage annotationMessage, Annotation annotation) {
         String documentId = annotation.getDocumentId();
         String annotationId = annotation.getAnnotationId();
@@ -88,6 +101,7 @@ public class LoadCacheConsumer {
 
         // Federated messages have already passed through a MapStore in their originating region. A transient put prevents the local MapStore from publishing
         // the message again while retaining the TTL and max-idle behavior configured for the annotation map.
+        // Serialize deliveries for this annotation across cluster members: without the lock, duplicates can both pass containsKey and race to insert.
         boolean lockAcquired = false;
         try {
             lockAcquired = annotationMap.tryLock(annotationId, federationLockWait.toMillis(), TimeUnit.MILLISECONDS);
@@ -95,6 +109,7 @@ public class LoadCacheConsumer {
                 throw new AnnotationStorageException("Timed out acquiring Hazelcast lock for federated annotation " + annotationId);
             }
 
+            // While holding the lock, ignore duplicate deliveries or insert this annotation without invoking the MapStore.
             if (!annotationMap.containsKey(annotationId)) {
                 MapConfig mapConfig = hazelcastInstance.getConfig().findMapConfig(mapName);
                 annotationMap.putTransient(annotationId, cacheValue, mapConfig.getTimeToLiveSeconds(), TimeUnit.SECONDS, mapConfig.getMaxIdleSeconds(),
@@ -108,6 +123,7 @@ public class LoadCacheConsumer {
             Thread.currentThread().interrupt();
             throw new AnnotationStorageException("Interrupted acquiring Hazelcast lock for federated annotation " + annotationId, e);
         } finally {
+            // Release only if acquired; otherwise another member's lock must remain untouched.
             if (lockAcquired) {
                 annotationMap.unlock(annotationId);
             }

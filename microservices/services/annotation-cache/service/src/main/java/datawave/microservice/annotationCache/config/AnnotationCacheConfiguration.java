@@ -20,7 +20,9 @@ import com.hazelcast.core.HazelcastInstance;
 import datawave.microservice.annotationCache.AnnotationMapStore;
 import datawave.microservice.annotationCache.AnnotationSyncListener;
 
-/** Configures the Hazelcast maps owned by the annotation-cache service. */
+/**
+ * Creates the annotation-cache Hazelcast instance and configures annotation retention, RabbitMQ write-through, and fetch-freshness invalidation.
+ */
 @Configuration
 public class AnnotationCacheConfiguration {
     private static final Logger log = LoggerFactory.getLogger(AnnotationCacheConfiguration.class);
@@ -40,23 +42,31 @@ public class AnnotationCacheConfiguration {
     }
 
     void configureMaps(Config config, AnnotationMapStore annotationMapStore, AnnotationSyncListener annotationMapListener) {
+        // Convert configured retention periods to the whole-second TTL values Hazelcast accepts.
         int maxCacheAgeSeconds = ttlSeconds("annotation-cache.max-cache-age", properties.getMaxCacheAge());
         int maxFetchAgeSeconds = ttlSeconds("annotation-cache.max-fetch-age", properties.getMaxFetchAge());
+
+        // Keep freshness-record retention no longer than annotation retention, so new records cannot
+        // outlive their annotation by TTL alone.
         if (properties.getMaxCacheAge().compareTo(properties.getMaxFetchAge()) < 0) {
             throw new IllegalStateException("annotation-cache.max-cache-age must be greater than or equal to annotation-cache.max-fetch-age");
         }
 
+        // Apply annotation TTL to every per-document annotation map; max-idle is disabled so reads do not extend retention.
         MapConfig annotationMapConfig = config.getMapConfig(ANNOTATIONS_MAP + "*");
         annotationMapConfig.setTimeToLiveSeconds(maxCacheAgeSeconds);
         annotationMapConfig.setMaxIdleSeconds(0);
 
+        // Use the MapStore to publish eligible local write-through annotations to RabbitMQ before accepting the write.
         MapStoreConfig storeConfig = annotationMapConfig.getMapStoreConfig();
         storeConfig.setEnabled(true);
         storeConfig.setImplementation(annotationMapStore);
 
+        // Listen only for local events and omit values; the listener invalidates fetch records using the map name.
         EntryListenerConfig listenerConfig = new EntryListenerConfig(annotationMapListener, true, false);
         annotationMapConfig.addEntryListenerConfig(listenerConfig);
 
+        // Give fetch-freshness maps a bounded lifetime too, without extending it on access.
         MapConfig fetchMapConfig = config.getMapConfig(FETCH_MAP + "*");
         fetchMapConfig.setTimeToLiveSeconds(maxFetchAgeSeconds);
         fetchMapConfig.setMaxIdleSeconds(0);

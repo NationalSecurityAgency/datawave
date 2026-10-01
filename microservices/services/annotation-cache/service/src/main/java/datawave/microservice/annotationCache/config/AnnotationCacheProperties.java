@@ -5,15 +5,21 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-/** Retention and topology-recovery settings for annotation-cache Hazelcast maps. */
+/** Retention, federation, and topology-recovery settings for annotation-cache maps. */
 @Configuration
 @ConfigurationProperties(prefix = "annotation-cache")
 public class AnnotationCacheProperties {
+    /** {@code max-cache-age}: Maximum annotation-map lifetime (default: 1 hour). */
     private Duration maxCacheAge = Duration.ofHours(1);
+    /** {@code max-fetch-age}: Maximum lifetime of a document fetch-freshness record (default: 5 minutes). */
     private Duration maxFetchAge = Duration.ofMinutes(5);
+    /** {@code federation-lock-wait}: Maximum wait for an annotation lock during federation (default: 5 seconds). */
     private Duration federationLockWait = Duration.ofSeconds(5);
+    /** {@code topology-monitoring-enabled}: Enable topology-triggered fetch-map invalidation (default: true). */
     private boolean topologyMonitoringEnabled = true;
+    /** {@code topology-settle-delay}: Delay after a topology event before invalidation (default: 15 seconds). */
     private Duration topologySettleDelay = Duration.ofSeconds(15);
+    /** {@code topology-poll-interval-ms}: Interval for checking deferred invalidation (default: 5000 ms). */
     private long topologyPollIntervalMs = 5000;
 
     public Duration getMaxCacheAge() {
