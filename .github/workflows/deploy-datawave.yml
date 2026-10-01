@@ -167,6 +167,9 @@ jobs:
            <password>${env.GITHUB_PASSWORD}</password>
          </server>
         </servers>
+        <activeProfiles>
+         <activeProfile>github-datawave</activeProfile>
+        </activeProfiles>
         <mirrors>
          <mirror>
            <id>google-maven-central</id>
