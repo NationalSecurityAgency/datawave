@@ -18,6 +18,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -84,8 +85,8 @@ class LoadCacheConsumerTest {
 
     @Test
     void federationLockWaitRejectsInvalidDurations() {
-        java.time.Duration[] invalidValues = {null, java.time.Duration.ZERO, java.time.Duration.ofNanos(-1), java.time.Duration.ofNanos(999_999)};
-        for (java.time.Duration invalidValue : invalidValues) {
+        Duration[] invalidValues = {null, Duration.ZERO, Duration.ofNanos(-1), Duration.ofNanos(999_999)};
+        for (Duration invalidValue : invalidValues) {
             AnnotationCacheProperties properties = new AnnotationCacheProperties();
             properties.setFederationLockWait(invalidValue);
             assertThrows(IllegalStateException.class, () -> new LoadCacheConsumer(hazelcastInstance, regionConfiguration, properties));
@@ -95,7 +96,7 @@ class LoadCacheConsumerTest {
     @Test
     void federationLockWaitAcceptsOneMillisecond() throws Exception {
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
-        properties.setFederationLockWait(java.time.Duration.ofMillis(1));
+        properties.setFederationLockWait(Duration.ofMillis(1));
         consumer = new LoadCacheConsumer(hazelcastInstance, regionConfiguration, properties).loadCache();
         String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
         IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
@@ -241,7 +242,7 @@ class LoadCacheConsumerTest {
         String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
         IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
-        properties.setFederationLockWait(java.time.Duration.ofMillis(150));
+        properties.setFederationLockWait(Duration.ofMillis(150));
         consumer = new LoadCacheConsumer(hazelcastInstance, regionConfiguration, properties).loadCache();
         when(annotationMap.tryLock("annotation", 150L, TimeUnit.MILLISECONDS)).thenReturn(false);
 
