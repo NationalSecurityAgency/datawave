@@ -125,7 +125,7 @@ jobs:
           pom: microservices/services/authorization/service/pom.xml
         - image: datawave/config-service
           category: trivy-config-service
-          pom: microservices/services/config/service/pom.xml
+          pom: microservices/services/config/pom.xml
         - image: datawave/dictionary-service
           category: trivy-dictionary-service
           pom: microservices/services/dictionary/service/pom.xml
