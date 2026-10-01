@@ -1,5 +1,7 @@
 package datawave.query.iterator;
 
+import static datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.AbstractControl.DEFAULT_CANCELLED_CHECK_INTERVAL;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -52,7 +54,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.core.common.util.TypeFilter;
-import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
@@ -1056,7 +1057,7 @@ public class QueryOptions implements OptionDescriber {
     public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
         return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache())
                         .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
-                        .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
+                        .forZookeeper(getZookeeperConfig(), DEFAULT_CANCELLED_CHECK_INTERVAL * 2).build();
     }
 
     public String getHdfsFileCompressionCodec() {

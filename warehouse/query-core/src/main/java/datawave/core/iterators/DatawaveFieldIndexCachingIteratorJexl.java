@@ -115,6 +115,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         private boolean limitLookup = false;
 
         private Control<Key> control;
+        private int cancelledCheckInterval = AbstractControl.DEFAULT_CANCELLED_CHECK_INTERVAL;
 
         @SuppressWarnings("unchecked")
         protected B self() {
@@ -261,6 +262,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
         public B withLimitLookup(boolean limitLookup) {
             this.limitLookup = limitLookup;
+            return self();
+        }
+
+        public B withCancelledCheckInterval(int cancelledCheckInterval) {
+            this.cancelledCheckInterval = cancelledCheckInterval;
             return self();
         }
 
@@ -437,13 +443,13 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.termNumber = builder.termNumber;
 
         if (builder.limitLookup) {
-            setControl = new InMemoryControl<>(builder.queryLock);
+            setControl = new InMemoryControl<>(builder.queryLock, builder.cancelledCheckInterval);
         } else {
             // Note: We have already selected the control directory at random in the DefaultQueryPlanner
             // @see DefaultQueryPlanner#getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration)
             if (builder.ivaratorCacheDirs.size() > 0) {
-                setControl = new HdfsBackedControl<>(builder.queryLock, builder.ivaratorCacheDirs, builder.persistOptions, builder.hdfsBackedSetBufferSize,
-                                builder.numRetries, builder.maxOpenFiles);
+                setControl = new HdfsBackedControl<>(builder.queryLock, builder.cancelledCheckInterval, builder.ivaratorCacheDirs, builder.persistOptions,
+                                builder.hdfsBackedSetBufferSize, builder.numRetries, builder.maxOpenFiles);
             } else {
                 throw new IllegalStateException("No ivarator cache dirs specified!");
             }
@@ -1555,15 +1561,17 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     public static abstract class AbstractControl<E> implements Control<E> {
         // cancelled check interval is 1 minute
-        public static final int CANCELLED_CHECK_INTERVAL = 1000 * 60;
+        public static final int DEFAULT_CANCELLED_CHECK_INTERVAL = 1000 * 60;
 
-        private volatile long lastCancelledCheck = System.currentTimeMillis() - RANDOM.nextInt(CANCELLED_CHECK_INTERVAL);
+        private volatile long lastCancelledCheck = System.currentTimeMillis();
         private volatile boolean cancelled = false;
 
         private final QueryLock queryLock;
+        private final int cancelledCheckInterval;
 
-        private AbstractControl(QueryLock queryLock) {
+        private AbstractControl(QueryLock queryLock, int cancelledCheckInterval) {
             this.queryLock = queryLock;
+            this.cancelledCheckInterval = cancelledCheckInterval;
         }
 
         @Override
@@ -1572,10 +1580,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             if (!cancelled && queryLock != null) {
                 // but only if the last check was so long ago
                 long now = System.currentTimeMillis();
-                if ((now - lastCancelledCheck) > CANCELLED_CHECK_INTERVAL) {
+                if ((now - lastCancelledCheck) > cancelledCheckInterval) {
                     synchronized (this) {
                         // now recheck the cancelled flag and timeout to ensure we really need to make the calls
-                        if (!cancelled && ((now - lastCancelledCheck) > CANCELLED_CHECK_INTERVAL)) {
+                        if (!cancelled && ((now - lastCancelledCheck) > cancelledCheckInterval)) {
                             cancelled = !queryLock.isQueryRunning();
                             lastCancelledCheck = now;
                         }
@@ -1597,8 +1605,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
         private final ExecutorService inMemoryExecutor = MoreExecutors.newDirectExecutorService();
 
-        public InMemoryControl(QueryLock queryLock) {
-            super(queryLock);
+        public InMemoryControl(QueryLock queryLock, int cancelledCheckInterval) {
+            super(queryLock, cancelledCheckInterval);
         }
 
         @Override
@@ -1689,9 +1697,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         // the max number of files to open simultaneously during a merge source
         private final int maxOpenFiles;
 
-        public HdfsBackedControl(QueryLock queryLock, List<IvaratorCacheDir> ivaratorCacheDirs, FileSortedSet.PersistOptions persistOptions,
-                        int hdfsBackedSetBufferSize, int numRetries, int maxOpenFiles) {
-            super(queryLock);
+        public HdfsBackedControl(QueryLock queryLock, int cancelledCheckInterval, List<IvaratorCacheDir> ivaratorCacheDirs,
+                        FileSortedSet.PersistOptions persistOptions, int hdfsBackedSetBufferSize, int numRetries, int maxOpenFiles) {
+            super(queryLock, cancelledCheckInterval);
             this.ivaratorCacheDirs = ivaratorCacheDirs;
             this.controlFs = ivaratorCacheDirs.get(0).getFs();
             this.controlDir = new Path(ivaratorCacheDirs.get(0).getPathURI());

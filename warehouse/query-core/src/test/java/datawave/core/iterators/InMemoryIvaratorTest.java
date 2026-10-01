@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,7 +22,9 @@ import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
+import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
@@ -274,5 +279,62 @@ public class InMemoryIvaratorTest {
         assertEquals(new Key("a", "dataType\u0000124.234.347"), itr.getTopKey());
         itr.next();
         assertFalse(itr.hasTop());
+    }
+
+    @Test
+    public void inMemoryCancellationTest() throws IOException {
+        QueryLock mockLock = Mockito.mock(QueryLock.class);
+        when(mockLock.isQueryRunning()).thenReturn(true);
+
+        DatawaveFieldIndexRegexIteratorJexl itr = DatawaveFieldIndexRegexIteratorJexl.builder().withFieldName("FIELD_A").withFieldValue(".*")
+                        .withIvaratorSourcePool(new GenericObjectPool<>(new BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>>() {
+                            @Override
+                            public SortedKeyValueIterator<Key,Value> makeObject() throws Exception {
+                                return sourceItr.deepCopy(null);
+                            }
+                        })).withWaitWindowObserver(new WaitWindowObserver()).withLimitLookup(true).withQueryLock(mockLock).withCancelledCheckInterval(0)
+                        .build();
+
+        itr.init(sourceItr, Map.of(), null);
+
+        // initial state
+        assertFalse(itr.getSetControl().isCancelledQuery());
+
+        // simulate cancel
+        when(mockLock.isQueryRunning()).thenReturn(false);
+
+        // with 0 interval this should be immediate
+        assertTrue(itr.getSetControl().isCancelledQuery());
+        verify(mockLock, atLeastOnce()).isQueryRunning();
+    }
+
+    @Test
+    public void inMemoryNotCancelledTest() throws IOException {
+        QueryLock mockLock = Mockito.mock(QueryLock.class);
+        when(mockLock.isQueryRunning()).thenReturn(true);
+
+        DatawaveFieldIndexRegexIteratorJexl itr = DatawaveFieldIndexRegexIteratorJexl.builder().withFieldName("FIELD_A").withFieldValue(".*")
+                        .withIvaratorSourcePool(new GenericObjectPool<>(new BasePoolableObjectFactory<SortedKeyValueIterator<Key,Value>>() {
+                            @Override
+                            public SortedKeyValueIterator<Key,Value> makeObject() throws Exception {
+                                return sourceItr.deepCopy(null);
+                            }
+                        })).withWaitWindowObserver(new WaitWindowObserver()).withLimitLookup(true).withQueryLock(mockLock).withCancelledCheckInterval(0)
+                        .build();
+
+        itr.init(sourceItr, Map.of(), null);
+
+        // initial state
+        assertFalse(itr.getSetControl().isCancelledQuery());
+
+        // with 0 interval this should be immediate
+        assertFalse(itr.getSetControl().isCancelledQuery());
+
+        itr.seek(new Range(new Key("a"), true, null, true), null, true);
+        assertTrue(itr.hasTop());
+
+        // still not cancelled
+        assertFalse(itr.getSetControl().isCancelledQuery());
+        verify(mockLock, atLeastOnce()).isQueryRunning();
     }
 }
