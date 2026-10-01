@@ -32,7 +32,10 @@ import com.hazelcast.partition.ReplicaMigrationEvent;
 
 import datawave.microservice.annotationCache.config.AnnotationCacheProperties;
 
-/** Invalidates transient fetch records after topology events that may have changed cached annotation availability. */
+/**
+ * Clears transient fetch-freshness markers after topology events that may leave annotation maps incomplete. Clearing them after the cluster settles forces
+ * stale cache state to be refreshed instead of treating a partial annotation set as complete.
+ */
 @Component
 public class AnnotationCacheTopologyListener
                 implements MembershipListener, LifecycleListener, MigrationListener, PartitionLostListener, DistributedObjectListener {

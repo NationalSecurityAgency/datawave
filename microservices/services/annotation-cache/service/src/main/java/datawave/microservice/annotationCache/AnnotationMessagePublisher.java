@@ -15,6 +15,14 @@ public class AnnotationMessagePublisher {
         this.streamBridge = streamBridge;
     }
 
+    /**
+     * Sends the message on the {@code persisted-out-0} binding. The result indicates channel handoff, not broker confirmation; {@link AnnotationMapStore} waits
+     * for the broker confirm.
+     *
+     * @param message
+     *            annotation message to publish
+     * @return {@code true} if the message was accepted by the binding channel
+     */
     public boolean send(Message<AnnotationMessage> message) {
         return streamBridge.send("persisted-out-0", message);
     }
