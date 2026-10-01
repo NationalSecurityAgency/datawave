@@ -22,7 +22,8 @@
     </scm>
 
     <properties>
-        <version.hazelcast.service>4.0.5-SNAPSHOT</version.hazelcast.service>
+        <version.hazelcast.common>4.0.7</version.hazelcast.common>
+        <version.hazelcast.service>4.0.8-SNAPSHOT</version.hazelcast.service>
     </properties>
     <repositories>
         <repository>
