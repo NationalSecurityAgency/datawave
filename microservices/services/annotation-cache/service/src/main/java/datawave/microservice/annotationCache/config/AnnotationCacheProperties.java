@@ -21,6 +21,14 @@ public class AnnotationCacheProperties {
     private Duration topologySettleDelay = Duration.ofSeconds(15);
     /** {@code topology-poll-interval-ms}: Interval for checking deferred invalidation (default: 5000 ms). */
     private long topologyPollIntervalMs = 5000;
+    /** {@code map-cleanup-enabled}: Enable removal of empty per-document maps (default: false). */
+    private boolean mapCleanupEnabled;
+    /** {@code map-cleanup-interval}: Interval between empty-map cleanup scans (default: 5 minutes). */
+    private Duration mapCleanupInterval = Duration.ofMinutes(5);
+    /** {@code empty-map-grace-period}: Time a map must remain empty before destruction (default: 30 minutes). */
+    private Duration emptyMapGracePeriod = Duration.ofMinutes(30);
+    /** {@code cleanup-lock-wait}: Maximum wait for a document lifecycle lock during cleanup (default: 1 second). */
+    private Duration cleanupLockWait = Duration.ofSeconds(1);
 
     public Duration getMaxCacheAge() {
         return maxCacheAge;
@@ -68,5 +76,57 @@ public class AnnotationCacheProperties {
 
     public void setTopologyPollIntervalMs(long topologyPollIntervalMs) {
         this.topologyPollIntervalMs = topologyPollIntervalMs;
+    }
+
+    /** @return whether empty-map cleanup is enabled */
+    public boolean isMapCleanupEnabled() {
+        return mapCleanupEnabled;
+    }
+
+    /**
+     * @param mapCleanupEnabled
+     *            whether empty-map cleanup is enabled
+     */
+    public void setMapCleanupEnabled(boolean mapCleanupEnabled) {
+        this.mapCleanupEnabled = mapCleanupEnabled;
+    }
+
+    /** @return interval between empty-map cleanup scans */
+    public Duration getMapCleanupInterval() {
+        return mapCleanupInterval;
+    }
+
+    /**
+     * @param mapCleanupInterval
+     *            interval between empty-map cleanup scans
+     */
+    public void setMapCleanupInterval(Duration mapCleanupInterval) {
+        this.mapCleanupInterval = mapCleanupInterval;
+    }
+
+    /** @return time a map must remain empty before destruction */
+    public Duration getEmptyMapGracePeriod() {
+        return emptyMapGracePeriod;
+    }
+
+    /**
+     * @param emptyMapGracePeriod
+     *            time a map must remain empty before destruction
+     */
+    public void setEmptyMapGracePeriod(Duration emptyMapGracePeriod) {
+        this.emptyMapGracePeriod = emptyMapGracePeriod;
+    }
+
+    /** @return maximum wait for a document lifecycle lock during cleanup */
+    public Duration getCleanupLockWait() {
+        return cleanupLockWait;
+    }
+
+    /**
+     * @param cleanupLockWait
+     *            maximum wait for a document lifecycle lock during cleanup
+     */
+    public void setCleanupLockWait(Duration cleanupLockWait) {
+        this.cleanupLockWait = cleanupLockWait;
     }
 }

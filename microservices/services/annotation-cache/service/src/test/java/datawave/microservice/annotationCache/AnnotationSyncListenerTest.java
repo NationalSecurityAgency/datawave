@@ -2,6 +2,7 @@ package datawave.microservice.annotationCache;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -22,6 +24,8 @@ class AnnotationSyncListenerTest {
 
     private HazelcastInstance hazelcastInstance;
     private IMap<Object,Object> fetchRecords;
+    private IMap<String,Boolean> lifecycleLocks;
+    private IMap<String,Long> emptyCandidates;
     private AnnotationSyncListener listener;
 
     @BeforeEach
@@ -29,7 +33,11 @@ class AnnotationSyncListenerTest {
     void setUp() {
         hazelcastInstance = mock(HazelcastInstance.class);
         fetchRecords = mock(IMap.class);
+        lifecycleLocks = mock(IMap.class);
+        emptyCandidates = mock(IMap.class);
         when(hazelcastInstance.getMap(FETCH_MAP + CACHE_KEY)).thenReturn(fetchRecords);
+        when(hazelcastInstance.<String,Boolean> getMap(AnnotationMapCleanup.LIFECYCLE_LOCK_MAP)).thenReturn(lifecycleLocks);
+        when(hazelcastInstance.<String,Long> getMap(AnnotationMapCleanup.EMPTY_CANDIDATE_MAP)).thenReturn(emptyCandidates);
 
         listener = new AnnotationSyncListener();
         listener.setHazelcastInstance(hazelcastInstance);
@@ -54,6 +62,17 @@ class AnnotationSyncListenerTest {
         listener.mapEvicted(event);
 
         verify(fetchRecords, times(2)).clear();
+    }
+
+    @Test
+    void invalidationHoldsDocumentLifecycleLockThroughClear() {
+        listener.entryExpired(entryEvent(ANNOTATION_MAP));
+
+        InOrder order = inOrder(lifecycleLocks, fetchRecords);
+        order.verify(lifecycleLocks).lock(CACHE_KEY);
+        order.verify(fetchRecords).clear();
+        order.verify(lifecycleLocks).unlock(CACHE_KEY);
+        verify(emptyCandidates).remove(FETCH_MAP + CACHE_KEY);
     }
 
     @Test

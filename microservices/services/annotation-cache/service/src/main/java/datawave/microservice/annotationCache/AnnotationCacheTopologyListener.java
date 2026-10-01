@@ -94,7 +94,11 @@ public class AnnotationCacheTopologyListener
         try {
             int cleared = 0;
             for (String mapName : Set.copyOf(fetchMapNames)) {
-                hazelcastInstance.getMap(mapName).clear();
+                String cacheKey = mapName.substring(FETCH_MAP.length());
+                AnnotationMapCleanup.withDocumentLock(hazelcastInstance, cacheKey, () -> {
+                    hazelcastInstance.getMap(mapName).clear();
+                    return null;
+                });
                 cleared++;
             }
             if (invalidationRequestedAt.compareAndSet(requestedAt, 0)) {

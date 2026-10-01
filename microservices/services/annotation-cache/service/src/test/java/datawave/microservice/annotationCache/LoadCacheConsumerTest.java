@@ -12,6 +12,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -26,6 +27,7 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -49,12 +51,19 @@ class LoadCacheConsumerTest {
     private RegionConfiguration regionConfiguration;
     private AnnotationCacheProperties properties;
     private Consumer<AnnotationMessage> consumer;
+    private IMap<String,Boolean> lifecycleLocks;
+    private IMap<String,Long> emptyCandidates;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUp() {
         hazelcastInstance = mock(HazelcastInstance.class);
         config = mock(Config.class);
         when(hazelcastInstance.getConfig()).thenReturn(config);
+        lifecycleLocks = mock(IMap.class);
+        emptyCandidates = mock(IMap.class);
+        when(hazelcastInstance.<String,Boolean> getMap(AnnotationMapCleanup.LIFECYCLE_LOCK_MAP)).thenReturn(lifecycleLocks);
+        when(hazelcastInstance.<String,Long> getMap(AnnotationMapCleanup.EMPTY_CANDIDATE_MAP)).thenReturn(emptyCandidates);
 
         regionConfiguration = new RegionConfiguration();
         regionConfiguration.setName(LOCAL_REGION);
@@ -175,6 +184,13 @@ class LoadCacheConsumerTest {
         verify(annotationMap).unlock("annotation");
         verify(annotationMap, never()).put(any(), any());
         verify(annotationMap, never()).set(any(), any());
+        String cacheKey = ID_TYPE + ":doc";
+        InOrder order = inOrder(lifecycleLocks, annotationMap);
+        order.verify(lifecycleLocks).lock(cacheKey);
+        order.verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
+        order.verify(annotationMap).unlock("annotation");
+        order.verify(lifecycleLocks).unlock(cacheKey);
+        verify(emptyCandidates).remove(ANNOTATIONS_MAP + cacheKey);
     }
 
     @Test
@@ -248,6 +264,7 @@ class LoadCacheConsumerTest {
 
         assertThrows(AnnotationStorageException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
         verify(annotationMap, never()).unlock("annotation");
+        verify(lifecycleLocks).unlock(ID_TYPE + ":doc");
     }
 
     @Test
@@ -276,6 +293,7 @@ class LoadCacheConsumerTest {
         assertThrows(IllegalStateException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
         verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
         verify(annotationMap).unlock("annotation");
+        verify(lifecycleLocks).unlock(ID_TYPE + ":doc");
     }
 
     @SuppressWarnings("unchecked")

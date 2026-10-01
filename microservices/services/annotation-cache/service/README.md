@@ -46,12 +46,20 @@ annotation-cache:
   max-cache-age: 1h
   max-fetch-age: 5m
   federation-lock-wait: 5s
+  map-cleanup-enabled: false
+  map-cleanup-interval: PT5M
+  empty-map-grace-period: PT30M
+  cleanup-lock-wait: PT1S
   topology-monitoring-enabled: true
   topology-settle-delay: 15s
   topology-poll-interval-ms: 5000
 ```
 
 Both TTLs must be positive whole seconds supported by Hazelcast, and annotation TTL must be greater than or equal to fetch TTL.
+
+Empty-map cleanup is disabled by default. Before enabling it, all annotation and fetch map operations must use
+`AnnotationMapCleanup.withDocumentLock` so cleanup cannot race with a reader or writer. Empty maps are destroyed after they have remained cleanup candidates
+for the configured grace period.
 
 ## Assumptions and guarantees
 
@@ -68,4 +76,5 @@ Both TTLs must be positive whole seconds supported by Hazelcast, and annotation 
 - Annotation and fetch-record changes are not one atomic transaction.
 - Hazelcast entry listeners are asynchronous. Fetch invalidation after annotation removal can have a short delay; callers that clear annotation data should also clear the corresponding fetch records.
 - A topology event may cause harmless extra backend reads because fetch records are discarded.
-- Per-document annotation and fetch maps remain distributed objects after their entries are cleared unless explicitly destroyed.
+- Per-document annotation and fetch maps remain distributed objects after their entries are cleared unless explicitly destroyed or empty-map cleanup is
+  enabled.

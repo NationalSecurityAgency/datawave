@@ -68,8 +68,11 @@ public class AnnotationSyncListener implements EntryRemovedListener<String,Objec
             return;
         }
 
-        IMap<String,Object> fetchRecords = hazelcastInstance.getMap(FETCH_MAP + cacheKey);
-        fetchRecords.clear();
+        AnnotationMapCleanup.withDocumentLock(hazelcastInstance, cacheKey, () -> {
+            IMap<String,Object> fetchRecords = hazelcastInstance.getMap(FETCH_MAP + cacheKey);
+            fetchRecords.clear();
+            return null;
+        });
         log.debug("Invalidated fetch records for {} after annotation cache removal", cacheKey);
     }
 

@@ -92,42 +92,45 @@ public class LoadCacheConsumer {
             throw new IllegalArgumentException("Federated annotation for document " + documentId + " is missing its annotation ID");
         }
 
-        String mapName = ANNOTATIONS_MAP + idType + ":" + documentId;
-        IMap<String,AnnotationMessage> annotationMap = hazelcastInstance.getMap(mapName);
+        String cacheKey = idType + ":" + documentId;
+        String mapName = ANNOTATIONS_MAP + cacheKey;
 
         // The normal producer writes one annotation per message. Normalize a batched message so that every map key still contains exactly its annotation.
         AnnotationMessage cacheValue = annotationMessage.getAnnotationsCount() == 1 ? annotationMessage
                         : annotationMessage.toBuilder().clearAnnotations().addAnnotations(annotation).build();
 
-        // Federated messages have already passed through a MapStore in their originating region. A transient put prevents the local MapStore from publishing
-        // the message again while retaining the TTL and max-idle behavior configured for the annotation map.
-        // Serialize deliveries for this annotation across cluster members: without the lock, duplicates can both pass containsKey and race to insert.
-        boolean lockAcquired = false;
-        try {
-            lockAcquired = annotationMap.tryLock(annotationId, federationLockWait.toMillis(), TimeUnit.MILLISECONDS);
-            if (!lockAcquired) {
-                throw new AnnotationStorageException("Timed out acquiring Hazelcast lock for federated annotation " + annotationId);
-            }
+        // The document lock protects the map proxy from cleanup; the annotation lock serializes duplicate deliveries.
+        AnnotationMapCleanup.withDocumentLock(hazelcastInstance, cacheKey, () -> {
+            IMap<String,AnnotationMessage> annotationMap = hazelcastInstance.getMap(mapName);
+            // Federated messages have already passed through a MapStore in their originating region. A transient put prevents the local MapStore from
+            // publishing the message again while retaining the TTL and max-idle behavior configured for the annotation map.
+            boolean lockAcquired = false;
+            try {
+                lockAcquired = annotationMap.tryLock(annotationId, federationLockWait.toMillis(), TimeUnit.MILLISECONDS);
+                if (!lockAcquired) {
+                    throw new AnnotationStorageException("Timed out acquiring Hazelcast lock for federated annotation " + annotationId);
+                }
 
-            // While holding the lock, ignore duplicate deliveries or insert this annotation without invoking the MapStore.
-            if (!annotationMap.containsKey(annotationId)) {
-                MapConfig mapConfig = hazelcastInstance.getConfig().findMapConfig(mapName);
-                annotationMap.putTransient(annotationId, cacheValue, mapConfig.getTimeToLiveSeconds(), TimeUnit.SECONDS, mapConfig.getMaxIdleSeconds(),
-                                TimeUnit.SECONDS);
-                log.info("Stored annotation {} federated from region {} in local cache {}", annotationId,
-                                annotationMessage.getParametersOrThrow(REGION_ID_PARAMETER), mapName);
-            } else {
-                log.debug("Annotation {} already exists in local cache {}", annotationId, mapName);
+                // While holding the lock, ignore duplicate deliveries or insert this annotation without invoking the MapStore.
+                if (!annotationMap.containsKey(annotationId)) {
+                    MapConfig mapConfig = hazelcastInstance.getConfig().findMapConfig(mapName);
+                    annotationMap.putTransient(annotationId, cacheValue, mapConfig.getTimeToLiveSeconds(), TimeUnit.SECONDS, mapConfig.getMaxIdleSeconds(),
+                                    TimeUnit.SECONDS);
+                    log.info("Stored annotation {} federated from region {} in local cache {}", annotationId,
+                                    annotationMessage.getParametersOrThrow(REGION_ID_PARAMETER), mapName);
+                } else {
+                    log.debug("Annotation {} already exists in local cache {}", annotationId, mapName);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AnnotationStorageException("Interrupted acquiring Hazelcast lock for federated annotation " + annotationId, e);
+            } finally {
+                // Release only if acquired; otherwise another member's lock must remain untouched.
+                if (lockAcquired) {
+                    annotationMap.unlock(annotationId);
+                }
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new AnnotationStorageException("Interrupted acquiring Hazelcast lock for federated annotation " + annotationId, e);
-        } finally {
-            // Release only if acquired; otherwise another member's lock must remain untouched.
-            if (lockAcquired) {
-                annotationMap.unlock(annotationId);
-            }
-        }
-
+            return null;
+        });
     }
 }
