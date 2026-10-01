@@ -301,6 +301,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private String limitFieldsField = null;
     private boolean hitList = false;
+    private boolean stripHitTermGroupingContext = false;
     private boolean dateIndexTimeTravel = false;
     private boolean dateIndexIterator = false;
     private boolean ignoreNonExistentFields = false;
@@ -730,6 +731,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
+        this.setStripHitTermGroupingContext(other.isStripHitTermGroupingContext());
         this.setDateIndexTimeTravel(other.isDateIndexTimeTravel());
         this.setDateIndexIterator(other.isDateIndexIterator());
         this.setBeginDateCap(other.getBeginDateCap());
@@ -2035,6 +2037,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.hitList = hitList;
     }
 
+    public boolean isStripHitTermGroupingContext() {
+        return this.stripHitTermGroupingContext;
+    }
+
+    public void setStripHitTermGroupingContext(boolean stripHitTermGroupingContext) {
+        this.stripHitTermGroupingContext = stripHitTermGroupingContext;
+    }
+
     public boolean isRawTypes() {
         return this.rawTypes;
     }
@@ -3046,6 +3056,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isTermFrequenciesRequired() == that.isTermFrequenciesRequired() &&
                 isLimitFieldsPreQueryEvaluation() == that.isLimitFieldsPreQueryEvaluation() &&
                 isHitList() == that.isHitList() &&
+                isStripHitTermGroupingContext() == that.isStripHitTermGroupingContext() &&
                 isDateIndexTimeTravel() == that.isDateIndexTimeTravel() &&
                 getIgnoreNonExistentFields() == that.getIgnoreNonExistentFields() &&
                 getBeginDateCap() == that.getBeginDateCap() &&
@@ -3337,6 +3348,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isLimitFieldsPreQueryEvaluation(),
                 getLimitFieldsField(),
                 isHitList(),
+                isStripHitTermGroupingContext(),
                 isDateIndexTimeTravel(),
                 getIgnoreNonExistentFields(),
                 getBeginDateCap(),
