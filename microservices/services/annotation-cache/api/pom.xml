@@ -30,7 +30,7 @@
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>hazelcast-common</artifactId>
-                <version>${version.hazelcast.service}</version>
+                <version>${version.hazelcast.common}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
