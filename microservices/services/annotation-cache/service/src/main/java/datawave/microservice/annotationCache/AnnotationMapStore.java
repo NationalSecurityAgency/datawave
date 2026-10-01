@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 import com.hazelcast.map.MapStore;
 
 import datawave.annotation.protobuf.v1.AnnotationMessage;
+import datawave.microservice.annotationCache.api.AnnotationKey;
 import datawave.microservice.annotationCache.api.AnnotationStorageException;
 import datawave.microservice.annotationCache.api.PersistenceMode;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
@@ -35,7 +36,7 @@ import datawave.microservice.annotationCache.api.RegionConfiguration;
  * with {@link AnnotationStorageException}.
  */
 @Component
-public class AnnotationMapStore implements MapStore<String,Object> {
+public class AnnotationMapStore implements MapStore<AnnotationKey,Object> {
     public static final String AMQP_CORRELATION_DATA_HEADER = "amqp_correlationData";
     public static final String AMQP_PUBLISH_CONFIRM_CORRELATION_HEADER = "amqp_publishConfirmCorrelation";
     private static Logger log = LoggerFactory.getLogger(AnnotationMapStore.class);
@@ -54,7 +55,7 @@ public class AnnotationMapStore implements MapStore<String,Object> {
 
     /**
      *
-     * @param s
+     * @param key
      *            key of the entry to store
      * @param o
      *            value of the entry to store
@@ -62,10 +63,10 @@ public class AnnotationMapStore implements MapStore<String,Object> {
      *             if a problem is encountered
      */
     @Override
-    public void store(String s, Object o) {
+    public void store(AnnotationKey key, Object o) {
         if (!(o instanceof AnnotationMessage)) {
             // not storing an annotation, bypass anything that might be on the queue
-            log.trace("Ignoring non-annotation value for key {}: {}", s, o == null ? "null" : o.getClass().getName());
+            log.trace("Ignoring non-annotation value for key {}: {}", key, o == null ? "null" : o.getClass().getName());
             return;
         }
 
@@ -75,26 +76,26 @@ public class AnnotationMapStore implements MapStore<String,Object> {
         try {
             persistenceMode = PersistenceMode.fromValue(configuredMode);
         } catch (IllegalArgumentException e) {
-            throw new AnnotationStorageException("Invalid persistence mode for annotation " + s + ": " + configuredMode, e);
+            throw new AnnotationStorageException("Invalid persistence mode for annotation " + key + ": " + configuredMode, e);
         }
 
         if (persistenceMode == PersistenceMode.CACHE_ONLY) {
-            log.debug("Skipping RabbitMQ publication of cache-only annotation {}", s);
+            log.debug("Skipping RabbitMQ publication of cache-only annotation {}", key);
             return;
         }
 
         String sourceRegion = annotationMessage.getParametersOrDefault(REGION_ID_PARAMETER, "");
         if (sourceRegion.isBlank()) {
-            throw new AnnotationStorageException("Write-through annotation " + s + " is missing source region parameter " + REGION_ID_PARAMETER);
+            throw new AnnotationStorageException("Write-through annotation " + key + " is missing source region parameter " + REGION_ID_PARAMETER);
         }
         if (!localRegion.equals(sourceRegion)) {
-            log.debug("Skipping RabbitMQ publication of annotation {} originating in region {}", s, sourceRegion);
+            log.debug("Skipping RabbitMQ publication of annotation {} originating in region {}", key, sourceRegion);
             return;
         }
 
         String idType = annotationMessage.getParametersOrDefault(ID_TYPE_PARAMETER, "");
         if (idType.isBlank()) {
-            throw new AnnotationStorageException("Write-through annotation " + s + " is missing parameter " + ID_TYPE_PARAMETER);
+            throw new AnnotationStorageException("Write-through annotation " + key + " is missing parameter " + ID_TYPE_PARAMETER);
         }
 
         String correlationId = UUID.randomUUID().toString();
@@ -140,39 +141,39 @@ public class AnnotationMapStore implements MapStore<String,Object> {
     /**
      * Hazelcast may call either this or the single entry method depending on locality and threading
      *
-     * @see #store(String, Object)
+     * @see #store(AnnotationKey, Object)
      * @param map
      *            map of entries to store
      */
     @Override
-    public void storeAll(Map<String,Object> map) {
-        for (Entry<String,Object> entry : map.entrySet()) {
+    public void storeAll(Map<AnnotationKey,Object> map) {
+        for (Entry<AnnotationKey,Object> entry : map.entrySet()) {
             store(entry.getKey(), entry.getValue());
         }
     }
 
     @Override
-    public void delete(String s) {
+    public void delete(AnnotationKey key) {
 
     }
 
     @Override
-    public void deleteAll(Collection<String> collection) {
+    public void deleteAll(Collection<AnnotationKey> collection) {
 
     }
 
     @Override
-    public Object load(String s) {
+    public Object load(AnnotationKey key) {
         return null;
     }
 
     @Override
-    public Map<String,Object> loadAll(Collection<String> collection) {
+    public Map<AnnotationKey,Object> loadAll(Collection<AnnotationKey> collection) {
         return Map.of();
     }
 
     @Override
-    public Iterable<String> loadAllKeys() {
+    public Iterable<AnnotationKey> loadAllKeys() {
         return null;
     }
 }

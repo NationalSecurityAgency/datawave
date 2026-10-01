@@ -5,7 +5,11 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-/** Retention, federation, and topology-recovery settings for annotation-cache maps. */
+/**
+ * Retention, federation, and topology-recovery settings for the two fixed annotation-cache data maps. Annotation/fetch TTLs are independent positive whole
+ * seconds, max-idle is disabled in map configuration, and fetch retention must not exceed annotation retention. Invalidation is best-effort; marker TTL remains
+ * the fallback for stale successful-source-check metadata.
+ */
 @Configuration
 @ConfigurationProperties(prefix = "annotation-cache")
 public class AnnotationCacheProperties {

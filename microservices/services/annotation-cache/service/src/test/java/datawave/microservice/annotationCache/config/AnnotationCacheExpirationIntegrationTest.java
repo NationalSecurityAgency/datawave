@@ -2,9 +2,9 @@ package datawave.microservice.annotationCache.config;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.time.Duration;
@@ -25,13 +25,14 @@ import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.microservice.annotationCache.AnnotationMapStore;
 import datawave.microservice.annotationCache.AnnotationSyncListener;
+import datawave.microservice.annotationCache.api.AnnotationKey;
+import datawave.microservice.annotationCache.api.FetchKey;
+import datawave.microservice.annotationCache.api.FetchRecord;
 
-/**
- * Verifies configured annotation/fetch TTL behavior and single-member annotation-expiry invalidation. Cross-member listener propagation is tested separately.
- */
+/** Verifies configured annotation/fetch TTL behavior and annotation-expiry invalidation using a real Hazelcast member. */
 class AnnotationCacheExpirationIntegrationTest {
-    private static final String CACHE_KEY = "UUID:document";
-    private static final String ANNOTATION_MAP = ANNOTATIONS_MAP + CACHE_KEY;
+    private static final AnnotationKey FIRST_ANNOTATION = new AnnotationKey("UUID", "document", "first");
+    private static final AnnotationKey SECOND_ANNOTATION = new AnnotationKey("UUID", "document", "second");
 
     private HazelcastInstance hazelcastInstance;
 
@@ -42,10 +43,6 @@ class AnnotationCacheExpirationIntegrationTest {
         }
     }
 
-    /**
-     * Confirms fetch records expire before annotations, then verifies annotation expiry invalidates a deliberately longer-lived fetch record. This test focuses
-     * on TTL policy and local listener behavior; it does not test multi-member propagation.
-     */
     @Test
     void annotationAndFetchExpirationRemainConsistent() throws InterruptedException {
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
@@ -58,27 +55,31 @@ class AnnotationCacheExpirationIntegrationTest {
         hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         listener.setHazelcastInstance(hazelcastInstance);
 
-        IMap<String,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATION_MAP);
-        IMap<String,String> fetchRecords = hazelcastInstance.getMap(FETCH_MAP + CACHE_KEY);
+        IMap<AnnotationKey,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATIONS_MAP);
+        IMap<FetchKey,FetchRecord> fetchRecords = hazelcastInstance.getMap(FETCH_MAP);
 
-        annotations.set("first", annotationMessage("first"));
-        fetchRecords.set("default-ttl", "record");
-        await("fetch record to expire using its configured TTL", () -> fetchRecords.get("default-ttl") == null);
-        assertNotNull(annotations.get("first"), "the longer-lived annotation should still be cached when the fetch record expires");
+        annotations.put(FIRST_ANNOTATION, annotationMessage("first"), 30, TimeUnit.SECONDS);
+        FetchKey defaultTtlMarker = fetchKey("UUID", "document", "default-ttl");
+        fetchRecords.put(defaultTtlMarker, record());
+        await("fetch record to expire using its configured TTL", () -> !fetchRecords.containsKey(defaultTtlMarker));
+        assertNotNull(annotations.get(FIRST_ANNOTATION), "the longer-lived annotation should still be cached when the fetch record expires");
 
-        // Expiration of an annotation invalidates document freshness state.
-        fetchRecords.set("listener-invalidation", "record", 30, TimeUnit.SECONDS);
-        await("first annotation to expire", () -> annotations.get("first") == null);
-        await("fetch records to be invalidated after annotation expiration", fetchRecords::isEmpty);
+        // Expiration of an annotation invalidates every auth-context marker for only that idType/document pair.
+        annotations.set(SECOND_ANNOTATION, annotationMessage("second"));
+        FetchKey invalidatedMarker = fetchKey("UUID", "document", "listener-invalidation");
+        FetchKey secondMarker = fetchKey("UUID", "document", "second-invalidation");
+        FetchKey otherTypeMarker = fetchKey("PAGE_ID", "document", "other-type");
+        fetchRecords.set(invalidatedMarker, record(), 30, TimeUnit.SECONDS);
+        fetchRecords.set(secondMarker, record(), 30, TimeUnit.SECONDS);
+        fetchRecords.set(otherTypeMarker, record(), 30, TimeUnit.SECONDS);
+        await("second annotation to expire using its configured TTL", () -> !annotations.containsKey(SECOND_ANNOTATION));
+        await("matching fetch records to be invalidated after annotation expiration",
+                        () -> !fetchRecords.containsKey(invalidatedMarker) && !fetchRecords.containsKey(secondMarker));
+        assertTrue(fetchRecords.containsKey(otherTypeMarker), "expiration under one id type must not invalidate another id type");
 
-        annotations.set("second", annotationMessage("second"));
-        fetchRecords.set("second-invalidation", "record", 30, TimeUnit.SECONDS);
-        await("second annotation to expire", () -> annotations.get("second") == null);
-        await("fetch records to be invalidated after second annotation expiration", fetchRecords::isEmpty);
-
-        assertNull(annotations.get("first"));
-        assertNull(annotations.get("second"));
-        assertEquals(0, fetchRecords.size());
+        assertNotNull(annotations.get(FIRST_ANNOTATION));
+        assertNull(annotations.get(SECOND_ANNOTATION));
+        assertTrue(fetchRecords.containsKey(otherTypeMarker));
     }
 
     private Config isolatedConfig() {
@@ -97,6 +98,14 @@ class AnnotationCacheExpirationIntegrationTest {
     private AnnotationMessage annotationMessage(String annotationId) {
         Annotation annotation = Annotation.newBuilder().setDocumentId("document").setAnnotationId(annotationId).build();
         return AnnotationMessage.newBuilder().addAnnotations(annotation).build();
+    }
+
+    private FetchKey fetchKey(String idType, String documentId, String authHash) {
+        return new FetchKey(idType, documentId, authHash);
+    }
+
+    private FetchRecord record() {
+        return new FetchRecord(System.currentTimeMillis(), 1);
     }
 
     private void await(String description, BooleanSupplier condition) throws InterruptedException {

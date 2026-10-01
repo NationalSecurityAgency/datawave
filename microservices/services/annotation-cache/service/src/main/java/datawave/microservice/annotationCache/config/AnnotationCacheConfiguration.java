@@ -1,9 +1,12 @@
 package datawave.microservice.annotationCache.config;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
+import static datawave.microservice.annotationCache.api.Constants.DOCUMENT_ID_KEY_ATTRIBUTE;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
+import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_KEY_ATTRIBUTE;
 
 import java.time.Duration;
+import java.util.Arrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +15,8 @@ import org.springframework.context.annotation.Configuration;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.Hazelcast;
@@ -46,30 +51,53 @@ public class AnnotationCacheConfiguration {
         int maxCacheAgeSeconds = ttlSeconds("annotation-cache.max-cache-age", properties.getMaxCacheAge());
         int maxFetchAgeSeconds = ttlSeconds("annotation-cache.max-fetch-age", properties.getMaxFetchAge());
 
-        // Keep freshness-record retention no longer than annotation retention, so new records cannot
-        // outlive their annotation by TTL alone.
+        // Keep freshness-record retention no longer than annotation retention, so new records cannot outlive their annotation by TTL alone.
         if (properties.getMaxCacheAge().compareTo(properties.getMaxFetchAge()) < 0) {
             throw new IllegalStateException("annotation-cache.max-cache-age must be greater than or equal to annotation-cache.max-fetch-age");
         }
 
-        // Apply annotation TTL to every per-document annotation map; max-idle is disabled so reads do not extend retention.
-        MapConfig annotationMapConfig = config.getMapConfig(ANNOTATIONS_MAP + "*");
+        // Configure only the two named maps. In particular, do not apply MapStore/listeners/indexes to Hazelcast's default map config.
+        MapConfig annotationMapConfig = exactMapConfig(config, ANNOTATIONS_MAP);
         annotationMapConfig.setTimeToLiveSeconds(maxCacheAgeSeconds);
         annotationMapConfig.setMaxIdleSeconds(0);
+        addHashIndex(annotationMapConfig, ID_TYPE_KEY_ATTRIBUTE, DOCUMENT_ID_KEY_ATTRIBUTE);
+        addHashIndex(annotationMapConfig, DOCUMENT_ID_KEY_ATTRIBUTE);
 
         // Use the MapStore to publish eligible local write-through annotations to RabbitMQ before accepting the write.
         MapStoreConfig storeConfig = annotationMapConfig.getMapStoreConfig();
         storeConfig.setEnabled(true);
         storeConfig.setImplementation(annotationMapStore);
 
-        // Listen only for local events and omit values; the listener invalidates fetch records using the map name.
-        EntryListenerConfig listenerConfig = new EntryListenerConfig(annotationMapListener, true, false);
-        annotationMapConfig.addEntryListenerConfig(listenerConfig);
+        // Listen only for local events and omit values; keys identify the affected document.
+        boolean listenerAlreadyConfigured = annotationMapConfig.getEntryListenerConfigs().stream()
+                        .anyMatch(existing -> existing.getImplementation() == annotationMapListener);
+        if (!listenerAlreadyConfigured) {
+            annotationMapConfig.addEntryListenerConfig(new EntryListenerConfig(annotationMapListener, true, false));
+        }
 
-        // Give fetch-freshness maps a bounded lifetime too, without extending it on access.
-        MapConfig fetchMapConfig = config.getMapConfig(FETCH_MAP + "*");
+        // Fetch-marker TTL controls when Datawave is checked again; reads do not extend retention.
+        MapConfig fetchMapConfig = exactMapConfig(config, FETCH_MAP);
         fetchMapConfig.setTimeToLiveSeconds(maxFetchAgeSeconds);
         fetchMapConfig.setMaxIdleSeconds(0);
+        addHashIndex(fetchMapConfig, ID_TYPE_KEY_ATTRIBUTE, DOCUMENT_ID_KEY_ATTRIBUTE);
+        addHashIndex(fetchMapConfig, DOCUMENT_ID_KEY_ATTRIBUTE);
+    }
+
+    private MapConfig exactMapConfig(Config config, String mapName) {
+        MapConfig mapConfig = config.getMapConfigs().get(mapName);
+        if (mapConfig == null) {
+            mapConfig = new MapConfig(mapName);
+            config.addMapConfig(mapConfig);
+        }
+        return mapConfig;
+    }
+
+    private void addHashIndex(MapConfig mapConfig, String... attributes) {
+        boolean configured = mapConfig.getIndexConfigs().stream()
+                        .anyMatch(index -> index.getType() == IndexType.HASH && index.getAttributes().equals(Arrays.asList(attributes)));
+        if (!configured) {
+            mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, attributes));
+        }
     }
 
     private int ttlSeconds(String propertyName, Duration duration) {

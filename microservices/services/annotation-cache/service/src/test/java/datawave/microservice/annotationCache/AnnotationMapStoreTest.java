@@ -24,6 +24,7 @@ import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.messaging.Message;
 
 import datawave.annotation.protobuf.v1.AnnotationMessage;
+import datawave.microservice.annotationCache.api.AnnotationKey;
 import datawave.microservice.annotationCache.api.AnnotationStorageException;
 import datawave.microservice.annotationCache.api.PersistenceMode;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
@@ -55,22 +56,22 @@ class AnnotationMapStoreTest {
 
     @Test
     void ignoresNonAnnotationValuesIncludingNull() {
-        mapStore.store("null", null);
-        mapStore.store("string", "value");
+        mapStore.store(key("null"), null);
+        mapStore.store(key("string"), "value");
 
         verify(publisher, never()).send(any());
     }
 
     @Test
     void cacheOnlyAnnotationIsNotPublished() {
-        mapStore.store("annotation", message(LOCAL_REGION, PersistenceMode.CACHE_ONLY));
+        mapStore.store(key("annotation"), message(LOCAL_REGION, PersistenceMode.CACHE_ONLY));
 
         verify(publisher, never()).send(any());
     }
 
     @Test
     void writeThroughAnnotationFromAnotherRegionIsNotPublished() {
-        mapStore.store("annotation", message(REMOTE_REGION, PersistenceMode.WRITE_THROUGH));
+        mapStore.store(key("annotation"), message(REMOTE_REGION, PersistenceMode.WRITE_THROUGH));
 
         verify(publisher, never()).send(any());
     }
@@ -80,7 +81,7 @@ class AnnotationMapStoreTest {
         confirmPublication(true, null);
         AnnotationMessage annotationMessage = message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH);
 
-        mapStore.store("annotation", annotationMessage);
+        mapStore.store(key("annotation"), annotationMessage);
 
         @SuppressWarnings("rawtypes")
         ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
@@ -99,7 +100,7 @@ class AnnotationMapStoreTest {
                         .build();
         // @formatter:on
 
-        mapStore.store("annotation", annotationMessage);
+        mapStore.store(key("annotation"), annotationMessage);
 
         verify(publisher).send(any(Message.class));
     }
@@ -113,7 +114,7 @@ class AnnotationMapStoreTest {
                         .build();
         // @formatter:on
 
-        assertThrows(AnnotationStorageException.class, () -> mapStore.store("annotation", annotationMessage));
+        assertThrows(AnnotationStorageException.class, () -> mapStore.store(key("annotation"), annotationMessage));
 
         verify(publisher, never()).send(any());
     }
@@ -127,7 +128,7 @@ class AnnotationMapStoreTest {
                         .build();
         // @formatter:on
 
-        assertThrows(AnnotationStorageException.class, () -> mapStore.store("annotation", annotationMessage));
+        assertThrows(AnnotationStorageException.class, () -> mapStore.store(key("annotation"), annotationMessage));
 
         verify(publisher, never()).send(any());
     }
@@ -141,7 +142,7 @@ class AnnotationMapStoreTest {
                         .build();
         // @formatter:on
 
-        AnnotationStorageException exception = assertThrows(AnnotationStorageException.class, () -> mapStore.store("annotation", annotationMessage));
+        AnnotationStorageException exception = assertThrows(AnnotationStorageException.class, () -> mapStore.store(key("annotation"), annotationMessage));
         assertTrue(exception.getMessage().contains("unknown"));
         verify(publisher, never()).send(any());
     }
@@ -150,7 +151,7 @@ class AnnotationMapStoreTest {
     void failedStreamBridgeHandoffFailsTheWrite() {
         when(publisher.send(any(Message.class))).thenReturn(false);
 
-        assertThrows(AnnotationStorageException.class, () -> mapStore.store("annotation", message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH)));
+        assertThrows(AnnotationStorageException.class, () -> mapStore.store(key("annotation"), message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH)));
     }
 
     @Test
@@ -158,7 +159,7 @@ class AnnotationMapStoreTest {
         confirmPublication(false, "rejected");
 
         AnnotationStorageException exception = assertThrows(AnnotationStorageException.class,
-                        () -> mapStore.store("annotation", message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH)));
+                        () -> mapStore.store(key("annotation"), message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH)));
         assertTrue(exception.getMessage().contains("NACK"));
     }
 
@@ -169,7 +170,7 @@ class AnnotationMapStoreTest {
             return true;
         });
 
-        assertThrows(AnnotationStorageException.class, () -> mapStore.store("annotation", message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH)));
+        assertThrows(AnnotationStorageException.class, () -> mapStore.store(key("annotation"), message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH)));
         assertTrue(Thread.currentThread().isInterrupted());
     }
 
@@ -179,10 +180,10 @@ class AnnotationMapStoreTest {
 
         // @formatter:off
         mapStore.storeAll(Map.of(
-                        "write", message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH),
-                        "write-two", message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH),
-                        "hydrate", message(LOCAL_REGION, PersistenceMode.CACHE_ONLY),
-                        "remote", message(REMOTE_REGION, PersistenceMode.WRITE_THROUGH)));
+                        key("write"), message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH),
+                        key("write-two"), message(LOCAL_REGION, PersistenceMode.WRITE_THROUGH),
+                        key("hydrate"), message(LOCAL_REGION, PersistenceMode.CACHE_ONLY),
+                        key("remote"), message(REMOTE_REGION, PersistenceMode.WRITE_THROUGH)));
         // @formatter:on
 
         @SuppressWarnings("rawtypes")
@@ -205,6 +206,10 @@ class AnnotationMapStoreTest {
             correlationData.getFuture().set(new CorrelationData.Confirm(ack, reason));
             return true;
         });
+    }
+
+    private AnnotationKey key(String annotationId) {
+        return new AnnotationKey("UUID", "document", annotationId);
     }
 
     private AnnotationMessage message(String sourceRegion, PersistenceMode persistenceMode) {

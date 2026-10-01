@@ -2,9 +2,7 @@ package datawave.microservice.annotationCache;
 
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
 
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.PreDestroy;
@@ -16,9 +14,6 @@ import org.springframework.stereotype.Component;
 
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.DistributedObjectEvent;
-import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleEvent;
@@ -30,38 +25,32 @@ import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 
+import datawave.microservice.annotationCache.api.FetchKey;
+import datawave.microservice.annotationCache.api.FetchRecord;
 import datawave.microservice.annotationCache.config.AnnotationCacheProperties;
 
 /**
- * Clears transient fetch-freshness markers after topology events that may leave annotation maps incomplete. Clearing them after the cluster settles forces
- * stale cache state to be refreshed instead of treating a partial annotation set as complete.
+ * Clears transient fetch-freshness markers after topology events that may leave annotation maps incomplete. Clearing the shared fetch map after the cluster
+ * settles forces stale cache state to be refreshed instead of treating a partial annotation set as complete.
  */
 @Component
-public class AnnotationCacheTopologyListener
-                implements MembershipListener, LifecycleListener, MigrationListener, PartitionLostListener, DistributedObjectListener {
+public class AnnotationCacheTopologyListener implements MembershipListener, LifecycleListener, MigrationListener, PartitionLostListener {
     private static final Logger log = LoggerFactory.getLogger(AnnotationCacheTopologyListener.class);
 
     private final HazelcastInstance hazelcastInstance;
     private final AnnotationCacheProperties properties;
-    private final Set<String> fetchMapNames = ConcurrentHashMap.newKeySet();
     private final AtomicLong invalidationRequestedAt = new AtomicLong();
 
     private final UUID membershipListenerId;
     private final UUID lifecycleListenerId;
     private final UUID migrationListenerId;
     private final UUID partitionLostListenerId;
-    private final UUID distributedObjectListenerId;
 
     public AnnotationCacheTopologyListener(HazelcastInstance hazelcastInstance, AnnotationCacheProperties properties) {
         this.hazelcastInstance = hazelcastInstance;
         this.properties = properties;
         validateProperties();
 
-        // Subscribe before taking the initial snapshot so a fetch map cannot be missed during discovery.
-        distributedObjectListenerId = hazelcastInstance.addDistributedObjectListener(this);
-        for (DistributedObject object : hazelcastInstance.getDistributedObjects()) {
-            track(object);
-        }
         membershipListenerId = hazelcastInstance.getCluster().addMembershipListener(this);
         lifecycleListenerId = hazelcastInstance.getLifecycleService().addLifecycleListener(this);
         migrationListenerId = hazelcastInstance.getPartitionService().addMigrationListener(this);
@@ -77,7 +66,7 @@ public class AnnotationCacheTopologyListener
         }
     }
 
-    /** Polls after the topology settles; clearing fetch maps is idempotent and safe for every cluster member to perform. */
+    /** Polls after the topology settles; clearing the shared fetch map is idempotent and safe for every cluster member to perform. */
     @Scheduled(fixedDelayString = "${annotation-cache.topology-poll-interval-ms:5000}",
                     initialDelayString = "${annotation-cache.topology-poll-interval-ms:5000}")
     public void poll() {
@@ -92,18 +81,15 @@ public class AnnotationCacheTopologyListener
         }
 
         try {
-            int cleared = 0;
-            for (String mapName : Set.copyOf(fetchMapNames)) {
-                hazelcastInstance.getMap(mapName).clear();
-                cleared++;
-            }
+            IMap<FetchKey,FetchRecord> fetchMap = hazelcastInstance.getMap(FETCH_MAP);
+            fetchMap.clear();
             if (invalidationRequestedAt.compareAndSet(requestedAt, 0)) {
-                log.warn("Cleared {} annotation fetch maps after a Hazelcast topology event", cleared);
+                log.warn("Cleared shared annotation fetch map after a Hazelcast topology event");
             }
         } catch (HazelcastInstanceNotActiveException e) {
             log.debug("Hazelcast stopped during topology-triggered fetch invalidation", e);
         } catch (RuntimeException e) {
-            log.error("Failed to invalidate annotation fetch maps after a Hazelcast topology event", e);
+            log.error("Failed to invalidate annotation fetch map after a Hazelcast topology event", e);
         }
     }
 
@@ -151,25 +137,6 @@ public class AnnotationCacheTopologyListener
         requestInvalidation("Hazelcast partition loss");
     }
 
-    @Override
-    public void distributedObjectCreated(DistributedObjectEvent event) {
-        track(event.getDistributedObject());
-    }
-
-    @Override
-    public void distributedObjectDestroyed(DistributedObjectEvent event) {
-        fetchMapNames.remove(String.valueOf(event.getObjectName()));
-    }
-
-    private void track(DistributedObject object) {
-        if (object instanceof IMap) {
-            String name = object.getName();
-            if (name.startsWith(FETCH_MAP) && name.length() > FETCH_MAP.length()) {
-                fetchMapNames.add(name);
-            }
-        }
-    }
-
     @PreDestroy
     public void close() {
         if (!hazelcastInstance.getLifecycleService().isRunning()) {
@@ -179,6 +146,5 @@ public class AnnotationCacheTopologyListener
         hazelcastInstance.getLifecycleService().removeLifecycleListener(lifecycleListenerId);
         hazelcastInstance.getPartitionService().removeMigrationListener(migrationListenerId);
         hazelcastInstance.getPartitionService().removePartitionLostListener(partitionLostListenerId);
-        hazelcastInstance.removeDistributedObjectListener(distributedObjectListenerId);
     }
 }

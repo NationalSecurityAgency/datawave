@@ -41,6 +41,7 @@ import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.microservice.annotationCache.AnnotationMapStore;
 import datawave.microservice.annotationCache.AnnotationSyncListener;
 import datawave.microservice.annotationCache.LoadCacheConsumer;
+import datawave.microservice.annotationCache.api.AnnotationKey;
 import datawave.microservice.annotationCache.api.AnnotationStorageException;
 import datawave.microservice.annotationCache.api.PersistenceMode;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
@@ -51,8 +52,6 @@ class FederatedCacheIntegrationTest {
     private static final String REMOTE_REGION = "remote";
     private static final String ID_TYPE = "UUID";
     private static final String DOCUMENT_ID = "document";
-    private static final String CACHE_KEY = ID_TYPE + ":" + DOCUMENT_ID;
-    private static final String ANNOTATION_MAP = ANNOTATIONS_MAP + CACHE_KEY;
 
     private HazelcastInstance hazelcastInstance;
 
@@ -76,12 +75,13 @@ class FederatedCacheIntegrationTest {
         hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         listener.setHazelcastInstance(hazelcastInstance);
 
-        IMap<String,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATION_MAP);
+        IMap<AnnotationKey,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATIONS_MAP);
 
-        AnnotationMessage localMessage = message(LOCAL_REGION, "local-annotation");
-        annotations.set("local-annotation", localMessage);
-        verify(mapStore).store("local-annotation", localMessage);
-        await("local annotation to be cached", () -> localMessage.equals(annotations.get("local-annotation")));
+        AnnotationKey localKey = key(ID_TYPE, DOCUMENT_ID, "local-annotation");
+        AnnotationMessage localMessage = message(LOCAL_REGION, ID_TYPE, DOCUMENT_ID, "local-annotation");
+        annotations.set(localKey, localMessage);
+        verify(mapStore).store(localKey, localMessage);
+        await("local annotation to be cached", () -> localMessage.equals(annotations.get(localKey)));
 
         RegionConfiguration region = new RegionConfiguration();
         region.setName(LOCAL_REGION);
@@ -89,25 +89,48 @@ class FederatedCacheIntegrationTest {
 
         // The queue also receives locally produced messages. They must be ignored because the originating write is already in this cluster.
         consumer.accept(localMessage);
-        verify(mapStore).store("local-annotation", localMessage);
+        verify(mapStore).store(localKey, localMessage);
 
         clearInvocations(mapStore);
-        AnnotationMessage remoteMessage = message(REMOTE_REGION, "remote-annotation");
+        AnnotationKey remoteKey = key(ID_TYPE, DOCUMENT_ID, "remote-annotation");
+        AnnotationMessage remoteMessage = message(REMOTE_REGION, ID_TYPE, DOCUMENT_ID, "remote-annotation");
         consumer.accept(remoteMessage);
 
-        await("remote annotation to be cached", () -> remoteMessage.equals(annotations.get("remote-annotation")));
-        verify(mapStore, after(250).never()).store(eq("remote-annotation"), any());
+        await("remote annotation to be cached", () -> remoteMessage.equals(annotations.get(remoteKey)));
+        verify(mapStore, after(250).never()).store(eq(remoteKey), any());
 
-        EntryView<String,AnnotationMessage> entryView = annotations.getEntryView("remote-annotation");
+        EntryView<AnnotationKey,AnnotationMessage> entryView = annotations.getEntryView(remoteKey);
         assertNotNull(entryView);
         long remainingTtl = entryView.getExpirationTime() - System.currentTimeMillis();
         assertTrue(remainingTtl > 0 && remainingTtl <= 30_000, "the federated entry should use the configured annotation TTL");
 
         // A duplicate delivery with the same immutable ID must leave the original value untouched and must not publish it locally.
-        AnnotationMessage duplicate = message(REMOTE_REGION, "remote-annotation").toBuilder().setSource("duplicate").build();
+        AnnotationMessage duplicate = message(REMOTE_REGION, ID_TYPE, DOCUMENT_ID, "remote-annotation").toBuilder().setSource("duplicate").build();
         consumer.accept(duplicate);
-        assertEquals(remoteMessage, annotations.get("remote-annotation"));
-        verify(mapStore, never()).store(eq("remote-annotation"), any());
+        assertEquals(remoteMessage, annotations.get(remoteKey));
+        verify(mapStore, never()).store(eq(remoteKey), any());
+    }
+
+    @Test
+    void federatedEntriesWithSameAnnotationIdRemainDistinctAcrossDocumentsAndIdentifierTypes() {
+        AnnotationCacheProperties properties = new AnnotationCacheProperties();
+        Config config = isolatedConfig();
+        new AnnotationCacheConfiguration(properties).configureMaps(config, mock(AnnotationMapStore.class), new AnnotationSyncListener());
+        hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+
+        RegionConfiguration region = new RegionConfiguration();
+        region.setName(LOCAL_REGION);
+        Consumer<AnnotationMessage> consumer = new LoadCacheConsumer(hazelcastInstance, region, properties).loadCache();
+        IMap<AnnotationKey,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATIONS_MAP);
+
+        consumer.accept(message(REMOTE_REGION, "UUID", "first-document", "same-id"));
+        consumer.accept(message(REMOTE_REGION, "UUID", "second-document", "same-id"));
+        consumer.accept(message(REMOTE_REGION, "PAGE_ID", "first-document", "same-id"));
+
+        assertEquals(3, annotations.size());
+        assertNotNull(annotations.get(key("UUID", "first-document", "same-id")));
+        assertNotNull(annotations.get(key("UUID", "second-document", "same-id")));
+        assertNotNull(annotations.get(key("PAGE_ID", "first-document", "same-id")));
     }
 
     @Test
@@ -123,22 +146,23 @@ class FederatedCacheIntegrationTest {
         hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         listener.setHazelcastInstance(hazelcastInstance);
 
-        IMap<String,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATIONS_MAP + CACHE_KEY);
+        IMap<AnnotationKey,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATIONS_MAP);
         RegionConfiguration region = new RegionConfiguration();
         region.setName(LOCAL_REGION);
         Consumer<AnnotationMessage> consumer = new LoadCacheConsumer(hazelcastInstance, region, properties).loadCache();
+        AnnotationKey contendedKey = key(ID_TYPE, DOCUMENT_ID, "contended");
 
-        annotations.lock("contended");
+        annotations.lock(contendedKey);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            Future<?> attempt = executor.submit(() -> consumer.accept(message(REMOTE_REGION, "contended")));
+            Future<?> attempt = executor.submit(() -> consumer.accept(message(REMOTE_REGION, ID_TYPE, DOCUMENT_ID, "contended")));
             ExecutionException failure = assertThrows(ExecutionException.class, () -> attempt.get(2, TimeUnit.SECONDS));
             assertTrue(failure.getCause() instanceof AnnotationStorageException);
             assertTrue(failure.getCause().getMessage().contains("Timed out acquiring Hazelcast lock"));
-            assertTrue(annotations.get("contended") == null);
+            assertTrue(annotations.get(contendedKey) == null);
         } finally {
             executor.shutdownNow();
-            annotations.unlock("contended");
+            annotations.unlock(contendedKey);
         }
     }
 
@@ -155,9 +179,13 @@ class FederatedCacheIntegrationTest {
         return config;
     }
 
-    private AnnotationMessage message(String region, String annotationId) {
-        Annotation annotation = Annotation.newBuilder().setDocumentId(DOCUMENT_ID).setAnnotationId(annotationId).build();
-        return AnnotationMessage.newBuilder().putParameters(REGION_ID_PARAMETER, region).putParameters(ID_TYPE_PARAMETER, ID_TYPE)
+    private AnnotationKey key(String idType, String documentId, String annotationId) {
+        return new AnnotationKey(idType, documentId, annotationId);
+    }
+
+    private AnnotationMessage message(String region, String idType, String documentId, String annotationId) {
+        Annotation annotation = Annotation.newBuilder().setDocumentId(documentId).setAnnotationId(annotationId).build();
+        return AnnotationMessage.newBuilder().putParameters(REGION_ID_PARAMETER, region).putParameters(ID_TYPE_PARAMETER, idType)
                         .putParameters(PERSISTENCE_MODE_PARAMETER, PersistenceMode.WRITE_THROUGH.value()).addAnnotations(annotation).build();
     }
 

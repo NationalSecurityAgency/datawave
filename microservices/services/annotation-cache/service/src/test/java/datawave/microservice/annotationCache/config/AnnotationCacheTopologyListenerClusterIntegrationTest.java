@@ -1,5 +1,6 @@
 package datawave.microservice.annotationCache.config;
 
+import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,6 +16,8 @@ import java.util.function.BooleanSupplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
@@ -22,14 +25,21 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 
 import datawave.microservice.annotationCache.AnnotationCacheTopologyListener;
+import datawave.microservice.annotationCache.api.AnnotationKey;
+import datawave.microservice.annotationCache.api.FetchKey;
+import datawave.microservice.annotationCache.api.FetchRecord;
 
 /** Verifies fetch invalidation after a real cluster member failure. */
 class AnnotationCacheTopologyListenerClusterIntegrationTest {
     private final List<HazelcastInstance> instances = new ArrayList<>();
     private final List<AnnotationCacheTopologyListener> listeners = new ArrayList<>();
+    private HazelcastInstance client;
 
     @AfterEach
     void tearDown() {
+        if (client != null) {
+            client.shutdown();
+        }
         for (AnnotationCacheTopologyListener listener : listeners) {
             try {
                 listener.close();
@@ -64,14 +74,23 @@ class AnnotationCacheTopologyListenerClusterIntegrationTest {
         await("members to form a cluster", () -> first.getCluster().getMembers().size() == 2 && second.getCluster().getMembers().size() == 2
                         && first.getPartitionService().isClusterSafe() && second.getPartitionService().isClusterSafe());
 
-        IMap<String,String> fetch = second.getMap(FETCH_MAP + "UUID:document");
-        fetch.put("auth", "record");
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
+        clientConfig.getNetworkConfig().addAddress("127.0.0.1:" + ports[0], "127.0.0.1:" + ports[1]);
+        client = HazelcastClient.newHazelcastClient(clientConfig);
+        IMap<FetchKey,FetchRecord> fetch = client.getMap(FETCH_MAP);
+        FetchKey fetchKey = new FetchKey("UUID", "document", "auth");
+        fetch.put(fetchKey, new FetchRecord(System.currentTimeMillis(), 1));
+        IMap<AnnotationKey,String> annotations = client.getMap(ANNOTATIONS_MAP);
+        AnnotationKey annotationKey = new AnnotationKey("UUID", "document", "annotation");
+        annotations.put(annotationKey, "cached");
         first.getLifecycleService().terminate();
         await("surviving member to become safe", () -> second.getCluster().getMembers().size() == 1 && second.getPartitionService().isClusterSafe());
 
         secondListener.poll();
 
         assertTrue(fetch.isEmpty());
+        assertTrue(annotations.containsKey(annotationKey), "topology invalidation must leave annotation entries untouched");
     }
 
     private Config clusterConfig(String clusterName, int port, int[] memberPorts) {

@@ -1,5 +1,6 @@
 package datawave.microservice.annotationCache;
 
+import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,6 +19,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionLostEvent;
 
+import datawave.annotation.protobuf.v1.AnnotationMessage;
+import datawave.microservice.annotationCache.api.AnnotationKey;
+import datawave.microservice.annotationCache.api.FetchKey;
+import datawave.microservice.annotationCache.api.FetchRecord;
 import datawave.microservice.annotationCache.config.AnnotationCacheProperties;
 
 class AnnotationCacheTopologyListenerTest {
@@ -35,12 +40,15 @@ class AnnotationCacheTopologyListenerTest {
     }
 
     @Test
-    void partitionLossInvalidatesAllTrackedFetchMaps() {
+    void partitionLossInvalidatesSharedFetchMapAndLeavesAnnotationsUntouched() {
         hazelcastInstance = newHazelcastInstance();
-        IMap<String,String> firstFetch = hazelcastInstance.getMap(FETCH_MAP + "UUID:first");
-        IMap<String,String> secondFetch = hazelcastInstance.getMap(FETCH_MAP + "PAGE_ID:second");
-        firstFetch.put("auth", "record");
-        secondFetch.put("auth", "record");
+        IMap<FetchKey,FetchRecord> fetch = hazelcastInstance.getMap(FETCH_MAP);
+        fetch.put(new FetchKey("UUID", "first", "auth"), new FetchRecord(System.currentTimeMillis(), 1));
+        fetch.put(new FetchKey("PAGE_ID", "second", "auth"), new FetchRecord(System.currentTimeMillis(), 1));
+        IMap<AnnotationKey,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATIONS_MAP);
+        AnnotationKey annotationKey = new AnnotationKey("UUID", "first", "annotation");
+        AnnotationMessage annotation = AnnotationMessage.newBuilder().build();
+        annotations.put(annotationKey, annotation);
 
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
         properties.setTopologySettleDelay(Duration.ZERO);
@@ -51,19 +59,19 @@ class AnnotationCacheTopologyListenerTest {
         listener.partitionLost(event);
         listener.poll();
 
-        assertTrue(firstFetch.isEmpty());
-        assertTrue(secondFetch.isEmpty());
+        assertTrue(fetch.isEmpty());
+        assertTrue(annotations.containsKey(annotationKey));
     }
 
     @Test
-    void tracksFetchMapsCreatedAfterListenerRegistration() {
+    void invalidatesTheFixedFetchMapWhenCreatedAfterListenerRegistration() {
         hazelcastInstance = newHazelcastInstance();
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
         properties.setTopologySettleDelay(Duration.ZERO);
         listener = new AnnotationCacheTopologyListener(hazelcastInstance, properties);
 
-        IMap<String,String> fetch = hazelcastInstance.getMap(FETCH_MAP + "UUID:late");
-        fetch.put("auth", "record");
+        IMap<FetchKey,FetchRecord> fetch = hazelcastInstance.getMap(FETCH_MAP);
+        fetch.put(new FetchKey("UUID", "late", "auth"), new FetchRecord(System.currentTimeMillis(), 1));
         PartitionLostEvent event = mock(PartitionLostEvent.class);
         when(event.getPartitionId()).thenReturn(2);
 

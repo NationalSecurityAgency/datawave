@@ -34,6 +34,7 @@ import com.hazelcast.map.IMap;
 
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationMessage;
+import datawave.microservice.annotationCache.api.AnnotationKey;
 import datawave.microservice.annotationCache.api.AnnotationStorageException;
 import datawave.microservice.annotationCache.api.PersistenceMode;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
@@ -75,12 +76,12 @@ class LoadCacheConsumerTest {
 
     @Test
     void federationLockWaitDefaultsToFiveSeconds() throws Exception {
-        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
-        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+        String mapName = ANNOTATIONS_MAP;
+        IMap<AnnotationKey,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
 
         consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation")));
 
-        verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
+        verify(annotationMap).tryLock(key("doc", "annotation"), 5000, TimeUnit.MILLISECONDS);
     }
 
     @Test
@@ -98,12 +99,12 @@ class LoadCacheConsumerTest {
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
         properties.setFederationLockWait(Duration.ofMillis(1));
         consumer = new LoadCacheConsumer(hazelcastInstance, regionConfiguration, properties).loadCache();
-        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
-        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+        String mapName = ANNOTATIONS_MAP;
+        IMap<AnnotationKey,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
 
         consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation")));
 
-        verify(annotationMap).tryLock("annotation", 1, TimeUnit.MILLISECONDS);
+        verify(annotationMap).tryLock(key("doc", "annotation"), 1, TimeUnit.MILLISECONDS);
     }
 
     @Test
@@ -164,36 +165,36 @@ class LoadCacheConsumerTest {
 
     @Test
     void storesRemoteAnnotationInDocumentMapWithoutInvokingMapStore() throws Exception {
-        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
-        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+        String mapName = ANNOTATIONS_MAP;
+        IMap<AnnotationKey,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
         AnnotationMessage message = message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"));
 
         consumer.accept(message);
 
-        verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
-        verify(annotationMap).putTransient("annotation", message, 120, TimeUnit.SECONDS, 30, TimeUnit.SECONDS);
-        verify(annotationMap).unlock("annotation");
+        verify(annotationMap).tryLock(key("doc", "annotation"), 5000, TimeUnit.MILLISECONDS);
+        verify(annotationMap).putTransient(key("doc", "annotation"), message, 120, TimeUnit.SECONDS, 30, TimeUnit.SECONDS);
+        verify(annotationMap).unlock(key("doc", "annotation"));
         verify(annotationMap, never()).put(any(), any());
         verify(annotationMap, never()).set(any(), any());
     }
 
     @Test
     void leavesExistingImmutableAnnotationUntouched() throws Exception {
-        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
-        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
-        when(annotationMap.containsKey("annotation")).thenReturn(true);
+        String mapName = ANNOTATIONS_MAP;
+        IMap<AnnotationKey,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+        when(annotationMap.containsKey(key("doc", "annotation"))).thenReturn(true);
 
         consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation")));
 
-        verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
-        verify(annotationMap).unlock("annotation");
+        verify(annotationMap).tryLock(key("doc", "annotation"), 5000, TimeUnit.MILLISECONDS);
+        verify(annotationMap).unlock(key("doc", "annotation"));
         verifyNoInteractions(config);
     }
 
     @Test
     void normalizesBatchedMessagesToOneAnnotationPerEntry() throws Exception {
-        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
-        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 0, 0);
+        String mapName = ANNOTATIONS_MAP;
+        IMap<AnnotationKey,AnnotationMessage> annotationMap = annotationMap(mapName, 0, 0);
         Annotation first = annotation("doc", "first");
         Annotation second = annotation("doc", "second");
         consumer.accept(message(REMOTE_REGION, ID_TYPE, first, second));
@@ -202,9 +203,9 @@ class LoadCacheConsumerTest {
         ArgumentCaptor<AnnotationMessage> valueCaptor = ArgumentCaptor.forClass(AnnotationMessage.class);
         // @formatter:off
         verify(annotationMap).putTransient(
-                        eq("first"), valueCaptor.capture(), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
+                        eq(key("doc", "first")), valueCaptor.capture(), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
         verify(annotationMap).putTransient(
-                        eq("second"), valueCaptor.capture(), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
+                        eq(key("doc", "second")), valueCaptor.capture(), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
         // @formatter:on
 
         assertEquals(1, valueCaptor.getAllValues().get(0).getAnnotationsCount());
@@ -217,20 +218,21 @@ class LoadCacheConsumerTest {
 
     @Test
     void usesEachAnnotationsDocumentMapForBatchedMessages() throws Exception {
-        IMap<String,AnnotationMessage> firstMap = annotationMap(ANNOTATIONS_MAP + ID_TYPE + ":first-doc", 0, 0);
-        IMap<String,AnnotationMessage> secondMap = annotationMap(ANNOTATIONS_MAP + ID_TYPE + ":second-doc", 0, 0);
+        IMap<AnnotationKey,AnnotationMessage> annotations = annotationMap(ANNOTATIONS_MAP, 0, 0);
 
         consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("first-doc", "first"), annotation("second-doc", "second")));
 
-        verify(firstMap).putTransient(eq("first"), any(AnnotationMessage.class), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
-        verify(secondMap).putTransient(eq("second"), any(AnnotationMessage.class), eq(0L), eq(TimeUnit.SECONDS), eq(0L), eq(TimeUnit.SECONDS));
+        verify(annotations).putTransient(eq(key("first-doc", "first")), any(AnnotationMessage.class), eq(0L), eq(TimeUnit.SECONDS), eq(0L),
+                        eq(TimeUnit.SECONDS));
+        verify(annotations).putTransient(eq(key("second-doc", "second")), any(AnnotationMessage.class), eq(0L), eq(TimeUnit.SECONDS), eq(0L),
+                        eq(TimeUnit.SECONDS));
     }
 
     @Test
     void duplicateAnnotationIsNoOpWhenAlreadyCached() throws Exception {
-        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
-        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
-        when(annotationMap.containsKey("annotation")).thenReturn(true);
+        String mapName = ANNOTATIONS_MAP;
+        IMap<AnnotationKey,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+        when(annotationMap.containsKey(key("doc", "annotation"))).thenReturn(true);
 
         consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation")));
 
@@ -239,22 +241,22 @@ class LoadCacheConsumerTest {
 
     @Test
     void failsAndLeavesLockUnreleasedWhenLockCannotBeAcquired() throws Exception {
-        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
-        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+        String mapName = ANNOTATIONS_MAP;
+        IMap<AnnotationKey,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
         properties.setFederationLockWait(Duration.ofMillis(150));
         consumer = new LoadCacheConsumer(hazelcastInstance, regionConfiguration, properties).loadCache();
-        when(annotationMap.tryLock("annotation", 150L, TimeUnit.MILLISECONDS)).thenReturn(false);
+        when(annotationMap.tryLock(key("doc", "annotation"), 150L, TimeUnit.MILLISECONDS)).thenReturn(false);
 
         assertThrows(AnnotationStorageException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
-        verify(annotationMap, never()).unlock("annotation");
+        verify(annotationMap, never()).unlock(key("doc", "annotation"));
     }
 
     @Test
     void restoresInterruptWhenLockAcquisitionIsInterrupted() throws Exception {
-        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
-        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
-        when(annotationMap.tryLock("annotation", 5000L, TimeUnit.MILLISECONDS)).thenThrow(new InterruptedException());
+        String mapName = ANNOTATIONS_MAP;
+        IMap<AnnotationKey,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+        when(annotationMap.tryLock(key("doc", "annotation"), 5000L, TimeUnit.MILLISECONDS)).thenThrow(new InterruptedException());
 
         try {
             assertThrows(AnnotationStorageException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
@@ -266,28 +268,32 @@ class LoadCacheConsumerTest {
 
     @Test
     void unlocksEntryWhenTransientInsertionFails() throws Exception {
-        String mapName = ANNOTATIONS_MAP + ID_TYPE + ":doc";
-        IMap<String,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
+        String mapName = ANNOTATIONS_MAP;
+        IMap<AnnotationKey,AnnotationMessage> annotationMap = annotationMap(mapName, 120, 30);
         // @formatter:off
         doThrow(new IllegalStateException("failure")).when(annotationMap).putTransient(
                         any(), any(), eq(120L), eq(TimeUnit.SECONDS), eq(30L), eq(TimeUnit.SECONDS));
         // @formatter:on
 
         assertThrows(IllegalStateException.class, () -> consumer.accept(message(REMOTE_REGION, ID_TYPE, annotation("doc", "annotation"))));
-        verify(annotationMap).tryLock("annotation", 5000, TimeUnit.MILLISECONDS);
-        verify(annotationMap).unlock("annotation");
+        verify(annotationMap).tryLock(key("doc", "annotation"), 5000, TimeUnit.MILLISECONDS);
+        verify(annotationMap).unlock(key("doc", "annotation"));
     }
 
     @SuppressWarnings("unchecked")
-    private IMap<String,AnnotationMessage> annotationMap(String mapName, int ttlSeconds, int maxIdleSeconds) throws Exception {
-        IMap<String,AnnotationMessage> annotationMap = mock(IMap.class);
-        when(hazelcastInstance.<String,AnnotationMessage> getMap(mapName)).thenReturn(annotationMap);
+    private IMap<AnnotationKey,AnnotationMessage> annotationMap(String mapName, int ttlSeconds, int maxIdleSeconds) throws Exception {
+        IMap<AnnotationKey,AnnotationMessage> annotationMap = mock(IMap.class);
+        when(hazelcastInstance.<AnnotationKey,AnnotationMessage> getMap(mapName)).thenReturn(annotationMap);
         MapConfig mapConfig = new MapConfig(mapName).setTimeToLiveSeconds(ttlSeconds).setMaxIdleSeconds(maxIdleSeconds);
-        when(config.findMapConfig(mapName)).thenReturn(mapConfig);
+        when(config.findMapConfig(ANNOTATIONS_MAP)).thenReturn(mapConfig);
         doReturn(true).when(annotationMap).tryLock(any(), anyLong(), any());
         // add default explicit behavior to return false
         when(annotationMap.containsKey(any())).thenReturn(false);
         return annotationMap;
+    }
+
+    private AnnotationKey key(String documentId, String annotationId) {
+        return new AnnotationKey(ID_TYPE, documentId, annotationId);
     }
 
     private Annotation annotation(String documentId, String annotationId) {

@@ -1,43 +1,45 @@
 # Annotation Cache Service
 
-## Purpose
+The service caches annotations in Hazelcast. It also records successful Datawave lookups so Sonicweb can avoid repeating them until the record expires.
 
-This service provides a regional Hazelcast cache for annotation data. Annotation entries are immutable and are keyed by annotation ID inside a per-document map:
+## Shared maps
 
-```text
-annotations:<idType>:<documentId>
-    annotationId -> AnnotationMessage
+| Map | Key | Value | Entry TTL |
+|---|---|---|---|
+| `annotations` | `AnnotationKey(idType, documentId, annotationId)` | `AnnotationMessage` | `annotation-cache.max-cache-age` (default `1h`) |
+| `doc-fetch-record` | `FetchKey(idType, documentId, authorizationHash)` | `FetchRecord(fetchedAt, annotationCountReturned)` | `annotation-cache.max-fetch-age` (default `5m`) |
 
-doc-fetch-record:<idType>:<documentId>
-    authorizationHash -> FetchRecord
-```
+Keys are immutable composite keys. See the [API README](../api/README.md) for map constants, serialization, and compatibility requirements.
 
-There is no separate document-to-annotation-ID index. A document's annotation map is the source of truth for its cached annotations, and consumers enumerate its values when retrieving them.
+Both maps have HASH indexes on `(__key.idType, __key.documentId)` and on `__key.documentId`. These support exact document-and-type lookups and document-ID lookups across identifier types.
 
-## Write and federation model
+The map names do not depend on document IDs. Entry count and memory use still depend on traffic and retention. Sonicweb also uses a separate `annotation-cache` map for health checks.
 
-For a local write-through, Hazelcast invokes `AnnotationMapStore`, which publishes to RabbitMQ and waits for a publisher ACK before returning. A successful ACK marks the write accepted by this service, but confirms broker acceptance only—not downstream processing or persistence. Surviving a broker restart also depends on persistent message delivery to a durable queue. Cache-only and remote-origin entries are not republished by the MapStore.
+## Writes and federation
 
-`RabbitTopologyConfig` declares a durable topic exchange (`annotation`), a durable queue (`annotation.cache`), and a `#` binding that routes all messages from the exchange to that queue. These durable declarations preserve the topology across broker restarts; they do not, on their own, guarantee message survival or consumer processing. Surviving a restart also requires persistent message delivery, and processing depends on consumer behavior.
+For local write-through entries, Hazelcast calls `AnnotationMapStore` to publish to RabbitMQ. The map write waits for a broker ACK and fails if publication fails, is returned or rejected, or times out. Local write-through messages must include `region.id` and `id.type`.
 
-Federated messages are consumed locally only when their `region.id` differs from the configured `region.name`. The message must also contain `id.type`, because `Annotation` contains the document ID but not the identifier type used to construct the per-document map name.
+A broker ACK confirms acceptance, not downstream processing or permanent storage. Surviving a broker restart also requires persistent message delivery to a durable queue. The service declares the durable `annotation` topic exchange, durable `annotation.cache` queue, and a `#` binding.
 
-Federated entries use `putTransient()` so they are not republished by the local `MapStore`. Duplicate delivery is expected and is safe because annotations are immutable and keyed by annotation ID.
+Cache-only and remote-origin entries are not republished. The federated consumer ignores messages from the local region and requires `region.id` and `id.type` on remote messages. It inserts each annotation under a distributed lock, using `putTransient()` to bypass the MapStore and prevent publication loops. Duplicate deliveries leave existing entries unchanged. This assumes immutable annotation IDs.
 
-Messages use these shared `AnnotationMessage.parameters` entries:
+## Fetch markers and freshness
 
-```text
-id.type   - identifier type used in the Hazelcast document map name
-region.id - region in which the message originated
-```
+A fetch marker records a successful Datawave lookup for one authorization context. It does not guarantee that the annotation cache contains a complete snapshot. Its presence and TTL determine freshness; `FetchRecord` fields are diagnostic only.
 
-## Fetch freshness
+Sonicweb writes a marker after source retrieval and cache merge succeed. Empty and not-found responses also receive markers. Errors do not. Cache hits do not renew markers, and expired markers cause a source lookup on the next request, not a background refresh. Because markers are written after retrieval, source latency adds to the age of the source observation.
 
-Annotation maps hold the cached annotation payloads; their companion `doc-fetch-record:<idType>:<documentId>` maps hold freshness markers keyed by `authorizationHash`. A marker means the annotation set for that document and authorization context has been checked and may be treated as fresh until the marker expires. The marker contains no annotation data, so its validity depends on the associated annotation map still containing the complete set represented by that freshness decision.
+Annotation removal, expiration, and eviction invalidate markers for the matching `(idType, documentId)`. Clearing or evicting the annotation map clears all markers. Member loss, partition loss, failed replica migration, and split-brain merge events request a delayed marker clear after the cluster settles and is safe.
 
-Maintain the annotation map and its fetch records as one logical cache state: removing, expiring, evicting, or clearing annotation data invalidates the companion fetch records. Otherwise, a still-live marker could cause incomplete cached data to be treated as fresh. Fetch records expire by `max-fetch-age`, which must not exceed annotation `max-cache-age`; invalidation may cause an extra source fetch, but avoids trusting stale freshness metadata.
+Invalidation is asynchronous. Concurrent requests may recreate markers, and missed invalidations are bounded by marker TTL. Clear operations are not barriers against concurrent writes.
 
-`AnnotationSyncListener` clears a document's fetch records after annotation removals, expirations, evictions, or map clears. After partition loss, member removal, failed replica migration, or a split-brain merge event, `AnnotationCacheTopologyListener` clears tracked fetch maps once the cluster has settled and is safe. These topology changes may leave annotation maps incomplete, so discarding freshness markers allows the cache to be repopulated rather than treated as complete. Annotation entries themselves are the complete read set, so there is no derived index to rebuild or reconcile.
+## Sonicweb reads and clears
+
+With result caching enabled, Sonicweb checks the caller's authorization-specific marker before querying Datawave. After a source lookup, it merges annotations with `putIfAbsent`, so existing cached IDs take precedence, then writes the marker. It returns source results combined with cached document entries, even if concurrent cache loss removes entries during the request. Visibility checks and cache-hit auditing still apply.
+
+When `sonicweb.annotation-cache.cache-datawave-results=false`, every read queries Datawave. Sonicweb ignores cache-only entries and combines source results with cached write-through entries. Markers do not suppress source reads, and write-through persistence is unchanged.
+
+Clients can clear all entries, one `(idType, documentId)`, or one document ID across identifier types. Scoped clears use indexed exact predicates.
 
 ## Configuration
 
@@ -51,21 +53,41 @@ annotation-cache:
   topology-poll-interval-ms: 5000
 ```
 
-Both TTLs must be positive whole seconds supported by Hazelcast, and annotation TTL must be greater than or equal to fetch TTL.
+Both TTLs must be positive whole seconds, and `max-fetch-age` must not exceed `max-cache-age`. Max-idle expiration is disabled. Federation lock wait and topology poll interval must be positive; topology settle delay may be zero.
 
-## Assumptions and guarantees
+RabbitMQ bindings and connection settings are supplied separately through application configuration. Bind `persisted-out-0` and `loadCache-in-0` to `annotation`, use consumer group `cache`, and set the content type to `application/x-protobuf`. Publication requires correlated confirms and returns. The companion Helm configuration is `configuration/configMapFiles/annotation-cache.yml` in the `datawave-helm-charts` repository.
 
-- Annotation IDs identify immutable annotation content.
-- RabbitMQ delivery and federation are at-least-once; persistence consumers must tolerate duplicates.
-- A message originating in the local region is already present locally and is ignored by the federated consumer.
-- `region.name` is configured consistently for each deployment.
-- `id.type` and `region.id` are present on newly produced messages; the MapStore rejects local write-through annotations missing either value before publishing.
-- Authorization decisions remain the responsibility of calling applications; this service does not authorize annotations.
-- A publisher confirm means broker acceptance, not Accumulo persistence or federation completion.
+## Build and tests
 
-## Consistency notes
+From the Datawave repository root, build and install the API and service:
 
-- Annotation and fetch-record changes are not one atomic transaction.
-- Hazelcast entry listeners are asynchronous. Fetch invalidation after annotation removal can have a short delay; callers that clear annotation data should also clear the corresponding fetch records.
-- A topology event may cause harmless extra backend reads because fetch records are discarded.
-- Per-document annotation and fetch maps remain distributed objects after their entries are cleared unless explicitly destroyed.
+```bash
+mvn -f microservices/services/annotation-cache/pom.xml -pl service -am clean install
+```
+
+Then, from the Sonicweb repository root:
+
+```bash
+mvn -pl service -am clean verify
+```
+
+Sonicweb uses `gov.nsa.datawave.microservice:annotation-cache-api:1.0.0-SNAPSHOT`, so install the API first. The aggregate `services` profile includes annotation-cache; its service module is included unless `onlyServiceApis` is set.
+
+Server tests cover serialization, indexed queries, expiration, map events, and topology recovery using isolated Hazelcast instances. Sonicweb tests cover client repository behavior. For opt-in raw Hazelcast measurements, see the [scaling guide](scaling-harness.md).
+
+### Member/client compatibility check
+
+From `microservices/services/annotation-cache`, run:
+
+```bash
+SONICWEB_ROOT=/path/to/sonicweb ./verify-supported-hazelcast-pairing.sh
+```
+
+The runner starts separate member and client JVMs using each application's resolved runtime dependencies. It reports their Hazelcast versions and checks key equality, reads, `putIfAbsent`, removal, locks, and both query shapes without custom serializer registration. Rerun it when either application's dependencies change. The last documented pairing was Hazelcast `5.1.2` member / `5.1.7` client; these are not required versions.
+
+The runner requires Bash, Maven, Java, GNU `timeout`, and access to both applications' dependencies. It rebuilds and installs the server, compiles Sonicweb, and disables Maven's build cache. It does not run Sonicweb's full verification suite; retain the separate `clean verify` command above.
+
+| Environment variable | Default | Purpose |
+|---|---|---|
+| `SONICWEB_ROOT` | `/app/sonicweb` | Sonicweb repository root. |
+| `ANNOTATION_CACHE_PAIRING_PORT` | `57991` | Loopback member port; choose an unused port for concurrent runs. |

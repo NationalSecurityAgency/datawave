@@ -30,6 +30,7 @@ import datawave.annotation.protobuf.v1.AnnotationMessage;
 import datawave.microservice.annotationCache.AnnotationMapStore;
 import datawave.microservice.annotationCache.AnnotationMessagePublisher;
 import datawave.microservice.annotationCache.AnnotationSyncListener;
+import datawave.microservice.annotationCache.api.AnnotationKey;
 import datawave.microservice.annotationCache.api.PersistenceMode;
 import datawave.microservice.annotationCache.api.RegionConfiguration;
 
@@ -71,20 +72,20 @@ class AnnotationPersistenceIntegrationTest {
         hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         listener.setHazelcastInstance(hazelcastInstance);
 
-        IMap<String,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATIONS_MAP + ID_TYPE + ":" + DOCUMENT_ID);
+        IMap<AnnotationKey,AnnotationMessage> annotations = hazelcastInstance.getMap(ANNOTATIONS_MAP);
         // @formatter:off
         AnnotationMessage hydration = message("hydration", LOCAL_REGION, PersistenceMode.CACHE_ONLY);
         AnnotationMessage localWrite = message("local-write", LOCAL_REGION, PersistenceMode.WRITE_THROUGH);
         AnnotationMessage remoteWrite = message("remote-write", REMOTE_REGION, PersistenceMode.WRITE_THROUGH);
         // @formatter:on
 
-        annotations.set("hydration", hydration);
-        annotations.set("local-write", localWrite);
-        annotations.set("remote-write", remoteWrite);
+        annotations.set(new AnnotationKey(ID_TYPE, DOCUMENT_ID, "hydration"), hydration);
+        annotations.set(new AnnotationKey(ID_TYPE, DOCUMENT_ID, "local-write"), localWrite);
+        annotations.set(new AnnotationKey(ID_TYPE, DOCUMENT_ID, "remote-write"), remoteWrite);
 
-        assertEquals(hydration, annotations.get("hydration"));
-        assertEquals(localWrite, annotations.get("local-write"));
-        assertEquals(remoteWrite, annotations.get("remote-write"));
+        assertEquals(hydration, annotations.get(new AnnotationKey(ID_TYPE, DOCUMENT_ID, "hydration")));
+        assertEquals(localWrite, annotations.get(new AnnotationKey(ID_TYPE, DOCUMENT_ID, "local-write")));
+        assertEquals(remoteWrite, annotations.get(new AnnotationKey(ID_TYPE, DOCUMENT_ID, "remote-write")));
         verify(publisher, times(1)).send(any(Message.class));
     }
 

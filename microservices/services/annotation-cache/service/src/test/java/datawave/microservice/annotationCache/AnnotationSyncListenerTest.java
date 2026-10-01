@@ -2,6 +2,7 @@ package datawave.microservice.annotationCache;
 
 import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MAP;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -15,13 +16,17 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapEvent;
+import com.hazelcast.query.Predicate;
+
+import datawave.microservice.annotationCache.api.AnnotationKey;
+import datawave.microservice.annotationCache.api.FetchKey;
+import datawave.microservice.annotationCache.api.FetchRecord;
 
 class AnnotationSyncListenerTest {
-    private static final String CACHE_KEY = "UUID:document";
-    private static final String ANNOTATION_MAP = ANNOTATIONS_MAP + CACHE_KEY;
+    private static final AnnotationKey KEY = new AnnotationKey("UUID", "document", "annotation");
 
     private HazelcastInstance hazelcastInstance;
-    private IMap<Object,Object> fetchRecords;
+    private IMap<FetchKey,FetchRecord> fetchRecords;
     private AnnotationSyncListener listener;
 
     @BeforeEach
@@ -29,26 +34,27 @@ class AnnotationSyncListenerTest {
     void setUp() {
         hazelcastInstance = mock(HazelcastInstance.class);
         fetchRecords = mock(IMap.class);
-        when(hazelcastInstance.getMap(FETCH_MAP + CACHE_KEY)).thenReturn(fetchRecords);
+        when(hazelcastInstance.<FetchKey,FetchRecord> getMap(FETCH_MAP)).thenReturn(fetchRecords);
 
         listener = new AnnotationSyncListener();
         listener.setHazelcastInstance(hazelcastInstance);
     }
 
     @Test
-    void entryRemovalEvictionAndExpirationInvalidateDocumentFetchRecords() {
-        EntryEvent<String,Object> event = entryEvent(ANNOTATION_MAP);
+    void entryRemovalEvictionAndExpirationRemoveMatchingDocumentFetchRecords() {
+        EntryEvent<AnnotationKey,Object> event = entryEvent(ANNOTATIONS_MAP, KEY);
 
         listener.entryRemoved(event);
         listener.entryEvicted(event);
         listener.entryExpired(event);
 
-        verify(fetchRecords, times(3)).clear();
+        verify(fetchRecords, times(3)).removeAll(any(Predicate.class));
+        verify(fetchRecords, never()).clear();
     }
 
     @Test
-    void mapClearAndEvictInvalidateDocumentFetchRecords() {
-        MapEvent event = mapEvent(ANNOTATION_MAP);
+    void mapClearAndEvictInvalidateAllFetchRecords() {
+        MapEvent event = mapEvent(ANNOTATIONS_MAP);
 
         listener.mapCleared(event);
         listener.mapEvicted(event);
@@ -57,27 +63,28 @@ class AnnotationSyncListenerTest {
     }
 
     @Test
-    void ignoresNonAnnotationMapsAndIncompleteAnnotationMapNames() {
-        listener.entryRemoved(entryEvent("other-map"));
-        listener.entryExpired(entryEvent(ANNOTATIONS_MAP));
+    void ignoresNonAnnotationEventsAndEntriesWithoutAValidKey() {
+        listener.entryRemoved(entryEvent("other-map", KEY));
+        listener.entryExpired(entryEvent(ANNOTATIONS_MAP, null));
         listener.mapCleared(mapEvent("other-map"));
-        listener.mapEvicted(mapEvent(ANNOTATIONS_MAP));
+        listener.mapEvicted(mapEvent(FETCH_MAP));
 
-        verify(hazelcastInstance, never()).getMap(FETCH_MAP + CACHE_KEY);
+        verify(hazelcastInstance, never()).getMap(FETCH_MAP);
     }
 
     @Test
     void removalDoesNotFailBeforeHazelcastInstanceIsInjected() {
         AnnotationSyncListener uninitialized = new AnnotationSyncListener();
 
-        uninitialized.entryExpired(entryEvent(ANNOTATION_MAP));
-        uninitialized.mapCleared(mapEvent(ANNOTATION_MAP));
+        uninitialized.entryExpired(entryEvent(ANNOTATIONS_MAP, KEY));
+        uninitialized.mapCleared(mapEvent(ANNOTATIONS_MAP));
     }
 
     @SuppressWarnings("unchecked")
-    private EntryEvent<String,Object> entryEvent(String mapName) {
-        EntryEvent<String,Object> event = mock(EntryEvent.class);
+    private EntryEvent<AnnotationKey,Object> entryEvent(String mapName, AnnotationKey key) {
+        EntryEvent<AnnotationKey,Object> event = mock(EntryEvent.class);
         when(event.getName()).thenReturn(mapName);
+        when(event.getKey()).thenReturn(key);
         return event;
     }
 
