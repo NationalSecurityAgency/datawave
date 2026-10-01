@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -28,17 +30,34 @@ public class KeywordQueryUtil {
 
     /**
      * Choose the best language from a non-null, non-empty list of languages, otherwise return null.
+     * <p>
+     * If preferredLanguages is provided, find the intersection of available and preferred languages
+     * <p>
+     * If YAKE cannot provide a language, take the first available language
      *
      * @param languages
      *            a list to choose from
+     * @param preferredLanguages
+     *            an optional set of preferred language in upper case
      * @return the best identifier or null.
      */
-    public static String chooseBestLanguage(List<String> languages) {
+    public static String chooseBestLanguage(List<String> languages, Set<String> preferredLanguages) {
         if (languages == null || languages.isEmpty()) {
             return null;
         }
 
-        for (String language : languages) {
+        List<String> normalizedLanguages = languages.stream().map(String::toUpperCase).collect(Collectors.toList());
+        List<String> availablePreferredLanguages = normalizedLanguages;
+        if (preferredLanguages != null && !preferredLanguages.isEmpty()) {
+            availablePreferredLanguages = normalizedLanguages.stream().filter(preferredLanguages::contains).collect(Collectors.toList());
+
+            if (availablePreferredLanguages.isEmpty()) {
+                // no overlap so revert back to available languages
+                availablePreferredLanguages = normalizedLanguages;
+            }
+        }
+
+        for (String language : availablePreferredLanguages) {
             // if the language can't be found in the language registry, the language
             // registry will return English. So, if the language name returned by the
             // registry and the input language name match - it confirms we have
@@ -52,7 +71,7 @@ public class KeywordQueryUtil {
 
         // if we get here, we couldn't find an ideal language, just return the first value, yake will default
         // to processing the data as if it were English.
-        return languages.get(0);
+        return availablePreferredLanguages.get(0);
     }
 
     /**

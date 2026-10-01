@@ -3,10 +3,12 @@ package datawave.query.tables.keyword;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.junit.Before;
@@ -65,6 +67,36 @@ public class KeywordQueryUtilTest {
                         KeywordQueryUtil.getStringValuesFromAttribute(attributesHetOne));
         assertMultipleValues(List.of("VALUE_ONE", "content attribute one", "content attribute two", "content attribute two"),
                         KeywordQueryUtil.getStringValuesFromAttribute(attributesHetTwo));
+    }
+
+    @Test
+    public void testPreferredLanguage() {
+        String best = KeywordQueryUtil.chooseBestLanguage(List.of("A", "B", "C"), Set.of());
+        assertEquals("A", best);
+
+        best = KeywordQueryUtil.chooseBestLanguage(null, null);
+        assertNull(best);
+
+        best = KeywordQueryUtil.chooseBestLanguage(List.of(), null);
+        assertNull(best);
+
+        best = KeywordQueryUtil.chooseBestLanguage(List.of("A", "B", "C"), null);
+        assertEquals("A", best);
+
+        best = KeywordQueryUtil.chooseBestLanguage(List.of("A", "B", "C"), Set.of("C"));
+        assertEquals("C", best);
+
+        best = KeywordQueryUtil.chooseBestLanguage(List.of("A", "B", "C"), Set.of("C", "D", "E"));
+        assertEquals("C", best);
+
+        best = KeywordQueryUtil.chooseBestLanguage(List.of("ENGLISH", "B", "C"), Set.of("C", "D", "E"));
+        assertEquals("C", best);
+
+        best = KeywordQueryUtil.chooseBestLanguage(List.of("ENGLISH", "B", "C"), Set.of());
+        assertEquals("ENGLISH", best);
+
+        best = KeywordQueryUtil.chooseBestLanguage(List.of("A", "ENGLISH", "C"), Set.of());
+        assertEquals("ENGLISH", best);
     }
 
     public static void assertSingleValue(String expectedValue, List<String> results) {
