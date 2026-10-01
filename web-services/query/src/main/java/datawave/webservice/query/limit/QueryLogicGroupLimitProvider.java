@@ -73,7 +73,7 @@ public class QueryLogicGroupLimitProvider {
 
             // Verify that the pattern compiles if it is not simply a * as is occasionally used as a wildcard in configurations.
             try {
-                if (!queryLogicPattern.equals(QueryLimitConstants.ASTERISK)) {
+                if (!queryLogicPattern.equals(QueryLimiterUtils.ASTERISK)) {
                     Pattern.compile(queryLogicPattern);
                 }
             } catch (PatternSyntaxException e) {

@@ -26,6 +26,12 @@ public class QueryLogicGroupLimitConfiguration {
         this.queryLimit = queryLimit;
     }
 
+    public QueryLogicGroupLimitConfiguration(QueryLogicGroupLimitConfiguration other) {
+        this.groupName = other.groupName;
+        this.queryLogicPattern = other.queryLogicPattern;
+        this.queryLimit = other.queryLimit;
+    }
+
     public String getGroupName() {
         return groupName;
     }
@@ -48,6 +54,15 @@ public class QueryLogicGroupLimitConfiguration {
 
     public void setQueryLimit(int queryLimit) {
         this.queryLimit = queryLimit;
+    }
+
+    /**
+     * Return a deep copy of this {@link QueryLogicGroupLimitConfiguration}.
+     *
+     * @return the deep copy
+     */
+    public QueryLogicGroupLimitConfiguration deepCopy() {
+        return new QueryLogicGroupLimitConfiguration(this);
     }
 
     @Override

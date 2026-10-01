@@ -200,7 +200,7 @@ public class QueryExpirationBeanTest {
         // Verify that the query IDs not in the query cache are no longer counted towards query limits.
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Set<String>> captor = ArgumentCaptor.forClass(Set.class);
-        verify(queryLimiter).stopCountingQueriesTowardsLimits(captor.capture());
+        verify(queryLimiter).markInactive(captor.capture());
         assertThat(captor.getValue()).containsExactlyInAnyOrder("otherQuery1", "otherQuery2", "otherQuery3");
     }
 
@@ -274,7 +274,7 @@ public class QueryExpirationBeanTest {
         verify(query, never()).closeConnection(connectionFactory);
 
         // Verify that we do not stop counting the query towards query limits.
-        verify(queryLimiter, never()).stopCountingQueryTowardsLimits(queryId);
+        verify(queryLimiter, never()).markInactive(queryId);
 
         // Verify the query is still in the query cache.
         assertThat(queryCache.get(queryId)).isNotNull();
@@ -301,7 +301,7 @@ public class QueryExpirationBeanTest {
         verify(query).closeConnection(connectionFactory);
 
         // Verify that we stopped counting the query towards query limits.
-        verify(queryLimiter).stopCountingQueryTowardsLimits(queryId);
+        verify(queryLimiter).markInactive(queryId);
 
         // Verify the query is no longer in the query cache.
         assertThat(queryCache.get(queryId)).isNull();
