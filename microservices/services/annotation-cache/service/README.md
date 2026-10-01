@@ -54,7 +54,7 @@ Annotation and fetch TTLs are validated at startup. Annotation TTL must be great
 - RabbitMQ delivery and federation are at-least-once; persistence consumers must tolerate duplicates.
 - A message originating in the local region is already present locally and is ignored by the federated consumer.
 - `region.name` is configured consistently for each deployment.
-- `id.type` and `region.id` are present on newly produced messages.
+- `id.type` and `region.id` are present on newly produced messages; the MapStore rejects local write-through annotations missing either value before publishing.
 - Visibility and authorization decisions remain the responsibility of Sonicweb; this service does not authorize annotations.
 - Publisher confirmation means broker acceptance, not Accumulo persistence or federation completion.
 

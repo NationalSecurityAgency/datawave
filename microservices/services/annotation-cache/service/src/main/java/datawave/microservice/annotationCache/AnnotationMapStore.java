@@ -1,5 +1,6 @@
 package datawave.microservice.annotationCache;
 
+import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.PERSISTENCE_MODE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
 
@@ -96,12 +97,17 @@ public class AnnotationMapStore implements MapStore<String,Object>, HazelcastIns
         }
 
         String sourceRegion = annotationMessage.getParametersOrDefault(REGION_ID_PARAMETER, "");
-        if (!sourceRegion.isBlank() && !localRegion.equals(sourceRegion)) {
+        if (sourceRegion.isBlank()) {
+            throw new AnnotationStorageException("Write-through annotation " + s + " is missing source region parameter " + REGION_ID_PARAMETER);
+        }
+        if (!localRegion.equals(sourceRegion)) {
             log.debug("Skipping RabbitMQ publication of annotation {} originating in region {}", s, sourceRegion);
             return;
         }
-        if (sourceRegion.isBlank()) {
-            log.warn("Annotation {} has no source region; treating it as a local write-through annotation for compatibility", s);
+
+        String idType = annotationMessage.getParametersOrDefault(ID_TYPE_PARAMETER, "");
+        if (idType.isBlank()) {
+            throw new AnnotationStorageException("Write-through annotation " + s + " is missing parameter " + ID_TYPE_PARAMETER);
         }
 
         String correlationId = UUID.randomUUID().toString();

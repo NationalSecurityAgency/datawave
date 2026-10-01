@@ -1,5 +1,6 @@
 package datawave.microservice.annotationCache;
 
+import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.PERSISTENCE_MODE_PARAMETER;
 import static datawave.microservice.annotationCache.api.Constants.REGION_ID_PARAMETER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -94,6 +95,7 @@ class AnnotationMapStoreTest {
         // @formatter:off
         AnnotationMessage annotationMessage = AnnotationMessage.newBuilder()
                         .putParameters(REGION_ID_PARAMETER, LOCAL_REGION)
+                        .putParameters(ID_TYPE_PARAMETER, "uuid")
                         .build();
         // @formatter:on
 
@@ -103,17 +105,31 @@ class AnnotationMapStoreTest {
     }
 
     @Test
-    void missingRegionDefaultsToLocalForCompatibility() {
-        confirmPublication(true, null);
+    void missingRegionRejectsWriteThroughAnnotation() {
         // @formatter:off
         AnnotationMessage annotationMessage = AnnotationMessage.newBuilder()
                         .putParameters(PERSISTENCE_MODE_PARAMETER, PersistenceMode.WRITE_THROUGH.value())
+                        .putParameters(ID_TYPE_PARAMETER, "uuid")
                         .build();
         // @formatter:on
 
-        mapStore.store("annotation", annotationMessage);
+        assertThrows(AnnotationStorageException.class, () -> mapStore.store("annotation", annotationMessage));
 
-        verify(publisher).send(any(Message.class));
+        verify(publisher, never()).send(any());
+    }
+
+    @Test
+    void missingIdTypeRejectsLocalWriteThroughAnnotation() {
+        // @formatter:off
+        AnnotationMessage annotationMessage = AnnotationMessage.newBuilder()
+                        .putParameters(PERSISTENCE_MODE_PARAMETER, PersistenceMode.WRITE_THROUGH.value())
+                        .putParameters(REGION_ID_PARAMETER, LOCAL_REGION)
+                        .build();
+        // @formatter:on
+
+        assertThrows(AnnotationStorageException.class, () -> mapStore.store("annotation", annotationMessage));
+
+        verify(publisher, never()).send(any());
     }
 
     @Test
@@ -192,7 +208,7 @@ class AnnotationMapStoreTest {
     }
 
     private AnnotationMessage message(String sourceRegion, PersistenceMode persistenceMode) {
-        return AnnotationMessage.newBuilder().putParameters(REGION_ID_PARAMETER, sourceRegion)
+        return AnnotationMessage.newBuilder().putParameters(REGION_ID_PARAMETER, sourceRegion).putParameters(ID_TYPE_PARAMETER, "uuid")
                         .putParameters(PERSISTENCE_MODE_PARAMETER, persistenceMode.value()).build();
     }
 
