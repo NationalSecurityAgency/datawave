@@ -190,7 +190,7 @@ jobs:
       uses: aquasecurity/trivy-action@v0.36.0
       continue-on-error: true
       with:
-        image-ref: '${{ env.GITHUB_REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}:${{ steps.project-version.outputs.version }}'
+        image-ref: '${{ env.GITHUB_REGISTRY }}/nationalsecurityagency${{ env.IMAGE_NAME }}/${{ matrix.image }}:${{ steps.project-version.outputs.version }}'
         format: sarif
         output: trivy-results.sarif
         severity: CRITICAL,HIGH
