@@ -55,8 +55,8 @@ configureTest \
       ExtractEmptyKeywordsByPageId \
       "Performs keyword extraction based on the PAGE_ID field in our wiki data, expected no keywords" \
       "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/generateTagCloud" \
-      "application/xml;charset=UTF-8" \
-      200
+      "" \
+      204
 
 runTest
 
