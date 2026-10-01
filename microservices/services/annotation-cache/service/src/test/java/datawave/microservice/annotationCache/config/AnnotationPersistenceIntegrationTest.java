@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -52,7 +53,7 @@ class AnnotationPersistenceIntegrationTest {
     void onlyLocalWriteThroughAnnotationsArePublished() {
         AnnotationMessagePublisher publisher = mock(AnnotationMessagePublisher.class);
         // @formatter:off
-        org.mockito.Mockito.when(publisher.send(any(Message.class))).thenAnswer(invocation -> {
+        when(publisher.send(any(Message.class))).thenAnswer(invocation -> {
             Message<?> message = invocation.getArgument(0);
             CorrelationData correlationData = (CorrelationData) message.getHeaders().get("amqp_publishConfirmCorrelation");
             correlationData.getFuture().set(new CorrelationData.Confirm(true, null));

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
@@ -42,7 +43,7 @@ class AnnotationCacheTopologyListenerTest {
         secondFetch.put("auth", "record");
 
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
-        properties.setTopologySettleDelay(java.time.Duration.ZERO);
+        properties.setTopologySettleDelay(Duration.ZERO);
         listener = new AnnotationCacheTopologyListener(hazelcastInstance, properties);
         PartitionLostEvent event = mock(PartitionLostEvent.class);
         when(event.getPartitionId()).thenReturn(1);
@@ -58,7 +59,7 @@ class AnnotationCacheTopologyListenerTest {
     void tracksFetchMapsCreatedAfterListenerRegistration() {
         hazelcastInstance = newHazelcastInstance();
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
-        properties.setTopologySettleDelay(java.time.Duration.ZERO);
+        properties.setTopologySettleDelay(Duration.ZERO);
         listener = new AnnotationCacheTopologyListener(hazelcastInstance, properties);
 
         IMap<String,String> fetch = hazelcastInstance.getMap(FETCH_MAP + "UUID:late");
@@ -76,10 +77,10 @@ class AnnotationCacheTopologyListenerTest {
     void validatesTopologyTimingSettings() {
         hazelcastInstance = newHazelcastInstance();
         AnnotationCacheProperties properties = new AnnotationCacheProperties();
-        properties.setTopologySettleDelay(java.time.Duration.ofNanos(-1));
+        properties.setTopologySettleDelay(Duration.ofNanos(-1));
         assertThrows(IllegalStateException.class, () -> new AnnotationCacheTopologyListener(hazelcastInstance, properties));
 
-        properties.setTopologySettleDelay(java.time.Duration.ZERO);
+        properties.setTopologySettleDelay(Duration.ZERO);
         properties.setTopologyPollIntervalMs(0);
         assertThrows(IllegalStateException.class, () -> new AnnotationCacheTopologyListener(hazelcastInstance, properties));
     }
