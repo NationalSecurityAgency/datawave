@@ -54,21 +54,20 @@ public class FieldNameAliaserNormalizerTest {
     }
 
     @Test
-    public void testNormalization() {
-
+    public void testNormalizationAndRepeatedSetup() {
+        // Verify repeated setup rebuilds both exact and wildcard alias caches.
         FieldNameAliaserNormalizer fnan = new FieldNameAliaserNormalizer();
+        conf.set("test" + FieldNameAliaserNormalizer.FIELD_ALIASES, "FIELD:FIRST,PREFIX*:FIRST_*");
+        fnan.setup(TypeRegistry.getType("test"), conf);
+        Assert.assertEquals("FIRST", fnan.normalizeAndAlias("FIELD"));
+        Assert.assertEquals("FIRST_VALUE", fnan.normalizeAndAlias("PREFIXVALUE"));
+
+        conf.set("test" + FieldNameAliaserNormalizer.FIELD_ALIASES, "FIELD:SECOND,PREFIX*:SECOND_*");
         fnan.setup(TypeRegistry.getType("test"), conf);
 
-        String testFieldName = "HeLLo_wOrLd";
-        String normalizedFieldName = fnan.normalizeAndAlias(testFieldName);
-
-        Assert.assertEquals("HELLO_WORLD", normalizedFieldName);
-
-        testFieldName = "Bar_3";
-
-        normalizedFieldName = fnan.normalizeAndAlias(testFieldName);
-
-        Assert.assertEquals("BAR_3", normalizedFieldName);
+        Assert.assertEquals("SECOND", fnan.normalizeAndAlias("FIELD"));
+        Assert.assertEquals("SECOND_VALUE", fnan.normalizeAndAlias("PREFIXVALUE"));
+        Assert.assertEquals("BAR_3", fnan.normalizeAndAlias("Bar_3"));
     }
 
 }

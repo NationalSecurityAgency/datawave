@@ -539,13 +539,15 @@ public class AbstractIngest {
             try (BatchWriter bw = client.createBatchWriter(SHARD)) {
                 Mutation m = new Mutation(ROW);
                 Text cf = new Text("tf");
+                Map<String,TermWeight.Info.Builder> offsets = new HashMap<>();
                 for (int i = 0; i < values.length; i++) {
-                    String value = values[i];
-                    Text cq = new Text(DATATYPE + "\0" + uid + "\0" + value + "\0" + field);
+                    offsets.computeIfAbsent(values[i], value -> TermWeight.Info.newBuilder()).addTermOffset(i);
+                }
+                // Store every occurrence of a term in one value instead of overwriting identical keys.
+                for (Map.Entry<String,TermWeight.Info.Builder> entry : offsets.entrySet()) {
+                    Text cq = new Text(DATATYPE + "\0" + uid + "\0" + entry.getKey() + "\0" + field);
                     ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());
-
-                    TermWeight.Info info = TermWeight.Info.newBuilder().addTermOffset(i).build();
-                    Value termFrequencyValue = new Value(info.toByteArray());
+                    Value termFrequencyValue = new Value(entry.getValue().build().toByteArray());
                     m.put(cf, cq, cv, TIMESTAMP, termFrequencyValue);
                 }
                 bw.addMutation(m);

@@ -18,7 +18,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -186,8 +185,8 @@ public class ExcerptIT extends AbstractQueryTest {
         expectHitTermsOptionalAnyOf("TF:b", "TF:c", "TF.234:b c");
         // b first occurs in this excerpt, so it is returned
         expectExcerpt("x [b] y");
-        // first match on the phrase, and also on c
-        expectExcerpt("0 [b] [c]");
+        // The two-token buffer before the phrase retains both zero occurrences.
+        expectExcerpt("0 0 [b] [c]");
         // "0 [c] 0" not included because it is not the first match on c
 
         planAndExecuteQuery();
@@ -214,7 +213,6 @@ public class ExcerptIT extends AbstractQueryTest {
         planAndExecuteQuery();
     }
 
-    @Disabled
     @Test
     public void testDuplicateCharacterWithExcerpt() throws Exception {
         givenDate(ingest.getDate());
@@ -226,9 +224,8 @@ public class ExcerptIT extends AbstractQueryTest {
         // there are two phrase hits, and they both get populated
         expectHitTermsOptionalAnyOf("TF:p", "TF:t", "TF.567:p t");
 
-        // this isn't actually returned
-        expectExcerpt("k k p [p] [t] k k");
-        // actually returned today "[p] [t] k"
+        // TF/2 includes offsets 1-6 around the phrase at 3-4; both occurrences of the hit term p are highlighted.
+        expectExcerpt("k [p] [p] [t] k k");
 
         planAndExecuteQuery();
     }
@@ -243,7 +240,8 @@ public class ExcerptIT extends AbstractQueryTest {
         expectHitTermsOptionalAnyOf("TF:a", "TF:b", "TF:c", "TF.234:b c");
         expectExcerpt("z [a]");
         expectExcerpt("x [b] y");
-        expectExcerpt("0 [b] [c]");
+        // Repeated context terms each occupy a position in the two-token buffer.
+        expectExcerpt("0 0 [b] [c]");
 
         planAndExecuteQuery();
     }

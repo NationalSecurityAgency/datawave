@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,11 +19,11 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.log4j.Logger;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
@@ -37,13 +38,15 @@ import datawave.query.iterator.NestedIterator;
  */
 class AndOrIteratorIT {
 
+    private static final long RANDOM_SEED = 0xA11D0A17L;
+
     // elements will sort lexicographically, not numerically
     private final SortedSet<String> uidsAll = new TreeSet<>(Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"));
     private final SortedSet<String> uidsEven = new TreeSet<>(Arrays.asList("2", "4", "6", "8", "10"));
     private final SortedSet<String> uidsOdd = new TreeSet<>(Arrays.asList("1", "3", "5", "7", "9", "11"));
     private final SortedSet<String> uidsPrime = new TreeSet<>(Arrays.asList("1", "2", "3", "5", "7", "11"));
 
-    private final Random rand = new Random();
+    private final Random rand = new Random(RANDOM_SEED);
 
     private static final Logger log = Logger.getLogger(AndOrIteratorIT.class);
 
@@ -412,10 +415,7 @@ class AndOrIteratorIT {
         }
     }
 
-    // Several edge cases exists where the following query will skip documents and cause valid hits to be missed.
-    // A fix will be made later, this test exists to document the error condition and validate any future fixes.
     // A && (B || !C)
-    @Disabled
     @Test
     void testByVolumeIntersectionWithNestedUnionThatContainsANegation() throws IOException {
         int max = 100;
@@ -517,9 +517,7 @@ class AndOrIteratorIT {
 
     // === test cases discovered via random tests ===
 
-    // "4" is missing. "8" is correctly evaluated via context excludes, once the b-term include is exhausted. This is an initial state problem.
     // A && (B || !C)
-    @Disabled
     @Test
     void testCase01() throws IOException {
         SortedSet<String> uidsA = new TreeSet<>(Arrays.asList("10", "4", "6", "7", "8"));
@@ -579,8 +577,6 @@ class AndOrIteratorIT {
         driveIterator(itr, countA, fieldIndexCounts);
     }
 
-    // originally missed 3, 5
-    @Disabled
     @Test
     void testCase04() throws IOException {
         SortedSet<String> uidsA = new TreeSet<>(Arrays.asList("1", "3", "5", "7", "9"));
@@ -606,7 +602,6 @@ class AndOrIteratorIT {
     }
 
     // contrived case where the B term never intersects, the negated C term is exhausted early but should contribute to all future A-terms
-    @Disabled
     @Test
     void testCase05() throws IOException {
         SortedSet<String> uidsA = new TreeSet<>(Arrays.asList("1", "3", "5", "7", "9"));
@@ -631,10 +626,7 @@ class AndOrIteratorIT {
         driveIntersectionWithSimpleNestedUnionWithNegatedTerm(uidsA, uidsB, uidsC, countA, fieldIndexCounts);
     }
 
-    // expected = 1,4,5,7
-    // did not find 4, 7
     // A && (B || !C)
-    @Disabled
     @Test
     void testCase06() throws IOException {
         SortedSet<String> uidsA = new TreeSet<>(Arrays.asList("1", "10", "4", "5", "7"));
@@ -660,7 +652,6 @@ class AndOrIteratorIT {
     }
 
     // contrived case where the B-term exhausts early, the C-term never excludes any A-term
-    @Disabled
     @Test
     void testCase08() throws IOException {
         SortedSet<String> uidsA = new TreeSet<>(Arrays.asList("1", "3", "5", "7", "9"));
@@ -685,17 +676,15 @@ class AndOrIteratorIT {
         driveIntersectionWithSimpleNestedUnionWithNegatedTerm(uidsA, uidsB, uidsC, countA, fieldIndexCounts);
     }
 
-    // This test should log a warning and continue because the non-event iterator is exhausted and no longer contributes
-    // to the non-event state of the nested union. In order for this case to be properly exercised, exhausted iterators should
-    // be removed from the original set of includes and context includes
+    // The failure is recoverable because the non-event iterator has already been exhausted and no longer contributes to the nested union.
     // A && (B || C || D)
-    @Disabled
     @Test
-    void testEdgeCaseThatShouldFlipAFatalExceptionToAWarning_exception() throws Exception {
+    void testEventFailureIsRecoverableAfterNonEventIncludeExhausts() throws Exception {
         SortedSet<String> sortedNonEventUids = new TreeSet<>(List.of("1", "2"));
         Set<NestedIterator<Key>> orIncludes = new HashSet<>();
         orIncludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_B", sortedNonEventUids, true));
-        orIncludes.add(IndexIteratorBridgeTest.createInterruptibleIndexIteratorBridge("FIELD_C", uidsAll, false, 5));
+        FailingNestedIterator failingIterator = new FailingNestedIterator(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsAll, false), 5);
+        orIncludes.add(failingIterator);
         orIncludes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_D", uidsAll, false));
 
         OrIterator or = new OrIterator<>(orIncludes);
@@ -713,6 +702,88 @@ class AndOrIteratorIT {
         counts.put("FIELD_D", uidsAll.size());
 
         driveIterator(and, new TreeSet<>(uidsAll), counts);
+        assertTrue(failingIterator.didFail(), "The event-field failure fixture did not execute");
+    }
+
+    private static class FailingNestedIterator implements NestedIterator<Key> {
+        private final NestedIterator<Key> delegate;
+        private final int successfulResults;
+        private int resultCount;
+        private boolean failed;
+
+        private FailingNestedIterator(NestedIterator<Key> delegate, int successfulResults) {
+            this.delegate = delegate;
+            this.successfulResults = successfulResults;
+        }
+
+        @Override
+        public void initialize() {
+            delegate.initialize();
+        }
+
+        @Override
+        public Key move(Key minimum) {
+            return record(delegate.move(minimum));
+        }
+
+        @Override
+        public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+            resultCount = 0;
+            failed = false;
+            delegate.seek(range, columnFamilies, inclusive);
+        }
+
+        @Override
+        public Collection<NestedIterator<Key>> leaves() {
+            return delegate.leaves();
+        }
+
+        @Override
+        public Collection<NestedIterator<Key>> children() {
+            return delegate.children();
+        }
+
+        @Override
+        public Document document() {
+            return delegate.document();
+        }
+
+        @Override
+        public boolean isContextRequired() {
+            return delegate.isContextRequired();
+        }
+
+        @Override
+        public void setContext(Key context) {
+            delegate.setContext(context);
+        }
+
+        @Override
+        public boolean isNonEventField() {
+            return delegate.isNonEventField();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        @Override
+        public Key next() {
+            return record(delegate.next());
+        }
+
+        private Key record(Key result) {
+            if (result != null && ++resultCount > successfulResults) {
+                failed = true;
+                throw new IllegalStateException("simulated event-field lookup failure");
+            }
+            return result;
+        }
+
+        private boolean didFail() {
+            return failed;
+        }
     }
 
     // === assert methods ===
@@ -783,8 +854,8 @@ class AndOrIteratorIT {
             log.warn("unexpected uids were found: " + unexpectedUids);
         }
 
-        assertTrue(uids.isEmpty(), "expected uids were not found: " + uids);
-        assertTrue(unexpectedUids.isEmpty(), "unexpected uids found: " + unexpectedUids);
+        assertTrue(uids.isEmpty(), "expected uids were not found: " + uids + "; random seed: " + RANDOM_SEED);
+        assertTrue(unexpectedUids.isEmpty(), "unexpected uids found: " + unexpectedUids + "; random seed: " + RANDOM_SEED);
     }
 
     private void assertDocumentUids(Document d, String uid) {
