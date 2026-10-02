@@ -98,6 +98,8 @@ jobs:
     needs: check-changes
     if: needs.check-changes.outputs.should_run_microservices == 'true'
     uses: ./.github/workflows/microservice-tests.yml
+    with:
+      build_main: ${{ needs.check-changes.outputs.should_run_main == 'true' }}
     secrets: inherit
   
   call-formatting-check:
