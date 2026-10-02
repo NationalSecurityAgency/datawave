@@ -9,17 +9,16 @@ else
 fi
 THIS_SCRIPT=$(eval $READLINK_CMD $0)
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR || exit
 
-. ../ingest/ingest-env.sh
-. ../ingest/ingest-libs.sh
-. ../ingest/job-cache-env.sh
+. "$THIS_DIR/ingest-env.sh"
+. "$THIS_DIR/ingest-libs.sh"
+. "$THIS_DIR/job-cache-env.sh"
 
 # Check that there are no other instances of this script running
 acquire_lock_file $(basename "$0") || exit 1
 
 #read from the datawave metadata table to create the edge key version file and save it locally with the rest of the config files
-./create-edgekey-version-cache.sh --update ../../config
+"$THIS_DIR/create-edgekey-version-cache.sh" --update "$THIS_DIR/../../config"
 
 # Swap the job cache directory
 echo Old job cache dir is $JOB_CACHE_DIR
@@ -40,9 +39,9 @@ echo New job cache dir is $JOB_CACHE_DIR
 BEFORE=$(basename $OLD_JOB_CACHE_DIR)
 AFTER=$(basename $JOB_CACHE_DIR)
 
-sed s%${BEFORE}%${AFTER}% job-cache-env.sh > job-cache-env.tmp
+sed "s%${BEFORE}%${AFTER}%" "$THIS_DIR/job-cache-env.sh" > "$THIS_DIR/job-cache-env.tmp"
 
-. ../ingest/ingest-libs.sh
+. "$THIS_DIR/ingest-libs.sh"
 
 date
 
@@ -130,5 +129,5 @@ date
 # If we made it here, everything is loaded into the new job cache
 # directory.  So, just swap the the environment script with the new
 # one that will tell jobs to run with the new job cache dir.
-cp job-cache-env.sh job-cache-env.bak
-mv job-cache-env.tmp job-cache-env.sh
+cp "$THIS_DIR/job-cache-env.sh" "$THIS_DIR/job-cache-env.bak"
+mv "$THIS_DIR/job-cache-env.tmp" "$THIS_DIR/job-cache-env.sh"
