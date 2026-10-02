@@ -498,6 +498,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int docAggregationThresholdMs = -1;
     /**
+     * The maximum number of entries aggregated into a single document; a document is truncated and marked incomplete past this. Disabled if -1.
+     */
+    private int docAggregationMaxEntries = -1;
+    /**
      * Term Frequency aggregations that exceed this threshold in milliseconds are logged as a warning
      */
     private int tfAggregationThresholdMs = -1;
@@ -833,6 +837,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
+        this.setDocAggregationMaxEntries(other.getDocAggregationMaxEntries());
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
@@ -2876,6 +2881,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.docAggregationThresholdMs = docAggregationThresholdMs;
     }
 
+    public int getDocAggregationMaxEntries() {
+        return docAggregationMaxEntries;
+    }
+
+    public void setDocAggregationMaxEntries(int docAggregationMaxEntries) {
+        this.docAggregationMaxEntries = docAggregationMaxEntries;
+    }
+
     public int getTfAggregationThresholdMs() {
         return tfAggregationThresholdMs;
     }
@@ -3196,6 +3209,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getVisitorFunctionMaxWeight() == that.getVisitorFunctionMaxWeight() &&
                 getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
+                getDocAggregationMaxEntries() == that.getDocAggregationMaxEntries() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
                 isSortQueryPreIndexWithImpliedCounts() == that.isSortQueryPreIndexWithImpliedCounts() &&
@@ -3433,6 +3447,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getVisitorFunctionMaxWeight(),
                 getQueryExecutionForPageTimeout(),
                 getDocAggregationThresholdMs(),
+                getDocAggregationMaxEntries(),
                 getTfAggregationThresholdMs(),
                 getPruneQueryOptions(),
                 isSortQueryPreIndexWithImpliedCounts(),
