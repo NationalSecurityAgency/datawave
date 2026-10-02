@@ -16,6 +16,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -57,6 +59,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -85,6 +88,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.data.UUIDType;
@@ -4193,6 +4197,154 @@ public class ExtendedQueryExecutorBeanTest {
         // Verify results
         assertNotNull(result1, "Expected a non-null response");
         assertEquals("a query plan", result1.getResult());
+    }
+
+    @Test
+    public void testPlanQueryCreatesMetric() throws Exception {
+        // Set local test input
+        String queryLogicName = "queryLogicName";
+        String query = "query";
+        String queryName = "queryName";
+        String queryVisibility = "A&B";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
+        String queryAuthorizations = "AUTH_1";
+        Date expirationDate = new Date(currentTime + 999999);
+        int pagesize = 10;
+        int pageTimeout = -1;
+        QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        boolean trace = false;
+        String userName = "userName";
+        String userSid = "userSid";
+        String userDN = "userDN";
+        String systemFrom = "test";
+        SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
+        List<String> dnList = Collections.singletonList(userDN);
+        UUID queryId = UUID.randomUUID();
+
+        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
+        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.putSingle(QueryParameters.QUERY_SYSTEM_FROM, systemFrom);
+        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.putSingle("valid", "param");
+
+        ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
+        marking.validate(queryParameters);
+
+        QueryParameters qp = new DefaultQueryParameters();
+        qp.validate(queryParameters);
+
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
+        op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        op.putSingle(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
+
+        // Set expectations of the create logic
+        queryLogic1.validate(queryParameters);
+        when(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).thenReturn((QueryLogic) this.queryLogic1);
+        when(this.queryLogic1.getMaxPageSize()).thenReturn(1000);
+        when(this.context.getCallerPrincipal()).thenReturn(this.principal);
+        when(this.principal.getName()).thenReturn(userName);
+        when(this.principal.getShortName()).thenReturn(userSid);
+        when(this.principal.getUserDN()).thenReturn(userDNpair);
+        when(this.principal.getDNs()).thenReturn(new String[] {userDN});
+        when(this.principal.getProxyServers()).thenReturn(new ArrayList<>(0));
+        when(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).thenReturn(true);
+        when(this.queryLogic1.getAuditType(null)).thenReturn(AuditType.PASSIVE);
+        when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
+        when(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).thenReturn(this.query);
+        when(this.queryLogic1.getAuditType(this.query)).thenReturn(AuditType.PASSIVE);
+        when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
+        when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
+        when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
+        this.query.populateTrackingMap(null);
+        this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
+        when(this.connectionFactory.getClient(userDN.toLowerCase(), new ArrayList<>(0), "connPool1", Priority.NORMAL, null)).thenReturn(this.client);
+        this.connectionRequestBean.requestEnd(queryId.toString());
+        when(this.principal.getPrimaryUser()).thenReturn(dwUser);
+        when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
+        when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
+        when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
+        when(this.userOperations.getRemoteUser(this.principal)).thenReturn(this.principal);
+        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
+        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.query.getOwner()).thenReturn(userSid);
+        when(this.query.getId()).thenReturn(queryId);
+        when(this.query.getQuery()).thenReturn(queryName);
+        when(this.query.getQueryLogicName()).thenReturn(queryLogicName);
+        when(this.query.getBeginDate()).thenReturn(null);
+        when(this.query.getEndDate()).thenReturn(null);
+        when(this.query.getColumnVisibility()).thenReturn(null);
+        when(this.query.getQueryAuthorizations()).thenReturn(queryAuthorizations);
+        when(this.query.getQueryName()).thenReturn(null);
+        when(this.query.getPagesize()).thenReturn(0);
+        when(this.query.getExpirationDate()).thenReturn(null);
+        when(this.query.getParameters()).thenReturn((Set) Collections.emptySet());
+        when(this.query.getUncaughtExceptionHandler()).thenReturn(new QueryUncaughtExceptionHandler());
+        when(this.query.getUserDN()).thenReturn(userDN);
+
+        when(this.responseObjectFactory.getQueryImpl()).thenReturn(new QueryImpl());
+        when(queryLogic1.getResultLimit(any(QueryImpl.class))).thenReturn(-1L);
+
+        // Collect metrics for this plan call
+        when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
+
+        // Set expectations of the plan
+        Authorizations queryAuths = new Authorizations(queryAuthorizations);
+        when(this.queryLogic1.getPlan(this.client, this.query, Collections.singleton(queryAuths), true, false)).thenReturn("a query plan");
+
+        // Set expectations of the cleanup
+        this.connectionFactory.returnClient(this.client);
+        queryLogic1.close();
+
+        // Run the test
+        QueryExecutorBean subject = new QueryExecutorBean();
+        ReflectionTestUtils.setField(subject, "ctx", context);
+        ReflectionTestUtils.setField(subject, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(subject, "responseObjectFactory", responseObjectFactory);
+        ReflectionTestUtils.setField(subject, "userOperationsBean", userOperations);
+        ReflectionTestUtils.setField(subject, "qlCache", qlCache);
+        ReflectionTestUtils.setField(subject, "queryCache", cache);
+        ReflectionTestUtils.setField(subject, "closedQueryCache", closedCache);
+        ReflectionTestUtils.setField(subject, "persister", persister);
+        ReflectionTestUtils.setField(subject, "queryLogicFactory", queryLogicFactory);
+        ReflectionTestUtils.setField(subject, "queryExpirationConf", queryExpirationConf);
+        ReflectionTestUtils.setField(subject, "auditor", auditor);
+        ReflectionTestUtils.setField(subject, "metrics", metrics);
+        ReflectionTestUtils.setField(subject, "traceInfos", traceInfos);
+        ReflectionTestUtils.setField(subject, "marking", new ColumnVisibilitySecurityMarking());
+        ReflectionTestUtils.setField(subject, "qp", new DefaultQueryParameters());
+        ReflectionTestUtils.setField(subject, "metricFactory", new QueryMetricFactoryImpl());
+        ReflectionTestUtils.setField(connectionRequestBean, "ctx", context);
+        ReflectionTestUtils.setField(subject, "accumuloConnectionRequestBean", connectionRequestBean);
+        ReflectionTestUtils.setField(subject, "queryLimiter", queryLimiter);
+        GenericResponse<String> result1 = subject.planQuery(queryLogicName, uriInfo, queryParameters);
+
+        // Verify results
+        assertNotNull(result1, "Expected a non-null response");
+        assertEquals("a query plan", result1.getResult());
+
+        // The metric is submitted once when planning starts and once when the plan is complete; both submissions are
+        // the same metric instance, so the captured value reflects its final state.
+        ArgumentCaptor<BaseQueryMetric> metricCaptor = ArgumentCaptor.forClass(BaseQueryMetric.class);
+        verify(metrics, times(2)).updateMetric(metricCaptor.capture());
+        BaseQueryMetric planMetric = metricCaptor.getValue();
+        assertEquals(queryId.toString(), planMetric.getQueryId(), "Expected the plan metric to carry the query id");
+        assertEquals("a query plan", planMetric.getPlan(), "Expected the plan metric to carry the plan");
+        // The closest existing lifecycle states are reported until query-metric-api carries PLANNING/PLANNED
+        assertEquals(QueryMetric.Lifecycle.CLOSED, planMetric.getLifecycle(), "Expected the completed plan lifecycle");
+        assertTrue(planMetric.getSetupTime() >= 0, "Expected the plan metric to carry the elapsed time");
     }
 
     @Test
