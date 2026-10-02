@@ -47,6 +47,7 @@ public class ProtobufEdgePreconditionTest {
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private static final Now now = Now.getInstance();
     private Configuration conf;
+
     private String loadDateStr = DateHelper.format(new Date(now.get()));
 
     @Before
@@ -56,8 +57,8 @@ public class ProtobufEdgePreconditionTest {
         conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/edge-ingest-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/metadata-config.xml"));
-        conf.setBoolean(ProtobufEdgeDataTypeHandler.EVALUATE_PRECONDITIONS, true);
-        conf.set(ProtobufEdgeDataTypeHandler.EDGE_SPRING_CONFIG, "config/EdgeSpringConfigPrecon.xml");
+        conf.setBoolean(EdgeIngestConfiguration.EVALUATE_PRECONDITIONS, true);
+        conf.set(EdgeIngestConfiguration.EDGE_SPRING_CONFIG, "config/EdgeSpringConfigPrecon.xml");
         conf.set(KEY_VERSION_CACHE_DIR, ClassLoader.getSystemResource("config").getPath());
         conf.set(KEY_VERSION_DIST_CACHE_DIR, ClassLoader.getSystemResource("config").getPath());
 
@@ -67,6 +68,7 @@ public class ProtobufEdgePreconditionTest {
         fields.clear();
         EdgeHandlerTestUtil.edgeKeyResults.clear();
         EdgeHandlerTestUtil.edgeValueResults.clear();
+
     }
 
     private RawRecordContainer getEvent(Configuration conf) {
@@ -304,6 +306,11 @@ public class ProtobufEdgePreconditionTest {
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 12, true, false);
         Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+
+        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
+        Assert.assertEquals("20221026/MY_CSV_DATA-MY_CSV_DATA///B", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
+        Assert.assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
+        Assert.assertEquals("1666747913000", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
 
     }
 
