@@ -95,7 +95,7 @@ public class NormalizerLoader extends AccumuloLoader<String,Multimap<String,Type
             String colq = key.getColumnQualifier().toString();
             int idx = colq.indexOf(Constants.NULL);
 
-            if (key.getColumnFamily().toString().equals(MetadataColumnFamilyConstants.COLF_RI.toString())) {
+            if (key.getColumnFamily().toString().equals(MetadataColumnFamilyConstants.COLF_RI_STR)) {
                 reverse = true;
             }
 
