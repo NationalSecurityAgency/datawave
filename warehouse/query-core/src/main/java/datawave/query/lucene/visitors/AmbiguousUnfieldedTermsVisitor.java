@@ -12,8 +12,11 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 /**
  * A {@link BaseVisitor} implementation that will search a query for any sub-phrases that represent a fielded term that is directly followed by unfielded terms
- * conjoined by the specified junction type. For example, this visitor would identify cases like {@code FOO:"abc" "def"} and {@code FOO:"abc" AND "def"} if the
- * junction type {@link JUNCTION#AND} is specified, and cases like {@code FOO:"abc" OR "def"} if the junction type {@link JUNCTION#OR} is specified.
+ * conjoined by the specified junction type.
+ * <ul>
+ * <li>Given {@link JUNCTION#AND}, identifies cases like {@code FOO:"abc" "def"} and {@code FOO:"abc" AND "def"}.</li>
+ * <li>Given {@link JUNCTION#OR}, identifies cases like {@code FOO:"abc" OR "def"}.</li>
+ * </ul>
  */
 public class AmbiguousUnfieldedTermsVisitor extends BaseVisitor {
 
@@ -101,8 +104,9 @@ public class AmbiguousUnfieldedTermsVisitor extends BaseVisitor {
         for (QueryNode child : node.getChildren()) {
             QueryNodeType type = QueryNodeType.get(child.getClass());
             switch (type) {
-                // The current child is a FIELD.
+                // The current child is a FIELD or QUOTED_FIELD.
                 case FIELD:
+                case QUOTED_FIELD:
                     // The current child is an unfielded term.
                     if (((FieldQueryNode) child).getFieldAsString().isEmpty()) {
                         // If we have found a fielded term in the preceding terms, the child is part of the current set of ambiguous phrases.
@@ -206,11 +210,11 @@ public class AmbiguousUnfieldedTermsVisitor extends BaseVisitor {
         } else if (type == junction.getType()) {
             // The child is an OR. Examine the OR's children.
             return junctionConsistsOfUnfieldedTerms(child, fieldedTermFound);
-        } else if (type == QueryNodeType.FIELD) {
+        } else if (type == QueryNodeType.FIELD || type == QueryNodeType.QUOTED_FIELD) {
             // If the child is a single field term, return true if it is unfielded and we have found a fieldedTerm. Otherwise, return false.
             return fieldedTermFound && ((FieldQueryNode) child).getFieldAsString().isEmpty();
         } else {
-            // The child is not one of the target types we want..
+            // The child is not one of the target types we want.
             return false;
         }
     }
@@ -233,8 +237,8 @@ public class AmbiguousUnfieldedTermsVisitor extends BaseVisitor {
             QueryNodeType type = QueryNodeType.get(child.getClass());
             // If the child is a group, check if it consists of ambiguously ORed phrases.
             if (type == QueryNodeType.GROUP) {
-                // If we found the field term specifically in a previous GROUP sibling, the top-level group cannot consist of ambigously ORed unfielded phrases.
-                // Instead, we have something like ((FOO:abc OR def) OR (aaa OR bbb)) which cannot be flattened to FOO:(abc OR def OR aaa OR bbb).
+                // If we found the field term specifically in a previous GROUP sibling, the top-level group cannot consist of ambiguously ORed unfielded
+                // phrases. Instead, we have something like ((FOO:abc OR def) OR (aaa OR bbb)) which cannot be flattened to FOO:(abc OR def OR aaa OR bbb).
                 if (fieldTermFoundInGroupSibling) {
                     return false;
                 }
@@ -251,7 +255,7 @@ public class AmbiguousUnfieldedTermsVisitor extends BaseVisitor {
                     // If it does not, the top-level group does not consist solely of ambiguous phrases.
                     return false;
                 }
-            } else if (type == QueryNodeType.FIELD) {
+            } else if (type == QueryNodeType.FIELD || type == QueryNodeType.QUOTED_FIELD) {
                 // If the child is a field term, check if it is fielded or unfielded.
                 if (!((FieldQueryNode) child).getFieldAsString().isEmpty()) {
                     // If the field name is not empty, and we have not found a fielded term yet, mark that we've found one.
