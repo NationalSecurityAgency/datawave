@@ -14,11 +14,13 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang3.StringUtils;
 
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.table.constants.TableName;
 import datawave.test.framework.FieldMetadata;
+import datawave.test.framework.util.MetadataColumn;
 import datawave.test.framework.util.ShardKeyUtil;
 import datawave.test.framework.util.UidGenerator;
 
@@ -33,10 +35,14 @@ public class ShardIndexTableWriter {
     // index keys are
     // value FIELD : datatype<null>shard viz
     public static void write(AccumuloClient client, List<FieldMetadata> fields, int numShards) {
-        try (BatchWriter bw = client.createBatchWriter(TableName.SHARD_INDEX)) {
+        writeIndex(client, fields, numShards, TableName.SHARD_INDEX, I, false);
+    }
+
+    static void writeIndex(AccumuloClient client, List<FieldMetadata> fields, int numShards, String tableName, MetadataColumn indexColumn, boolean reverse) {
+        try (BatchWriter bw = client.createBatchWriter(tableName)) {
 
             for (FieldMetadata field : fields) {
-                if (!field.getMetadataColumns().contains(I)) {
+                if (!field.getMetadataColumns().contains(indexColumn)) {
                     continue;
                 }
 
@@ -63,8 +69,9 @@ public class ShardIndexTableWriter {
                     }
                     // The uid aggregator sums counts, so repeated tokens or overlapping normalizers must not write the same event twice.
                     for (String indexedValue : indexedValues) {
+                        String row = reverse ? StringUtils.reverse(indexedValue) : indexedValue;
                         for (String datatype : field.getDatatypes()) {
-                            writeIndexMutation(bw, indexedValue, field.getFieldName(), datatype, eventIds, numShards);
+                            writeIndexMutation(bw, row, field.getFieldName(), datatype, eventIds, numShards);
                         }
                     }
                 }

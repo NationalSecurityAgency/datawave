@@ -126,4 +126,12 @@ public abstract class AbstractTableWriterTest {
     protected List<Type<?>> normalizers(Type<?>... types) {
         return List.of(types);
     }
+
+    protected List<Integer> eventIdsInSameShard(int count) {
+        List<Integer> eventIds = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            eventIds.add(1 + i * NUM_SHARDS);
+        }
+        return eventIds;
+    }
 }

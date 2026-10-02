@@ -3,8 +3,10 @@ package datawave.test.framework.writers;
 import static datawave.test.framework.writers.TableWriter.TIMESTAMP;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -128,9 +130,7 @@ public class ShardTableWriter {
 
     private static void createTermFrequencyColumn(BatchWriter bw, FieldMetadata field, int numShards) {
         // row shard : tf : datatype<null>uid<null>normalizedToken<null>FIELD : TermWeight.Info(termOffset)
-        // field.isContentField() is guaranteed true here (the TF column is only dispatched for content fields), and its value is a space-joined phrase
-        // normalized with LcNoDiacriticsType (see IngestMetadata's TF/normalizer skip rule).
-        Type<?> normalizer = field.getNormalizers().get(0);
+        // IngestMetadata generates LcNoDiacriticsType phrases, but manually configured fields can carry several normalizers.
         Map<String,Mutation> mutationsByRow = new LinkedHashMap<>();
         for (String datatype : field.getDatatypes()) {
             for (int eventId : field.getEventIds()) {
@@ -142,8 +142,13 @@ public class ShardTableWriter {
                 String[] tokens = value.split(" ");
                 Map<String,TermWeight.Info.Builder> offsetsByToken = new LinkedHashMap<>();
                 for (int position = 0; position < tokens.length; position++) {
-                    String normalizedToken = normalizer.normalize(tokens[position]);
-                    offsetsByToken.computeIfAbsent(normalizedToken, token -> TermWeight.Info.newBuilder()).addTermOffset(position);
+                    Set<String> normalizedTokens = new LinkedHashSet<>();
+                    for (Type<?> normalizer : field.getNormalizers()) {
+                        normalizedTokens.add(normalizer.normalize(tokens[position]));
+                    }
+                    for (String normalizedToken : normalizedTokens) {
+                        offsetsByToken.computeIfAbsent(normalizedToken, token -> TermWeight.Info.newBuilder()).addTermOffset(position);
+                    }
                 }
                 // Repeated normalized tokens share a key; collect all positions before putting that key once.
                 for (Map.Entry<String,TermWeight.Info.Builder> entry : offsetsByToken.entrySet()) {

@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.table.constants.TableName;
 import datawave.test.framework.FieldMetadata;
@@ -104,6 +107,20 @@ class ShardTableWriterTest extends AbstractTableWriterTest {
                 assertEquals(List.of(1), offsets(entry.getValue()));
             }
         }
+    }
+
+    @Test
+    void testEveryNormalizerContributesOffsetsWithoutDuplicatingPositions() throws InvalidProtocolBufferException {
+        FieldMetadata field = createPopulatedField("FIELD", List.of("Alpha alpha ALPHA"), List.of(1), TF);
+        field.setNormalizers(normalizers(new NoOpType(), new LcNoDiacriticsType(), new LcNoDiacriticsType()));
+        ShardTableWriter.write(client, List.of(field), NUM_SHARDS);
+
+        Map<String,List<Integer>> actual = new HashMap<>();
+        for (Map.Entry<Key,Value> entry : scan(TableName.SHARD)) {
+            String token = entry.getKey().getColumnQualifier().toString().split("\0")[2];
+            actual.put(token, offsets(entry.getValue()));
+        }
+        assertEquals(Map.of("Alpha", List.of(0), "alpha", List.of(0, 1, 2), "ALPHA", List.of(2)), actual);
     }
 
     /**

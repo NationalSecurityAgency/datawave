@@ -35,6 +35,7 @@ public class TableWriter {
     public static void write(AccumuloClient client, List<FieldMetadata> metadata, int numShards) {
         MetadataTableWriter.write(client, metadata);
         ShardIndexTableWriter.write(client, metadata, numShards);
+        ShardReverseIndexTableWriter.write(client, metadata, numShards);
         ShardTableWriter.write(client, metadata, numShards);
     }
 }

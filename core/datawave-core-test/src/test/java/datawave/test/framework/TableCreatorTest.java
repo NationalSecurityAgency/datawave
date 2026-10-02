@@ -33,17 +33,19 @@ class TableCreatorTest {
         TableOperations tops = client.tableOperations();
         assertTrue(tops.exists(TableName.SHARD), "shard table should exist");
         assertTrue(tops.exists(TableName.SHARD_INDEX), "shard index should exist");
+        assertTrue(tops.exists(TableName.SHARD_RINDEX), "reverse index should exist");
         assertTrue(tops.exists(TableName.METADATA), "metadata table should exist");
     }
 
     /**
-     * Only the shard index aggregates: the shard and metadata tables hold one entry per key and would be corrupted by a combiner that merged their values.
+     * Only the global indexes aggregate: the shard and metadata tables hold one entry per key and would be corrupted by a combiner that merged their values.
      */
     @Test
-    void testOnlyTheShardIndexCarriesTheAggregator() throws Exception {
+    void testOnlyTheGlobalIndexesCarryTheAggregator() throws Exception {
         TableCreator.createTables(client);
 
         assertTrue(hasUidAggregator(TableName.SHARD_INDEX), "the shard index relies on the aggregator");
+        assertTrue(hasUidAggregator(TableName.SHARD_RINDEX), "the reverse index relies on the aggregator");
         assertFalse(hasUidAggregator(TableName.SHARD), "the shard table must not aggregate");
         assertFalse(hasUidAggregator(TableName.METADATA), "the metadata table must not aggregate");
     }

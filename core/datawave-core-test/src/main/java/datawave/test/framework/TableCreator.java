@@ -25,6 +25,7 @@ public class TableCreator {
         // TODO: make this config based
         tops.create(TableName.SHARD);
         createShardIndex(tops);
+        createShardReverseIndex(tops);
         tops.create(TableName.METADATA);
     }
 
@@ -44,7 +45,23 @@ public class TableCreator {
      *             if the table cannot be created or configured
      */
     public static void createShardIndex(TableOperations tops) throws Exception {
-        tops.create(TableName.SHARD_INDEX);
+        createIndex(tops, TableName.SHARD_INDEX);
+    }
+
+    /**
+     * Create the reverse index table with the same UID aggregator and iterator priorities as the forward index.
+     *
+     * @param tops
+     *            the table operations
+     * @throws Exception
+     *             if the table cannot be created or configured
+     */
+    public static void createShardReverseIndex(TableOperations tops) throws Exception {
+        createIndex(tops, TableName.SHARD_RINDEX);
+    }
+
+    private static void createIndex(TableOperations tops, String tableName) throws Exception {
+        tops.create(tableName);
 
         Map<String,String> additions = new HashMap<>();
         IteratorUtil.IteratorScope[] scopes = IteratorUtil.IteratorScope.values();
@@ -55,6 +72,6 @@ public class TableCreator {
             additions.put(name, "19,datawave.iterators.TotalAggregatingIterator");
             additions.put(opt, "datawave.ingest.table.aggregator.GlobalIndexUidAggregator");
         }
-        MacTestUtil.addPropertiesAndWait(tops, TableName.SHARD_INDEX, additions);
+        MacTestUtil.addPropertiesAndWait(tops, tableName, additions);
     }
 }

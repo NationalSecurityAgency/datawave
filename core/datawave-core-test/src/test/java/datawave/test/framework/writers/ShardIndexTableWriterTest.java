@@ -17,12 +17,15 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.ingest.protobuf.Uid;
+import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
 import datawave.table.constants.TableName;
 import datawave.test.framework.FieldMetadata;
 import datawave.test.framework.TableCreator;
@@ -191,31 +194,47 @@ class ShardIndexTableWriterTest extends AbstractTableWriterTest {
         assertEquals(expected, scanKeys(TableName.SHARD_INDEX));
     }
 
-    @Test
-    void testRepeatedNormalizedTokensCountEachEventOnce() throws InvalidProtocolBufferException {
-        FieldMetadata field = createPopulatedField("FIELD", List.of("Alpha Beta ALPHA"), List.of(1, 11), I, TF);
+    @ParameterizedTest
+    @ValueSource(ints = {2, 20, 21, 25})
+    void testRepeatedNormalizedTokensCountEachEventOnce(int eventCount) throws InvalidProtocolBufferException {
+        List<Integer> eventIds = eventIdsInSameShard(eventCount);
+        FieldMetadata field = createPopulatedField("FIELD", List.of("Alpha Beta ALPHA"), eventIds, I, TF);
         ShardIndexTableWriter.write(client, List.of(field), NUM_SHARDS);
 
         List<Map.Entry<Key,Value>> entries = scan(TableName.SHARD_INDEX);
         assertEquals(3, entries.size(), "index the phrase and both distinct tokens");
         for (Map.Entry<Key,Value> entry : entries) {
             Uid.List uids = Uid.List.parseFrom(entry.getValue().get());
-            assertEquals(2L, uids.getCOUNT(), "token repetitions must not inflate the event count");
-            assertEquals(sorted(List.of(UidGenerator.uid("1"), UidGenerator.uid("11"))), sorted(uids.getUIDList()));
+            assertCountAndUids(uids, eventIds);
         }
     }
 
-    @Test
-    void testOverlappingNormalizersCountEachEventOnce() throws InvalidProtocolBufferException {
-        FieldMetadata field = createPopulatedField("FIELD", List.of("alpha"), List.of(1, 11), I, TF);
-        field.setNormalizers(normalizers(new LcNoDiacriticsType(), new NoOpType()));
+    @ParameterizedTest
+    @ValueSource(ints = {2, 20, 21, 25})
+    void testOverlappingNormalizersCountEachEventOnce(int eventCount) throws InvalidProtocolBufferException {
+        List<Integer> eventIds = eventIdsInSameShard(eventCount);
+        FieldMetadata field = createPopulatedField("FIELD", List.of("alpha"), eventIds, I, TF);
+        field.setNormalizers(normalizers(new LcNoDiacriticsType(), new NoOpType(), new LcNoDiacriticsType()));
         ShardIndexTableWriter.write(client, List.of(field), NUM_SHARDS);
 
         List<Map.Entry<Key,Value>> entries = scan(TableName.SHARD_INDEX);
         assertEquals(1, entries.size(), "the phrase and token normalize to the same index key");
         Uid.List uids = Uid.List.parseFrom(entries.get(0).getValue().get());
-        assertEquals(2L, uids.getCOUNT());
-        assertEquals(sorted(List.of(UidGenerator.uid("1"), UidGenerator.uid("11"))), sorted(uids.getUIDList()));
+        assertCountAndUids(uids, eventIds);
+    }
+
+    @Test
+    void testDuplicateSourceValuesRetainCountOnlyEstimation() throws InvalidProtocolBufferException {
+        FieldMetadata field = createPopulatedField("FIELD", List.of("a", "a"), eventIdsInSameShard(21), I);
+        ShardIndexTableWriter.write(client, List.of(field), NUM_SHARDS);
+
+        List<Map.Entry<Key,Value>> entries = scan(TableName.SHARD_INDEX);
+        assertEquals(1, entries.size());
+        Uid.List uids = Uid.List.parseFrom(entries.get(0).getValue().get());
+        assertTrue(uids.getIGNORE());
+        assertEquals(0, uids.getUIDCount());
+        // Duplicate source values intentionally emit duplicate entries; count-only aggregation estimates their summed count.
+        assertEquals(42L, uids.getCOUNT());
     }
 
     /**
@@ -247,5 +266,20 @@ class ShardIndexTableWriterTest extends AbstractTableWriterTest {
         List<String> copy = new ArrayList<>(uids);
         copy.sort(String::compareTo);
         return copy;
+    }
+
+    private void assertCountAndUids(Uid.List uids, List<Integer> eventIds) {
+        assertEquals(eventIds.size(), uids.getCOUNT(), "token repetitions and overlapping normalizers must not inflate the event count");
+        if (eventIds.size() > GlobalIndexUidAggregator.MAX) {
+            assertTrue(uids.getIGNORE(), "above the UID threshold the aggregator must use count-only mode");
+            assertEquals(0, uids.getUIDCount());
+        } else {
+            assertFalse(uids.getIGNORE());
+            List<String> expected = new ArrayList<>();
+            for (int eventId : eventIds) {
+                expected.add(UidGenerator.uid(String.valueOf(eventId)));
+            }
+            assertEquals(sorted(expected), sorted(uids.getUIDList()));
+        }
     }
 }
