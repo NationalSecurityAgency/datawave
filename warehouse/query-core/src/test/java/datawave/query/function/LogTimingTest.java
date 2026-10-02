@@ -1,5 +1,6 @@
 package datawave.query.function;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -29,7 +30,7 @@ class LogTimingTest {
 
         LogTiming.addTimingMetadata(document, querySpan);
 
-        TimingMetadata timingMetadata = assertInstanceOf(TimingMetadata.class, document.get(LogTiming.TIMING_METADATA));
+        TimingMetadata timingMetadata = assertInstanceOf(TimingMetadata.class, document.getTimingMetadata());
         assertEquals(1L, timingMetadata.getSeekCount());
         assertEquals(2L, timingMetadata.getNextCount());
         assertEquals(1L, timingMetadata.getSourceCount());
@@ -53,6 +54,6 @@ class LogTimingTest {
         LogTiming.addTimingMetadata(document, null);
         LogTiming.addTimingMetadata(null, new QuerySpan(null));
 
-        assertFalse(document.getDictionary().containsKey(LogTiming.TIMING_METADATA));
+        assertNull(document.getTimingMetadata());
     }
 }

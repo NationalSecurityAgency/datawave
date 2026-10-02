@@ -1,6 +1,5 @@
 package datawave.query.iterator;
 
-import static datawave.query.function.LogTiming.TIMING_METADATA;
 import static datawave.query.iterator.waitwindow.WaitWindowObserver.WAIT_WINDOW_OVERRUN;
 
 import java.io.IOException;
@@ -109,7 +108,7 @@ public class TestLookupTask<T extends QueryIterator> {
         Document d = deserializedValue.getValue();
         Document filteredDocument = new Document();
         d.getDictionary().entrySet().stream().forEach(e -> {
-            if (!e.getKey().equals(TIMING_METADATA) && !e.getKey().equals(WAIT_WINDOW_OVERRUN)) {
+            if (!e.getKey().equals(WAIT_WINDOW_OVERRUN)) {
                 filteredDocument.put(e.getKey(), e.getValue(), includeGroupingContext);
             }
         });
