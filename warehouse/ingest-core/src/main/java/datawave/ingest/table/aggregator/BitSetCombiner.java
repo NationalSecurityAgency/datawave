@@ -15,7 +15,7 @@ import datawave.table.constants.TableName;
  * <p>
  * Deletes are not honored.
  */
-public class BitSetCombiner extends PropogatingCombiner {
+public class BitSetCombiner extends PropagatingCombiner {
 
     @Override
     public Value reduce(Key key, Iterator<Value> iter) {

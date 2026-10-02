@@ -95,7 +95,7 @@ public class AggregatorIntegrationTests {
         String opt = "table.iterator.scan.agg.opt.*";
 
         client.tableOperations().setProperty(DEFAULT_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
-        client.tableOperations().setProperty(DEFAULT_AGGREGATOR, opt, "datawave.iterators.PropogatingIterator");
+        client.tableOperations().setProperty(DEFAULT_AGGREGATOR, opt, "datawave.iterators.PropagatingIterator");
 
         client.tableOperations().setProperty(UID_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
         client.tableOperations().setProperty(UID_AGGREGATOR, opt, "datawave.ingest.table.aggregator.GlobalIndexUidAggregator");
@@ -110,7 +110,7 @@ public class AggregatorIntegrationTests {
         opt = "table.iterator.minc.agg.opt.*";
 
         client.tableOperations().setProperty(DEFAULT_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
-        client.tableOperations().setProperty(DEFAULT_AGGREGATOR, opt, "datawave.iterators.PropogatingIterator");
+        client.tableOperations().setProperty(DEFAULT_AGGREGATOR, opt, "datawave.iterators.PropagatingIterator");
 
         client.tableOperations().setProperty(UID_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
         client.tableOperations().setProperty(UID_AGGREGATOR, opt, "datawave.ingest.table.aggregator.GlobalIndexUidAggregator");
@@ -125,7 +125,7 @@ public class AggregatorIntegrationTests {
         opt = "table.iterator.majc.agg.opt.*";
 
         client.tableOperations().setProperty(DEFAULT_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
-        client.tableOperations().setProperty(DEFAULT_AGGREGATOR, opt, "datawave.iterators.PropogatingIterator");
+        client.tableOperations().setProperty(DEFAULT_AGGREGATOR, opt, "datawave.iterators.PropagatingIterator");
 
         client.tableOperations().setProperty(UID_AGGREGATOR, name, "19,datawave.iterators.TotalAggregatingIterator");
         client.tableOperations().setProperty(UID_AGGREGATOR, opt, "datawave.ingest.table.aggregator.GlobalIndexUidAggregator");

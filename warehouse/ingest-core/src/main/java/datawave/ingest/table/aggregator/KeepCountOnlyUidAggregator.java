@@ -17,7 +17,7 @@ public class KeepCountOnlyUidAggregator extends GlobalIndexUidAggregator {
     }
 
     @Override
-    public boolean propogateKey() {
-        return isSeenIgnore() || super.propogateKey();
+    public boolean propagateKey() {
+        return isSeenIgnore() || super.propagateKey();
     }
 }

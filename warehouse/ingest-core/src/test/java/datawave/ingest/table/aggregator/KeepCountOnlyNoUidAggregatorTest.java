@@ -36,7 +36,7 @@ public class KeepCountOnlyNoUidAggregatorTest {
 
         assertEquals(0, result.getCOUNT());
         assertTrue(result.getIGNORE());
-        assertTrue(agg.propogateKey());
+        assertTrue(agg.propagateKey());
     }
 
     @Test
@@ -46,7 +46,7 @@ public class KeepCountOnlyNoUidAggregatorTest {
 
         assertEquals(-1, result.getCOUNT());
         assertTrue(result.getIGNORE());
-        assertTrue(agg.propogateKey());
+        assertTrue(agg.propagateKey());
     }
 
     @Test
@@ -56,6 +56,6 @@ public class KeepCountOnlyNoUidAggregatorTest {
 
         assertEquals(4, result.getCOUNT());
         assertTrue(result.getIGNORE());
-        assertTrue(agg.propogateKey());
+        assertTrue(agg.propagateKey());
     }
 }

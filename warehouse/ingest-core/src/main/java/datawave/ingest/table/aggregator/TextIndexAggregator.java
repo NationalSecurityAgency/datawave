@@ -17,7 +17,7 @@ import datawave.ingest.protobuf.TermWeightPosition;
  *
  *
  */
-public class TextIndexAggregator extends PropogatingCombiner {
+public class TextIndexAggregator extends PropagatingCombiner {
     private static final Logger log = Logger.getLogger(TextIndexAggregator.class);
 
     private TreeSet<TermWeightPosition> offsets = new TreeSet<>();
@@ -47,9 +47,10 @@ public class TextIndexAggregator extends PropogatingCombiner {
     /**
      * Determines whether or not to propagate the key depending on the result of the value
      *
-     * @return a boolean on whether to propogate or not
+     * @return a boolean on whether to propagate or not
      */
-    public boolean propogateKey() {
+    @Override
+    public boolean propagateKey() {
         return true;
     }
 
