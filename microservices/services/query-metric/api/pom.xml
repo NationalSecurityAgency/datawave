@@ -31,6 +31,7 @@
         <version.jaxb-api>2.3.1</version.jaxb-api>
         <version.protobuf-java>3.25.5</version.protobuf-java>
         <version.protostuff>1.6.2</version.protostuff>
+        <version.springframework>5.3.39</version.springframework>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -209,7 +210,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
-            <version>5.3.21</version>
+            <version>${version.springframework}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
