@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -21,7 +22,7 @@ import org.apache.accumulo.core.file.rfile.RFileOperations;
 import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.After;
@@ -184,22 +185,23 @@ public class RFileUtilTest {
     }
 
     public static File createRFile(List<Map.Entry<Key,Value>> data) throws IOException {
-        FileSystem fs = FileSystem.getLocal(new Configuration());
         File tmpFile = File.createTempFile("testSimpleSplits", ".rf");
         tmpFile.delete();
 
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
                         new Configuration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
 
-        FileSKVWriter writer = RFileOperations.getInstance().newWriterBuilder().forFile(tmpFile.getCanonicalPath(), fs, new Configuration(), cs)
-                        .withTableConfiguration(DefaultConfiguration.getInstance()).build();
-        writer.startDefaultLocalityGroup();
+        try (FSDataOutputStream output = new FSDataOutputStream(new FileOutputStream(tmpFile), null);
+                        FileSKVWriter writer = RFileOperations.getInstance().newWriterBuilder()
+                                        .forOutputStream(tmpFile.getCanonicalPath(), output, new Configuration(), cs)
+                                        .withTableConfiguration(DefaultConfiguration.getInstance()).build()) {
+            writer.startDefaultLocalityGroup();
 
-        // write data
-        for (Map.Entry<Key,Value> toWrite : data) {
-            writer.append(toWrite.getKey(), toWrite.getValue());
+            // write data
+            for (Map.Entry<Key,Value> toWrite : data) {
+                writer.append(toWrite.getKey(), toWrite.getValue());
+            }
         }
-        writer.close();
 
         return tmpFile;
     }
