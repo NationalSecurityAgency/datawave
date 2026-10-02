@@ -128,6 +128,7 @@
                 <td>Query Plan (<a th:onClick="|toggleVisibility('query-plan', ${metricIter.index + 1})|">hide</a>)</td>
                 <td th:id="'query-plan' + ${metricIter.index + 1}" style="white-space:pre-wrap; overflow-wrap:anywhere;"/>
             </tr>
+            <tr><td>Query SubPlans</td><td><a th:href="${metric.querySubplansUrl}" th:text="${metric.queryId}"></a></td></tr>
             <tr class="highlight"><td>Predictions</td><td th:utext="${metric.predictionsStr}"></td></tr>
             <tr><td>Server</td><td th:text="${metric.host}"></td></tr>
             <tr class="highlight"><td>Elapsed Time</td><td th:text="${metric.elapsedTimeStr}"></td></tr>

@@ -711,6 +711,9 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     @XmlElement
     protected String plan = null;
     @XmlElement
+    @XmlJavaTypeAdapter(StringRangeCountMapAdapter.class)
+    protected Map<String,RangeCounts> subPlans = new TreeMap<>();
+    @XmlElement
     protected long loginTime = -1;
     @XmlElementWrapper(name = "predictions")
     @XmlElement(name = "prediction")
@@ -724,6 +727,34 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     public enum Lifecycle {
 
         NONE, DEFINED, INITIALIZED, RESULTS, CLOSED, CANCELLED, MAXRESULTS, NEXTTIMEOUT, TIMEOUT, SHUTDOWN, MAXWORK
+    }
+
+    public void addSubPlan(String plan, RangeCounts rangeCounts) {
+        if (subPlans.containsKey(plan)) {
+            RangeCounts combinedCounts = new RangeCounts();
+            RangeCounts currentCounts = subPlans.get(plan);
+            combinedCounts.setDocumentRangeCount(currentCounts.getDocumentRangeCount() + rangeCounts.getDocumentRangeCount());
+            combinedCounts.setShardRangeCount(currentCounts.getShardRangeCount() + rangeCounts.getShardRangeCount());
+            subPlans.put(plan, combinedCounts);
+        } else {
+            subPlans.put(plan, rangeCounts);
+        }
+    }
+
+    public void addSubPlans(Map<String,RangeCounts> subplanMap) {
+        if (subplanMap != null && !subplanMap.isEmpty()) {
+            for (Map.Entry<String,RangeCounts> entry : subplanMap.entrySet()) {
+                addSubPlan(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    public Map<String,RangeCounts> getSubPlans() {
+        return subPlans;
+    }
+
+    public void setSubPlans(Map<String,RangeCounts> subPlans) {
+        this.subPlans = subPlans;
     }
 
     public String getQueryType() {
