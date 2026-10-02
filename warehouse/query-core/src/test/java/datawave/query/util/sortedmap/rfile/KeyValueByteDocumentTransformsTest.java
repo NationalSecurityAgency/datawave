@@ -25,7 +25,7 @@ import datawave.query.composite.CompositeMetadata;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.util.TypeMetadata;
 
-public class KeyValueByteDocumenTransformsTest {
+public class KeyValueByteDocumentTransformsTest {
 
     protected final byte[] template = new byte[] {5, 2, 29, 4, 8, 3, 25, 23, 6, 21, 7, 16};
 
@@ -33,8 +33,8 @@ public class KeyValueByteDocumenTransformsTest {
     public void testDocumentTransforms() {
         List<Document> docs = createDocuments();
         for (Document d : docs) {
-            Value v = KeyValueByteDocumentTransforms.documentToValue(d);
-            Document d2 = KeyValueByteDocumentTransforms.valueToDocument(v);
+            Value v = KeyValueTransformUtils.documentToValue(d);
+            Document d2 = KeyValueTransformUtils.valueToDocument(v);
             assertDocumentEquals(d, d2);
         }
     }
@@ -43,8 +43,8 @@ public class KeyValueByteDocumenTransformsTest {
     public void testByteTransforms() {
         List<byte[]> docs = createByteArrays();
         for (byte[] d : docs) {
-            Key k = KeyValueByteDocumentTransforms.byteToKey(d);
-            byte[] d2 = KeyValueByteDocumentTransforms.keyToByte(k);
+            Key k = KeyValueTransformUtils.byteToKey(d);
+            byte[] d2 = KeyValueTransformUtils.keyToByte(k);
             assertArrayEquals(d, d2);
         }
     }
