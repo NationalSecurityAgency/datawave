@@ -13,24 +13,25 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * Function to test whether key/value pairs match within the part of a tree (left side) formed by the field name structure that is
  * dot-delimited: NAME.FOO.BAR.BAZ
  *
- * position args are as follows:
+ * position args are the indexed of the grouping name starting from the left to include when determining a group
  * for this field name:   NAME.grandparent_0.parent_0.child_0
  *
- * '0' means take everything to the left of the last '.' (in other words 'NAME.grandparent_0.parent_0')
- * '1' means take everything to the left of the next-to-last '.' (i.e. 'NAME.grandparent_0'
+ * '0' means take the leftmost group after the first '.' (in other words 'NAME.grandparent_0')
+ * '1' means take the up through the second group '.' (i.e. 'NAME.grandparent_0.parent_0'
  *
  *  If there is no position arg supplied, '0' is assumed.
  *
  *         "NAME.grandparent_0.parent_0.child_1,FREDO,fredo"    ==  "fredo",
- *         "NAME.grandparent_0.parent_0.child_0,SANTINO,santino" ==  "santino");
+ *         "NAME.grandparent_0.parent_1.child_0,SANTINO,santino" ==  "santino");
  *         (implied 0 for the position arg) means that fredo and santino have the same
- *         field name left-side: 'NAME.grandparent_0.parent_0'  (they have the same parents so they are siblings)
+ *         field name left-side: 'NAME.grandparent_0'  (they have the same grandparents so they are related)
  *
  *         "NAME.grandparent_0.parent_0.child_1,FREDO,fredo" == "fredo",
  *         "NAME.grandparent_0.parent_1.child_0,SANTINO,santino" == "santino", 1);
- *         with '1' for the position ard, function is true fredo and santino have the same
- *         field name left-side: 'NAME.grandparent_0' (they have the same grandparents so they are 1st cousins
+ *         with '1' for the position ard, function is false fredo and santino do not have the same
+ *         field name left-side: 'NAME.grandparent_0.parent_X' (they have the same grandparents so they are 1st cousins)
  *
+ * Supplying -1 as the position will mean to match all grouping fields must match, regardless of how many there are
  * </pre>
  */
 public class MatchesInGroupLeft extends JexlQueryFunction {

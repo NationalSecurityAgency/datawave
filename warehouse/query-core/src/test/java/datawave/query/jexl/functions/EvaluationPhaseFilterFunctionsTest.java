@@ -1047,7 +1047,7 @@ public class EvaluationPhaseFilterFunctionsTest {
     }
 
     /**
-     * Tests for {@link EvaluationPhaseFilterFunctions#getMatchToLeftOfPeriod(String, int)}.
+     * Tests for {@link EvaluationPhaseFilterFunctions#extractDotSegmentRangeFromLeft(String, int)}.
      */
     public static class GetMatchToLeftOfPeriodTests {
 
@@ -1059,17 +1059,25 @@ public class EvaluationPhaseFilterFunctionsTest {
         @Test
         public void testValidPositions() {
             givenPosition(0);
-            assertResult("second.third");
+            assertResult("second");
 
             givenPosition(1);
-            assertResult("second");
+            assertResult("second.third");
+
+            givenPosition(2);
+            assertResult("second.third.fourth");
         }
 
         // Verify that null is returned for an invalid position.
         @Test
         public void testInvalidPosition() {
-            givenPosition(2);
+            givenPosition(3);
+            assertResult(null);
 
+            givenPosition(4);
+            assertResult(null);
+
+            givenPosition(-2);
             assertResult(null);
         }
 
@@ -1078,7 +1086,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         }
 
         private void assertResult(String expected) {
-            assertThat(EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(input, position)).isEqualTo(expected);
+            assertThat(EvaluationPhaseFilterFunctions.extractDotSegmentRangeFromLeft(input, position)).isEqualTo(expected);
         }
     }
 
