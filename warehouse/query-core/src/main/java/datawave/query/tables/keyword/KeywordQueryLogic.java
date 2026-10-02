@@ -93,6 +93,11 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     public static final String TAG_CLOUD_MAX = "tag.cloud.max";
 
     /**
+     * Used to specify that a tag cloud should remove tags that have a higher than this similarity with existing tags.
+     */
+    public static final String TAG_CLOUD_SIM_MAX = "tag.cloud.sim.max";
+
+    /**
      * Used to specify that the tag clouds should be grouped by language.
      */
     public static final String TAG_CLOUD_LANGUAGE = "tag.cloud.language";
@@ -229,6 +234,18 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         String responseVersion = settings.findParameter(TAG_CLOUD_VERSION).getParameterValue().trim();
         setResponseVersion(responseVersion);
 
+        // tag cloud similarity max is set from configuration and then overridden by the query param, no limit is 0.
+        state.setMaxSimilarityThreshold(config.getMaxSimilarityThreshold());
+        String maxCloudTagSimString = settings.findParameter(TAG_CLOUD_SIM_MAX).getParameterValue().trim();
+        if (!maxCloudTagSimString.isEmpty()) {
+            try {
+                state.setMaxSimilarityThreshold(Double.parseDouble(maxCloudTagSimString));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid parameter " + TAG_CLOUD_SIM_MAX + " (value: " + maxCloudTagSimString + "), using configured value "
+                                + config.getMaxSimilarityThreshold() + '.', e);
+            }
+        }
+
         if (settings.getQuery() != null && !settings.getQuery().isEmpty()) {
             // Execute the query logic.
             final Collection<String> queryTerms = extractQueryTerms(settings);
@@ -273,7 +290,8 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
                 final IteratorSetting cfg = new IteratorSetting(60, "keyword-extractor", KeywordExtractingIterator.class);
                 KeywordExtractingIterator.setOptions(cfg, config.getMinNgrams(), config.getMaxNgrams(), config.getMaxKeywords(), config.getMaxScore(),
-                                config.getMaxContentChars(), config.getState().getPreferredViews(), config.getState().getLanguageMap());
+                                config.getMaxContentChars(), config.getState().getMaxSimilarityThreshold(), config.getState().getPreferredViews(),
+                                config.getState().getLanguageMap());
                 scanner.addScanIterator(cfg);
 
                 // wrap the scanIterator in case there is nothing there and we have external content that needs to be transformed
@@ -453,6 +471,14 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     public void setMaxKeywords(int maxKeywords) {
         getConfig().setMaxNgrams(maxKeywords);
+    }
+
+    public double getMaxSimilarityThreshold() {
+        return getConfig().getMaxSimilarityThreshold();
+    }
+
+    public void setMaxSimilarityThreshold(double maxSimilarityThreshold) {
+        getConfig().setMaxSimilarityThreshold(maxSimilarityThreshold);
     }
 
     public int getMaxNgrams() {
