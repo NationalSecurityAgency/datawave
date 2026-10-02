@@ -53,6 +53,7 @@ import datawave.query.attributes.SummaryOptions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.annotation.AllHitsQueryConfig;
+import datawave.query.function.DocumentMatchContext;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -283,6 +284,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> queryTermFrequencyFields = Collections.emptySet();
     // Are we required to get term frequencies (i.e. does the query contain content functions)
     private boolean termFrequenciesRequired = false;
+    // Are we required to gather document-match context (i.e. does the query contain document:match functions)
+    private boolean documentMatchContextRequired = false;
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
     private Set<String> matchingFieldSets = Collections.emptySet();
@@ -501,6 +504,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Term Frequency aggregations that exceed this threshold in milliseconds are logged as a warning
      */
     private int tfAggregationThresholdMs = -1;
+    /**
+     * Maximum encoded d-column payload size, in bytes, to inspect for document:match evaluation
+     */
+    private int documentMatchMaxEncodedSize = DocumentMatchContext.DEFAULT_MAX_ENCODED_SIZE;
+    /**
+     * Maximum decoded d-column payload size, in bytes, to inspect for document:match evaluation
+     */
+    private int documentMatchMaxDecodedSize = DocumentMatchContext.DEFAULT_MAX_DECODED_SIZE;
+    /**
+     * Maximum aggregate encoded d-column payload size, in bytes, to retain in memory for document:match evaluation
+     */
+    private int documentMatchMaxEncodedContextSize = DocumentMatchContext.DEFAULT_MAX_ENCODED_CONTEXT_SIZE;
 
     /**
      * Flag to control query option pruning in the visitor function. Queries that see significant or varied pruning via the RangeStream may see a benefit from
@@ -718,6 +733,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSortedUIDs(other.isSortedUIDs());
         this.setQueryTermFrequencyFields(null == other.getQueryTermFrequencyFields() ? null : Sets.newHashSet(other.getQueryTermFrequencyFields()));
         this.setTermFrequenciesRequired(other.isTermFrequenciesRequired());
+        this.setDocumentMatchContextRequired(other.isDocumentMatchContextRequired());
         this.setLimitFields(null == other.getLimitFields() ? null : Sets.newHashSet(other.getLimitFields()));
         this.setMatchingFieldSets(null == other.getMatchingFieldSets() ? null : Sets.newHashSet(other.getMatchingFieldSets()));
         this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
@@ -834,6 +850,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
+        this.setDocumentMatchMaxEncodedSize(other.getDocumentMatchMaxEncodedSize());
+        this.setDocumentMatchMaxDecodedSize(other.getDocumentMatchMaxDecodedSize());
+        this.setDocumentMatchMaxEncodedContextSize(other.getDocumentMatchMaxEncodedContextSize());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
         this.setSortQueryPreIndexWithImpliedCounts(other.isSortQueryPreIndexWithImpliedCounts());
@@ -2337,6 +2356,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.termFrequenciesRequired = termFrequenciesRequired;
     }
 
+    public boolean isDocumentMatchContextRequired() {
+        return documentMatchContextRequired;
+    }
+
+    public void setDocumentMatchContextRequired(boolean documentMatchContextRequired) {
+        this.documentMatchContextRequired = documentMatchContextRequired;
+    }
+
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
         this.shouldLimitTermExpansionToModel = shouldLimitTermExpansionToModel;
     }
@@ -2884,6 +2911,30 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
     }
 
+    public int getDocumentMatchMaxEncodedSize() {
+        return documentMatchMaxEncodedSize;
+    }
+
+    public void setDocumentMatchMaxEncodedSize(int documentMatchMaxEncodedSize) {
+        this.documentMatchMaxEncodedSize = documentMatchMaxEncodedSize;
+    }
+
+    public int getDocumentMatchMaxDecodedSize() {
+        return documentMatchMaxDecodedSize;
+    }
+
+    public void setDocumentMatchMaxDecodedSize(int documentMatchMaxDecodedSize) {
+        this.documentMatchMaxDecodedSize = documentMatchMaxDecodedSize;
+    }
+
+    public int getDocumentMatchMaxEncodedContextSize() {
+        return documentMatchMaxEncodedContextSize;
+    }
+
+    public void setDocumentMatchMaxEncodedContextSize(int documentMatchMaxEncodedContextSize) {
+        this.documentMatchMaxEncodedContextSize = documentMatchMaxEncodedContextSize;
+    }
+
     public GroupFields getGroupFields() {
         return groupFields;
     }
@@ -3044,6 +3095,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 Float.compare(that.getCollapseDatePercentThreshold(), getCollapseDatePercentThreshold()) == 0 &&
                 isSortedUIDs() == that.isSortedUIDs() &&
                 isTermFrequenciesRequired() == that.isTermFrequenciesRequired() &&
+                isDocumentMatchContextRequired() == that.isDocumentMatchContextRequired() &&
                 isLimitFieldsPreQueryEvaluation() == that.isLimitFieldsPreQueryEvaluation() &&
                 isHitList() == that.isHitList() &&
                 isStripHitTermGroupingContext() == that.isStripHitTermGroupingContext() &&
@@ -3197,6 +3249,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout() &&
                 getDocAggregationThresholdMs() == that.getDocAggregationThresholdMs() &&
                 getTfAggregationThresholdMs() == that.getTfAggregationThresholdMs() &&
+                getDocumentMatchMaxEncodedSize() == that.getDocumentMatchMaxEncodedSize() &&
+                getDocumentMatchMaxDecodedSize() == that.getDocumentMatchMaxDecodedSize() &&
+                getDocumentMatchMaxEncodedContextSize() == that.getDocumentMatchMaxEncodedContextSize() &&
                 getPruneQueryOptions() == that.getPruneQueryOptions() &&
                 isSortQueryPreIndexWithImpliedCounts() == that.isSortQueryPreIndexWithImpliedCounts() &&
                 isSortQueryPreIndexWithFieldCounts() == that.isSortQueryPreIndexWithFieldCounts() &&
@@ -3331,6 +3386,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isSortedUIDs(),
                 getQueryTermFrequencyFields(),
                 isTermFrequenciesRequired(),
+                isDocumentMatchContextRequired(),
                 getLimitFields(),
                 getMatchingFieldSets(),
                 isLimitFieldsPreQueryEvaluation(),
@@ -3434,6 +3490,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 getQueryExecutionForPageTimeout(),
                 getDocAggregationThresholdMs(),
                 getTfAggregationThresholdMs(),
+                getDocumentMatchMaxEncodedSize(),
+                getDocumentMatchMaxDecodedSize(),
+                getDocumentMatchMaxEncodedContextSize(),
                 getPruneQueryOptions(),
                 isSortQueryPreIndexWithImpliedCounts(),
                 isSortQueryPreIndexWithFieldCounts(),
