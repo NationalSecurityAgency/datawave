@@ -16,16 +16,18 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
+import datawave.next.ModeledQuery.Term;
 
 /**
- * This test exercises random terms are executable, not executable, or negated.
+ * Drives random queries built from terms that are executable, non-executable or negated, and checks the visitor against {@link ModeledQuery} rather than a hand
+ * written expectation.
+ * <p>
+ * Each iteration asserts two things: the visitor bounds the query exactly when the model says the field index can, and when it can, the candidates match
+ * exactly. Where the model says it cannot, the visitor owes a refusal, not an empty set.
  */
 public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
 
@@ -34,9 +36,18 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
     private final Set<String> fields = Set.of("FIELD_A", "FIELD_B");
     private final Set<String> datatypes = Set.of("datatype-a");
 
+    /** every uid {@link #getRandomUids()} can draw */
+    private static final Set<Integer> UNIVERSE = Set.of(1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009);
+
     private final List<String> executableTerms = new ArrayList<>();
     private final List<String> nonExecutableTerms = new ArrayList<>();
     private final List<String> allTerms = new ArrayList<>();
+
+    private final Range range = new Range(row);
+    private final Random rand = new Random();
+
+    // the maximum number of iterations each test should run
+    private final int max = 1_000;
 
     @BeforeEach
     public void beforeEach() {
@@ -52,354 +63,197 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         nonExecutableTerms.add("FIELD_Z == 'z'");
         nonExecutableTerms.add("filter:isNull(FIELD_X, 'x')");
         nonExecutableTerms.add("filter:isNotNull(FIELD_X, 'x')");
-        nonExecutableTerms.add("FIELD_X !~ 'ba.*'");
-        nonExecutableTerms.add("FIELD_X != 'x'");
 
         allTerms.clear();
         allTerms.addAll(executableTerms);
         allTerms.addAll(nonExecutableTerms);
     }
 
-    private final Range range = new Range(row);
-    private final Random rand = new Random();
-
-    private final Set<String> selectedTerms = new HashSet<>();
-
-    private String[] terms;
-    private Set<Integer>[] uids;
-    private Set<Integer> expected = null;
-
-    // the maximum number of iterations each test should run
-    private final int max = 1_000;
-
     @Test
     public void testRandomSingleTerms() {
         for (int i = 0; i < max; i++) {
-            driveSingleTerm();
+            Term[] terms = pickTerms(1);
+            drive(ModeledQuery.term(terms[0]));
+        }
+    }
+
+    /**
+     * A bare negation, which the field index can never bound: there is no way to enumerate the documents that do not match a term.
+     */
+    @Test
+    public void testRandomNegatedSingleTerms() {
+        for (int i = 0; i < max; i++) {
+            Term[] terms = pickTerms(1);
+            drive(ModeledQuery.negated(terms[0]));
         }
     }
 
     @Test
     public void testIntersections() {
         for (int i = 0; i < max; i++) {
-            driveSimpleIntersection(2);
-            driveSimpleIntersection(3);
-            driveSimpleIntersection(4);
+            driveIntersection(2);
+            driveIntersection(3);
+            driveIntersection(4);
         }
     }
 
     @Test
     public void testUnions() {
         for (int i = 0; i < max; i++) {
-            driveSimpleUnion(2);
-            driveSimpleUnion(3);
-            driveSimpleUnion(4);
-        }
-    }
-
-    @Test
-    public void testNestedIntersection() {
-        for (int i = 0; i < max; i++) {
-            driveNestedIntersection();
-        }
-    }
-
-    @Test
-    public void testNestedUnion() {
-        for (int i = 0; i < max; i++) {
-            driveNestedUnion();
-        }
-    }
-
-    @Test
-    public void testIntersectionWithNegations() {
-        for (int i = 0; i < max; i++) {
-            driveIntersectionWithNegations(2);
-            driveIntersectionWithNegations(3);
-            driveIntersectionWithNegations(4);
-        }
-    }
-
-    @Test
-    public void testUnionWithNegations() {
-        // this cannot happen without outside context, see testNestedUnionWithNegations
-    }
-
-    @Test
-    public void testNestedIntersectionWithNegations() {
-        for (int i = 0; i < max; i++) {
-            driveNestedIntersectionWithNegation();
-        }
-    }
-
-    @Disabled
-    @Test
-    public void testNestedUnionWithNegations() {
-        for (int i = 0; i < max; i++) {
-            driveNestedUnionWithNegation();
-        }
-    }
-
-    private void driveSingleTerm() {
-        clearState();
-
-        String term = selectRandomTerm();
-        withQuery(term);
-        if (!isTermExecutable(term)) {
-            return;
-        }
-
-        SortedSet<Integer> uids = getRandomUids();
-        writeUidsForTerm(term, uids);
-        expected = uids;
-        driveTest();
-    }
-
-    // (A && B && ... && Z)
-    private void driveSimpleIntersection(int termCount) {
-        clearState();
-        createTermsAndUids(termCount);
-        buildExpectedForSimpleIntersection();
-        withQuery(Joiner.on(" && ").join(terms));
-        driveTest();
-    }
-
-    private void buildExpectedForSimpleIntersection() {
-        for (int i = 0; i < terms.length; i++) {
-            String term = terms[i];
-            if (isTermExecutable(term)) {
-                if (expected == null) {
-                    expected = new HashSet<>(uids[i]);
-                } else {
-                    expected.retainAll(uids[i]);
-                    if (expected.isEmpty()) {
-                        break;
-                    }
-                }
-            }
-        }
-
-        // possible no term was executable
-        if (expected == null) {
-            expected = new HashSet<>();
-        }
-    }
-
-    // (A || B || ... || Z)
-    private void driveSimpleUnion(int termCount) {
-        clearState();
-        createTermsAndUids(termCount);
-        withQuery(Joiner.on(" || ").join(terms));
-        buildExpectedForSimpleUnion();
-        driveTest();
-    }
-
-    private void buildExpectedForSimpleUnion() {
-        expected = new HashSet<>();
-        for (int i = 0; i < terms.length; i++) {
-            if (isTermExecutable(terms[i])) {
-                expected.addAll(uids[i]);
-            }
+            driveUnion(2);
+            driveUnion(3);
+            driveUnion(4);
         }
     }
 
     // A || (B && C)
-    private void driveNestedIntersection() {
-        clearState();
-        createTermsAndUids(3);
-        buildExpectedForNestedIntersection();
-
-        // A || (B && C)
-        withQuery(terms[0] + " || (" + terms[1] + " && " + terms[2] + ")");
-        driveTest();
-    }
-
-    private void buildExpectedForNestedIntersection() {
-        expected = new HashSet<>();
-        if (isTermExecutable(terms[1]) && isTermExecutable(terms[2])) {
-            expected.addAll(uids[2]);
-            expected.retainAll(uids[1]);
-        } else if (isTermExecutable(terms[1])) {
-            expected.addAll(uids[1]);
-        } else if (isTermExecutable(terms[2])) {
-            expected.addAll(uids[2]);
-        }
-
-        if (isTermExecutable(terms[0])) {
-            expected.addAll(uids[0]);
+    @Test
+    public void testNestedIntersection() {
+        for (int i = 0; i < max; i++) {
+            Term[] terms = pickTerms(3);
+            drive(ModeledQuery.or(ModeledQuery.term(terms[0]), ModeledQuery.and(ModeledQuery.term(terms[1]), ModeledQuery.term(terms[2]))));
         }
     }
 
-    private void driveNestedUnion() {
-        clearState();
-        createTermsAndUids(3);
-        buildExpectedForNestedUnion();
-
-        // A && (B || C)
-        withQuery(terms[0] + " && (" + terms[1] + " || " + terms[2] + ")");
-        driveTest();
-    }
-
-    private void buildExpectedForNestedUnion() {
-        expected = new HashSet<>();
-        if (isTermExecutable(terms[2])) {
-            expected.addAll(uids[2]);
-        }
-        if (isTermExecutable(terms[1])) {
-            expected.addAll(uids[1]);
-        }
-
-        if (isTermExecutable(terms[0])) {
-            if (!expected.isEmpty()) {
-                expected.retainAll(uids[0]);
-            } else if (!isTermExecutable(terms[1]) && !isTermExecutable(terms[2])) {
-                expected.addAll(uids[0]);
-            }
+    // A && (B || C)
+    @Test
+    public void testNestedUnion() {
+        for (int i = 0; i < max; i++) {
+            Term[] terms = pickTerms(3);
+            drive(ModeledQuery.and(ModeledQuery.term(terms[0]), ModeledQuery.or(ModeledQuery.term(terms[1]), ModeledQuery.term(terms[2]))));
         }
     }
 
-    // (A && B && ... !Z)
-    private void driveIntersectionWithNegations(int termCount) {
-        clearState();
-        createTermsAndUids(termCount);
-        buildExpectedForIntersectionWithNegations();
-        negateLastTerm();
-        withQuery(Joiner.on(" && ").join(terms));
-        driveTest();
+    // A && B && ... && !Z
+    @Test
+    public void testIntersectionWithNegations() {
+        for (int i = 0; i < max; i++) {
+            driveIntersectionWithNegation(2);
+            driveIntersectionWithNegation(3);
+            driveIntersectionWithNegation(4);
+        }
     }
 
-    private void buildExpectedForIntersectionWithNegations() {
-        // process terms using intersection logic, except the last term
-        for (int i = 0; i < terms.length - 1; i++) {
-            if (isTermExecutable(terms[i])) {
-                if (expected == null) {
-                    expected = new TreeSet<>(uids[i]);
-                } else {
-                    expected.retainAll(uids[i]);
-                }
-            }
-        }
-
-        // process negated intersection logic for last term, provided expected uids exist
-        // and last term is executable
-        if (expected != null && !expected.isEmpty() && isTermExecutable(terms[terms.length - 1])) {
-            expected.removeAll(uids[uids.length - 1]);
-        }
-
-        if (expected == null) {
-            expected = new TreeSet<>();
+    /**
+     * A || !B, which the field index can never bound: the union offers no candidate set for the negation to be subtracted from.
+     */
+    @Test
+    public void testUnionWithNegations() {
+        for (int i = 0; i < max; i++) {
+            Term[] terms = pickTerms(2);
+            drive(ModeledQuery.or(ModeledQuery.term(terms[0]), ModeledQuery.negated(terms[1])));
         }
     }
 
     // A || (B && !C)
-    private void driveNestedIntersectionWithNegation() {
-        clearState();
-        createTermsAndUids(3);
-        buildExpectedForNestedIntersectionWithNegation();
-        negateLastTerm();
-        withQuery(terms[0] + " || (" + terms[1] + " && " + terms[2] + ")");
-        driveTest();
-    }
-
-    private void buildExpectedForNestedIntersectionWithNegation() {
-        // A || (B && !C)
-        expected = new HashSet<>();
-        if (isTermExecutable(terms[1])) {
-            expected.addAll(uids[1]);
-            if (isTermExecutable(terms[2])) {
-                expected.removeAll(uids[2]);
-            }
-        }
-        // If B term is not executable we actually have a union like (A || !C)
-        // in this case do nothing for the C term, it isn't executable. Visitor should ignore.
-
-        if (isTermExecutable(terms[0])) {
-            expected.addAll(uids[0]);
+    @Test
+    public void testNestedIntersectionWithNegations() {
+        for (int i = 0; i < max; i++) {
+            Term[] terms = pickTerms(3);
+            drive(ModeledQuery.or(ModeledQuery.term(terms[0]), ModeledQuery.and(ModeledQuery.term(terms[1]), ModeledQuery.negated(terms[2]))));
         }
     }
 
     // A && (B || !C)
-    // query may take the above form, logically equivalent to:
-    // (A && B) || (A && !C)
-    private void driveNestedUnionWithNegation() {
-        clearState();
-        createTermsAndUids(3);
-        buildExpectedForNestedUnionWithNegation();
-        negateLastTerm();
-        withQuery(terms[0] + " && (" + terms[1] + " || " + terms[2] + ")");
-        driveTest();
-    }
-
-    private void buildExpectedForNestedUnionWithNegation() {
-        Set<Integer> left = new HashSet<>(uids[0]);
-        left.retainAll(uids[1]);
-
-        Set<Integer> right = new HashSet<>(uids[0]);
-        right.removeAll(uids[2]);
-
-        expected = new HashSet<>();
-        expected.addAll(left);
-        expected.addAll(right);
-    }
-
-    private void driveTest() {
-        Preconditions.checkNotNull(query);
-        Preconditions.checkNotNull(expected);
-
-        ASTJexlScript script = parse(query);
-        SortedKeyValueIterator<Key,Value> source = createSource();
-
-        Set<Key> results = DocIdIteratorVisitor.getDocIds(script, range, source, datatypes, null, fields);
-        SortedSet<Integer> resultUids = resultsToUids(results);
-
-        boolean equivalent = expected.equals(resultUids);
-        if (!equivalent) {
-            logState();
+    @Test
+    public void testNestedUnionWithNegations() {
+        for (int i = 0; i < max; i++) {
+            Term[] terms = pickTerms(3);
+            drive(ModeledQuery.and(ModeledQuery.term(terms[0]), ModeledQuery.or(ModeledQuery.term(terms[1]), ModeledQuery.negated(terms[2]))));
         }
-        assertEquals(expected, resultUids);
     }
 
-    protected void clearState() {
-        super.clearState();
-        selectedTerms.clear();
-        query = null;
-        terms = null;
-        uids = null;
-        expected = null;
+    private void driveIntersection(int termCount) {
+        drive(ModeledQuery.and(positiveSlots(pickTerms(termCount))));
+    }
+
+    private void driveUnion(int termCount) {
+        drive(ModeledQuery.or(positiveSlots(pickTerms(termCount))));
+    }
+
+    private void driveIntersectionWithNegation(int termCount) {
+        Term[] terms = pickTerms(termCount);
+
+        ModeledQuery[] slots = new ModeledQuery[termCount];
+        for (int i = 0; i < termCount - 1; i++) {
+            slots[i] = ModeledQuery.term(terms[i]);
+        }
+        slots[termCount - 1] = ModeledQuery.negated(terms[termCount - 1]);
+
+        drive(ModeledQuery.and(slots));
+    }
+
+    private ModeledQuery[] positiveSlots(Term[] terms) {
+        ModeledQuery[] slots = new ModeledQuery[terms.length];
+        for (int i = 0; i < terms.length; i++) {
+            slots[i] = ModeledQuery.term(terms[i]);
+        }
+        return slots;
     }
 
     /**
-     * The number of positive terms to create
+     * Runs one query and checks it against the model, both in whether the index can bound it at all and in the candidates it produces
      *
-     * @param count
-     *            the term count
+     * @param model
+     *            the query form
      */
-    @SuppressWarnings("unchecked")
-    protected void createTermsAndUids(int count) {
-        terms = new String[count];
-        uids = new Set[count];
+    private void drive(ModeledQuery model) {
+        ASTJexlScript script = parse(model.query());
+        SortedKeyValueIterator<Key,Value> source = createSource();
 
-        for (int i = 0; i < count; i++) {
-            terms[i] = selectRandomTerm();
-            if (isTermExecutable(terms[i])) {
-                uids[i] = getRandomUids();
-            } else {
-                uids[i] = new HashSet<>();
-            }
+        DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypes, null, fields);
+        ScanResult result = visitor.getScanResult(script);
+
+        boolean expectBound = model.bound() != null;
+        boolean actualBound = result != null && result.isBounded();
+        if (expectBound != actualBound) {
+            logState(model);
+        }
+        assertEquals(expectBound, actualBound, "wrong answer on whether the index can bound: " + model.query());
+
+        if (!expectBound) {
+            // the visitor owes a refusal rather than a set, which getDocIds turns into a fatal query exception
+            return;
         }
 
-        writeData();
+        Set<Integer> expected = model.candidates(UNIVERSE);
+        SortedSet<Integer> actual = resultsToUids(result.getResults());
+        if (!expected.equals(actual)) {
+            logState(model);
+        }
+        assertEquals(expected, actual, model.query());
     }
 
-    protected void negateLastTerm() {
-        Preconditions.checkNotNull(terms);
-        terms[terms.length - 1] = negateTerm(terms[terms.length - 1]);
+    /**
+     * Selects distinct random terms and writes index data for the ones the field index can resolve
+     *
+     * @param count
+     *            the number of terms
+     * @return the modeled terms
+     */
+    private Term[] pickTerms(int count) {
+        clearState();
+
+        Set<String> selected = new HashSet<>();
+        Term[] terms = new Term[count];
+        for (int i = 0; i < count; i++) {
+            String query = selectRandomTerm(selected);
+            if (executableTerms.contains(query)) {
+                Set<Integer> uids = getRandomUids();
+                writeUidsForTerm(query, uids);
+                terms[i] = Term.resolved(query, uids);
+            } else {
+                terms[i] = Term.unresolved(query);
+            }
+        }
+        return terms;
     }
 
-    protected void writeData() {
-        for (int i = 0; i < terms.length; i++) {
-            if (isTermExecutable(terms[i])) {
-                writeUidsForTerm(terms[i], uids[i]);
+    private String selectRandomTerm(Set<String> selected) {
+        while (true) {
+            String term = allTerms.get(rand.nextInt(allTerms.size()));
+            if (selected.add(term)) {
+                return term;
             }
         }
     }
@@ -413,30 +267,9 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         }
     }
 
-    private String negateTerm(String term) {
-        return "!(" + term + ")";
-    }
-
-    private String selectRandomTerm() {
-        String term = null;
-        boolean found = false;
-        while (!found) {
-            term = allTerms.get(rand.nextInt(allTerms.size()));
-            if (!selectedTerms.contains(term)) {
-                selectedTerms.add(term);
-                found = true;
-            }
-        }
-        return term;
-    }
-
-    private boolean isTermExecutable(String term) {
-        return executableTerms.contains(term);
-    }
-
-    private SortedSet<Integer> getRandomUids() {
+    private Set<Integer> getRandomUids() {
         int count = rand.nextInt(10);
-        SortedSet<Integer> uids = new TreeSet<>();
+        Set<Integer> uids = new TreeSet<>();
         while (uids.size() < count) {
             uids.add(1000 + rand.nextInt(10));
         }
@@ -454,15 +287,15 @@ public class StochasticDocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         return uids;
     }
 
-    private void logState() {
-        for (int i = 0; i < terms.length; i++) {
-            log.info("{} :: {}", terms[i], uids[i]);
-        }
-        log.info("expected: {}", expected);
+    private void logState(ModeledQuery model) {
+        log.info("query: {}", model.query());
+        log.info("shape: {}", model.shape());
+        log.info("bound: {}", model.bound());
+        log.info("candidates: {}", model.candidates(UNIVERSE));
     }
 
     @Override
     protected BaseDocIdIterator createIterator() {
-        throw new IllegalStateException("Not implemented");
+        throw new IllegalStateException("Should never be called");
     }
 }

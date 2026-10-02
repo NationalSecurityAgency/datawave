@@ -2,8 +2,6 @@ package datawave.next;
 
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -15,7 +13,11 @@ import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTMethodNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
@@ -29,10 +31,14 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 
 import datawave.next.stats.DocIterStats;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.RewriteNegationsVisitor;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * A visitor that scans the field index and returns all document ids that match a given query.
@@ -41,18 +47,28 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
  * <ul>
  * <li>equality</li>
  * <li>regex</li>
- * <li>range</li>
+ * <li>range, as a bounded range marker</li>
  * <li>list marker</li>
- * <li>negations that are part of an intersection</li>
+ * <li>negations, in any position an enclosing intersection can subtract them from</li>
  * </ul>
  * <p>
  * Operators that are NOT supported
  * <ul>
- * <li>negated regex</li>
- * <li>negated equality</li>
  * <li>functions</li>
  * <li>term markers</li>
  * </ul>
+ * <p>
+ * Every node returns a {@link ScanResult} bounding the documents its subtree can match, or null when the field index cannot bound it at all, and the parent
+ * composes those bounds with {@link ScanResult#and(ScanResult, ScanResult)}, {@link ScanResult#or(ScanResult, ScanResult)} and
+ * {@link ScanResult#negate(ScanResult)}. Nothing returns the incoming context: a negated parent treats whatever it is handed as documents to remove, so echoing
+ * the context back would have that parent subtract its own result from itself and find nothing.
+ * <p>
+ * A bound is always widened rather than narrowed when precision is lost, so the visitor can return a document the query does not match, which is then discarded
+ * by evaluating the document itself, but never drops one the query does match.
+ * <p>
+ * A negated equality or negated regex is neither supported nor expected. The {@link RewriteNegationsVisitor} turns {@code A != B} into {@code !(A == B)} and
+ * {@code A !~ B} into {@code !(A =~ B)} while planning the query, so reaching one here means the tree was never planned and the scan fails rather than silently
+ * returning the wrong document ids.
  */
 public class DocIdIteratorVisitor extends BaseVisitor {
 
@@ -76,35 +92,52 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     private final Clock clock = Clock.systemUTC();
 
     /**
+     * Scans the field index and returns the bound on the documents this query can match.
+     * <p>
+     * A caller must handle an unbounded result rather than treating it as an empty one. There is no key set that means "every document", so a query the field
+     * index cannot bound needs a full table scan, which this stack does not perform. See {@link #getDocIds(ASTJexlScript)} for the callers that refuse instead.
      *
      * @param script
      *            the query tree
-     * @param range
-     *            the range
-     * @param source
-     *            the source iterator
-     * @param datatypeFilter
-     *            the datatype filter
-     * @param timeFilter
-     *            the time filter
-     * @return the set of document ids that satisfy the query
+     * @return the bound, or null when the field index cannot bound the query at all
      */
-    public static Set<Key> getDocIds(ASTJexlScript script, Range range, SortedKeyValueIterator<Key,Value> source, Set<String> datatypeFilter,
-                    LongRange timeFilter, Set<String> indexedFields) {
-        DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypeFilter, timeFilter, indexedFields);
-        Object o = script.jjtAccept(visitor, null);
-        if (o instanceof ScanResult) {
-            return ((ScanResult) o).getResults();
-        }
-        return Collections.emptySet();
+    public ScanResult getScanResult(ASTJexlScript script) {
+        Object o = script.jjtAccept(this, null);
+        return o instanceof ScanResult ? (ScanResult) o : null;
     }
 
+    /**
+     * Scans the field index for the candidate document ids, which may be a superset of the documents the query matches. Evaluating each document discards the
+     * extras, so a caller that does not evaluate them must check {@link ScanResult#isExact()} rather than answering from this set.
+     *
+     * @param script
+     *            the query tree
+     * @return the candidate document ids
+     * @throws DatawaveFatalQueryException
+     *             when the field index cannot bound the query, which would require a full table scan
+     */
     public Set<Key> getDocIds(ASTJexlScript script) {
-        Object o = script.jjtAccept(this, null);
-        if (o instanceof ScanResult) {
-            return ((ScanResult) o).getResults();
+        ScanResult result = getScanResult(script);
+        if (result == null || !result.isBounded()) {
+            throw unboundedQuery(script);
         }
-        return Collections.emptySet();
+        return result.getResults();
+    }
+
+    /**
+     * Builds the failure for a query the field index cannot bound.
+     * <p>
+     * Reporting no documents would be a silently wrong answer, so this fails instead. It should be unreachable: a query needing a full table scan is rejected
+     * by the planner well before the field index sees it, provided full table scans are disabled.
+     *
+     * @param script
+     *            the query tree
+     * @return a fatal query exception
+     */
+    private DatawaveFatalQueryException unboundedQuery(ASTJexlScript script) {
+        String msg = "Field index cannot bound the query, a full table scan would be required: [" + JexlStringBuildingVisitor.buildQuery(script) + "]";
+        log.error(msg);
+        return new DatawaveFatalQueryException(new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED, msg));
     }
 
     protected DocIdIteratorVisitor(SortedKeyValueIterator<Key,Value> source, Range range, Set<String> datatypeFilter, LongRange timeFilter,
@@ -125,62 +158,31 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        List<JexlNode> positive = new ArrayList<>();
-        List<JexlNode> negative = new ArrayList<>();
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            JexlNode deref = JexlASTHelper.dereference(node.jjtGetChild(i));
-            if (deref instanceof ASTNotNode) {
-                negative.add(deref);
-            } else {
-                positive.add(deref);
-            }
-        }
-
-        if (!positive.isEmpty() && !negative.isEmpty()) {
-            log.trace("union of negated and positive terms will not be executed");
-            return null;
-        }
-
-        if (positive.isEmpty() && !negative.isEmpty()) {
-            log.trace("union of negated terms will not be executed");
-            return null;
-        }
-
         ScanResult result = null;
-        for (JexlNode child : positive) {
-            // union passes in external context
-            Object o = child.jjtAccept(this, data);
-            if (o instanceof ScanResult) {
-                ScanResult scanResult = (ScanResult) o;
-                if (result == null) {
-                    result = scanResult;
-                } else {
-                    result.union(scanResult);
-                }
-            } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
-                }
-            }
-        }
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = JexlASTHelper.dereference(node.jjtGetChild(i));
 
-        if (result == null) {
-            // no term was executable
-            if (log.isTraceEnabled()) {
-                log.trace("union: [{}] found 0 hits", JexlStringBuildingVisitor.buildQuery(node));
+            // a union has no candidate set of its own to offer, so every child sees the external context
+            ScanResult childResult = scan(child, context(data));
+            if (childResult == null) {
+                // an undecided disjunct could be true for any document, so the union bounds nothing
+                if (log.isTraceEnabled()) {
+                    log.trace("union: [{}] has an undecided term, no bound", JexlStringBuildingVisitor.buildQuery(node));
+                }
+                return null;
             }
-            return data;
+
+            result = (i == 0) ? childResult : ScanResult.or(result, childResult);
+            if (result == null) {
+                return null;
+            }
         }
 
         if (log.isTraceEnabled()) {
-            log.trace("union: [{}] found {} hits", JexlStringBuildingVisitor.buildQuery(node), result.getResults().size());
+            log.trace("union: [{}] bound {} keys", JexlStringBuildingVisitor.buildQuery(node), result.getResults().size());
         }
         return result;
     }
-
-    /*
-     * There are many potential types of joins happening here. Enumerate and work through cases.
-     */
 
     @Override
     public Object visit(ASTAndNode node, Object data) {
@@ -191,6 +193,43 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             return handleMarker(node, data, instance);
         }
 
+        ScanResult result = null;
+        boolean first = true;
+        for (JexlNode child : positiveTermsFirst(node)) {
+            // an intersection drives its own context, narrowing each scan by what the terms before it already bound
+            ScanResult childResult = scan(child, context(result));
+            result = first ? childResult : ScanResult.and(result, childResult);
+            first = false;
+
+            if (result != null && result.isBounded() && result.getResults().isEmpty()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("short circuit intersection, no candidates remain");
+                }
+                return result;
+            }
+        }
+
+        if (log.isDebugEnabled()) {
+            if (result == null) {
+                log.debug("intersection: [{}] has no decided term, no bound", JexlStringBuildingVisitor.buildQuery(node));
+            } else {
+                log.debug("intersection: [{}] bound {} keys", JexlStringBuildingVisitor.buildQuery(node), result.getResults().size());
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Orders an intersection's children so that negations come last.
+     * <p>
+     * Purely a performance concern, since {@link ScanResult#and(ScanResult, ScanResult)} is associative and commutative. A negation cannot narrow the running
+     * candidate set on its own, so running the positive terms first gives every negated scan a key range to stay inside.
+     *
+     * @param node
+     *            an intersection
+     * @return the dereferenced children, negations last
+     */
+    private List<JexlNode> positiveTermsFirst(ASTAndNode node) {
         List<JexlNode> positive = new ArrayList<>();
         List<JexlNode> negative = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
@@ -201,93 +240,59 @@ public class DocIdIteratorVisitor extends BaseVisitor {
                 positive.add(deref);
             }
         }
+        positive.addAll(negative);
+        return positive;
+    }
 
-        // positive terms first
-        ScanResult result = null;
-        for (JexlNode child : positive) {
-            // intersections drive their own context
-            Object o = child.jjtAccept(this, result);
-            if (!(o instanceof ScanResult)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
-                }
-                continue;
-            }
-
-            ScanResult scanResult = (ScanResult) o;
-            if (scanResult.getResults().isEmpty()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("short circuit intersection, child returned zero hits");
-                }
-                return new HashSet<>();
-            }
-
-            if (result == null) {
-                result = scanResult;
-            } else {
-                // scan results know how to handle partial intersections, as in the case of a timeout
-                result.intersect(scanResult);
-
-                if (result.getResults().isEmpty()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("short circuit intersection, no ids exist after merge");
-                    }
-                    return result;
-                }
-            }
+    /**
+     * Visits a node and returns its bound, treating anything that is not a {@link ScanResult} as undecided.
+     * <p>
+     * A node handing back the very context it was given has decided nothing, which is what {@link BaseVisitor} does for any node type this visitor does not
+     * override. Every term that does compose a bound builds a new instance, so rejecting an echo costs nothing.
+     *
+     * @param node
+     *            the node to visit
+     * @param context
+     *            the candidate set to scan within, or null
+     * @return the node's bound, or null when this visitor cannot decide it
+     */
+    private ScanResult scan(JexlNode node, ScanResult context) {
+        Object o = node.jjtAccept(this, context);
+        if (o instanceof ScanResult && o != context) {
+            return (ScanResult) o;
         }
+        if (log.isTraceEnabled()) {
+            log.trace("undecided term: {}", JexlStringBuildingVisitor.buildQuery(node));
+        }
+        return null;
+    }
 
-        // TODO: handle the case of all negations (A && (B || (!C && !D)))
-
-        // now process negations
-        for (JexlNode child : negative) {
-            // intersections drive their own context
-            Object o = child.jjtAccept(this, result);
-            if (!(o instanceof ScanResult)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Node did not return a set: {}", JexlStringBuildingVisitor.buildQuery(child));
-                }
-                continue;
-            }
-
-            ScanResult scanResult = (ScanResult) o;
-            if (scanResult.getResults().isEmpty()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("negated term in intersection, child returned zero hits");
-                }
-                continue;
-            }
-
-            // uncomment for exceptions
-            // Preconditions.checkNotNull(ids);
-            if (result != null && !result.getResults().isEmpty()) {
-                // results can be removed even for a partial scan of a negated term
-                result.getResults().removeAll(scanResult.getResults());
-            }
-
-            if (result != null && result.getResults().isEmpty()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("no ids exist for intersection after processing merge, short circuit return");
-                }
+    /**
+     * The candidate set a child may restrict its scan to.
+     * <p>
+     * Only a whole positive result qualifies. A negative result's keys are documents that cannot match, so its key range says nothing about where the
+     * candidates are, and a partial scan's range stops wherever the scan was cut short.
+     *
+     * @param data
+     *            the running result or incoming context, possibly null or not a ScanResult
+     * @return the context to pass down, or null
+     */
+    private ScanResult context(Object data) {
+        if (data instanceof ScanResult) {
+            ScanResult result = (ScanResult) data;
+            if (result.isBounded() && !result.isTimeout()) {
                 return result;
             }
         }
-
-        if (result == null) {
-            // no terms were executable
-            if (log.isDebugEnabled()) {
-                log.debug("intersection: [{}] found 0 hits", JexlStringBuildingVisitor.buildQuery(node));
-            }
-            return data;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("intersection: [{}] found {} hits", JexlStringBuildingVisitor.buildQuery(node), result.getResults().size());
-        }
-        return result;
+        return null;
     }
 
     /**
      * This method exists because we may have a bounded range that is also marked as value exceeded
+     * <p>
+     * A marker that makes its source non-executable against the field index returns null, the same as any other term this visitor cannot resolve. It must not
+     * return the incoming context: a negated term is handed the enclosing intersection's own running ScanResult, and echoing that back makes the intersection
+     * subtract its result from itself and find nothing.
      *
      * @param node
      *            the original ASTAndNode
@@ -307,14 +312,16 @@ public class DocIdIteratorVisitor extends BaseVisitor {
                 return handleExceededValue(node, data, instance);
             case INDEX_HOLE:
                 log.info("found an index hole");
-                return data;
+                return null;
+            case STRICT:
+            case LENIENT:
+                // these only say how a missing field is evaluated, the source term is still scannable
+                return scan(JexlASTHelper.dereference(instance.getSource()), context(data));
             case EVALUATION_ONLY:
             case DELAYED:
             case DROPPED:
-            case STRICT:
-            case LENIENT:
                 log.debug("not handling marker of type: {}", instance.getType().getLabel());
-                return data;
+                return null;
             default:
                 throw new RuntimeException("Unknown marker of type: " + instance.getType().getLabel());
         }
@@ -458,18 +465,100 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         return node.jjtGetChild(0).jjtAccept(this, data);
     }
 
+    /**
+     * Complements the source term's bound. A negation cannot be scanned, only subtracted from a candidate set an enclosing intersection already has, so on its
+     * own it returns a negative {@link ScanResult} that bounds nothing until it reaches that intersection.
+     *
+     * @param node
+     *            an ASTNotNode
+     * @param data
+     *            the data
+     * @return the complement of the source term's bound, or null when the source cannot be complemented
+     */
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        return node.jjtGetChild(0).jjtAccept(this, data);
+        JexlNode source = JexlASTHelper.dereference(node.jjtGetChild(0));
+        return ScanResult.negate(scan(source, context(data)));
     }
 
+    /**
+     * The query planner rewrites {@code A !~ B} into {@code !(A =~ B)} via the {@link RewriteNegationsVisitor}, so this node cannot reach the field index.
+     *
+     * @param node
+     *            an ASTNRNode
+     * @param data
+     *            the data
+     * @return never returns
+     * @throws DatawaveFatalQueryException
+     *             always
+     */
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        return null;
+        throw unrewrittenNegation(node);
+    }
+
+    /**
+     * The query planner rewrites {@code A != B} into {@code !(A == B)} via the {@link RewriteNegationsVisitor}, so this node cannot reach the field index.
+     *
+     * @param node
+     *            an ASTNENode
+     * @param data
+     *            the data
+     * @return never returns
+     * @throws DatawaveFatalQueryException
+     *             always
+     */
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        throw unrewrittenNegation(node);
+    }
+
+    /**
+     * Builds the failure for a negated operator that should have been rewritten before the query reached the field index.
+     *
+     * @param node
+     *            the offending node
+     * @return a fatal query exception
+     */
+    private DatawaveFatalQueryException unrewrittenNegation(JexlNode node) {
+        String msg = "Negated operator was not rewritten by the " + RewriteNegationsVisitor.class.getSimpleName() + ": ["
+                        + JexlStringBuildingVisitor.buildQuery(node) + "]";
+        log.error(msg);
+        return new DatawaveFatalQueryException(new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, msg));
     }
 
     @Override
-    public Object visit(ASTNENode node, Object data) {
+    public Object visit(ASTGTNode node, Object data) {
+        return unboundedRange(node);
+    }
+
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        return unboundedRange(node);
+    }
+
+    @Override
+    public Object visit(ASTLTNode node, Object data) {
+        return unboundedRange(node);
+    }
+
+    @Override
+    public Object visit(ASTLENode node, Object data) {
+        return unboundedRange(node);
+    }
+
+    /**
+     * Refuses a range the field index cannot bound. A scannable range arrives as a bounded range marker, so a range operator reaching this visitor on its own
+     * is open ended.
+     *
+     * @param node
+     *            an unwrapped range operator
+     * @return null, always
+     */
+    private Object unboundedRange(JexlNode node) {
+        if (log.isTraceEnabled()) {
+            log.trace("open ended range: [{}] is not scannable on its own", JexlStringBuildingVisitor.buildQuery(node));
+        }
         return null;
     }
 
