@@ -116,6 +116,7 @@ class QueryLimiterConcurrencyTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(20);
+        config.setEnabled(true);
         givenLimitConfig(config);
 
         // Create three separate tasks representing different servers. Each 'server' will receive 10 client requests. This means we will attempt to create a
@@ -144,6 +145,7 @@ class QueryLimiterConcurrencyTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(10);
         config.setDefaultUserQueryLimit(15);
+        config.setEnabled(true);
         givenLimitConfig(config);
 
         // Create three separate tasks targeting the same server. Each task will attempt to create 5 client requests for random users and query logics.
@@ -172,6 +174,7 @@ class QueryLimiterConcurrencyTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(15);
+        config.setEnabled(true);
 
         // Set a limit of 10 TLD queries per user across all systems.
         QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
@@ -220,6 +223,7 @@ class QueryLimiterConcurrencyTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(20);
+        config.setEnabled(true);
 
         // Set a limit of 10 queries for the user testUserA.
         UserLimitConfiguration userLimitConfig = new UserLimitConfiguration();
@@ -289,6 +293,7 @@ class QueryLimiterConcurrencyTest {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(20);
+        config.setEnabled(true);
 
         SystemLimitConfiguration systemLimitConfig = new SystemLimitConfiguration();
         systemLimitConfig.setSystemPattern("server-01");
