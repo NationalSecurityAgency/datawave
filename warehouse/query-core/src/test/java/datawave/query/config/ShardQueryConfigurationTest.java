@@ -100,6 +100,12 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("checkpointable", false);
         updatedValues.put("checkpointable", true);
 
+        defaultValues.put("useSynchronousRunningQuery", false);
+        updatedValues.put("useSynchronousRunningQuery", true);
+
+        defaultValues.put("queryLimiterEnabled", true);
+        updatedValues.put("queryLimiterEnabled", false);
+
         defaultValues.put("auths", Sets.newHashSet());
         updatedValues.put("auths", Sets.newHashSet("FOO", "BAR"));
 

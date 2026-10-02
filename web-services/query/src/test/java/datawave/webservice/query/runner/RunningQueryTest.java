@@ -123,7 +123,9 @@ public class RunningQueryTest {
         TransformIterator<?,?> iter = new TransformIterator<>();
         expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
         expect(logic.getTransformIterator(settings)).andReturn(iter);
-        expect(logic.isLongRunningQuery()).andReturn(false);
+        expect(logic.isQueryLimiterEnabled()).andReturn(true).anyTimes();
+        expect(logic.isIntermediateEmptyPagesEnabled()).andReturn(false);
+        expect(logic.isUseSynchronousRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
         logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
@@ -146,7 +148,7 @@ public class RunningQueryTest {
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
 
         expect(logic.getCollectQueryMetrics()).andReturn(false);
-        expect(logic.isLongRunningQuery()).andReturn(false);
+        expect(logic.isIntermediateEmptyPagesEnabled()).andReturn(false);
         expect(logic.getResultLimit(settings)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
         logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));

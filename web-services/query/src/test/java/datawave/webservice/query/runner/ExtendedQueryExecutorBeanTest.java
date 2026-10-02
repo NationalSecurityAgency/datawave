@@ -317,6 +317,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.qlCache.poll(queryId.toString())).thenReturn(null);
         when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
         when(this.runningQuery.getSettings()).thenReturn(this.query);
+        when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
         this.runningQuery.cancel();
         this.runningQuery.closeConnection(this.connectionFactory);
         when(this.query.getId()).thenReturn(queryId);
@@ -560,6 +561,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.cache.get(queryId.toString())).thenReturn(this.runningQuery);
         this.closedCache.remove(queryId.toString());
         when(this.runningQuery.getSettings()).thenReturn(this.query);
+        when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
         when(this.query.getOwner()).thenReturn(userSid);
         this.runningQuery.cancel();
         this.runningQuery.closeConnection(this.connectionFactory);
@@ -734,7 +736,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getAuditType(this.query)).thenReturn(AuditType.NONE);
         when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
         when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-        when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic1.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
         this.query.populateTrackingMap(null);
         this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
@@ -891,7 +893,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getAuditType(this.query)).thenReturn(AuditType.NONE);
         when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
         when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-        when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic1.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
         this.query.populateTrackingMap(null);
         this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
@@ -1049,7 +1051,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getAuditType(this.query)).thenReturn(AuditType.NONE);
         when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
         when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-        when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic1.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
         this.query.populateTrackingMap(null);
         this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
@@ -1231,7 +1233,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getAuditType(this.query)).thenReturn(AuditType.NONE);
         when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
         when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-        when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic1.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
         this.query.populateTrackingMap(null);
         this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
@@ -1398,7 +1400,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getAuditType(this.query)).thenReturn(AuditType.NONE);
         when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
         when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-        when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic1.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
         this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
         when(this.connectionFactory.getClient("connPool1", new ArrayList<>(), Priority.NORMAL, null)).thenReturn(this.client);
@@ -1557,7 +1559,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getAuditType(this.query)).thenReturn(AuditType.NONE);
         when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
         when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-        when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic1.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
         this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
         when(this.connectionFactory.getClient("connPool1", new ArrayList<>(), Priority.NORMAL, null)).thenReturn(this.client);
@@ -1772,7 +1774,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.query.getUserDN()).thenReturn(userDN);
         when(this.query.getDnList()).thenReturn(dnList);
         when(this.query.getSystemFrom()).thenReturn(systemFrom);
-        when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic1.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
         this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
@@ -2087,7 +2089,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.query.getUserDN()).thenReturn(userDN);
         when(this.query.getDnList()).thenReturn(dnList);
         when(this.query.getSystemFrom()).thenReturn(systemFrom);
-        when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic1.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
         when(this.queryLogic1.initialize(eq(this.client), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
@@ -3560,7 +3562,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.query.getUserDN()).thenReturn(userDN);
         when(this.query.getDnList()).thenReturn(dnList);
         when(this.query.getSystemFrom()).thenReturn(null);
-        when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
+        when(this.queryLogic1.isIntermediateEmptyPagesEnabled()).thenReturn(false);
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
         this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
@@ -3716,6 +3718,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.principal.getAuthorizations()).thenReturn((Collection) Arrays.asList(Arrays.asList(authorization)));
         when(this.cache.get(queryName)).thenReturn(this.runningQuery);
         when(this.runningQuery.getSettings()).thenReturn(this.query);
+        when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
         when(this.query.getOwner()).thenReturn(userSid);
         // when(this.runningQuery.getTraceInfo()).thenReturn(this.traceInfo);
         when(this.cache.lock(queryName)).thenReturn(false);
