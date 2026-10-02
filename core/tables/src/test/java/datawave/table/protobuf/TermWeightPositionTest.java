@@ -1,4 +1,4 @@
-package datawave.ingest.protobuf;
+package datawave.table.protobuf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
