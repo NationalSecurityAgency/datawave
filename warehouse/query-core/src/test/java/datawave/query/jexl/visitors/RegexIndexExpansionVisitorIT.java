@@ -196,6 +196,9 @@ public class RegexIndexExpansionVisitorIT extends BaseIndexExpansionTest {
         dataTypes.put("FIELD_C", new LcNoDiacriticsType());
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
+        config.setExpandAllTerms(false);
+        config.setExpandFields(false);
+        config.setExpandValues(false);
 
         write("bar", "FIELD_A");
         write("baz", "FIELD_A");

@@ -26,11 +26,14 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.Sets;
 
+import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.Query;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
@@ -151,12 +154,17 @@ public class NumericListQueryTest extends AbstractQueryTest {
     }
 
     private void runTestQuery(String queryString, String plan, Map<String,String> extraParms, Set<String> goodResults) throws Exception {
+        runTestQuery(logic, queryString, plan, extraParms, goodResults);
+    }
+
+    private void runTestQuery(ShardQueryLogic queryLogic, String queryString, String plan, Map<String,String> extraParms, Set<String> goodResults)
+                    throws Exception {
         this.expectedResults = goodResults;
         givenQuery(queryString);
         givenParameters(extraParms);
         expectPlan(plan);
 
-        planAndExecuteQuery();
+        planAndExecuteQuery(queryLogic);
     }
 
     @Test
@@ -342,7 +350,7 @@ public class NumericListQueryTest extends AbstractQueryTest {
         Set<String> goodResults = Sets.newHashSet("REPTILE.PET.1:snake", "DOG.WILD.1:coyote", "CAT.WILD.1:tiger", "SIZE.CANINE.3:20,12.5",
                         "CANINE.WILD.1:coyote", "FISH.WILD.1:tuna", "BIRD.WILD.1:hawk");
 
-        runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
+        runTestQuery(new NoRegexExpansionShardQueryLogic(logic), queryString, expectedQueryPlan, extraParameters, goodResults);
     }
 
     @Test
@@ -395,6 +403,24 @@ public class NumericListQueryTest extends AbstractQueryTest {
         Set<String> goodResults = Sets.newHashSet();
 
         runTestQuery(queryString, expectedQueryPlan, extraParameters, goodResults);
+    }
+
+    private static class NoRegexExpansionShardQueryLogic extends ShardQueryLogic {
+        private NoRegexExpansionShardQueryLogic(ShardQueryLogic other) {
+            super(other);
+        }
+
+        @Override
+        public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
+            ShardQueryConfiguration config = ShardQueryConfiguration.create(this, settings);
+            config.setExpandAllTerms(false);
+            config.setExpandFields(false);
+            config.setExpandValues(false);
+            config.setGeneratePlanOnly(false);
+            setConfig(config);
+            initialize(config, client, settings, auths);
+            return config;
+        }
     }
 
 }
