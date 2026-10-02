@@ -80,9 +80,8 @@ public class CountMap extends HashMap<String,Integer> {
         if (value > 0) {
             return super.put(key, value);
         } else {
-            value = get(key);
-            remove(key);
-            return value;
+            value = remove(key);
+            return value != null ? value : ZERO;
         }
     }
 }
