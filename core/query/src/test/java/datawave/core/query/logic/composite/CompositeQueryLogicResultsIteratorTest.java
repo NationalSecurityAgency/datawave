@@ -1,6 +1,6 @@
 package datawave.core.query.logic.composite;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -16,7 +16,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -40,7 +40,7 @@ public class CompositeQueryLogicResultsIteratorTest {
 
         // wait for threads to complete before testing the short-circuit behavior
         CountDownLatch latch = compositeLogic.getCompletionLatch();
-        assertTrue("completion latch did not count down in time", latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS), "completion latch did not count down in time");
 
         long start = System.currentTimeMillis();
         iterator.hasNext();
