@@ -32,4 +32,17 @@
             <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
         </repository>
     </repositories>
+    <profiles>
+        <profile>
+            <id>services</id>
+            <activation>
+                <property>
+                    <name>!onlyServiceApis</name>
+                </property>
+            </activation>
+            <modules>
+                <module>service</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
