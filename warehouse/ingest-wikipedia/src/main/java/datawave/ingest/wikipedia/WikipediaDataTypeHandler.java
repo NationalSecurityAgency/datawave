@@ -42,6 +42,7 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardUtil;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
 import datawave.ingest.mapreduce.handler.shard.content.ContentIndexCounters;
@@ -356,7 +357,7 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, this.ingestHelper.getReplaceMalformedUTF8());
-        Key k = createKey(shardId, colf, colq, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
+        Key k = ShardUtil.createKey(shardId, colf, colq, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
         contextWriter.write(bKey, DataTypeHandler.NULL_VALUE, context);
     }

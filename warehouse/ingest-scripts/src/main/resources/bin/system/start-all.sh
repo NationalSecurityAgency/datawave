@@ -24,7 +24,7 @@ fi
 
 if [ -z "${NUM_SHARDS}" ] ; then
       error "Will not start ingest unless NUM_SHARDS is defined. Exiting..."
-      return 1
+      exit 1
 fi
 
 echo "Starting ingesters..."

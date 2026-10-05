@@ -1,5 +1,10 @@
 package datawave.query.planner;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,37 +25,34 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ComparisonFailure;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.opentest4j.AssertionFailedError;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.Lists;
 
-import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -59,53 +61,31 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.IndexFieldHoleDataIngest;
 import datawave.query.util.MetadataHelper;
 import datawave.table.constants.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
 /**
  * Tests usage of {@link DatePartitionedQueryPlanner} in queries.
  */
-public abstract class DatePartitionedQueryPlannerTest {
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class DatePartitionedQueryPlannerTest {
 
     private static final Logger log = Logger.getLogger(DatePartitionedQueryPlannerTest.class);
 
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
-
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends DatePartitionedQueryPlannerTest {
-
-        @Before
-        public void setup() throws Exception {
-            super.setup();
-            logic.setCollapseUids(true);
-        }
-
-        @Override
-        protected IndexFieldHoleDataIngest.Range getRange() {
-            return IndexFieldHoleDataIngest.Range.SHARD;
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends DatePartitionedQueryPlannerTest {
-
-        @Before
-        public void setup() throws Exception {
-            super.setup();
-            logic.setCollapseUids(false);
-        }
-
-        @Override
-        protected IndexFieldHoleDataIngest.Range getRange() {
-            return IndexFieldHoleDataIngest.Range.DOCUMENT;
-        }
-    }
 
     private static class Event {
         String date;
@@ -147,13 +127,11 @@ public abstract class DatePartitionedQueryPlannerTest {
         }
     }
 
-    protected abstract IndexFieldHoleDataIngest.Range getRange();
-
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");
     private static final Set<Authorizations> authSet = Collections.singleton(auths);
 
-    @Inject
-    @SpringBean(name = "EventQuery")
+    @Autowired
+    @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
     protected KryoDocumentDeserializer deserializer;
 
@@ -171,36 +149,24 @@ public abstract class DatePartitionedQueryPlannerTest {
     private String initialPlan;
     private Double fieldIndexHoleMinThreshold;
 
-    @Deployment
-    public static JavaArchive createDeployment() {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
-
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         // change to debug to see planning
         Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.WARN);
-        this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setMaxDepthThreshold(100);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);
         this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
+        this.logic.setCollapseUids(false);
         this.deserializer = new KryoDocumentDeserializer();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         this.eventConfigs.clear();
         this.queryParameters.clear();
@@ -213,7 +179,7 @@ public abstract class DatePartitionedQueryPlannerTest {
         this.fieldIndexHoleMinThreshold = null;
     }
 
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         TypeRegistry.reset();
     }
@@ -278,7 +244,7 @@ public abstract class DatePartitionedQueryPlannerTest {
 
     private AccumuloClient createClient() throws Exception {
         AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log).client;
-        IndexFieldHoleDataIngest.writeItAll(client, getRange(), eventConfigs);
+        IndexFieldHoleDataIngest.writeItAll(client, IndexFieldHoleDataIngest.Range.DOCUMENT, eventConfigs);
         ingestUtil.write(client, auths);
 
         PrintUtility.printTable(client, auths, TableName.SHARD);
@@ -317,10 +283,12 @@ public abstract class DatePartitionedQueryPlannerTest {
         Set<Date> datesWithoutHoles = new HashSet<>();
         this.eventConfigs.forEach(config -> {
             if (config.getTime() >= this.startDate.getTime() && config.getTime() <= this.endDate.getTime()) {
-                // field has to be in the query and fieldIndexHoleMinThreshold != null and index / frequency < fieldIndexHoleMinThreshold
+                // field has to be in the query and index / frequency < the effective threshold. When no threshold is set on the test, the production
+                // default applies - treating it as "no holes" here would make the all-holes-or-no-holes assertion below vacuous.
+                double threshold = this.fieldIndexHoleMinThreshold != null ? this.fieldIndexHoleMinThreshold
+                                : new ShardQueryConfiguration().getIndexFieldHoleMinThreshold();
                 boolean hasHoles = config.getMetadataCounts().entrySet().stream().filter(e -> fieldsInQuery.contains(e.getKey()))
-                                .anyMatch(e -> this.fieldIndexHoleMinThreshold != null && ((double) (e.getValue().getValue1())
-                                                / ((double) e.getValue().getValue0())) < this.fieldIndexHoleMinThreshold);
+                                .anyMatch(e -> ((double) (e.getValue().getValue1()) / ((double) e.getValue().getValue0())) < threshold);
                 if (hasHoles) {
                     datesWithHoles.add(new Date(config.getTime()));
                 } else {
@@ -330,19 +298,15 @@ public abstract class DatePartitionedQueryPlannerTest {
         });
 
         SortedMap<Pair<Date,Date>,Set<String>> subRanges = queryPlanner.getSubQueryDateRanges(logic.getConfig());
-        // if the subRanges is null, then this implies no holes
-        if (subRanges == null) {
-            return;
-        }
         // Subranges are sorted and should begin with the query beginDate and end with the query endDate
         Pair<Date,Date> firstSubRange = subRanges.keySet().stream().findFirst().get();
-        Assert.assertNotNull("firstSubRange should not be null", firstSubRange);
-        Assert.assertEquals("begin of lastSubRange should equal query beginDate", this.startDate.getTime(), firstSubRange.getLeft().getTime());
+        assertNotNull(firstSubRange, "firstSubRange should not be null");
+        assertEquals(this.startDate.getTime(), firstSubRange.getLeft().getTime(), "begin of lastSubRange should equal query beginDate");
         Pair<Date,Date> lastSubRange = subRanges.keySet().stream().reduce((first, second) -> second).get();
-        Assert.assertNotNull("lastSubRange should not be null", lastSubRange);
-        Assert.assertEquals("end of lastSubRange should equal query endDate", this.endDate.getTime(), lastSubRange.getRight().getTime());
+        assertNotNull(lastSubRange, "lastSubRange should not be null");
+        assertEquals(this.endDate.getTime(), lastSubRange.getRight().getTime(), "end of lastSubRange should equal query endDate");
 
-        Assert.assertEquals(getDiffs(expectedPlans.keySet(), subRanges.keySet()), expectedPlans.keySet(), subRanges.keySet());
+        assertEquals(expectedPlans.keySet(), subRanges.keySet(), getDiffs(expectedPlans.keySet(), subRanges.keySet()));
 
         Pair<Date,Date> previousPair = null;
         for (Pair<Date,Date> range : subRanges.keySet()) {
@@ -366,13 +330,14 @@ public abstract class DatePartitionedQueryPlannerTest {
                 datesWithoutHolesInRange.add(formatDate.format(range.getRight()));
             }
 
-            Assert.assertFalse("Subrange " + range + " must have all days with holes or all days with no holes: hasHoles:" + datesWithHolesInRange
-                            + " hasNoHoles:" + datesWithoutHolesInRange, !datesWithHolesInRange.isEmpty() && !datesWithoutHolesInRange.isEmpty());
+            assertFalse(!datesWithHolesInRange.isEmpty() && !datesWithoutHolesInRange.isEmpty(),
+                            "Subrange " + range + " must have all days with holes or all days with no holes: hasHoles:" + datesWithHolesInRange + " hasNoHoles:"
+                                            + datesWithoutHolesInRange);
 
             // check that there is one millisecond difference between the end of one range and the beginning of the next
             if (previousPair != null) {
                 long difference = range.getLeft().getTime() - previousPair.getRight().getTime();
-                Assert.assertEquals("Expected difference of 1ms, got " + difference, 1, difference);
+                assertEquals(1, difference, "Expected difference of 1ms, got " + difference);
             }
 
             previousPair = range;
@@ -434,7 +399,7 @@ public abstract class DatePartitionedQueryPlannerTest {
             actualEvents.add(new Event(date, event.getMetadata().getInternalId()));
         }
 
-        Assert.assertEquals(getDiffs(expectedEvents, actualEvents), expectedEvents, actualEvents);
+        assertEquals(expectedEvents, actualEvents, getDiffs(expectedEvents, actualEvents));
 
         Plans actualPlans = PartitionedPlanVisitor.getPlans(config.getQueryString());
         assertPlanEquals(initialPlan, logic.getQueryPlanner().getInitialPlan());
@@ -448,11 +413,11 @@ public abstract class DatePartitionedQueryPlannerTest {
                 logic.setFullTableScanEnabled(false);
                 logic.initialize(client, settings, authSet);
                 if (successMode == ExpectedSuccess.NONE) {
-                    Assert.fail("Expected full table scan to be required for any success");
+                    fail("Expected full table scan to be required for any success");
                 }
             } catch (DatawaveQueryException | DatawaveFatalQueryException e) {
                 if (successMode == ExpectedSuccess.SOME) {
-                    Assert.fail("Expected some success even with failed date ranges");
+                    fail("Expected some success even with failed date ranges");
                 }
             }
         }
@@ -482,7 +447,7 @@ public abstract class DatePartitionedQueryPlannerTest {
     }
 
     /**
-     * assertQuery is almost the same as Assert.assertEquals except that it will allow for different orderings of the terms within an AND or and OR.
+     * assertQuery is almost the same as Assertions.assertEquals except that it will allow for different orderings of the terms within an AND or and OR.
      *
      * @param expected
      *            The expected query
@@ -501,12 +466,12 @@ public abstract class DatePartitionedQueryPlannerTest {
         queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
         TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedTree, queryTree);
         if (!comparison.isEqual()) {
-            throw new ComparisonFailure(comparison.getReason(), expected, query);
+            throw new AssertionFailedError(comparison.getReason(), expected, query);
         }
     }
 
     protected void assertPlanEquals(Set<String> expectedPlans, Set<String> actualPlans) throws org.apache.commons.jexl3.parser.ParseException {
-        Assert.assertEquals("Expected plans differ in size from actual plans", expectedPlans.size(), actualPlans.size());
+        assertEquals(expectedPlans.size(), actualPlans.size(), "Expected plans differ in size from actual plans");
 
         // we will be modifying the actual set
         actualPlans = new HashSet<>(actualPlans);
@@ -517,12 +482,12 @@ public abstract class DatePartitionedQueryPlannerTest {
                     assertPlanEquals(expected, actual);
                     match = actual;
                     break;
-                } catch (ComparisonFailure c) {
+                } catch (AssertionFailedError c) {
 
                 }
             }
             if (match == null) {
-                throw new ComparisonFailure("Unable to find expected plan in actual plans", expected, actualPlans.toString());
+                throw new AssertionFailedError("Unable to find expected plan in actual plans", expected, actualPlans.toString());
             } else {
                 actualPlans.remove(match);
             }
@@ -916,5 +881,4 @@ public abstract class DatePartitionedQueryPlannerTest {
 
         assertSubrangesCorrect(assertQueryResults(ExpectedSuccess.NONE));
     }
-
 }

@@ -25,7 +25,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.javatuples.Pair;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.BaseType;
 import datawave.data.type.DateType;
@@ -37,6 +36,7 @@ import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.util.Geometry;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 
 /**
@@ -605,16 +605,18 @@ public class IndexFieldHoleDataIngest {
         Mutation mutation = new Mutation(countEntry.getKey());
         Pair<Long,Long> counts = countEntry.getValue();
         if (eventField(countEntry.getKey())) {
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
         }
-        mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
+        mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date),
+                        new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue0())));
         if (counts.getValue1() > 0) {
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype + "\u0000" + date),
                             new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype + "\u0000" + date),
                             new Value(SummingCombiner.VAR_LEN_ENCODER.encode(counts.getValue1())));
         }
-        mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn(countEntry.getKey()).getClass().getName()), emptyValue);
+        mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn(countEntry.getKey()).getClass().getName()),
+                        emptyValue);
         return mutation;
     }
 
@@ -630,11 +632,11 @@ public class IndexFieldHoleDataIngest {
                         // a field to test tokens and missing reverse index
                         Mutation mutation2 = new Mutation(mutation.getRow());
                         for (ColumnUpdate update : mutation.getUpdates()) {
-                            if (!new Text(update.getColumnFamily()).equals(ColumnFamilyConstants.COLF_I)) {
+                            if (!new Text(update.getColumnFamily()).equals(MetadataColumnFamilyConstants.COLF_I)) {
                                 mutation2.put(update.getColumnFamily(), update.getColumnQualifier(), update.getValue());
                             }
                         }
-                        mutation2.put(ColumnFamilyConstants.COLF_TF, new Text(datatype), emptyValue);
+                        mutation2.put(MetadataColumnFamilyConstants.COLF_TF, new Text(datatype), emptyValue);
                         mutation = mutation2;
                     }
                     bw.addMutation(mutation);

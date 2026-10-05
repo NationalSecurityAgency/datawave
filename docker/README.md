@@ -9,18 +9,18 @@ The following versions are known to work.
 RHEL 9.6+  
 Docker 28.5.1+  
 
-RHEL 8 does not seem to work. It interferes with the docker daemon in a way that prevents a successful build of the quickstart image.
+RHEL 8 does not seem to work. It interferes with the Docker daemon during the image build.
 
 ## TLDR
 
 ```shell
 # build docker images for datawave and all of the microservices
-mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -Djkube.container-image.tags.1=latest clean install
+mvn -T1C -Pcompose -Dservices -Dmicroservice-docker -Ddocker-release -Ddeploy -Dtar -Ddist -DskipTests -Djkube.container-image.tags.1=latest clean install
 
 # bootstrap the services, and bring them up using docker compose
 cd docker
 ./bootstrap.sh
-docker compose up -d
+docker compose up -d --wait --wait-timeout 600
 
 # run some queries to ensure everything is working
 cd scripts
@@ -29,9 +29,9 @@ cd scripts
 
 ## Components
 
-### Quickstart
+### DataWave Stack Accumulo
 
-Datawave Quickstart is a self-contained hadoop, zookeeper, and accumulo deployment prepopulated with data.
+[datawave-stack-accumulo](https://github.com/NationalSecurityAgency/datawave-stack-accumulo) supplies the Hadoop and Accumulo runtime. Docker Compose starts its individual services and the `ingest` service loads the same sample datasets used by the DataWave quickstart tests.
 
 ### Consul
 
@@ -75,7 +75,7 @@ You will need to build the docker image for this service on your local machine f
 
 ### Zookeeper
 
-Zookeeper is a prepacked docker image used for distributed synchronization.
+ZooKeeper is provided by the `datawave-stack-accumulo` image and used for distributed synchronization.
 
 ### Kafka
 
@@ -176,104 +176,23 @@ $> docker compose version
 Docker Compose version v2.21.0
 ```
 
-#### Datawave Quickstart
+#### DataWave Stack Setup
 
-Prior to starting docker compose, you need to use the Datawave Quickstart to deploy working instances of Hadoop, Zookeeper, and Accumulo, along with some sample datasets for query.
+The default Compose profile starts Hadoop, ZooKeeper, and Accumulo from the published `datawave-stack-accumulo` image. It also starts the DataWave ingest and webservice images and loads the sample Wikipedia, annotation, JSON, and CSV data used by the existing test suites.
 
-There are two methods for deploying the Datawave Quickstart.  
-
- - **default**: Deploys the Datawave Quickstart as a docker container within docker compose.
-
- - **hybrid**: Deploys the Datawave Quickstart directly on your host system.
-
-#### Default Datawave Quickstart Setup
-
-Build the Datawave Quickstart docker image using the following build command:
+Build the DataWave images using the following command. The infrastructure image is pulled and does not need to be rebuilt in this repository:
 
 ```
-# To build the quickstart docker image, and all of the microservice images, run this
-mvn -Pcompose -Dservices -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -Djkube.container-image.tags.1=latest clean install -T1C
-
-# To build just the quickstart docker image, run this
-mvn -Pcompose -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipTests -Djkube.container-image.tags.1=latest clean install -T1C
-```
-Note that the quickstart-docker property is set.  This property is a shortcut which activates the `docker` and `quickstart` profiles without activating the `docker` profile for the microservices.
-
-For this command, the build profile is set to `compose`.  This profile contains all of the properties needed to make the quickstart work as part
-of the docker compose deployment.  The use of any other build profile with docker compose is unsupported.
-
-You may update the property `jkube.containers.image.tags.1` to be something other than latest, but must use the `VERSION` environment variable with `docker compose` to specity that tag should be used for datawave images. Otherwise, `docker compose` will use the tag `latest`. 
-
-If you ever need to rebuild the Datawave quickstart docker image, but don't want to ingest the sample data you can add `-DskipIngest` to 
-your build command.  This can save you some time, since the docker compose configuration stores ingested data in a persistent volume.
-
-If desired, you can ensure wildfly is started when creating the containers via `docker compose up -d` by changing the datawave-bootstrap.sh argument `--accumulo` to `--web` for the quickstart service in the docker-compose.yml file:
-
-```
-services:
-  quickstart:
-    profiles:
-      - quickstart
-    # To run the wildfly webservice, change `--accumulo` to `--web`
-    command: ["datawave-bootstrap.sh", "--web"]
+mvn -T1C -Pcompose -Dservices -Dmicroservice-docker -Ddocker-release -Ddeploy -Dtar -Ddist -DskipTests -Djkube.container-image.tags.1=latest clean install
 ```
 
-Alternatively, you can start and test the wildfly deployment after creating the containers:
+For this command, the build profile is set to `compose`. This profile contains the properties needed by the Compose deployment. The use of any other build profile with Docker Compose is unsupported.
 
-```
-# Enter the docker-quickstart container shell.
-docker exec -ti docker-quickstart-1 bash
-
-# Start wildfly and test it.
-[root@e80487d9f063 datawave-quickstart]# datawaveWebStart && datawaveWebTest
-
-# Exit the docker container shell.
-[root@e80487d9f063 datawave-quickstart]# exit
-```
-
-To stop the wildfly deployment, repeat the steps above using the command `datawaveWebStop` instead of `datawaveWebStart  && datawaveWebTest`.
+You may update the property `jkube.container-image.tags.1` to be something other than `latest`, but must use the `VERSION` environment variable with `docker compose` to specify the tag used for DataWave images. Otherwise, Docker Compose uses `latest`.
 
 If you performed a build with the `jkube.container-image.tags.1` property set to anything but `latest`, you can specify the the tag to use when running `docker compose`
 ```shell
 VERSION=20260326.1 docker compose up
-```
-
-#### Hybrid Datawave Quickstart Setup
-
-Before running the quickstart setup, you need to edit your ~/.bashrc to include the following export:
-
-```
-export DW_BIND_HOST=0.0.0.0
-```
-
-This will ensure that Hadoop binds to all interfaces, and that Accumulo binds to the hostname/IP address.  This is required to connect to the host Accumulo instance from a docker container.
-
-What follows is a brief description of how to setup and run the Datawave Quickstart.  For more detailed information see the [DataWave Quickstart Readme](../contrib/datawave-quickstart/README.md).
-
-```
-# Add the quickstart env.sh to your .bashrc
-# DW_SOURCE refers to your local path to the datawave source code, and may be set as an environment variable if desired
-echo "activateDW() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc
-
-# Source .bashrc to kick off the quickstart build
-source ~/.bashrc
-
-# Activate DataWave
-activateDW
-
-# Install Datawave and its dependencies
-allInstall
-
-# Start Accumulo and its dependencies
-accumuloStart
-
-# At this point, you are ready to deploy and test the query microservices via docker compose
-
-# If desired, start the wildfly webservice, and run some diagnostic tests
-datawaveWebStart && datawaveWebTest
-
-# Make sure to stop the wildfly webservice before starting the query microservices via docker compose
-datawaveWebStop
 ```
 
 #### Datawave Microservices
@@ -286,7 +205,7 @@ mvn -Pcompose -Dservices -Dmicroservice-docker -Ddist -DskipTests -DskipITs clea
 
 Note that the microservice-docker property is set.  This property is a shortcut which activates the `docker` profile for just the microservices.
 
-This command can be combined with default Datawave Quickstart build command to build everything at once.
+This command can be combined with the DataWave ingest and webservice image build as shown above.
 
 ### Bootstrap
 
@@ -301,22 +220,20 @@ Bootstrap your deployment by running:
 This will produce a `.env` file containing the following:
 
 ```
-# If set to quickstart, enables the quickstart container
+# Enables the reusable Hadoop/Accumulo stack and DataWave fixture loader
 # Note: More than one profile may be set.
-COMPOSE_PROFILES=""
+COMPOSE_PROFILES="datawave-stack"
 
 # These environment variables are used to create extra hosts which
-# allow containers to route to the host quickstart deployment.
-# The extra hosts aren't used when deploying the docker quickstart,
-# but the variables still need to be set for the compose file to be valid.
+# allow containers to route to services running on the host when using hybrid mode.
 DW_HOSTNAME="<Your hostname>"
 DW_HOST_FQDN="<Your host FQDN>"
 DW_HOST_IP="<Your host IP Address>"
 
-# These environment variables must be set when running the quickstart
-# from the host machine in hybrid mode.
-DW_ZOOKEEPER_HOST="<Your hostname>"
-DW_HADOOP_HOST="<Your hostname>"
+DW_ZOOKEEPER_HOST="zookeeper"
+DW_HADOOP_HOST="hdfs-nn"
+DW_YARN_HOST="yarn-rm"
+HADOOP_CONF_SOURCE="./stack"
 ```
 
 #### Hybrid Bootstrap
@@ -328,23 +245,23 @@ Bootstrap your deployment by running:
 This will produce a `.env` file containing the following:
 
 ```
-# If set to quickstart, enables the quickstart container
-# Note: More than one profile may be set.
+# No infrastructure profile is selected because the backend is running on the host.
 COMPOSE_PROFILES=""
 
 # These environment variables are used to create extra hosts which
-# allow containers to route to the host quickstart deployment.
-# The extra hosts aren't used when deploying the docker quickstart,
-# but the variables still need to be set for the compose file to be valid.
+# allow containers to route to the host backend deployment.
 DW_HOSTNAME="<Your hostname>"
 DW_HOST_FQDN="<Your host FQDN>"
 DW_HOST_IP="<Your host IP Address>"
 
-# These environment variables must be set when running the quickstart
-# from the host machine in hybrid mode.
+# Backend service locations for hybrid mode.
 DW_ZOOKEEPER_HOST="<Your hostname>"
 DW_HADOOP_HOST="<Your hostname>"
+DW_YARN_HOST="<Your hostname>"
+HADOOP_CONF_SOURCE="<HADOOP_CONF_DIR from your host deployment>"
 ```
+
+Hybrid mode requires either `HADOOP_CONF_DIR` or `HADOOP_CONF_SOURCE` to point to the host deployment's Hadoop configuration directory when `bootstrap.sh hybrid` runs. The directory is mounted at `/etc/hadoop/conf` inside the service containers.
 
 ### Start services
 
@@ -360,21 +277,38 @@ Start the default services (with Hazelcast as the backend):
 
 ```BACKEND=hazelcast docker compose up -d```
 
-Start the default services, and the dictionary service:
+Start the default services and the dictionary service:
 
-```docker compose --profile quickstart --profile dictionary up -d```
+```docker compose --profile datawave-stack --profile dictionary up -d```
 
 Start the default services, the kafka services, and the dictionary service:
 
-```docker compose --profile quickstart --profile dictionary --profile kafka up -d```
+```docker compose --profile datawave-stack --profile dictionary --profile kafka up -d```
 
 Start the default services, and the file provider service:
 
-```docker compose --profile quickstart --profile file-provider up -d```
+```docker compose --profile datawave-stack --profile file-provider up -d```
 
 Start all services:
 
-```docker compose --profile quickstart --profile full up -d```
+```docker compose --profile datawave-stack --profile full up -d```
+
+### Shard table splits
+
+`stack/shard-splits.txt` holds the split points for `datawave.shard`, one full `yyyyMMdd_num` shard id
+per line. `stack/initialize-datawave.sh` applies them with `addsplits` before any data is written, so
+the sharded schema starts out spread over one tablet per shard row instead of sitting in a single
+tablet. It also writes the `num_shards` entry the query side reads out of `datawave.metadata` to
+expand a day from the global index into that day's shards.
+
+The dates are those of the fixture data, and the shard numbers must cover `0` through
+`table.shard.numShardsPerDay - 1` from `properties/compose.properties`. Changing that property means
+regenerating the file and rebuilding the ingest image, since the count is baked into the image's
+ingest configuration.
+
+To check a running stack:
+
+```docker/scripts/verifySplits.sh```
 
 ### View logs
 

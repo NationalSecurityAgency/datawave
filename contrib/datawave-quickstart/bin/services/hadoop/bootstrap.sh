@@ -3,8 +3,8 @@
 DW_HADOOP_SERVICE_DIR="$( dirname "${BASH_SOURCE[0]}" )"
 
 # Get these vars from the pom so users not building the container image can stay up to date
-DW_HADOOP_VERSION="${DW_HADOOP_VERSION:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.hadoop | tail -1)}"
-DW_HADOOP_DIST_SHA512_CHECKSUM="${DW_HADOOP_DIST_SHA512_CHECKSUM:-$(mvn -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.hadoop | tail -1)}"
+DW_HADOOP_VERSION="${DW_HADOOP_VERSION:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=version.quickstart.hadoop | tail -1)}"
+DW_HADOOP_DIST_SHA512_CHECKSUM="${DW_HADOOP_DIST_SHA512_CHECKSUM:-$(mvn -o -q -f ${DW_CLOUD_HOME}/docker/pom.xml help:evaluate -DforceStdout -Dexpression=sha512.checksum.hadoop | tail -1)}"
 
 DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-https://dlcdn.apache.org/hadoop/common/hadoop-${DW_HADOOP_VERSION}/hadoop-${DW_HADOOP_VERSION}.tar.gz}"
 DW_HADOOP_DIST="$( basename "${DW_HADOOP_DIST_URI}" )"
