@@ -14,7 +14,6 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +23,7 @@ import datawave.core.query.configuration.QueryData;
 import datawave.next.DocIdQueryIterator;
 import datawave.next.async.RunnableWithContext;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.util.IterationInterruptedCheck;
 import datawave.scan.ScannerBuilder;
 
 /**
@@ -64,7 +64,10 @@ public class DocumentIdProducer implements RunnableWithContext {
                 try {
                     executeScan();
                     executing = false;
-                } catch (IterationInterruptedException e) {
+                } catch (RuntimeException e) {
+                    if (!IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                        throw e;
+                    }
                     log.warn("time sliced, resubmitting scan for {}", getContext());
                 }
             }

@@ -16,7 +16,6 @@ import java.util.TreeSet;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 
@@ -29,6 +28,7 @@ import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.Util;
 import datawave.query.iterator.Util.Transformer;
 import datawave.query.iterator.waitwindow.WaitWindowObserver;
+import datawave.query.util.IterationInterruptedCheck;
 
 /**
  * Performs a merge join of the child iterators. It is expected that all child iterators return values in sorted order.
@@ -380,13 +380,14 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             try {
                 try {
                     child.seek(range, columnFamilies, inclusive);
-                } catch (IterationInterruptedException e2) {
-                    // throw IterationInterrupted exceptions as-is with no modifications so the QueryIterator can handle it
-                    throw e2;
                 } catch (WaitWindowOverrunException e) {
                     log.debug(id + ": AndIterator.seek() passing through WaitWindowOverrunException: " + e.getMessage());
                     throw e;
                 } catch (Exception e2) {
+                    if (IterationInterruptedCheck.isIterationInterruptedException(e2)) {
+                        // throw IterationInterruptedException as-is with no modifications so the QueryIterator can handle it
+                        throw (RuntimeException) e2;
+                    }
                     if (child.isNonEventField()) {
                         // dropping a non-event term from the query means that the accuracy of the query
                         // cannot be guaranteed. Thus, a fatal exception.
@@ -404,10 +405,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 // When comparing possible yield keys in the AndIterator, we choose the highest
                 // key because the uids of the sources need to be equal to return a match
                 this.waitWindowObserver.propagateException(null, true, false, e);
-            } catch (IterationInterruptedException iie) {
-                // allow the QueryIterator to handle these exceptions
-                throw iie;
             } catch (Exception e) {
+                if (IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                    // allow the QueryIterator to handle IterationInterruptedExceptions
+                    throw (RuntimeException) e;
+                }
                 include.remove();
                 if (includes.isEmpty() || e instanceof DatawaveFatalQueryException) {
                     throw e;
@@ -543,10 +545,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             } catch (WaitWindowOverrunException wwoe) {
                 log.debug(id + ": AndIterator.advanceIterators() passing through WaitWindowOverrunException: " + wwoe.getMessage());
                 throw wwoe;
-            } catch (IterationInterruptedException ie) {
-                // allow the QueryIterator to handle these exceptions
-                throw ie;
             } catch (Exception e) {
+                if (IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                    // allow the QueryIterator to handle IterationInterruptedExceptions
+                    throw (RuntimeException) e;
+                }
                 seenException = true;
                 if (itr.isNonEventField()) {
                     // dropping a non-event term from the query means that the accuracy of the query

@@ -15,7 +15,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
@@ -31,6 +30,7 @@ import datawave.next.stats.DocIdQueryIterStats;
 import datawave.next.stats.DocIterStats;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.IterationInterruptedCheck;
 
 /**
  * An iterator that runs against the field index and returns all document keys that match the query
@@ -287,16 +287,16 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
     private void handleException(Exception e) throws IOException {
         Throwable reason = e;
 
-        // We need to pass IOException, IteratorInterruptedException, and TabletClosedExceptions up to the Tablet as they are
+        // We need to pass IOException, IterationInterruptedException, and TabletClosedExceptions up to the Tablet as they are
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
-        IterationInterruptedException iie = null;
+        RuntimeException iie = null;
         TabletClosedException tce = null;
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
-        if (reason instanceof IterationInterruptedException) {
-            iie = (IterationInterruptedException) reason;
+        if (IterationInterruptedCheck.isIterationInterruptedException(reason)) {
+            iie = (RuntimeException) reason;
         }
         if (reason instanceof TabletClosedException) {
             tce = (TabletClosedException) reason;
@@ -308,8 +308,8 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
             if (reason instanceof IOException) {
                 ioe = (IOException) reason;
             }
-            if (reason instanceof IterationInterruptedException) {
-                iie = (IterationInterruptedException) reason;
+            if (IterationInterruptedCheck.isIterationInterruptedException(reason)) {
+                iie = (RuntimeException) reason;
             }
             if (reason instanceof TabletClosedException) {
                 tce = (TabletClosedException) reason;

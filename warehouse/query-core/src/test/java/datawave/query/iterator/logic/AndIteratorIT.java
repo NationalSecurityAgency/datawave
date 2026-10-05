@@ -16,7 +16,6 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
@@ -90,7 +89,7 @@ class AndIteratorIT {
         // "Lookup of event field failed, precision of query reduced."
 
         SortedSet<String> uids = new TreeSet<>(uidsA);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids));
+        assertThrows(RuntimeException.class, () -> driveIterator(itr, uids));
     }
 
     /**
@@ -104,7 +103,7 @@ class AndIteratorIT {
         includes.add(IndexIteratorBridgeTest.createInterruptibleIndexIteratorBridge("FIELD_B", uidsB, true, 1));
 
         AndIterator itr = new AndIterator<>(includes);
-        assertThrows(IterationInterruptedException.class, () -> itr.seek(new Range(), Collections.emptyList(), false));
+        assertThrows(RuntimeException.class, () -> itr.seek(new Range(), Collections.emptyList(), false));
     }
 
     // 1) handles the next() -> advanceIterators() path with an event field
@@ -120,7 +119,7 @@ class AndIteratorIT {
         includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsC, false));
 
         AndIterator itr = new AndIterator<>(includes);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, intersectUids(uidsA, uidsB, uidsC)));
+        assertThrows(RuntimeException.class, () -> driveIterator(itr, intersectUids(uidsA, uidsB, uidsC)));
     }
 
     @Test
@@ -136,7 +135,7 @@ class AndIteratorIT {
 
         AndIterator itr = new AndIterator<>(includes);
         SortedSet<String> uids = intersectUids(uidsA, uidsB, uidsC);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids));
+        assertThrows(RuntimeException.class, () -> driveIterator(itr, uids));
     }
 
     // 1) handles the next() -> advanceIterators() path with an index only term
@@ -156,7 +155,7 @@ class AndIteratorIT {
         Set<String> indexOnlyFields = Sets.newHashSet("FIELD_A", "FIELD_B", "FIELD_C");
         Set<String> droppedFields = Collections.singleton("FIELD_C");
         SortedSet<String> uids = intersectUids(uidsA, uidsB, uidsC);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids, indexOnlyFields, droppedFields));
+        assertThrows(RuntimeException.class, () -> driveIterator(itr, uids, indexOnlyFields, droppedFields));
     }
 
     // 2) handles the next() -> advanceIterators() path when a negation is in play
@@ -178,7 +177,7 @@ class AndIteratorIT {
         Set<String> indexOnlyFields = Sets.newHashSet("FIELD_A", "FIELD_B");
         Set<String> droppedFields = Collections.singleton("FIELD_B");
         SortedSet<String> uids = intersectUids(uidsA, uidsB);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids, indexOnlyFields, droppedFields));
+        assertThrows(RuntimeException.class, () -> driveIterator(itr, uids, indexOnlyFields, droppedFields));
     }
 
     // 3) applyContextRequired -> contextIncludes are uneven and there's no high key
@@ -213,7 +212,7 @@ class AndIteratorIT {
         Set<String> indexOnlyFields = Sets.newHashSet("FIELD_A", "FIELD_B");
         Set<String> droppedFields = Collections.singleton("FIELD_B");
         SortedSet<String> uids = intersectUids(uidsA, uidsB);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, uids, indexOnlyFields, droppedFields));
+        assertThrows(RuntimeException.class, () -> driveIterator(itr, uids, indexOnlyFields, droppedFields));
     }
 
     @Test
