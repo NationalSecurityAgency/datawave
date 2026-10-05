@@ -36,7 +36,6 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.BaseEdgeQueryTest;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.CompositeTestingIngest;
 import datawave.query.util.TypeMetadata;
@@ -119,7 +118,7 @@ public class ValueToAttributesTest extends AbstractQueryTest {
         CompositeTestingIngest.writeItAll(clientForTest, CompositeTestingIngest.WhatKindaRange.DOCUMENT);
         PrintUtility.printTable(clientForTest, auths, TableName.SHARD);
         PrintUtility.printTable(clientForTest, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(clientForTest, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
+        PrintUtility.printTable(clientForTest, auths, TableName.METADATA);
     }
 
     @AfterAll
@@ -130,7 +129,6 @@ public class ValueToAttributesTest extends AbstractQueryTest {
     @BeforeEach
     public void setup() {
         setClientForTest(clientForTest);
-        logic.setFullTableScanEnabled(true);
         logic.setCollapseUids(false);
 
         givenDate("20091231", "20150101");
