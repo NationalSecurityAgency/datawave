@@ -41,7 +41,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.model.IndexFieldHole;
 import datawave.query.model.QueryModel;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class MockMetadataHelper extends MetadataHelper {
     protected final Metadata metadata = new Metadata();

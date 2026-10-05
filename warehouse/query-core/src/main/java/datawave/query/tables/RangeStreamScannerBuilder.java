@@ -85,8 +85,7 @@ public class RangeStreamScannerBuilder extends SessionBuilder<RangeStreamScanner
 
             // the RangeStreamScanner can use a builder instead of the scanner factory
             Preconditions.checkNotNull(config, "GenericQueryConfiguration must be set");
-            ScannerFactory scannerFactory = new ScannerFactory(config);
-            session.setScannerFactory(scannerFactory);
+            session.setAccumuloClient(client);
 
             return session;
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
