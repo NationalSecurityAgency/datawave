@@ -69,6 +69,10 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-connection-pool</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-tables</artifactId>
         </dependency>
         <dependency>
