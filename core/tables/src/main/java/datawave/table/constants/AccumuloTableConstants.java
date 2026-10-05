@@ -9,8 +9,6 @@ import org.apache.accumulo.core.data.TableId;
  * <li>org.apache.accumulo.core.metadata.RootTable</li>
  * <li>org.apache.accumulo.core.replication.ReplicationTable</li>
  * </ul>
- *
- * Note: TableNameUtil.qualify() replacement moved to AccumuloValidators per review feedback, so it can leverage name validation.
  */
 public final class AccumuloTableConstants {
 
