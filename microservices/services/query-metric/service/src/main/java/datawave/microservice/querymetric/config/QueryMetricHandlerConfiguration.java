@@ -48,7 +48,6 @@ import datawave.microservice.querymetric.handler.QueryMetricCombiner;
 import datawave.microservice.querymetric.handler.RemoteShardTableQueryMetricHandler;
 import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
 import datawave.microservice.querymetric.handler.SimpleQueryGeometryHandler;
-import datawave.microservice.security.util.DnUtils;
 import datawave.query.language.builder.jexl.JexlTreeBuilder;
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
@@ -101,14 +100,14 @@ public class QueryMetricHandlerConfiguration {
                     AccumuloConnectionFactory connectionFactory, QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory,
                     MarkingFunctions<?> markingFunctions, QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser,
                     ResponseObjectFactory responseObjectFactory, WebClient.Builder webClientBuilder,
-                    @Autowired(required = false) JWTTokenHandler jwtTokenHandler, DnUtils dnUtils, QueryMetricResponseFactory queryMetricResponseFactory) {
+                    @Autowired(required = false) JWTTokenHandler jwtTokenHandler, QueryMetricResponseFactory queryMetricResponseFactory) {
         ShardTableQueryMetricHandler handler;
         if (queryMetricHandlerProperties.isUseRemoteQuery()) {
             handler = new RemoteShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions,
-                            queryMetricCombiner, luceneToJexlQueryParser, responseObjectFactory, webClientBuilder, jwtTokenHandler, dnUtils);
+                            queryMetricCombiner, luceneToJexlQueryParser, responseObjectFactory, webClientBuilder, jwtTokenHandler);
         } else {
             handler = new LocalShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions,
-                            queryMetricCombiner, luceneToJexlQueryParser, dnUtils);
+                            queryMetricCombiner, luceneToJexlQueryParser);
         }
         handler.setQueryMetricResponseFactory(queryMetricResponseFactory);
         return handler;
