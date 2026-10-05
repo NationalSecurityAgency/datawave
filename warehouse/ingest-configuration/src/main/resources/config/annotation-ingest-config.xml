@@ -46,6 +46,26 @@
     </property>
 
     <property>
+        <name>truthmark.table.name</name>
+        <value>${table.name.truthmark}</value>
+    </property>
+
+    <property>
+        <name>truthmark.table.loader.priority</name>
+        <value>70</value>
+    </property>
+
+    <property>
+        <name>truthmark.source.table.name</name>
+        <value>${table.name.truthmark.source}</value>
+    </property>
+
+    <property>
+        <name>truthmark.source.table.loader.priority</name>
+        <value>80</value>
+    </property>
+
+    <property>
         <name>annotation.source.visibility.inherit.event</name>
         <value>false</value>
         <description>enable setting the visibility for annotation source from event</description>
