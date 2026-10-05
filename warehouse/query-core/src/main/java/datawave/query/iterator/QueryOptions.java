@@ -2664,7 +2664,10 @@ public class QueryOptions implements OptionDescriber {
                 }
 
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                // A class that cannot be loaded has no known defaults, so keep every option, as for a class that is not a QueryOptions.
+                DefaultOptions options = DefaultOptions.builder().build();
+                defaultOptionsMap.put(className, options);
+                return options;
             }
 
         }
