@@ -76,4 +76,9 @@ public class TestAbstractContentIngestHelper extends AbstractContentIngestHelper
         return ",";
     }
 
+    @Override
+    public boolean isWhindexField(String field) {
+        return false;
+    }
+
 }
