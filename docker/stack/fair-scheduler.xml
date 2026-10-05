@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<allocations>
+    <queue name="liveIngestQueue">
+        <minResources>256 mb,1 vcores</minResources>
+        <maxResources>8192 mb,4 vcores</maxResources>
+        <maxRunningApps>4</maxRunningApps>
+        <schedulingPolicy>fair</schedulingPolicy>
+    </queue>
+    <queue name="bulkIngestQueue">
+        <minResources>256 mb,1 vcores</minResources>
+        <maxResources>8192 mb,4 vcores</maxResources>
+        <maxRunningApps>2</maxRunningApps>
+        <schedulingPolicy>fair</schedulingPolicy>
+    </queue>
+    <queuePlacementPolicy>
+        <rule name="specified" create="false"/>
+        <rule name="default" queue="liveIngestQueue"/>
+    </queuePlacementPolicy>
+</allocations>

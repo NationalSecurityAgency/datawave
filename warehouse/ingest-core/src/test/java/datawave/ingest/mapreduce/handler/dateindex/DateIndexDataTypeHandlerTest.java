@@ -29,7 +29,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.table.config.DateIndexTableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class DateIndexDataTypeHandlerTest {
 

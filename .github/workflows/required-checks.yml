@@ -10,8 +10,8 @@ on:
   merge_group:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'merge_group' }}
 
 jobs:
   check-changes:
@@ -30,6 +30,17 @@ jobs:
     - name: Detect which workflows should run
       id: filter
       run: |
+        # A merge group can contain changes from multiple queued pull requests.
+        # Run every required suite rather than filtering on only the tip commit.
+        if [[ "${{ github.event_name }}" == "merge_group" ]]; then
+          echo "Merge group detected; all required suites will run"
+          echo "should_run_main=true" >> $GITHUB_OUTPUT
+          echo "should_run_microservices=true" >> $GITHUB_OUTPUT
+          echo "should_run_formatting=true" >> $GITHUB_OUTPUT
+          echo "should_run_compose=true" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
         # Get list of changed files
         if [[ "${{ github.event_name }}" == "pull_request" ]]; then
           FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)

@@ -9,10 +9,10 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.filter.WhindexCreationDateFilter;
 import datawave.iterators.FrequencyMetadataAggregator;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 
 public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
 
@@ -40,7 +40,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "EdgeMetadataCombiner");
         setPropertyIfNecessary(tableName, stem, "19,datawave.iterators.EdgeMetadataCombiner", tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_EDGE.toString(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.columns", MetadataColumnFamilyConstants.COLF_EDGE.toString(), tops, log);
         return stem;
     }
 
@@ -49,7 +49,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
                     throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "CountMetadataCombiner");
         setPropertyIfNecessary(tableName, stem, "15,datawave.iterators.CountMetadataCombiner", tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_COUNT.toString(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.columns", MetadataColumnFamilyConstants.COLF_COUNT.toString(), tops, log);
         return stem;
     }
 
@@ -57,7 +57,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     private String setFrequencyCombiner(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyCombiner");
         setPropertyIfNecessary(tableName, stem, "10," + FrequencyMetadataAggregator.class.getName(), tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.columns", MetadataColumnFamilyConstants.COLF_F.toString(), tops, log);
         return stem;
     }
 
@@ -65,7 +65,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     private String setIndexCombiner(TableOperations tops, String scopeName) throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "IndexCombiner");
         setPropertyIfNecessary(tableName, stem, "11," + FrequencyMetadataAggregator.class.getName(), tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_I.toString(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.columns", MetadataColumnFamilyConstants.COLF_I.toString(), tops, log);
         return stem;
     }
 
@@ -73,7 +73,7 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     private String setReverseIndexCombiner(TableOperations tops, String scopeName) throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "ReverseIndexCombiner");
         setPropertyIfNecessary(tableName, stem, "12," + FrequencyMetadataAggregator.class.getName(), tops, log);
-        setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_RI.toString(), tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.columns", MetadataColumnFamilyConstants.COLF_RI.toString(), tops, log);
         return stem;
     }
 

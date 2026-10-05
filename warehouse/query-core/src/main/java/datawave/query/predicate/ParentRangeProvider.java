@@ -4,7 +4,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 
 import datawave.query.function.DocumentRangeProvider;
-import datawave.query.tld.TLD;
+import datawave.table.util.TLD;
 
 /**
  * For use with the {@link datawave.query.tables.ParentQueryLogic}
