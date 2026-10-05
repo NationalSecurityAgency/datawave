@@ -87,8 +87,8 @@ import datawave.mr.bulk.split.DefaultSplitStrategy;
 import datawave.mr.bulk.split.LocationStrategy;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.SplitStrategy;
-import datawave.table.constants.AccumuloTableConstants;
 import datawave.scan.ScannerBuilder;
+import datawave.table.constants.AccumuloTableConstants;
 import datawave.util.TextUtil;
 
 public class BulkInputFormat extends InputFormat<Key,Value> {
@@ -946,7 +946,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     startRow = new Text();
 
                 Range metadataRange = new Range(new KeyExtent(TableId.of(tableId), startRow, null).toMetaRow(), true, null, false);
-                Scanner scanner = ScannerBuilder.create(client).setTableName(AccumuloTableConstants.METADATA_TABLE_NAME).setAuthorizations(Authorizations.EMPTY).build();
+                Scanner scanner = ScannerBuilder.create(client).setTableName(AccumuloTableConstants.METADATA_TABLE_NAME).setAuthorizations(Authorizations.EMPTY)
+                                .build();
                 MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME);

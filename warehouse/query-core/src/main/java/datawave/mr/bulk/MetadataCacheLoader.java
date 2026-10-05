@@ -24,8 +24,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.collect.Sets;
 
 import datawave.query.util.Tuple2;
-import datawave.table.constants.AccumuloTableConstants;
 import datawave.scan.ScannerBuilder;
+import datawave.table.constants.AccumuloTableConstants;
 
 /**
  * A cache loader that maps accumulo metadata ranges to the files and locations.
