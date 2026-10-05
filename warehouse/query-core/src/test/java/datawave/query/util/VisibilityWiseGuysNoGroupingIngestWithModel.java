@@ -14,7 +14,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.DateType;
 import datawave.data.type.IpAddressType;
@@ -24,6 +23,7 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.index.day.IndexIngestUtil;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 
 public class VisibilityWiseGuysNoGroupingIngestWithModel {
@@ -348,134 +348,134 @@ public class VisibilityWiseGuysNoGroupingIngestWithModel {
             bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
 
             mutation = new Mutation("NAME");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("NAME")), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("NAME")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("NOME");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(19L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("NOME")), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(19L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("NOME")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("GENDER");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(11L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("GENDER")), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(11L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("GENDER")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("GENERE");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(21L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("GENERE")), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(21L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("GENERE")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("AGE");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("AGE")), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("AGE")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("ETA");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(22L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("ETA")), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(22L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("ETA")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("MAGIC");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("AGE")), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("AGE")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("UUID");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("UUID")), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("UUID")), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("BIRTH_DATE");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             mutation = new Mutation("DEATH_DATE");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             // index only fields
             mutation = new Mutation("LOCATION");
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
             mutation = new Mutation("POSIZIONE");
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             // add some fields to test for null
             mutation = new Mutation("NULL1");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
             mutation = new Mutation("NULL2");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             // add a field to test tokens
             mutation = new Mutation("QUOTE");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_TF, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_TF, new Text(datatype), emptyValue);
             bw.addMutation(mutation);
 
             // for testing #NOEXPANSION function
             mutation = new Mutation("COLOR");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
             // for testing #NOEXPANSION function
             mutation = new Mutation("HUE");
-            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
-            mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
-            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
+            mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
 
         } finally {

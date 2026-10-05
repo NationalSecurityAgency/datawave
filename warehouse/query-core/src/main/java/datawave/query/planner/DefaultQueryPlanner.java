@@ -34,8 +34,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -55,8 +53,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -196,6 +192,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.query.util.ShardQueryUtils;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -244,11 +241,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected boolean disableExpandIndexFunction = false;
 
     /**
-     * Allows developers to cache data types
-     */
-    protected boolean cacheDataTypes = false;
-
-    /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
      */
     public static int maxChildNodesToPrint = 10;
@@ -256,21 +248,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     public static int maxTermsToPrint = 100;
 
     private final long maxRangesPerQueryPiece;
-
-    private static Cache<String,Set<String>> allFieldTypeMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
-                    .expireAfterAccess(24, TimeUnit.HOURS).build();
-
-    private static Cache<String,Multimap<String,Type<?>>> dataTypeMap = CacheBuilder.newBuilder().maximumSize(100).concurrencyLevel(100)
-                    .expireAfterAccess(24, TimeUnit.HOURS).build();
-
-    private static Multimap<String,Type<?>> queryFieldsAsDataTypeMap;
-
-    private static Multimap<String,Type<?>> normalizedFieldAsDataTypeMap;
-
-    // These are caches of the complete set of indexed and normalized fields
-    private static Set<String> cachedIndexedFields = null;
-    private static Set<String> cachedReverseIndexedFields = null;
-    private static Set<String> cachedNormalizedFields = null;
 
     protected List<PushDownRule> rules = Lists.newArrayList();
 
@@ -316,6 +293,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     protected CompositeMetadata compositeMetadata;
     protected TypeMetadata typeMetadata;
+    // reused across calls to configureTypeMappings; not thread-safe, so each DefaultQueryPlanner (and clone) gets its own instance
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
     protected String contentExpansionFields;
     protected String serializedIvaratorDirs;
     protected Set<String> indexedFields;
@@ -388,7 +367,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected DefaultQueryPlanner(DefaultQueryPlanner other) {
         this(other.maxRangesPerQueryPiece, other.limitScanners);
         setRangeStreamClass(other.getRangeStreamClass());
-        setCacheDataTypes(other.getCacheDataTypes());
         setDisableAnyFieldLookup(other.disableAnyFieldLookup);
         setDisableBoundedLookup(other.disableBoundedLookup);
         setDisableCompositeFields(other.disableCompositeFields);
@@ -591,6 +569,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
                 cfg = getQueryIterator(metadataHelper, config, "", false, false);
+                if (null == cfg) {
+                    awaitSettingFuture();
+                }
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
@@ -772,9 +753,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.warn("Config object must be an instance of ShardQueryConfiguration to properly close the DefaultQueryPlanner. You gave me a "
                                 + genericConfig);
             }
-            if (null != executor) {
-                executor.shutdown();
-            }
+            shutdownExecutor();
             return;
         }
 
@@ -787,6 +766,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.error("Failed to close query " + settings.getId(), e);
         }
 
+        shutdownExecutor();
+    }
+
+    /**
+     * Shut down this planner's internal thread pool, if one was ever started. Unlike {@link #close(GenericQueryConfiguration, Query)} this performs no
+     * query-level cleanup, so it is safe to call on planner clones that share a query with the planner they were cloned from.
+     */
+    public void shutdownExecutor() {
         if (null != executor) {
             executor.shutdown();
         }
@@ -1343,41 +1330,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     throws DatawaveQueryException {
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         try {
-            Multimap<String,Type<?>> fieldToDatatypeMap = null;
-            if (cacheDataTypes) {
-                fieldToDatatypeMap = dataTypeMap.getIfPresent(String.valueOf(config.getDatatypeFilter().hashCode()));
-            }
-
-            if (null != fieldToDatatypeMap) {
-                Set<String> indexedFields = Sets.newHashSet();
-                Set<String> reverseIndexedFields = Sets.newHashSet();
-                Set<String> normalizedFields = Sets.newHashSet();
-
-                loadDataTypeMetadata(fieldToDatatypeMap, indexedFields, reverseIndexedFields, normalizedFields, false);
-
-                if (null == queryFieldsAsDataTypeMap) {
-                    queryFieldsAsDataTypeMap = HashMultimap.create(Multimaps.filterKeys(fieldToDatatypeMap, input -> !cachedNormalizedFields.contains(input)));
-                }
-
-                if (null == normalizedFieldAsDataTypeMap) {
-                    normalizedFieldAsDataTypeMap = HashMultimap
-                                    .create(Multimaps.filterKeys(fieldToDatatypeMap, input -> cachedNormalizedFields.contains(input)));
-                }
-
-                setCachedFields(indexedFields, reverseIndexedFields, queryFieldsAsDataTypeMap, normalizedFieldAsDataTypeMap, config);
-            } else {
-                fieldToDatatypeMap = configureIndexedAndNormalizedFields(metadataHelper, config, script);
-
-                if (cacheDataTypes) {
-                    loadDataTypeMetadata(null, null, null, null, true);
-
-                    dataTypeMap.put(String.valueOf(config.getDatatypeFilter().hashCode()), metadataHelper.getFieldsToDatatypes(config.getDatatypeFilter()));
-                }
-            }
-
-        } catch (InstantiationException | IllegalAccessException | AccumuloException | AccumuloSecurityException | TableNotFoundException
-                        | ExecutionException e) {
-            throw new DatawaveFatalQueryException(e);
+            configureIndexedAndNormalizedFields(metadataHelper, config, script);
         } finally {
             stopwatch.stop();
         }
@@ -2018,60 +1971,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
 
     /**
-     * Load the metadata information.
-     *
-     * @param fieldToDatatypeMap
-     *            the field mapping
-     * @param indexedFields
-     *            set of indexed fields
-     * @param reverseIndexedFields
-     *            reverse indexed fields
-     * @param normalizedFields
-     *            the normalized fields
-     * @param reload
-     *            the reload flag
-     * @throws AccumuloException
-     *             for issues with accumulo
-     * @throws AccumuloSecurityException
-     *             for accumulo authentication issues
-     * @throws TableNotFoundException
-     *             if the table is not found
-     * @throws ExecutionException
-     *             for execuition errors
-     * @throws InstantiationException
-     *             for issues with instantiation
-     * @throws IllegalAccessException
-     *             for issues with access
-     */
-    private void loadDataTypeMetadata(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields, Set<String> reverseIndexedFields,
-                    Set<String> normalizedFields, boolean reload) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
-                    ExecutionException, InstantiationException, IllegalAccessException {
-        synchronized (dataTypeMap) {
-            if (!reload && (null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)
-                            && (null != cachedReverseIndexedFields && null != reverseIndexedFields)) {
-                indexedFields.addAll(cachedIndexedFields);
-                reverseIndexedFields.addAll(cachedReverseIndexedFields);
-                normalizedFields.addAll(cachedNormalizedFields);
-
-                return;
-            }
-
-            cachedIndexedFields = metadataHelper.getIndexedFields(null);
-            cachedReverseIndexedFields = metadataHelper.getReverseIndexedFields(null);
-            cachedNormalizedFields = metadataHelper.getAllNormalized();
-
-            if ((null != cachedIndexedFields && null != indexedFields) && (null != cachedNormalizedFields && null != normalizedFields)
-                            && (null != cachedReverseIndexedFields && null != reverseIndexedFields)) {
-                indexedFields.addAll(cachedIndexedFields);
-                reverseIndexedFields.addAll(cachedReverseIndexedFields);
-                normalizedFields.addAll(cachedNormalizedFields);
-            }
-        }
-    }
-
-    /**
-     * Apply the query model to the given query script and query configuration, using the set of all fields cached in allFieldTypeMap if cacheDataTypes is true,
-     * or from {@link MetadataHelper#getAllFields(Set)} otherwise.
+     * Apply the query model to the given query script and query configuration, using the set of all fields from
+     * {@link MetadataHelper#getModelExpansionFields(Set)}.
      *
      * @param metadataHelper
      *            the metadata helper
@@ -2086,18 +1987,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script, QueryModel queryModel) {
         // Establish the set of all fields to use when applying the query model.
         Set<String> dataTypes = config.getDatatypeFilter();
-        Set<String> allFields = null;
+        Set<String> allFields;
         try {
-            String dataTypeHash = String.valueOf(dataTypes.hashCode());
-            if (cacheDataTypes) {
-                allFields = allFieldTypeMap.getIfPresent(dataTypeHash);
-            }
-            if (null == allFields) {
-                allFields = metadataHelper.getModelExpansionFields(dataTypes);
-                if (cacheDataTypes) {
-                    allFieldTypeMap.put(dataTypeHash, allFields);
-                }
-            }
+            allFields = metadataHelper.getModelExpansionFields(dataTypes);
 
             if (log.isTraceEnabled()) {
                 StringBuilder builder = new StringBuilder();
@@ -2391,6 +2283,24 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // no-op
     }
 
+    /**
+     * Blocks until the iterator setting future completes, so that polling {@link #getQueryIterator} is not a hot spin. A failed future is left for the next
+     * getQueryIterator call to surface.
+     */
+    private void awaitSettingFuture() {
+        if (null == settingFuture) {
+            return;
+        }
+        try {
+            settingFuture.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DatawaveAsyncOperationException("Interrupted while building the query iterator", e);
+        } catch (ExecutionException e) {
+            // getQueryIterator will rethrow the cause
+        }
+    }
+
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Boolean isFullTable,
                     boolean isPreload) {
 
@@ -2675,12 +2585,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     typeMetadata = typeMetadata.reduce(fieldsToRetain);
                 }
 
-                // only compress if enabled AND not reducing per shard
-                // type metadata will be serialized in the VisitorFunction
-                String serializedTypeMetadata = typeMetadata.toString();
-                if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
-                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                // only compress/Kryo-encode if enabled AND not reducing per shard, since in that case
+                // type metadata is re-serialized via toString() in the VisitorFunction instead
+                boolean kryoTypeMetadata = config.isKryoTypeMetadata() && !config.getReduceTypeMetadataPerShard();
+                String serializedTypeMetadata;
+                if (kryoTypeMetadata) {
+                    serializedTypeMetadata = typeMetadataSerializer.serialize(typeMetadata);
+                } else {
+                    serializedTypeMetadata = typeMetadata.toString();
+                    if (compressMappings && !config.getReduceTypeMetadataPerShard()) {
+                        serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                    }
                 }
+                addOption(cfg, QueryOptions.TYPE_METADATA_KRYO, Boolean.toString(kryoTypeMetadata), false);
 
                 addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
             }
@@ -3198,14 +3115,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         this.disableCompositeFields = disableCompositeFields;
     }
 
-    public boolean getCacheDataTypes() {
-        return cacheDataTypes;
-    }
-
-    public void setCacheDataTypes(boolean cacheDataTypes) {
-        this.cacheDataTypes = cacheDataTypes;
-    }
-
     private Multimap<String,String> invertMultimap(Map<String,String> multi) {
         Multimap<String,String> inverse = HashMultimap.create();
         for (Entry<String,String> entry : multi.entrySet()) {
@@ -3312,14 +3221,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(e);
         }
 
-    }
-
-    protected void setCachedFields(Set<String> indexedFields, Set<String> reverseIndexedFields, Multimap<String,Type<?>> queryFieldMap,
-                    Multimap<String,Type<?>> normalizedFieldMap, ShardQueryConfiguration config) {
-        config.setIndexedFields(indexedFields);
-        config.setReverseIndexedFields(reverseIndexedFields);
-        updateQueryFieldsDatatypes(config, queryFieldMap);
-        config.setNormalizedFieldsDatatypes(normalizedFieldMap);
     }
 
     protected Multimap<String,Type<?>> configureIndexedAndNormalizedFields(Multimap<String,Type<?>> fieldToDatatypeMap, Set<String> indexedFields,
@@ -3500,8 +3401,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (compositeMetadata == null && compositeMetadataCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(compositeMetadataCallable.stageName());
             try {
-                while (compositeMetadata == null) {
-                    compositeMetadata = compositeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                compositeMetadata = compositeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (compositeMetadata == null) {
+                    throw new ExecutionException(new IllegalStateException("CompositeMetadata was null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch CompositeMetadata", e);
@@ -3521,8 +3423,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (typeMetadata == null && typeMetadataCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(typeMetadataCallable.stageName());
             try {
-                while (typeMetadata == null) {
-                    typeMetadata = typeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                typeMetadata = typeMetadataFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (typeMetadata == null) {
+                    throw new ExecutionException(new IllegalStateException("TypeMetadata was null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch TypeMetadata", e);
@@ -3538,8 +3441,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (contentExpansionFields == null && contentExpansionFieldsCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(contentExpansionFieldsCallable.stageName());
             try {
-                while (contentExpansionFields == null) {
-                    contentExpansionFields = contentExpansionFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                contentExpansionFields = contentExpansionFieldsFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (contentExpansionFields == null) {
+                    throw new ExecutionException(new IllegalStateException("Content expansion fields were null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to fetch Content Expansion fields", e);
@@ -3555,8 +3459,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (serializedIvaratorDirs == null && ivaratorCacheDirCallable != null) {
             TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(ivaratorCacheDirCallable.stageName());
             try {
-                while (serializedIvaratorDirs == null) {
-                    serializedIvaratorDirs = ivaratorCacheDirFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                serializedIvaratorDirs = ivaratorCacheDirFuture.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+                if (serializedIvaratorDirs == null) {
+                    throw new ExecutionException(new IllegalStateException("Serialized ivarator cache dirs were null"));
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 log.error("Failed to serialize ivarator cache dirs", e);
@@ -3612,9 +3517,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected Set<String> getFieldSet(String stageName, Future<Set<String>> future) {
         TraceStopwatch stopwatch = stageStopWatch.newStartedStopwatch(stageName);
         try {
-            Set<String> fields = null;
-            while (fields == null) {
-                fields = future.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+            Set<String> fields = future.get(concurrentTimeoutMillis, TimeUnit.MILLISECONDS);
+            if (fields == null) {
+                throw new ExecutionException(new IllegalStateException("Stage[" + stageName + "] returned a null field set"));
             }
             return fields;
         } catch (ExecutionException | InterruptedException | TimeoutException e) {

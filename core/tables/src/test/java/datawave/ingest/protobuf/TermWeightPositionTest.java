@@ -1,11 +1,12 @@
 package datawave.ingest.protobuf;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -13,8 +14,8 @@ public class TermWeightPositionTest {
 
     private List<TermWeightPosition> termWeightPositionList = Lists.newArrayList();
 
-    @Before
-    public void setup() {
+    @BeforeEach
+    public void beforeEach() {
         TermWeightPosition.Builder twpBuilder = new TermWeightPosition.Builder();
 
         // Simple ordering tests
@@ -68,7 +69,7 @@ public class TermWeightPositionTest {
 
         List<TermWeightPosition> result = Lists.newArrayList(termWeightPositionList);
         Collections.sort(result, new TermWeightPosition.MaxOffsetComparator());
-        Assert.assertEquals(listExpected, result);
+        assertEquals(listExpected, result);
 
     }
 
@@ -100,7 +101,7 @@ public class TermWeightPositionTest {
 
         List<TermWeightPosition> result = Lists.newArrayList(termWeightPositionList);
         Collections.sort(result);
-        Assert.assertEquals(listExpected, result);
+        assertEquals(listExpected, result);
     }
 
     @Test
@@ -108,17 +109,17 @@ public class TermWeightPositionTest {
         TermWeightPosition.Builder builder = new TermWeightPosition.Builder();
         TermWeightPosition expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
         TermWeightPosition position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
-        Assert.assertEquals(expected, position);
+        assertEquals(expected, position);
 
         expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
         builder.reset();
         position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
-        Assert.assertEquals(expected, position);
+        assertEquals(expected, position);
 
         expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(false).build();
         builder.reset();
         position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(false).build();
-        Assert.assertEquals(expected, position);
+        assertEquals(expected, position);
     }
 
     @Test
@@ -127,6 +128,6 @@ public class TermWeightPositionTest {
         Integer twScore = TermWeightPosition.positionScoreToTermWeightScore(positionScore);
         Float result = TermWeightPosition.termWeightScoreToPositionScore(twScore);
 
-        Assert.assertEquals(result + "!=" + positionScore, positionScore, result);
+        assertEquals(positionScore, result, result + "!=" + positionScore);
     }
 }

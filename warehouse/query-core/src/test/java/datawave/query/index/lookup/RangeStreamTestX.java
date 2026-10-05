@@ -2,7 +2,7 @@ package datawave.query.index.lookup;
 
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
-import static datawave.util.TableName.SHARD_INDEX;
+import static datawave.table.constants.TableName.SHARD_INDEX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

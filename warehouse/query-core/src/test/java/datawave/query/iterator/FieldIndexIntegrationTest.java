@@ -1,6 +1,6 @@
 package datawave.query.iterator;
 
-import static datawave.util.TableName.SHARD;
+import static datawave.table.constants.TableName.SHARD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
