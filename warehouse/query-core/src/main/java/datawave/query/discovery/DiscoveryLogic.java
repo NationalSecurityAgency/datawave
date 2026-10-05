@@ -678,6 +678,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         Set<String> params = super.getOptionalQueryParameters();
         params.add(SEPARATE_COUNTS_BY_COLVIS);
         params.add(SUM_COUNTS);
+        params.add(VALUES_ONLY);
         return params;
     }
 

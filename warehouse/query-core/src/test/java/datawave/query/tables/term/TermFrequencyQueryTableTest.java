@@ -1,22 +1,17 @@
 package datawave.query.tables.term;
 
 import static datawave.query.util.WiseGuysIngest.corleoneUID;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.UUID;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
@@ -25,116 +20,76 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.config.TermFrequencyQueryConfiguration;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.tables.ShardQueryLogicTest;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
-public abstract class TermFrequencyQueryTableTest {
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class TermFrequencyQueryTableTest {
+
     private static final Logger log = Logger.getLogger(TermFrequencyQueryTableTest.class);
 
     private static final Authorizations auths = new Authorizations("ALL");
     private static final Set<Authorizations> authSet = Collections.singleton(auths);
 
-    @Inject
-    @SpringBean(name = "TermFrequencyQuery")
+    private static AccumuloClient client;
+
+    @Autowired
+    @Qualifier("TermFrequencyQuery")
     protected TermFrequencyQueryTable logic;
     protected KryoDocumentDeserializer deserializer;
 
-    private final DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
     private final Map<String,String> queryParameters = new HashMap<>();
 
     private String query;
 
-    protected abstract String getRange();
-
-    @RunWith(Arquillian.class)
-    public static class ShardRange extends TermFrequencyQueryTableTest {
-
-        @Override
-        protected String getRange() {
-            return WiseGuysIngest.WhatKindaRange.SHARD.name();
-        }
-    }
-
-    @RunWith(Arquillian.class)
-    public static class DocumentRange extends TermFrequencyQueryTableTest {
-
-        @Override
-        protected String getRange() {
-            return WiseGuysIngest.WhatKindaRange.DOCUMENT.name();
-        }
-    }
-
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-    }
-
-    @AfterClass
-    public static void afterClass() throws Exception {
-        TypeRegistry.reset();
-    }
-
-    @Before
-    public void setup() {
-        this.deserializer = new KryoDocumentDeserializer();
-    }
-
-    @After
-    public void tearDown() {
-        this.logic = null;
-    }
-
-    private AccumuloClient createClient() throws Exception {
-        AccumuloClient client = new QueryTestTableHelper(ShardQueryLogicTest.ShardRange.class.toString(), log,
-                        RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER).client;
-        WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.valueOf(getRange()));
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        // WhatKindaRange only affects how UIDs are encoded in the global index, which this
+        // query logic never scans, so a single ingest is sufficient here.
+        client = new QueryTestTableHelper(TermFrequencyQueryTableTest.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY,
+                        RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER).client;
+        WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
         PrintUtility.printTable(client, auths, TableName.SHARD);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        return client;
+    }
+
+    @BeforeEach
+    public void setup() {
+        this.deserializer = new KryoDocumentDeserializer();
     }
 
     private Query createSettings() {
@@ -179,7 +134,6 @@ public abstract class TermFrequencyQueryTableTest {
     }
 
     private void runQuery(String shard, String dataType, String uid, String fieldLimit, List<String> expectedTfs) throws Exception {
-        AccumuloClient client = createClient();
         Query settings = createSettings();
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
 
@@ -229,7 +183,7 @@ public abstract class TermFrequencyQueryTableTest {
             }
             String tfComposite = StringUtils.join(new String[] {name, extendedName, value, count, offsets}, ",");
             if (fieldLimit != null && fieldLimit.equals(name)) {
-                assertTrue("unexpected tf: " + tfComposite, expectedTfs.remove(tfComposite));
+                assertTrue(expectedTfs.remove(tfComposite), "unexpected tf: " + tfComposite);
             }
         }
     }

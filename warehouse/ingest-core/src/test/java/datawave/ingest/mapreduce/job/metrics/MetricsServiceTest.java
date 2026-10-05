@@ -24,7 +24,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.mapreduce.TestContextWriter;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class MetricsServiceTest {
 
