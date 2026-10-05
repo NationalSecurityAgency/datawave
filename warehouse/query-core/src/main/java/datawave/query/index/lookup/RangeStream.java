@@ -70,6 +70,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -227,6 +228,8 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
             log.trace(JexlStringBuildingVisitor.buildQuery(node));
         }
 
+        Multimap<String,Type<?>> nonIndexedQueryFieldsDatatypes = HashMultimap.create(config.getQueryFieldsDatatypes());
+        nonIndexedQueryFieldsDatatypes.keySet().removeAll(config.getIndexedFields());
         BaseIndexStream ranges = (BaseIndexStream) node.jjtAccept(this, null);
 
         // Guards against the case of a very oddly formed JEXL query, e.g. ("foo")
