@@ -109,7 +109,6 @@ public class ShardQueryLogicQueryValidationTest {
 
     @BeforeEach
     public void setup() throws ParseException {
-        this.logic.setFullTableScanEnabled(true);
         this.deserializer = new KryoDocumentDeserializer();
         this.startDate = dateFormat.parse("20091231");
         this.endDate = dateFormat.parse("20150101");

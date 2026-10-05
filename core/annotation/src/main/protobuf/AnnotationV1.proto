@@ -77,3 +77,11 @@ message AnnotationList {
     repeated Annotation annotations = 1;
     string nextPageToken = 2;
 }
+
+// Used for synchronizing annotations between systems.
+message AnnotationMessage {
+    string annotationMessageId = 1; // the 128-bit hash for this message
+    repeated Annotation annotations = 2; // a list of one or more annotations we're sending
+    string source = 3; // the source of the message.
+    map<string, string> parameters = 50; // key-value pairs identifying the parameters for the message.
+}

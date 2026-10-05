@@ -105,8 +105,9 @@ public class MultiValueCompositeIndexTest extends AbstractQueryTest {
 
     private static final String COMPOSITE_BEGIN_DATE = "20010101 000000.000";
 
-    private static final String BEGIN_DATE = "20000101 000000.000";
-    private static final String END_DATE = "20020101 000000.000";
+    // every event is ingested at COMPOSITE_BEGIN_DATE, so the query only needs to cover that single shard day
+    private static final String BEGIN_DATE = "20010101 000000.000";
+    private static final String END_DATE = "20010101 235959.999";
 
     private static final Configuration conf = new Configuration();
 
@@ -417,7 +418,8 @@ public class MultiValueCompositeIndexTest extends AbstractQueryTest {
             if (logic.isUseShardedIndex()) {
                 assertEquals(2, queries.size());
             } else {
-                assertEquals(2196, queries.size());
+                // the ivarator forces a full scan of the query's date range: one shard day at NUM_SHARDS shards
+                assertEquals(NUM_SHARDS, queries.size());
             }
         }
 

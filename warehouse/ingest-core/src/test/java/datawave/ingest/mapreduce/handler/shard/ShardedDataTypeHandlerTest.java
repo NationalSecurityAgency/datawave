@@ -33,6 +33,7 @@ import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
+import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
@@ -646,7 +647,7 @@ public class ShardedDataTypeHandlerTest {
     }
 
     private long getTimestamp() {
-        return ShardedDataTypeHandler.getIndexTimestamp(timestamp);
+        return DateIndexUtil.getIndexTimestamp(timestamp);
     }
 
     private Type createType() {

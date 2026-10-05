@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -49,6 +50,7 @@ import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.function.RemoveGroupingContext;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.transformer.DocumentTransform;
@@ -88,6 +90,12 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private final String targetField;
     private final TermExtractor queryTermExtractor;
     private final Normalizer<String> termNormalizer;
+    /**
+     * A snapshot of the jexl query string, taken at construction time. This transformer may be constructed before
+     * {@link ShardQueryConfiguration#getOriginalJexlQuery()} has been populated (e.g. {@code ShardQueryLogic.loadQueryParameters()} fetches the transformer,
+     * via {@code getTransformer()}, before the original jexl query string is parsed and set on the config), so this value is only used as a fallback in
+     * {@link #apply(Entry)} when the live value on {@link #shardQueryConfig} is not yet available.
+     */
     private final String jexlQueryString;
     /**
      * Used for merging data about an annotation that may have been stored in the event with hits against that annotation. The key represents the field that
@@ -100,8 +108,8 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     private int contextSize = DEFAULT_CONTEXT_SIZE;
     private float minScore = DEFAULT_MIN_SCORE;
     private TimeUnit timeUnit = DEFAULT_TIMEUNIT;
-    private boolean forcedGroupingNotation = false;
     private List<String> forcedReturnFields = new ArrayList<>();
+    private boolean forcedGroupingNotation = false;
 
     private Set<Pattern> searchHitTerms;
     private ObjectMapper objectMapper;
@@ -124,7 +132,20 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     @Override
     public void initialize(Query settings, MarkingFunctions<?> markingFunctions) {
         super.initialize(settings, markingFunctions);
+        updateConfig(settings);
+    }
 
+    /**
+     * Parses the query parameters relevant to this transform and updates its configuration accordingly. Called once by
+     * {@link #initialize(Query, MarkingFunctions)} when this transform is first constructed, and again by {@code ShardQueryLogic#addConfigBasedTransformers()}
+     * on subsequent pages, following the same initialize()/updateConfig() lifecycle contract used by the other config-based transforms (e.g.
+     * {@code UniqueTransform}, {@code GroupingTransform}, {@code FieldRenameTransform}), in case the query parameters legitimately change across pages (e.g.
+     * after a checkpoint/resume).
+     *
+     * @param settings
+     *            the query settings to read parameters from
+     */
+    public void updateConfig(Query settings) {
         // handle query parameters for configuration overrides
         String enabledStr = settings.findParameter(ENABLED_PARAMETER).getParameterValue();
         if (!enabledStr.isBlank()) {
@@ -197,10 +218,13 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         // test for changes that need to be made to the query to support field enrichment from the event
         if (enrichmentFieldMap != null && !enrichmentFieldMap.isEmpty()) {
             String groupingParameter = settings.findParameter(INCLUDE_GROUPING_CONTEXT).getParameterValue();
-            if ((!Boolean.parseBoolean(groupingParameter))) {
+            // only forcing grouping notation when not already set by the config
+            if ((!Boolean.parseBoolean(groupingParameter)) && !shardQueryConfig.getIncludeGroupingContext()) {
                 // grouping notation not set, apply it
                 shardQueryConfig.setIncludeGroupingContext(true);
-                // capture this, so it can be undone after the transform is complete
+                // record this so it can be undone after the transform is complete. initialize() only runs once per
+                // query now (this transformer instance is constructed once and reused across all page/next() calls),
+                // so a plain instance field is sufficient to remember this across pages.
                 forcedGroupingNotation = true;
             }
 
@@ -266,79 +290,91 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
             return keyDocumentEntry;
         }
 
-        // extract terms to lookup hits on if they haven't been extracted yet
-        if (searchHitTerms == null) {
-            try {
-                searchHitTerms = new HashSet<>();
-                for (String normalized : queryTermExtractor.extract(jexlQueryString, termNormalizer)) {
-                    searchHitTerms.add(compileNormalized(normalized));
-                }
-            } catch (ParseException | JavaRegexAnalyzer.JavaRegexParseException e) {
-                log.debug("no valid search terms detected for query, skipping all hits", e);
-            }
-        }
-
-        if (searchHitTerms.isEmpty()) {
-            // no search terms, no-op
+        // If this is a final document, bail
+        if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
             return keyDocumentEntry;
         }
 
-        Key key = keyDocumentEntry.getKey();
-        Document document = keyDocumentEntry.getValue();
-        if (key == null || document == null || !document.isToKeep()) {
-            // either missing information that is critical or is transient
-            return keyDocumentEntry;
-        } else if (document.get(targetField) != null) {
-            log.warn("Document: " + key + " already contains field: " + targetField + " skipping");
-            return keyDocumentEntry;
-        }
-
-        String shard = key.getRow().toString();
-        String cf = key.getColumnFamily().toString();
-        String[] parts = cf.split("\u0000");
-
-        if (parts.length != 2) {
-            // unexpected doc key
-            log.warn("Cannot apply all hits to result. Unexpected doc key: " + key);
-            return keyDocumentEntry;
-        }
-
-        String dataType = parts[0];
-        String uid = parts[1];
-        List<Annotation> annotations = annotationDataAccess.getAnnotations(shard, dataType, uid);
-        for (Annotation annotation : annotations) {
-            String annotationType = annotation.getAnnotationType();
-            if (validTypes.contains(annotationType)) {
-                // this annotation supports allHits
-                TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
-                List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
+        try {
+            // extract terms to lookup hits on if they haven't been extracted yet
+            if (searchHitTerms == null) {
                 try {
-                    AllHits results = null;
-                    if (!orderedHits.isEmpty()) {
-                        results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, timeUnit);
+                    // prefer the live value from the shared config: this transformer may have been constructed
+                    // before the config's original jexl query was populated (see field javadoc above)
+                    String currentJexlQueryString = shardQueryConfig.getOriginalJexlQuery();
+                    if (currentJexlQueryString == null) {
+                        currentJexlQueryString = jexlQueryString;
                     }
-                    enrichAllHitsFromDocument(annotation, results, document);
-                    updateDocument(keyDocumentEntry, results);
-                } catch (AllHitsException e) {
-                    log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
-                    AllHits error = new AllHits();
-                    error.setAnnotationId(annotation.getAnnotationId());
-                    error.addDynamicProperties("error", e.getMessage());
-                    updateDocument(keyDocumentEntry, error);
-                } finally {
-                    // strip anything we forced into the Document to complete the query
-                    keyDocumentEntry = stripGroupingNotation(keyDocumentEntry);
-                    keyDocumentEntry = removeForcedFields(keyDocumentEntry);
+                    searchHitTerms = new HashSet<>();
+                    for (String normalized : queryTermExtractor.extract(currentJexlQueryString, termNormalizer)) {
+                        searchHitTerms.add(compileNormalized(normalized));
+                    }
+                } catch (ParseException | JavaRegexAnalyzer.JavaRegexParseException e) {
+                    log.debug("no valid search terms detected for query, skipping all hits", e);
                 }
             }
-        }
 
-        return keyDocumentEntry;
+            if (searchHitTerms.isEmpty()) {
+                // no search terms, no-op
+                return keyDocumentEntry;
+            }
+
+            Key key = keyDocumentEntry.getKey();
+            Document document = keyDocumentEntry.getValue();
+            if (key == null || document == null || !document.isToKeep()) {
+                // either missing information that is critical or is transient
+                return keyDocumentEntry;
+            } else if (document.get(targetField) != null) {
+                log.warn("Document: " + key + " already contains field: " + targetField + " skipping");
+                return keyDocumentEntry;
+            }
+
+            String shard = key.getRow().toString();
+            String cf = key.getColumnFamily().toString();
+            String[] parts = cf.split("\u0000");
+
+            if (parts.length != 2) {
+                // unexpected doc key
+                log.warn("Cannot apply all hits to result. Unexpected doc key: " + key);
+                return keyDocumentEntry;
+            }
+
+            String dataType = parts[0];
+            String uid = parts[1];
+            Collection<Annotation> annotations = annotationDataAccess.getAnnotations(shard, dataType, uid);
+            for (Annotation annotation : annotations) {
+                String annotationType = annotation.getAnnotationType();
+                if (validTypes.contains(annotationType)) {
+                    // this annotation supports allHits
+                    TreeMap<SegmentBoundary,List<SegmentValue>> sortedSegments = sort(annotation.getSegmentsList());
+                    List<SegmentHit> orderedHits = search(sortedSegments, contextSize, minScore);
+                    try {
+                        AllHits results = null;
+                        if (!orderedHits.isEmpty()) {
+                            results = allHitsFactory.create(annotation.getAnnotationId(), orderedHits, sortedSegments, timeUnit);
+                        }
+                        enrichAllHitsFromDocument(annotation, results, document);
+                        updateDocument(keyDocumentEntry, results);
+                    } catch (AllHitsException e) {
+                        log.warn("failed to process hit(s) on annotation: " + annotation.getAnnotationId() + " for doc: " + dataType + "\\x00" + uid, e);
+                        AllHits error = new AllHits();
+                        error.setAnnotationId(annotation.getAnnotationId());
+                        error.addDynamicProperties("error", e.getMessage());
+                        updateDocument(keyDocumentEntry, error);
+                    }
+                }
+            }
+            return keyDocumentEntry;
+        } finally {
+            // strip anything we forced into the Document to complete the query
+            stripGroupingNotation(keyDocumentEntry);
+            removeForcedFields(keyDocumentEntry);
+        }
     }
 
-    private Entry<Key,Document> removeForcedFields(Entry<Key,Document> entry) {
-        if (forcedReturnFields.isEmpty()) {
-            return entry;
+    private void removeForcedFields(Entry<Key,Document> entry) {
+        if (forcedReturnFields.isEmpty() || entry.getValue() == null) {
+            return;
         }
 
         Set<Tuple2<String,Attribute<? extends Comparable<?>>>> toRemove = Sets.newHashSet();
@@ -354,17 +390,15 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
         for (Tuple2<String,Attribute<? extends Comparable<?>>> goner : toRemove) {
             entry.getValue().removeAll(goner.first());
         }
-
-        return entry;
     }
 
-    private Entry<Key,Document> stripGroupingNotation(Entry<Key,Document> entry) {
+    private void stripGroupingNotation(Entry<Key,Document> entry) {
         if (!forcedGroupingNotation) {
-            return entry;
+            return;
         }
 
         RemoveGroupingContext removeGroupingContext = new RemoveGroupingContext();
-        return removeGroupingContext.apply(entry);
+        removeGroupingContext.apply(entry);
     }
 
     private void enrichAllHitsFromDocument(Annotation annotation, AllHits allHits, Document document) {
