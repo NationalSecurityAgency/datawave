@@ -3,6 +3,7 @@ package datawave.query.tables.shard;
 import static datawave.core.iterators.ResultCountingIterator.ResultCountTuple;
 
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -31,12 +32,13 @@ import datawave.webservice.query.result.event.DefaultEvent;
 /**
  * A transformer that aggregates query results into a count.
  * <p>
- * Aggregation happens in a separate thread so that an intermediate result can be returned to the RunningQuery.
+ * Aggregation happens in a separate thread so that an intermediate result can be returned to the RunningQuery. The aggregation thread exits on its own once the
+ * source iterator is exhausted. A query that is torn down before that happens must {@link #close()} this iterator to release the thread.
  */
-public class CountAggregatingIterator extends TransformIterator {
+public class CountAggregatingIterator extends TransformIterator implements Closeable {
     private static final Logger log = Logger.getLogger(CountAggregatingIterator.class);
 
-    private static final long DEFAULT_PAGE_WAIT_TIME_MILLIS = 3_600_000L;
+    public static final long DEFAULT_PAGE_WAIT_TIME_MILLIS = 3_600_000L;
 
     private boolean done = false;
     private final AtomicBoolean executing = new AtomicBoolean(true);
@@ -45,7 +47,11 @@ public class CountAggregatingIterator extends TransformIterator {
     private final long pageWaitTimeMillis;
 
     private final CountEntryAggregator aggregator;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "count aggregation");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     /**
      * Constructor with that uses {@link #DEFAULT_PAGE_WAIT_TIME_MILLIS}
@@ -82,6 +88,19 @@ public class CountAggregatingIterator extends TransformIterator {
 
         CountAggregatingRunnable runnable = new CountAggregatingRunnable(iterator, aggregator, executing, latch);
         executor.execute(runnable);
+
+        // the aggregation task is the only task, so the executor can wind down as soon as it finishes
+        executor.shutdown();
+    }
+
+    /**
+     * Stop aggregating and release the aggregation thread.
+     * <p>
+     * Safe to call at any point. Aggregation that is still in flight is interrupted, so the count produced by an already closed iterator is not meaningful.
+     */
+    @Override
+    public void close() {
+        executor.shutdownNow();
     }
 
     @Override
@@ -185,7 +204,7 @@ public class CountAggregatingIterator extends TransformIterator {
         public void run() {
             try {
                 log.info("Beginning count aggregation");
-                while (iterator.hasNext()) {
+                while (!Thread.currentThread().isInterrupted() && iterator.hasNext()) {
                     Entry<Key,Value> entry = iterator.next();
                     if (null == entry || entry.getKey() == null || entry.getValue() == null) {
                         continue;

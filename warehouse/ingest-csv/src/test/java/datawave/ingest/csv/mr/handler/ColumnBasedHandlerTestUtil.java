@@ -35,7 +35,7 @@ import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.table.constants.ColumnFamilyConstants;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Utility Class for common static methods used in ColumnBasedHandler tests

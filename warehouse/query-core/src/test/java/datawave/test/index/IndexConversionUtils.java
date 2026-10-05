@@ -1,6 +1,6 @@
 package datawave.test.index;
 
-import static datawave.util.TableName.SHARD_INDEX;
+import static datawave.table.constants.TableName.SHARD_INDEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -45,8 +45,8 @@ import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
+import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
-import datawave.util.TableName;
 
 /**
  * This class contains all boilerplate code to support declarative style tests
