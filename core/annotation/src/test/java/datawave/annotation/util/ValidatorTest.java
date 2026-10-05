@@ -127,4 +127,26 @@ public class ValidatorTest {
         assertTrue(error.contains("not be null"), error);
 
     }
+
+    /**
+     * Regression test: the fixed-validator overload of {@link Validator#addMemberValidator(java.util.function.Function, Validator, String)} previously
+     * discarded its {@code messageContext} argument and hardcoded {@code ""} when delegating to the dynamic-validator overload, so the descriptive context
+     * suffix (e.g. "in children validation") was silently dropped from every member-validation error produced through this overload.
+     */
+    @Test
+    public void testMemberValidatorAppendsMessageContextSuffix() {
+        // bob has no start/end dates, so the child validator's "must be null" checks (which alice satisfies but bob technically also
+        // satisfies here) won't trigger; instead make bob fail the "Name is required" check to produce a deterministic single error.
+        bob.name = "";
+
+        Validator<Person> childValidator = Validator.<Person> create().addCheck(o -> o.name != null && !o.name.isBlank(), "Name is required");
+
+        Validator<Container> validator = Validator.<Container> create().addMemberValidator(o -> o.children, childValidator, "in children validation");
+
+        Validator.ValidationState<Container> validationState = validator.check(container, false);
+        assertFalse(validationState.isValid());
+        List<String> errors = validationState.getErrors();
+        assertEquals(1, errors.size());
+        assertEquals("Name is required in children validation", errors.get(0));
+    }
 }
