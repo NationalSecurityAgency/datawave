@@ -8,7 +8,7 @@ import org.apache.hadoop.io.Text;
 
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.waitwindow.WaitWindowObserver;
-import datawave.query.tld.TLD;
+import datawave.table.util.TLD;
 
 public class AncestorIndexIterator extends IndexIterator {
 
