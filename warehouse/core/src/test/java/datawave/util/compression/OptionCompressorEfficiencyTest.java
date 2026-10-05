@@ -18,7 +18,7 @@ import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.StringUtils; // Apache Commons Lang for capitalization
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 import datawave.query.util.TypeMetadata;
