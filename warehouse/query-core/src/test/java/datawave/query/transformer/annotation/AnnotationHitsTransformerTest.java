@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.net.URLEncoder;
@@ -24,6 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +56,9 @@ import datawave.query.QueryParameters;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.transformer.annotation.model.AllHits;
 
@@ -1413,6 +1420,75 @@ public class AnnotationHitsTransformerTest {
 
         Entry<Key,Document> result = transformer.apply(Map.entry(HIT_KEY, new Document()));
         assertEquals(expected, result.getValue());
+    }
+
+    @Test
+    public void finalDocumentKeyTest() {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(AnnotationHitsTransformer.KEYWORDS_PARAMETER, "keyword");
+
+        targetField = "TARGET_FIELD";
+        when(normalizer.normalize("keyword")).thenReturn("keyword");
+
+        QuerySpanCollector collector = mock(QuerySpanCollector.class);
+        QuerySpan querySpan = mock(QuerySpan.class);
+        Range range = new Range("begin", "end");
+        YieldCallback yieldCallback = mock(YieldCallback.class);
+
+        // force a final document to return
+        when(querySpan.hasEntries()).thenReturn(true);
+        // give something to return
+        when(collector.getCombinedQuerySpan(querySpan, true)).thenReturn(querySpan);
+
+        List<Entry<Key,Document>> entryList = List.of();
+        FinalDocumentTrackingIterator fdti = new FinalDocumentTrackingIterator(collector, querySpan, range, entryList.iterator(), yieldCallback);
+        // will the stats be returned?
+        assertTrue(fdti.hasNext());
+
+        Entry<Key,Document> finalDoc = fdti.next();
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+
+        assertEquals(finalDoc, transformer.apply(finalDoc));
+
+        verifyNoInteractions(termExtractor);
+        verifyNoInteractions(annotationDao);
+        verifyNoInteractions(allHitsFactory);
+    }
+
+    /**
+     * Simulates what happens after the last document is returned
+     */
+    @Test
+    public void finalDocumentWithDocumentRangeTest() {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1", "ANNO2");
+
+        QuerySpanCollector collector = mock(QuerySpanCollector.class);
+        QuerySpan querySpan = mock(QuerySpan.class);
+        Range range = new Range(HIT_KEY, true, null, true);
+        YieldCallback yieldCallback = mock(YieldCallback.class);
+
+        // force a final document to return
+        when(querySpan.hasEntries()).thenReturn(true);
+        // give something to return
+        when(collector.getCombinedQuerySpan(querySpan, true)).thenReturn(querySpan);
+
+        List<Entry<Key,Document>> entryList = List.of();
+        FinalDocumentTrackingIterator fdti = new FinalDocumentTrackingIterator(collector, querySpan, range, entryList.iterator(), yieldCallback);
+        // will the stats be returned?
+        assertTrue(fdti.hasNext());
+        Entry<Key,Document> finalDocumentEntry = fdti.next();
+        Document originalDoc = finalDocumentEntry.getValue().copy();
+        test(finalDocumentEntry, Map.entry(finalDocumentEntry.getKey(), originalDoc));
+
+        verifyNoInteractions(termExtractor);
+        verifyNoInteractions(annotationDao);
+        verifyNoInteractions(normalizer);
+        verifyNoInteractions(allHitsFactory);
     }
 
     private void enrichmentFieldMapTest(Document input, Document output) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {

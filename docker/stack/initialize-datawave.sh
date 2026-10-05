@@ -4,6 +4,8 @@ set -euo pipefail
 readonly INGEST_HOME=/opt/datawave-ingest/current
 readonly HDFS_INGEST_DIR=/datawave/ingest
 readonly FIXTURES=/opt/datawave-test-data
+readonly SHARD_SPLITS=/stack/shard-splits.txt
+readonly NUM_SHARDS_FLOOR_DATE=19000101
 
 until accumulo shell -u root -p secret -e info >/dev/null 2>&1; do
     echo "Waiting for Accumulo..."
@@ -24,6 +26,14 @@ accumulo shell -u root -p secret -e "createtable datawave.queryMetrics_s" 2>/dev
 mkdir -p /srv/logs/ingest /srv/data/datawave/flags /var/run/datawave
 
 "${INGEST_HOME}/bin/ingest/create-all-tables.sh"
+
+# Otherwise the whole sharded schema lives in one tablet.
+accumulo shell -u root -p secret -e "addsplits -t datawave.shard -sf ${SHARD_SPLITS}"
+
+# The query side expands a day into shards from this entry, not from num.shards.
+num_shards=$(cut -d_ -f2 "${SHARD_SPLITS}" | sort -u | wc -l)
+accumulo shell -u root -p secret -e "insert num_shards ns ${NUM_SHARDS_FLOOR_DATE}_${num_shards} '' -t datawave.metadata"
+
 "${INGEST_HOME}/bin/ingest/load-job-cache.sh"
 
 run_ingest() {
