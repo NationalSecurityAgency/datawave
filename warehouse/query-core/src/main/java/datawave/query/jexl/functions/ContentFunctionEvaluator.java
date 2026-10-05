@@ -177,7 +177,8 @@ public abstract class ContentFunctionEvaluator {
                         TermFrequencyList.Zone zone = new TermFrequencyList.Zone(field, true, eventId);
                         Collection<TermWeightPosition> offsets = tfList.fetchOffsets().get(zone);
                         // if no offsets, but we are explicitly looking for this field (i.e. not unfielded), then check for a non-content expansion zone
-                        if (offsets.isEmpty() && (fields != null && fields.contains(field))) {
+                        // fields in the TF column may have a context hash which necessitates isRelevantField() to get a correct match
+                        if (offsets.isEmpty() && isRelevantField(field)) {
                             zone = new TermFrequencyList.Zone(field, false, eventId);
                             offsets = tfList.fetchOffsets().get(zone);
                         }

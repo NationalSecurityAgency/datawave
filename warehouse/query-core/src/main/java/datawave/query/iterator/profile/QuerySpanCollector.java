@@ -9,12 +9,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.log4j.Logger;
 
 public class QuerySpanCollector {
-    private AtomicLong seekCount = new AtomicLong();
-    private AtomicLong nextCount = new AtomicLong();
-    private AtomicBoolean yield = new AtomicBoolean();
-    private AtomicLong sourceCount = new AtomicLong();
-    private Map<String,Long> stageTimers = new LinkedHashMap<>();
-    private Logger log = Logger.getLogger(QuerySpan.class);
+    private final AtomicLong seekCount = new AtomicLong();
+    private final AtomicLong nextCount = new AtomicLong();
+    private final AtomicBoolean yield = new AtomicBoolean();
+    private final AtomicLong sourceCount = new AtomicLong();
+    private final Map<String,Long> stageTimers = new LinkedHashMap<>();
+    private final Logger log = Logger.getLogger(QuerySpan.class);
 
     public void addQuerySpan(QuerySpan querySpan) {
 
@@ -62,6 +62,7 @@ public class QuerySpanCollector {
                     combinedQuerySpan.setSeek(this.seekCount.getAndSet(0));
                     combinedQuerySpan.setYield(this.yield.getAndSet(false));
                     combinedQuerySpan.setSourceCount(this.sourceCount.getAndSet(0));
+                    // setStageTimers copies the entries into the QuerySpan's own map, so clearing ours afterwards is safe
                     combinedQuerySpan.setStageTimers(this.stageTimers);
                     this.stageTimers.clear();
                 } else {
@@ -76,7 +77,7 @@ public class QuerySpanCollector {
         return combinedQuerySpan;
     }
 
-    public boolean hasEntries() {
+    public synchronized boolean hasEntries() {
         if (this.seekCount.intValue() > 0 || this.nextCount.intValue() > 0 || this.yield.get() || this.sourceCount.intValue() > 0
                         || !this.stageTimers.isEmpty()) {
             return true;
@@ -136,8 +137,15 @@ public class QuerySpanCollector {
         return sourceCount.longValue();
     }
 
+    /**
+     * An unmodifiable snapshot of the accumulated stage timers, in insertion order.
+     *
+     * @return a copy of the stage timers, unaffected by subsequent mutation of this collector
+     */
     public Map<String,Long> getStageTimers() {
-        return Collections.unmodifiableMap(stageTimers);
+        synchronized (this) {
+            return Collections.unmodifiableMap(new LinkedHashMap<>(stageTimers));
+        }
     }
 
 }

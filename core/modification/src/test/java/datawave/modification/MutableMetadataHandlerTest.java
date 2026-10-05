@@ -23,7 +23,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.modification.DefaultModificationRequest;
 import datawave.webservice.modification.ModificationRequestBase.MODE;
 

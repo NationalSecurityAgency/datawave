@@ -7,8 +7,8 @@ import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELA
 import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_INTERSECT;
 import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_UNION;
 import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
-import static datawave.util.TableName.METADATA;
-import static datawave.util.TableName.SHARD_INDEX;
+import static datawave.table.constants.TableName.METADATA;
+import static datawave.table.constants.TableName.SHARD_INDEX;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -50,9 +50,8 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
-import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Integration test for asserting correct query plans coming off the RangeStream
@@ -387,8 +386,7 @@ public class RangeStreamQueryTest {
 
         // Run a standard limited-scanner range stream.
         count++;
-        ScannerFactory scannerFactory = new ScannerFactory(config);
-        rangeStream = new RangeStream(config, scannerFactory, helper);
+        rangeStream = new RangeStream(config, helper);
         rangeStream.setLimitScanners(true);
 
         script = JexlASTHelper.parseAndFlattenJexlQuery(query);

@@ -24,7 +24,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.nyctlc.NYCTLCHelper;
 import datawave.ingest.nyctlc.NYCTLCIngestHelper;
 import datawave.ingest.nyctlc.NYCTLCReader;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class NYCTLCColumnBasedHandlerTest {
 

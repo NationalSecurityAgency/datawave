@@ -29,7 +29,7 @@ import datawave.ingest.table.config.MetadataTableConfigHelper;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Creates and configures tables that are commonly needed for queries

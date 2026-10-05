@@ -12,7 +12,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class DateIndexTestIngest {
 

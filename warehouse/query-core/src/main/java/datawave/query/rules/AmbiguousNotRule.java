@@ -10,7 +10,7 @@ import datawave.query.lucene.visitors.AmbiguousNotVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 
 /**
- * An implementation of {@link QueryRule} that checks a LUCENE query for any usage of NOT with OR'd/AND'd terms before it that are not wrapped, e.g. *
+ * An implementation of {@link QueryRule} that checks a LUCENE query for any usage of NOT with OR'd/AND'd terms before it that are not wrapped, e.g.
  * {@code FIELD1:abc OR FIELD2:def NOT FIELD3:123} should be {@code (FIELD1:abc OR FIELD2:def) NOT FIELD3:123}.
  */
 public class AmbiguousNotRule extends ShardQueryRule {
