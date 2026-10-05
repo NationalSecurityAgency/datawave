@@ -20,7 +20,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.DatawaveJexlContext;
 
@@ -37,10 +36,6 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
      * Should sizes of documents be tracked
      */
     private boolean trackSizes;
-
-    public MarkingFunctions getMarkingFunctions() {
-        return MarkingFunctions.Factory.createMarkingFunctions();
-    }
 
     protected Attributes() {
         this(true);

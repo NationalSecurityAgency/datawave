@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
@@ -63,6 +62,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
@@ -94,7 +94,6 @@ import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.predict.QueryPredictor;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
-import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryParameters;
@@ -240,6 +239,7 @@ public class CachedResultsBean {
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
 
     @Inject
+    @SpringBean(name = "queryLimiter")
     private QueryLimiter queryLimiter;
 
     protected static final String COMMA = ",";
@@ -303,7 +303,16 @@ public class CachedResultsBean {
         ps.setString(5, cqo.getEventId());
         ps.setString(6, cqo.getRow());
         ps.setString(7, cqo.getColFam());
-        ps.setString(8, MarkingFunctions.Encoding.toString(new TreeMap<>(cqo.getMarkings())));
+
+        String visibility = "";
+        if (cqo.getMarkings() != null) {
+            AccessExpression ae = cqo.getMarkings().toAccessExpression();
+            if (ae != null) {
+                visibility = ae.getExpression();
+            }
+        }
+
+        ps.setString(8, visibility);
         for (Entry<String,String> e : cqo.getColumnValues().entrySet()) {
 
             String columnName = e.getKey();
@@ -475,7 +484,7 @@ public class CachedResultsBean {
                 try {
                     MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>(q.toMap());
                     marking.validate(queryMap);
-                    queryMap.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                    queryMap.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toAccessExpressionString());
                     queryMap.set(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
                     queryMap.set(PrivateAuditConstants.USER_DN, q.getUserDN());
                     queryMap.set(PrivateAuditConstants.LOGIC_CLASS, logic.getLogicName());
@@ -1310,7 +1319,7 @@ public class CachedResultsBean {
                 MultiValueMap<String,String> params = new LinkedMultiValueMap<>(query.toMap());
                 marking.validate(params);
                 PrivateAuditConstants.stripPrivateParameters(queryParameters);
-                params.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                params.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toAccessExpressionString());
                 params.set(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
                 params.set(PrivateAuditConstants.USER_DN, query.getUserDN());
                 params.set(PrivateAuditConstants.LOGIC_CLASS, crq.getQueryLogic().getLogicName());

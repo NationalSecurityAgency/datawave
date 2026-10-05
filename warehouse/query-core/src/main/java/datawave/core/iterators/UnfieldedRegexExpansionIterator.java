@@ -57,9 +57,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
     private Text columnQualifierDate;
     private Text columnQualifierDateAndDatatype;
 
-    // used to track the unique field value pairs
-    private final Set<String> foundPairs = new HashSet<>();
-
     private final ShardIndexKey parser = new ShardIndexKey();
 
     enum HINT_TYPE {
@@ -112,17 +109,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
     }
 
     @Override
-    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (!range.isStartKeyInclusive()) {
-            // need to make the start key inclusive because filters operate slightly differently
-            Range seekRange = new Range(range.getStartKey(), true, range.getEndKey(), range.isEndKeyInclusive());
-            super.seek(seekRange, columnFamilies, inclusive);
-        } else {
-            super.seek(range, columnFamilies, inclusive);
-        }
-    }
-
-    @Override
     public FilterResult filter(Key k, Value v) {
         if (log.isDebugEnabled()) {
             log.debug("tk: {}", k.toStringNoTime());
@@ -151,14 +137,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
             previousMatch = parser.getValue();
         }
 
-        String candidate = parser.getValue() + parser.getField();
-        if (foundPairs.contains(candidate)) {
-            // advance to next field
-            foundPairs.clear();
-            log.debug("Found duplicate field, advance to next field");
-            return new FilterResult(false, AdvanceResult.NEXT_CF);
-        }
-
         String date = parser.getShard();
         if (date.compareTo(startDate) < 0) {
             // advance to start date
@@ -177,7 +155,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
         }
 
         log.debug("key accepted, advancing to next column family");
-        foundPairs.add(candidate);
         return new FilterResult(true, AdvanceResult.NEXT_CF);
     }
 
@@ -218,5 +195,40 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
                 options.containsKey(END_DATE) &&
                 options.containsKey(PATTERN);
         //  @formatter:on
+    }
+
+    /**
+     * Resumes a torn down scan past the column family it already reported a value for.
+     * <p>
+     * A rebuilt stack is re-seeked at {@code Range(lastReturnedKey, exclusive)}, which lands inside the column family the previous stack skipped when it
+     * accepted that key. Ranges from {@code ShardIndexQueryTableStaticMethods#getRegexRange} are exclusive too, but their start key is a bare row with no
+     * column family, so only a complete index key marks a resume.
+     */
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        if (!range.isStartKeyInclusive() && isCompleteIndexKey(range.getStartKey())) {
+            Key skip = range.getStartKey().followingKey(PartialKey.ROW_COLFAM);
+            // a null end key means the scan is unbounded, as happens for a pattern with wildcards on both sides
+            Key endKey = range.getEndKey();
+            if (endKey != null && skip.compareTo(endKey) > 0) {
+                // handles the case where appending a null byte would cause the start key to be greater than the end key
+                super.seek(new Range(endKey, true, endKey, range.isEndKeyInclusive()), columnFamilies, inclusive);
+            } else {
+                super.seek(new Range(skip, true, endKey, range.isEndKeyInclusive()), columnFamilies, inclusive);
+            }
+        } else {
+            super.seek(range, columnFamilies, inclusive);
+        }
+    }
+
+    /**
+     * A complete shard index key carries a column family, meaning it identifies a specific field rather than a bare row boundary.
+     *
+     * @param key
+     *            the start key of a seek range
+     * @return true if the key could be one this iterator previously returned
+     */
+    private static boolean isCompleteIndexKey(Key key) {
+        return key != null && key.getColumnFamily().getLength() > 0;
     }
 }

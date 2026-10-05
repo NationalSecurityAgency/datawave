@@ -90,8 +90,8 @@ public class AuthorizeHttpTest {
     @Test
     public void testAuthorizeNotAllowedCallerTrustedHeader() throws Exception {
         // Use trusted header to authenticate to ProxiedEntityX509Filter
-        testUtils.testAuthorizeMethodFailure(notAllowedCaller, "/authorization/v1/authorize", true, false);
-        testUtils.testAuthorizeMethodFailure(notAllowedCaller, "/authorization/v2/authorize", true, false);
+        testUtils.testNotAllowedMethodFailure(notAllowedCaller, "/authorization/v1/authorize", true, false);
+        testUtils.testNotAllowedMethodFailure(notAllowedCaller, "/authorization/v2/authorize", true, false);
     }
 
     @Test
@@ -99,34 +99,34 @@ public class AuthorizeHttpTest {
         // Use JWT to authenticate to JWTAuthenticationFilter
         // Since user is already authenticated, ProxiedEntityX509Filter does not
         // authenticate and trustedHeaders are ignored
-        testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v1/authorize", true, true);
-        testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v2/authorize", true, true);
+        testUtils.testAllowedMethodSuccess(allowedCaller, "/authorization/v1/authorize", true, true);
+        testUtils.testAllowedMethodSuccess(allowedCaller, "/authorization/v2/authorize", true, true);
 
         // Use JWT to authenticate to JWTAuthenticationFilter
         // Since user is already authenticated, ProxiedEntityX509Filter does not
         // authenticate and trustedHeaders are ignored
         // allowedCaller is not enforced when accessing using JWT
-        testUtils.testAuthorizeMethodSuccess(notAllowedCaller, "/authorization/v1/authorize", true, true);
-        testUtils.testAuthorizeMethodSuccess(notAllowedCaller, "/authorization/v2/authorize", true, true);
+        testUtils.testAllowedMethodSuccess(notAllowedCaller, "/authorization/v1/authorize", true, true);
+        testUtils.testAllowedMethodSuccess(notAllowedCaller, "/authorization/v2/authorize", true, true);
     }
 
     @Test
     public void testAuthorizeJWT() throws Exception {
         // Use JWT to authenticate to JWTAuthenticationFilter
-        testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v1/authorize", false, true);
-        testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v2/authorize", false, true);
+        testUtils.testAllowedMethodSuccess(allowedCaller, "/authorization/v1/authorize", false, true);
+        testUtils.testAllowedMethodSuccess(allowedCaller, "/authorization/v2/authorize", false, true);
 
         // Use JWT to authenticate to JWTAuthenticationFilter
         // allowedCaller is not enforced when accessing using JWT
-        testUtils.testAuthorizeMethodSuccess(notAllowedCaller, "/authorization/v1/authorize", false, true);
-        testUtils.testAuthorizeMethodSuccess(notAllowedCaller, "/authorization/v2/authorize", false, true);
+        testUtils.testAllowedMethodSuccess(notAllowedCaller, "/authorization/v1/authorize", false, true);
+        testUtils.testAllowedMethodSuccess(notAllowedCaller, "/authorization/v2/authorize", false, true);
     }
 
     @Test
     public void testAuthorizeAllowedCallerTrustedHeader() throws Exception {
         // Use trusted header to authenticate to ProxiedEntityX509Filter
-        testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v1/authorize", true, false);
-        testUtils.testAuthorizeMethodSuccess(allowedCaller, "/authorization/v2/authorize", true, false);
+        testUtils.testAllowedMethodSuccess(allowedCaller, "/authorization/v1/authorize", true, false);
+        testUtils.testAllowedMethodSuccess(allowedCaller, "/authorization/v2/authorize", true, false);
     }
 
     @Test

@@ -37,7 +37,7 @@ public class AccumuloConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MarkingFunctions markingFunctions() {
+    public MarkingFunctions<?> markingFunctions() {
         return new MarkingFunctions.Default();
     }
 

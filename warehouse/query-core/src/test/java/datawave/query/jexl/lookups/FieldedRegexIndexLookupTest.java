@@ -1,11 +1,17 @@
 package datawave.query.jexl.lookups;
 
+import static org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -23,6 +29,8 @@ import datawave.query.tables.ScannerFactory;
 public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
 
     private static final Logger log = LoggerFactory.getLogger(FieldedRegexIndexLookupTest.class);
+
+    private AsyncIndexLookup lookup;
 
     @Test
     public void testExpansionWithNodata() {
@@ -206,6 +214,70 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
         assertResultValues("FIELD_A", Set.of("tim", "tam"));
     }
 
+    @Test
+    public void testExecutionHints_expansionPoolSelectedOverIndexTable() {
+        write("bar", "FIELD_A");
+        withQuery("FIELD_A =~ 'ba.*'");
+
+        Map<String,String> expansionHints = new HashMap<>();
+        expansionHints.put("scan_type", "expansion-pool-a");
+        expansionHints.put("priority", "2");
+
+        Map<String,String> indexHints = new HashMap<>();
+        indexHints.put("scan_type", "index-a");
+        indexHints.put("priority", "1");
+
+        Map<String,Map<String,String>> tableHints = new HashMap<>();
+        tableHints.put("expansion", expansionHints);
+        tableHints.put("shardIndex", indexHints);
+        config.setTableHints(tableHints);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(expansionHints, lookup.builder.getExecutionHints());
+    }
+
+    @Test
+    public void testExecutionHints_indexTableNameSelectedWhenNoExpansionPoolExists() {
+        write("bar", "FIELD_A");
+        withQuery("FIELD_A =~ 'ba.*'");
+
+        Map<String,String> indexHints = new HashMap<>();
+        indexHints.put("scan_type", "index-a");
+        indexHints.put("priority", "1");
+
+        Map<String,Map<String,String>> tableHints = new HashMap<>();
+        tableHints.put("shardIndex", indexHints);
+        config.setTableHints(tableHints);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(indexHints, lookup.builder.getExecutionHints());
+    }
+
+    @Test
+    public void testConsistencyLevel() {
+        write("bar", "FIELD_A");
+        withQuery("FIELD_A =~ 'ba.*'");
+
+        Map<String,ScannerBase.ConsistencyLevel> consistencyLevels = new HashMap<>();
+        consistencyLevels.put("shardIndex", ConsistencyLevel.EVENTUAL);
+        config.setTableConsistencyLevels(consistencyLevels);
+
+        executeLookup();
+        assertResultFields(Set.of("FIELD_A"));
+        assertResultValues("FIELD_A", Set.of("bar"));
+
+        assertNotNull(lookup.builder);
+        assertEquals(ConsistencyLevel.EVENTUAL, lookup.builder.getConsistencyLevel());
+    }
+
     @Override
     protected void executeLookup() {
         try {
@@ -220,7 +292,7 @@ public class FieldedRegexIndexLookupTest extends BaseIndexLookupTest {
             Range range = desc.range;
             boolean reverse = desc.isForReverseIndex;
 
-            AsyncIndexLookup lookup = createLookup(field, value, range, reverse);
+            lookup = createLookup(field, value, range, reverse);
             executeLookup(lookup);
         } catch (Exception e) {
             log.error(e.getMessage(), e);

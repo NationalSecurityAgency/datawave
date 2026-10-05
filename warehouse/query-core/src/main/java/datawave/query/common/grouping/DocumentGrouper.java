@@ -310,7 +310,7 @@ public class DocumentGrouper {
             // Create a new group and merge it into the existing groups.
             Group group = new Group(grouping, count);
             group.setFieldAggregator(fieldAggregator);
-            group.addDocumentVisibility(document.getColumnVisibility());
+            group.addDocumentExpression(document.getAccessExpression());
             groups.mergeOrPutGroup(group);
         }
     }
@@ -630,9 +630,9 @@ public class DocumentGrouper {
         }
         // Add the visibilities of each attribute in the grouping for combination later, and increment the count for how many times this distinct
         // grouping was seen.
-        group.addAttributeVisibilities(grouping);
+        group.addAttributeExpressions(grouping);
         group.incrementCount();
-        group.addDocumentVisibility(document.getColumnVisibility());
+        group.addDocumentExpression(document.getAccessExpression());
     }
 
     private Set<GroupingAttribute<?>> createGroupingAttributes(String field, Set<Attribute<?>> attributes) {

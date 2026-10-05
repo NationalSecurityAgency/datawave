@@ -23,7 +23,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.marking.MarkingFunctions;
+import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.microservice.querymetric.config.QueryMetricTransportType;
 import datawave.microservice.querymetric.config.TimelyProperties;
 import datawave.microservice.querymetric.function.QueryMetricSupplier;
@@ -53,7 +53,7 @@ public class NonWebApplicationMessagingTest {
     @BeforeEach
     public void setup() {
         this.metricMarkings = new HashMap<>();
-        this.metricMarkings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "A&C");
+        this.metricMarkings.put(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "A&C");
         this.storedMetricUpdates.clear();
     }
 

@@ -10,6 +10,7 @@
         |datawave\.test.*|
         |gov.nsa.datawave.*)" regex="true" strategyOnMismatch="allowed">
     <!-- API packages -->
+    <allow pkg="org.apache.accumulo.access"/>
     <allow pkg="org.apache.accumulo.core.client"/>
     <allow pkg="org.apache.accumulo.core.data"/>
     <allow pkg="org.apache.accumulo.core.security"/>

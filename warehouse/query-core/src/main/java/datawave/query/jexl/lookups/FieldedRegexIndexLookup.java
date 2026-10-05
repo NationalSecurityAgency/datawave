@@ -1,10 +1,13 @@
 package datawave.query.jexl.lookups;
 
+import static datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.EXPANSION_HINT_KEY;
+
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -18,6 +21,8 @@ import com.google.common.base.Preconditions;
 import datawave.core.iterators.FieldedRegexExpansionIterator;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
+import datawave.scan.ExecutionHintHelper;
+import datawave.scan.ScannerBuilder;
 import datawave.util.time.DateHelper;
 
 /**
@@ -71,9 +76,27 @@ public class FieldedRegexIndexLookup extends BaseRegexIndexLookup {
     protected Runnable createRunnable() {
         return () -> {
             String tableName = getTableName();
-            try (Scanner scanner = config.getClient().createScanner(tableName, config.getAuthorizations().iterator().next())) {
-                String hintKey = getHintKey(tableName);
-                scanner.setExecutionHints(Map.of(tableName, hintKey));
+
+            //  @formatter:off
+            builder = ScannerBuilder.create(config.getClient())
+                    .setTableName(tableName)
+                    .setAuthorizations(config.getAuthorizations().iterator().next());
+            //  @formatter:on
+
+            // only set the consistency level if configured
+            ConsistencyLevel consistencyLevel = ExecutionHintHelper.getConsistencyLevel(tableName, config.getTableConsistencyLevels());
+            if (consistencyLevel != null) {
+                builder.setConsistencyLevel(consistencyLevel);
+            }
+
+            // only set execution hints if configured
+            Map<String,String> executionHints = ExecutionHintHelper.getExecutionHints(EXPANSION_HINT_KEY, config.getIndexTableName(), config.getTableHints());
+            if (executionHints != null) {
+                builder.setScanType(ExecutionHintHelper.getScanType(executionHints));
+                builder.setScanPriority(ExecutionHintHelper.getPriority(executionHints));
+            }
+
+            try (Scanner scanner = builder.build()) {
 
                 IteratorSetting regexIterator = createRegexIterator();
                 scanner.addScanIterator(regexIterator);

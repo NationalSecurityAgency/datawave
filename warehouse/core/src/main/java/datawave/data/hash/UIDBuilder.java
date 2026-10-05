@@ -6,11 +6,14 @@ import org.apache.commons.cli.Option;
 import org.apache.hadoop.conf.Configuration;
 
 /**
+ * Deprecated, use {@link datawave.table.hash.UIDBuilder}
+ * <p>
  * Creates UIDs based on various types of input
  *
  * @param <UID_TYPE>
  *            the type of UID
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public interface UIDBuilder<UID_TYPE extends UID> {
 
     /**

@@ -1,5 +1,7 @@
 package datawave.query.transformer.annotation.model;
 
+import java.util.Set;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Term {
@@ -8,6 +10,9 @@ public class Term {
 
     @JsonProperty
     private float confidence;
+
+    @JsonProperty
+    private Set<TermHit> hits;
 
     @JsonProperty
     private TimeRange timeRange = new TimeRange();
@@ -30,5 +35,13 @@ public class Term {
 
     public void setConfidence(float confidence) {
         this.confidence = confidence;
+    }
+
+    public Set<TermHit> getHits() {
+        return hits;
+    }
+
+    public void setHits(Set<TermHit> hits) {
+        this.hits = hits;
     }
 }

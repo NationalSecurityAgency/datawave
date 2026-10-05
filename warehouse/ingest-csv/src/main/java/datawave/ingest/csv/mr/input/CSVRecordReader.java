@@ -1,10 +1,10 @@
 package datawave.ingest.csv.mr.input;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -27,8 +27,10 @@ import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.input.reader.event.EventFixer;
 import datawave.ingest.metadata.id.MetadataIdParser;
 import datawave.ingest.validation.EventValidator;
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
+import datawave.marking.Markings;
 
 public class CSVRecordReader extends CSVReaderBase implements EventFixer {
 
@@ -42,7 +44,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
 
     private ExtendedCSVHelper csvHelper;
     private DataTypeOverrideHelper dataTypeHelper;
-    private Map<String,String> securityMarkings;
+    private Markings<?> securityMarkings;
 
     @Override
     public void initialize(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
@@ -126,12 +128,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
     protected void decorateEvent() {
         if (null != this.securityMarkings && !this.securityMarkings.isEmpty()) {
             event.setSecurityMarkings(securityMarkings);
-            try {
-                event.setVisibility(MarkingFunctionsFactory.createMarkingFunctions().translateToColumnVisibility(securityMarkings));
-            } catch (MarkingFunctions.Exception e) {
-                log.error("Could not set default ColumnVisibility for the event", e);
-                throw new RuntimeException(e);
-            }
+            event.setVisibility(securityMarkings.toColumnVisibility());
         }
 
         // now validate
@@ -174,14 +171,16 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
         }
 
         // If fieldName is a security marking field (as configured by EVENT_SECURITY_MARKING_FIELD_NAMES),
-        // then put the marking value into this.securityMarkings, where the key is the field name for the marking
-        // (as configured by EVENT_SECURITY_MARKING_FIELD_DOMAINS)
+        // then accumulate the marking value into this.securityMarkings
         if (this.csvHelper.getSecurityMarkingFieldDomainMap().containsKey(fieldName)) {
-            if (null == this.securityMarkings) {
-                this.securityMarkings = new HashMap<>();
-            }
             if (!StringUtils.isEmpty(fieldValue)) {
-                this.securityMarkings.put(this.csvHelper.getSecurityMarkingFieldDomainMap().get(fieldName), fieldValue);
+                AccessExpression ae = AccessExpressionUtil.normalize(fieldValue);
+                AccessExpressionMarkings newMarking = AccessExpressionMarkings.builder().accessExpression(ae).build();
+                if (securityMarkings == null) {
+                    securityMarkings = newMarking;
+                } else {
+                    securityMarkings = new MarkingFunctions.Default().combine(securityMarkings, newMarking);
+                }
             }
         }
         // Now lets add metadata extracted from the parsers

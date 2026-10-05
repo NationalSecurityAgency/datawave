@@ -23,7 +23,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
 import datawave.query.function.serializer.KryoDocumentSerializer;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -32,7 +32,7 @@ public class DocumentTransformerTest {
 
     // variables used to build the transformer
     private final Query query = new QueryImpl();
-    private final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
+    private final MarkingFunctions<?> markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
     private final ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
     private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
 

@@ -34,10 +34,10 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.scan.BatchScannerBuilder;
-import datawave.query.scan.ScannerBuilder;
 import datawave.query.tables.async.ScannerChunk;
-import datawave.util.TableName;
+import datawave.scan.BatchScannerBuilder;
+import datawave.scan.ScannerBuilder;
+import datawave.table.constants.TableName;
 
 public class ScanSessionManagerTest {
 

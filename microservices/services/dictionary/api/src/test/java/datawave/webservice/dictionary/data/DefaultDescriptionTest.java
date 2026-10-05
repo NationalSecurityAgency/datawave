@@ -7,10 +7,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.xml.bind.JAXBContext;
@@ -21,17 +19,31 @@ import javax.xml.bind.annotation.XmlSchema;
 
 import org.junit.jupiter.api.Test;
 
+import datawave.marking.AccessExpressionMarkings;
+
 public class DefaultDescriptionTest {
 
     @Test
     public void testMarshall() throws JAXBException {
         JAXBContext j = JAXBContext.newInstance(DefaultFields.class);
 
-        Map<String,String> markings = new HashMap<>();
-        markings.put("columnVisibility", "PRIVATE");
+        DefaultFields dicFieldsList = getDefaultFields();
 
+        Marshaller m = j.createMarshaller();
+        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        m.marshal(dicFieldsList, out);
+
+        String result = out.toString();
+
+        assertTrue(result.contains("<columnVisibility>PRIVATE</columnVisibility>"));
+        assertTrue(result.contains("<description>my description</description>"));
+    }
+
+    private static DefaultFields getDefaultFields() {
         DefaultDescription desc = new DefaultDescription();
-        desc.setMarkings(markings);
+        desc.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
         desc.setDescription("my description");
 
         Set<DefaultDescription> descs = new HashSet<>();
@@ -47,18 +59,7 @@ public class DefaultDescriptionTest {
 
         DefaultFields dicFieldsList = new DefaultFields();
         dicFieldsList.setFields(dicFields);
-
-        Marshaller m = j.createMarshaller();
-        m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        m.marshal(dicFieldsList, out);
-
-        String result = out.toString();
-
-        assertTrue(result.contains("<key>columnVisibility</key>"));
-        assertTrue(result.contains("<value>PRIVATE</value>"));
-        assertTrue(result.contains("<description>my description</description>"));
+        return dicFieldsList;
     }
 
     @Test
@@ -83,10 +84,7 @@ public class DefaultDescriptionTest {
                         + "            <descriptions>\n"
                         + "                <description>my description</description>\n"
                         + "                <markings>\n"
-                        + "                    <entry>\n"
-                        + "                        <key>columnVisibility</key>\n"
-                        + "                        <value>PRIVATE</value>\n"
-                        + "                    </entry>\n"
+                        + "                    <columnVisibility>PRIVATE</columnVisibility>\n"
                         + "                </markings>\n"
                         + "            </descriptions>\n"
                         + "            <fieldName>myField</fieldName>\n"
@@ -107,9 +105,9 @@ public class DefaultDescriptionTest {
             assertEquals("myType", f.getDatatype());
             for (DefaultDescription d : f.getDescriptions()) {
                 assertEquals("my description", d.getDescription());
-                Map<String,String> m = d.getMarkings();
-                assertEquals("PRIVATE", m.get("columnVisibility"));
-                markingCount = m.size();
+                assertTrue(d.getMarkings() instanceof AccessExpressionMarkings);
+                AccessExpressionMarkings aem = (AccessExpressionMarkings) d.getMarkings();
+                assertEquals("PRIVATE", aem.getColumnVisibilityString());
                 descriptionCount++;
             }
             fieldCount++;
@@ -117,6 +115,5 @@ public class DefaultDescriptionTest {
 
         assertEquals(1, fieldCount);
         assertEquals(1, descriptionCount);
-        assertEquals(1, markingCount);
     }
 }

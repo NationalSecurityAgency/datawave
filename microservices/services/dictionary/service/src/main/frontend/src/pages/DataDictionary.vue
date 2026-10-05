@@ -310,7 +310,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { QTable, QTableProps, exportFile, useQuasar, Notify } from 'quasar';
+import { QTable, QTableProps, exportFile, useQuasar } from 'quasar';
 import { useToggle, useDark } from '@vueuse/core';
 import { api } from '../boot/axios';
 import { Banner, Menu, columns, System } from '../functions/components';

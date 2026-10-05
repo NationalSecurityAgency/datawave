@@ -24,10 +24,18 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 public interface ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends DataTypeHandler<KEYIN> {
 
     Value NULL_VALUE = new Value(new byte[0]);
+
+    @Deprecated(forRemoval = true, since = "7.40.0")
     String FULL_CONTENT_LOCALITY_NAME = "fullcontent";
+
+    @Deprecated(forRemoval = true, since = "7.40.0")
     String FULL_CONTENT_COLUMN_FAMILY = "d";
     /* TODO Make a clearer definition of full content indexers */
+
+    @Deprecated(forRemoval = true, since = "7.40.0")
     String TERM_FREQUENCY_LOCALITY_NAME = "termfrequency";
+
+    @Deprecated(forRemoval = true, since = "7.40.0")
     Text TERM_FREQUENCY_COLUMN_FAMILY = new Text("tf");
 
     long process(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,

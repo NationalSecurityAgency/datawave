@@ -37,7 +37,6 @@ import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.Constants;
@@ -48,6 +47,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.keyword.transform.KeywordResultsTransformer;
 import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
 import datawave.query.transformer.TagCloudTransformer;
+import datawave.table.constants.ColumnFamilyConstants;
 import datawave.util.keyword.TagCloudPartition;
 import datawave.util.keyword.TagCloudUtils;
 import datawave.webservice.query.exception.QueryException;
@@ -387,7 +387,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         log.debug("Received pieces: " + shardId + ", " + datatype + ", " + uid);
 
         // Create and add a Range
-        final String cf = ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY;
+        final String cf = ColumnFamilyConstants.FULL_CONTENT;
         final String cq = datatype + Constants.NULL_BYTE_STRING + uid;
         final Key startKey = new Key(shardId, cf, cq + Constants.NULL_BYTE_STRING);
         final Key endKey = new Key(shardId, cf, cq + endKeyTerminator);

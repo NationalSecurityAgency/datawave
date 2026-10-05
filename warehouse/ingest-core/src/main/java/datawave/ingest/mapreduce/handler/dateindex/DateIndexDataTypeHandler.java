@@ -94,6 +94,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
     protected DateNormalizer dateNormalizer = new DateNormalizer();
     protected ShardIdFactory shardIdFactory = null;
     protected TaskAttemptContext taskAttemptContext = null;
+    protected MarkingFunctions<?> markingFunctions;
 
     public Set<Type> getDataTypes() {
         Set<Type> types = new HashSet<>();
@@ -148,6 +149,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
         this.taskAttemptContext = context;
         this.conf = context.getConfiguration();
         this.shardIdFactory = new ShardIdFactory(conf);
+        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
         String tableName = conf.get(DATEINDEX_TNAME, null);
         if (null == tableName) {
@@ -364,7 +366,7 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {
-        return MarkingFunctions.Factory.createMarkingFunctions().flatten(vis);
+        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
     }
 
     public Text getDateIndexTableName() {

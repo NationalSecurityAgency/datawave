@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.webservice.query.result.event.HasMarkings;
 import datawave.webservice.query.util.TypedValue;
 
@@ -27,15 +28,15 @@ public abstract class CacheableQueryRow implements HasMarkings {
         fixedColumnSet.add("_column_timestamps_");
     }
 
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
 
     public static Set<String> getFixedColumnSet() {
         return Collections.unmodifiableSet(fixedColumnSet);
     }
 
-    public abstract void addColumn(String columnName, String columnStringValue, Map<String,String> markings, String columnVisibility, Long timestamp);
+    public abstract void addColumn(String columnName, String columnStringValue, Markings<?> markings, String columnVisibility, Long timestamp);
 
-    public abstract void addColumn(String columnName, TypedValue columnValue, Map<String,String> markings, String columnVisibility, Long timestamp);
+    public abstract void addColumn(String columnName, TypedValue columnValue, Markings<?> markings, String columnVisibility, Long timestamp);
 
     public abstract String getUser();
 
@@ -51,7 +52,7 @@ public abstract class CacheableQueryRow implements HasMarkings {
 
     public abstract String getColFam();
 
-    public abstract Map<String,String> getColumnMarkings(String columnName);
+    public abstract Markings<?> getColumnMarkings(String columnName);
 
     public abstract String getColumnVisibility(String columnName);
 
@@ -98,17 +99,17 @@ public abstract class CacheableQueryRow implements HasMarkings {
 
     public abstract void setUser(String user_);
 
-    public abstract void setColumnMarkingsMap(Map<String,Map<String,String>> columnMarkingsMap);
+    public abstract void setColumnMarkingsMap(Map<String,Markings<?>> columnMarkingsMap);
 
     public abstract void setColumnColumnVisibilityMap(Map<String,String> columnVisibilityMap);
 
     public abstract void setColumnTimestampMap(Map<String,Long> parseColumnTimestamps);
 
-    public MarkingFunctions getMarkingFunctions() {
+    public MarkingFunctions<?> getMarkingFunctions() {
         return markingFunctions;
     }
 
-    public void setMarkingFunctions(MarkingFunctions markingFunctions) {
+    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
         this.markingFunctions = markingFunctions;
     }
 }

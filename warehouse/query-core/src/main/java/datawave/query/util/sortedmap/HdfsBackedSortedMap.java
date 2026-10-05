@@ -9,7 +9,6 @@ import java.util.List;
 
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FsStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
@@ -159,24 +158,7 @@ public class HdfsBackedSortedMap<K,V> extends BufferedFileBackedSortedMap<K,V> {
         }
 
         public boolean isValid() {
-            FsStatus fsStatus = null;
-            try {
-                fsStatus = ivaratorCacheDir.getFs().getStatus();
-            } catch (IOException e) {
-                log.warn("Unable to determine status of the filesystem: " + ivaratorCacheDir.getFs());
-            }
-
-            // determine whether this fs is a good candidate
-            if (fsStatus != null) {
-                long availableStorageMiB = fsStatus.getRemaining() / 0x100000L;
-                double availableStoragePercent = (double) fsStatus.getRemaining() / fsStatus.getCapacity();
-
-                // if we are using less than our storage limit, the cache dir is valid
-                return availableStorageMiB >= ivaratorCacheDir.getConfig().getMinAvailableStorageMiB()
-                                && availableStoragePercent >= ivaratorCacheDir.getConfig().getMinAvailableStoragePercent();
-            }
-
-            return false;
+            return ivaratorCacheDir.validateFS();
         }
 
         @Override

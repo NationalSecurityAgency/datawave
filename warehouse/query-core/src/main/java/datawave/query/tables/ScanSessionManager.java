@@ -3,11 +3,12 @@ package datawave.query.tables;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.query.scan.ScanManager;
+import datawave.scan.ScanManager;
 
 /**
  * An extension of {@link ScanManager} that also tracks {@link ScannerSession} instances in addition to {@link org.apache.accumulo.core.client.Scanner} and
@@ -18,6 +19,10 @@ public class ScanSessionManager extends ScanManager {
     private static final Logger log = LoggerFactory.getLogger(ScanSessionManager.class);
 
     protected final Set<ScannerSession> sessionInstances = Collections.synchronizedSet(new HashSet<>());
+
+    protected final AtomicBoolean sessionsClosed = new AtomicBoolean(false);
+
+    private final Object sessionLock = new Object();
 
     public ScanSessionManager() {
         // empty constructor
@@ -30,8 +35,15 @@ public class ScanSessionManager extends ScanManager {
      *            a ScannerSession instance
      */
     public void addScanner(ScannerSession scanner) {
-        log.trace("Adding scanner {}", scanner);
-        this.sessionInstances.add(scanner);
+        synchronized (sessionLock) {
+            if (sessionsClosed.get()) {
+                log.warn("ScanSessionManager closed, closing ScannerSession");
+                scanner.close();
+            } else {
+                log.trace("Adding scanner {}", scanner);
+                this.sessionInstances.add(scanner);
+            }
+        }
     }
 
     /**
@@ -52,12 +64,17 @@ public class ScanSessionManager extends ScanManager {
     /**
      * Closes all scanners tracked by the {@link ScanSessionManager}
      */
+    @Override
     public void close() {
-        log.trace("ScannerManager asked to close all tracked scanners");
-        super.close();
+        synchronized (sessionLock) {
+            sessionsClosed.set(true);
 
-        for (ScannerSession scanner : new HashSet<>(sessionInstances)) {
-            close(scanner);
+            log.trace("ScannerManager asked to close all tracked scanners");
+            super.close();
+
+            for (ScannerSession scanner : new HashSet<>(sessionInstances)) {
+                close(scanner);
+            }
         }
     }
 

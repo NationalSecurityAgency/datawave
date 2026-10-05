@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -18,7 +17,7 @@ import com.esotericsoftware.kryo.io.Input;
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
+import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.parser.EventFields;
@@ -30,11 +29,13 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Key,Value>,EventBase> implements CacheableLogic {
 
-    public EventQueryTransformer(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+    private MarkingFunctions<?> markingFunctions;
+
+    public EventQueryTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(tableName, settings, markingFunctions, responseObjectFactory);
     }
 
-    public EventQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    public EventQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         super(logic, settings, markingFunctions, responseObjectFactory);
     }
@@ -52,13 +53,18 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         }
         EventBase event = this.responseObjectFactory.getEvent();
 
-        Map<String,String> markings = null;
+        if (null == markingFunctions) {
+            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+        }
+
+        Markings<?> markings;
         try {
             markings = this.markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(key.getColumnVisibility()), this.auths);
         } catch (Exception e) {
             log.error("could not translate " + key.getColumnVisibility() + " to markings, skipping entry");
             return null;
         }
+
         if (null == markings || markings.isEmpty()) {
             // can't process this one because we did not have valid security markings
             log.error("Transformer visibility interpreter was null, skipping entry");
@@ -86,8 +92,8 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         String origFieldName = null;
         String fieldName = null;
 
-        // Hold unique Column Visibilities and merge them at the end
-        // for the overall event ColumnVisibility.
+        // Hold unique visibilities and merge them at the end
+        // for the overall event visibility.
         Set<ColumnVisibility> visibilitiesToMerge = new HashSet<>();
 
         for (Entry<String,Collection<FieldValue>> e : eventFields.asMap().entrySet()) {
@@ -101,14 +107,15 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
             for (FieldValue fv : e.getValue()) {
                 visibilitiesToMerge.add(fv.getVisibility());
                 try {
-                    Map<String,String> fieldMarkings = this.markingFunctions.translateFromColumnVisibility(fv.getVisibility());
+                    Markings<?> fieldMarkings = this.markingFunctions.translateFromColumnVisibility(fv.getVisibility());
                     String value = new String(fv.getValue(), StandardCharsets.UTF_8);
                     // if this is a content field name, then replace the value with the uid
                     if (getContentFieldNames().contains(fieldName)) {
                         value = baseUid;
                     }
-                    values.add(this.makeField(fieldName, fieldMarkings, new String(fv.getVisibility().getExpression()), entry.getKey().getTimestamp(), value));
-                } catch (Exception e1) {
+                    values.add(this.makeField(fieldName, fieldMarkings, fieldMarkings.toAccessExpression().getExpression(), entry.getKey().getTimestamp(),
+                                    value));
+                } catch (MarkingFunctions.Exception e1) {
                     throw new RuntimeException("could not make markings from: " + fv.getVisibility());
                 }
             }
@@ -116,11 +123,12 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
 
         ColumnVisibility columnVisibility = null;
         try {
-            columnVisibility = this.markingFunctions.combine(visibilitiesToMerge);
-            event.setMarkings(this.markingFunctions.translateFromColumnVisibility(columnVisibility));
+            columnVisibility = markingFunctions.combineVisibilities(visibilitiesToMerge);
+            event.setMarkings(markingFunctions.translateFromColumnVisibility(columnVisibility));
         } catch (Exception e1) {
             throw new RuntimeException("could not make markings from: " + columnVisibility);
         }
+
         event.setFields(new ArrayList<>(values));
 
         Metadata metadata = new Metadata();
@@ -145,7 +153,7 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
 
         // assign an estimate of the event size
         // in practice this is about 6 times the size of the kryo bytes
-        event.setSizeInBytes(entry.getValue().getSize() * 6);
+        event.setSizeInBytes(entry.getValue().getSize() * 6L);
 
         return event;
     }

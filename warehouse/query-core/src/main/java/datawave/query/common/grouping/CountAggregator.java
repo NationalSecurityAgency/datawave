@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import datawave.query.attributes.Attribute;
@@ -22,24 +22,24 @@ public class CountAggregator extends AbstractAggregator<Long> {
     private long count;
 
     /**
-     * The column visibilities of all attributes aggregated.
+     * The access expressions of all attributes aggregated.
      */
-    private final Set<ColumnVisibility> columnVisibilities;
+    private final Set<AccessExpression> accessExpressions;
 
     public static CountAggregator of(String field, TypeAttribute<BigDecimal> attribute) {
-        return new CountAggregator(field, attribute.getType().getDelegate().longValue(), attribute.getColumnVisibility());
+        return new CountAggregator(field, attribute.getType().getDelegate().longValue(), attribute.getAccessExpression());
     }
 
     public CountAggregator(String field) {
         super(field);
-        this.columnVisibilities = new HashSet<>();
+        this.accessExpressions = new HashSet<>();
     }
 
-    private CountAggregator(String field, long count, ColumnVisibility visibility) {
+    private CountAggregator(String field, long count, AccessExpression expression) {
         this(field);
         this.count = count;
-        if (visibility != null) {
-            columnVisibilities.add(visibility);
+        if (expression != null) {
+            accessExpressions.add(expression);
         }
     }
 
@@ -54,8 +54,8 @@ public class CountAggregator extends AbstractAggregator<Long> {
     }
 
     @Override
-    public Set<ColumnVisibility> getColumnVisibilities() {
-        return Collections.unmodifiableSet(columnVisibilities);
+    public Set<AccessExpression> getAccessExpressions() {
+        return Collections.unmodifiableSet(accessExpressions);
     }
 
     /**
@@ -82,7 +82,7 @@ public class CountAggregator extends AbstractAggregator<Long> {
     @Override
     public void aggregate(Attribute<?> value) {
         count++;
-        this.columnVisibilities.add(value.getColumnVisibility());
+        this.accessExpressions.add(value.getAccessExpression());
     }
 
     @Override
@@ -90,7 +90,7 @@ public class CountAggregator extends AbstractAggregator<Long> {
         if (other instanceof CountAggregator) {
             CountAggregator aggregator = (CountAggregator) other;
             this.count += aggregator.count;
-            this.columnVisibilities.addAll(aggregator.columnVisibilities);
+            this.accessExpressions.addAll(aggregator.accessExpressions);
         } else {
             throw new IllegalArgumentException("Cannot merge instance of " + other.getClass().getName());
         }
@@ -98,6 +98,6 @@ public class CountAggregator extends AbstractAggregator<Long> {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("field", field).append("count", count).append("columnVisibilities", columnVisibilities).toString();
+        return new ToStringBuilder(this).append("field", field).append("count", count).append("accessExpressions", accessExpressions).toString();
     }
 }

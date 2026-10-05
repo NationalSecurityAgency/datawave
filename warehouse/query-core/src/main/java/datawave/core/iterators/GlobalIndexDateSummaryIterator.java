@@ -201,6 +201,7 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
         private String date = null;
         private Map<String,MutableLong> summary = new HashMap<>();
         private Map<String,Set<ColumnVisibility>> columnVisibilitiesMap = Maps.newHashMap();
+        protected MarkingFunctions<?> markingFunctions;
 
         public TermInfoSummary(String fieldValue, String fieldName, String date) {
             this.fieldValue = fieldValue;
@@ -255,8 +256,11 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
                     // Calculate the ColumnVisibility for this key from the combiner.
                     Set<ColumnVisibility> columnVisibilities = this.columnVisibilitiesMap.get(datatype);
 
+                    if (null == markingFunctions) {
+                        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+                    }
                     // Note that the access controls found in the combined ColumnVisibility will be pulled out appropriately here
-                    ColumnVisibility cv = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
+                    ColumnVisibility cv = markingFunctions.combineVisibilities(columnVisibilities);
 
                     // Create a new Key compatible with the shardIndex key format
                     Key k = new Key(this.fieldValue, this.fieldName, this.date + '\0' + datatype, new String(cv.getExpression()));

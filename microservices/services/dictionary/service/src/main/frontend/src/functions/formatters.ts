@@ -56,7 +56,7 @@ export function parseVal(colName: string, colValue: any, colDataTypeCount?: any)
 }
 
 // Catches undefined values and returns an empty string to prevent 'undefined' from rendering in the DOM.
-export function maxSubstring(str: any, colName: any): any {
+export function maxSubstring(str: any, _colName: any): any {
   if (str === undefined) {
     return;
   }

@@ -1,23 +1,21 @@
 package datawave.webservice.query.result.event;
 
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlSeeAlso;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
-import com.google.common.base.Charsets;
-
+import datawave.marking.Markings;
 import datawave.webservice.query.util.TypedValue;
 import io.protostuff.Message;
 
 @XmlAccessorType(XmlAccessType.NONE)
-@XmlSeeAlso(DefaultField.class)
 public abstract class FieldBase<T> implements HasMarkings, Message<T> {
 
-    protected transient Map<String,String> markings;
+    protected transient Markings<?> markings;
 
     public abstract Long getTimestamp();
 
@@ -40,8 +38,13 @@ public abstract class FieldBase<T> implements HasMarkings, Message<T> {
     public abstract void setColumnVisibility(String columnVisibility);
 
     public void setColumnVisibility(ColumnVisibility columnVisibility) {
-        String cvString = (columnVisibility == null) ? null : new String(columnVisibility.getExpression(), Charsets.UTF_8);
-        setColumnVisibility(cvString);
+        String exprString = (columnVisibility == null) ? null : new String(columnVisibility.getExpression(), StandardCharsets.UTF_8);
+        setColumnVisibility(exprString);
+    }
+
+    public void setColumnVisibility(AccessExpression accessExpression) {
+        String exprString = (accessExpression == null) ? null : accessExpression.getExpression();
+        setColumnVisibility(exprString);
     }
 
 }

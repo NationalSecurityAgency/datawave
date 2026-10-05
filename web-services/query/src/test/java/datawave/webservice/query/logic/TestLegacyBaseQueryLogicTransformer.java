@@ -75,7 +75,7 @@ public class TestLegacyBaseQueryLogicTransformer {
     private static class TestTransformer extends BaseQueryLogicTransformer<Map.Entry<?,?>,EventBase<?,?>> {
         BaseQueryResponse response;
 
-        public TestTransformer(MarkingFunctions markingFunctions, BaseQueryResponse response) {
+        public TestTransformer(MarkingFunctions<?> markingFunctions, BaseQueryResponse response) {
             super(markingFunctions);
             this.response = response;
         }

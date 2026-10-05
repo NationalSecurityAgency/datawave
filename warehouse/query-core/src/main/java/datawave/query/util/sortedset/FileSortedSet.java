@@ -705,7 +705,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     /**
      * This is the iterator for a persisted FileSortedSet
      */
-    protected class FileIterator implements Iterator<E>, AutoCloseable {
+    protected class FileIterator implements Iterator<E> {
         private SortedSetInputStream<E> stream;
         private E next;
 
@@ -763,9 +763,11 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         }
 
         @Override
-        public void close() {
+        protected void finalize() throws Throwable {
             cleanup();
+            super.finalize();
         }
+
     }
 
     /**

@@ -1,8 +1,7 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
-import java.util.Map;
-
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.marking.Markings;
 
 /**
  * Extracts the duration field specified by a Normalized Content Interface
@@ -13,7 +12,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 public class DurationValue {
     private int duration = -1;
 
-    private Map<String,String> markings = null;
+    private Markings<?> markings = null;
 
     public DurationValue(NormalizedContentInterface elapsedTimeNCI) {
         String durString = elapsedTimeNCI.getIndexedFieldValue();
@@ -36,7 +35,7 @@ public class DurationValue {
         }
     }
 
-    public Map<String,String> getMarkings() {
+    public Markings<?> getMarkings() {
         return this.markings;
     }
 }

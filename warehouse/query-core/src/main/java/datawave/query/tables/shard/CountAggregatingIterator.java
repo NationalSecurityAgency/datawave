@@ -3,6 +3,7 @@ package datawave.query.tables.shard;
 import static datawave.core.iterators.ResultCountingIterator.ResultCountTuple;
 
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -31,12 +32,13 @@ import datawave.webservice.query.result.event.DefaultEvent;
 /**
  * A transformer that aggregates query results into a count.
  * <p>
- * Aggregation happens in a separate thread so that an intermediate result can be returned to the RunningQuery.
+ * Aggregation happens in a separate thread so that an intermediate result can be returned to the RunningQuery. The aggregation thread exits on its own once the
+ * source iterator is exhausted. A query that is torn down before that happens must {@link #close()} this iterator to release the thread.
  */
-public class CountAggregatingIterator extends TransformIterator {
+public class CountAggregatingIterator extends TransformIterator implements Closeable {
     private static final Logger log = Logger.getLogger(CountAggregatingIterator.class);
 
-    private static final long DEFAULT_PAGE_WAIT_TIME_MILLIS = 3_600_000L;
+    public static final long DEFAULT_PAGE_WAIT_TIME_MILLIS = 3_600_000L;
 
     private boolean done = false;
     private final AtomicBoolean executing = new AtomicBoolean(true);
@@ -45,7 +47,11 @@ public class CountAggregatingIterator extends TransformIterator {
     private final long pageWaitTimeMillis;
 
     private final CountEntryAggregator aggregator;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
+        Thread thread = new Thread(runnable, "count aggregation");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     /**
      * Constructor with that uses {@link #DEFAULT_PAGE_WAIT_TIME_MILLIS}
@@ -57,7 +63,7 @@ public class CountAggregatingIterator extends TransformIterator {
      * @param markingFunctions
      *            the marking functions
      */
-    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions markingFunctions) {
+    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions<?> markingFunctions) {
         this(iterator, transformer, markingFunctions, DEFAULT_PAGE_WAIT_TIME_MILLIS);
     }
 
@@ -74,13 +80,27 @@ public class CountAggregatingIterator extends TransformIterator {
      *            the time to wait for the next page
      */
     @SuppressWarnings("unchecked")
-    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions markingFunctions, long pageWaitTimeMillis) {
+    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions<?> markingFunctions,
+                    long pageWaitTimeMillis) {
         super(iterator, transformer);
         this.aggregator = new CountEntryAggregator(transformer, markingFunctions);
         this.pageWaitTimeMillis = pageWaitTimeMillis;
 
         CountAggregatingRunnable runnable = new CountAggregatingRunnable(iterator, aggregator, executing, latch);
         executor.execute(runnable);
+
+        // the aggregation task is the only task, so the executor can wind down as soon as it finishes
+        executor.shutdown();
+    }
+
+    /**
+     * Stop aggregating and release the aggregation thread.
+     * <p>
+     * Safe to call at any point. Aggregation that is still in flight is interrupted, so the count produced by an already closed iterator is not meaningful.
+     */
+    @Override
+    public void close() {
+        executor.shutdownNow();
     }
 
     @Override
@@ -121,12 +141,12 @@ public class CountAggregatingIterator extends TransformIterator {
     private static class CountEntryAggregator {
 
         private final AtomicLong count = new AtomicLong(0L);
-        private final Set<ColumnVisibility> cvs = new HashSet<>();
+        private final Set<ColumnVisibility> columnVisibilities = new HashSet<>();
 
         private final Transformer transformer;
-        private final MarkingFunctions markingFunctions;
+        private MarkingFunctions<?> markingFunctions;
 
-        public CountEntryAggregator(Transformer transformer, MarkingFunctions markingFunctions) {
+        public CountEntryAggregator(Transformer transformer, MarkingFunctions<?> markingFunctions) {
             this.transformer = transformer;
             this.markingFunctions = markingFunctions;
         }
@@ -136,13 +156,13 @@ public class CountAggregatingIterator extends TransformIterator {
         }
 
         public void addColumnVisibility(ColumnVisibility cv) {
-            this.cvs.add(cv);
+            this.columnVisibilities.add(cv);
         }
 
         @SuppressWarnings("unchecked")
         public Object getAggregatedEvent() {
-            if (cvs.isEmpty() && count.get() == 0L) {
-                cvs.add(new ColumnVisibility(""));
+            if (columnVisibilities.isEmpty() && count.get() == 0L) {
+                columnVisibilities.add(new ColumnVisibility(""));
             }
 
             ColumnVisibility cv = getCombinedColumnVisibility();
@@ -151,7 +171,10 @@ public class CountAggregatingIterator extends TransformIterator {
 
         private ColumnVisibility getCombinedColumnVisibility() {
             try {
-                return markingFunctions.combine(cvs);
+                if (null == markingFunctions) {
+                    markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+                }
+                return markingFunctions.combineVisibilities(columnVisibilities);
             } catch (Exception e) {
                 log.error("Could not combine columnVisibilities for the count", e);
                 return null;
@@ -181,7 +204,7 @@ public class CountAggregatingIterator extends TransformIterator {
         public void run() {
             try {
                 log.info("Beginning count aggregation");
-                while (iterator.hasNext()) {
+                while (!Thread.currentThread().isInterrupted() && iterator.hasNext()) {
                     Entry<Key,Value> entry = iterator.next();
                     if (null == entry || entry.getKey() == null || entry.getValue() == null) {
                         continue;

@@ -21,17 +21,17 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
 
     public static final String TIMING_METADATA = "TIMING_METADATA";
     protected QuerySpan spanRunner;
-    private static String host = null;
     private static Logger log = Logger.getLogger(QuerySpan.class);
-
-    private static final Object LOCK = new Object();
+    private static final String host;
 
     static {
+        String canonicalHostName = null;
         try {
-            host = InetAddress.getLocalHost().getCanonicalHostName();
+            canonicalHostName = InetAddress.getLocalHost().getCanonicalHostName();
         } catch (UnknownHostException e) {
             log.error(e.getMessage(), e);
         }
+        host = canonicalHostName;
     }
 
     public LogTiming(QuerySpan spanRunner) {
@@ -45,31 +45,39 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
         return entry;
     }
 
+    /**
+     * Adds a {@link TimingMetadata} attribute to the document from the current values of the query span, then resets the span.
+     * <p>
+     * The query span must be confined to the calling thread; this method deliberately does not lock.
+     *
+     * @param document
+     *            the document to annotate, may be null
+     * @param querySpan
+     *            a thread-confined query span, may be null
+     */
     public static void addTimingMetadata(Document document, QuerySpan querySpan) {
 
         if (document != null && querySpan != null) {
             TimingMetadata timingMetadata = new TimingMetadata();
-            synchronized (LOCK) {
-                timingMetadata.setHost(host);
-                timingMetadata.setSourceCount(querySpan.getSourceCount());
-                timingMetadata.setSeekCount(querySpan.getSeekCount());
-                timingMetadata.setNextCount(querySpan.getNextCount());
-                if (querySpan.getYield()) {
-                    timingMetadata.setYieldCount(1L);
-                } else {
-                    timingMetadata.setYieldCount(0L);
-                }
-
-                long totalStageTimers = querySpan.getStageTimerTotal();
-                // do not report timers that are less than 5% of the total
-                double threshold = totalStageTimers * 0.05;
-                for (Entry<String,Long> e : querySpan.getStageTimers().entrySet()) {
-                    if (e.getValue().longValue() >= threshold) {
-                        timingMetadata.addStageTimer(e.getKey(), new Numeric(e.getValue(), document.getMetadata(), document.isToKeep()));
-                    }
-                }
-                querySpan.reset();
+            timingMetadata.setHost(host);
+            timingMetadata.setSourceCount(querySpan.getSourceCount());
+            timingMetadata.setSeekCount(querySpan.getSeekCount());
+            timingMetadata.setNextCount(querySpan.getNextCount());
+            if (querySpan.getYield()) {
+                timingMetadata.setYieldCount(1L);
+            } else {
+                timingMetadata.setYieldCount(0L);
             }
+
+            long totalStageTimers = querySpan.getStageTimerTotal();
+            // do not report timers that are less than 5% of the total
+            double threshold = totalStageTimers * 0.05;
+            for (Entry<String,Long> e : querySpan.getStageTimers().entrySet()) {
+                if (e.getValue().longValue() >= threshold) {
+                    timingMetadata.addStageTimer(e.getKey(), new Numeric(e.getValue(), document.getMetadata(), document.isToKeep()));
+                }
+            }
+            querySpan.reset();
             document.put(TIMING_METADATA, timingMetadata);
         }
     }

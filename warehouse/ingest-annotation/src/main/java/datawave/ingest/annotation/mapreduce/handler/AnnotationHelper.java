@@ -57,11 +57,23 @@ public class AnnotationHelper {
     private final String annotationSourceTableName;
     private final Text annotationSourceTableNameText;
 
+    public static final String TRUTHMARK_TNAME = "truthmark.table.name";
+    private final String truthmarkTableName;
+
+    public static final String TRUTHMARK_SOURCE_TNAME = "truthmark.source.table.name";
+    private final String truthmarkSourceTableName;
+
     public static final String ANNOTATION_TABLE_LOAD_PRIORITY = "annotation.table.loader.priority";
     private final int annotationTableLoaderPriority;
 
     public static final String ANNOTATION_SOURCE_TABLE_LOAD_PRIORITY = "annotation.source.table.loader.priority";
     private final int annotationSourceTableLoaderPriority;
+
+    public static final String TRUTHMARK_TABLE_LOAD_PRIORITY = "truthmark.table.loader.priority";
+    private final int truthmarkTableLoaderPriority;
+
+    public static final String TRUTHMARK_SOURCE_TABLE_LOAD_PRIORITY = "truthmark.source.table.loader.priority";
+    private final int truthmarkSourceTableLoaderPriority;
 
     public static final String ANNOTATION_RAW_TRANSFORMATION_ENABLED = "annotation.raw.transform.enable";
     private final boolean annotationRawTransformationEnabled;
@@ -85,8 +97,14 @@ public class AnnotationHelper {
         this.annotationSourceTableName = conf.get(ANNOTATION_SOURCE_TNAME, "datawave.annotationSource");
         this.annotationSourceTableNameText = new Text(annotationSourceTableName);
 
+        this.truthmarkTableName = conf.get(TRUTHMARK_TNAME, "datawave.truthmark");
+
+        this.truthmarkSourceTableName = conf.get(TRUTHMARK_SOURCE_TNAME, "datawave.truthmarkSource");
+
         this.annotationTableLoaderPriority = conf.getInt(ANNOTATION_TABLE_LOAD_PRIORITY, 50);
         this.annotationSourceTableLoaderPriority = conf.getInt(ANNOTATION_SOURCE_TABLE_LOAD_PRIORITY, 60);
+        this.truthmarkTableLoaderPriority = conf.getInt(TRUTHMARK_TABLE_LOAD_PRIORITY, 70);
+        this.truthmarkSourceTableLoaderPriority = conf.getInt(TRUTHMARK_SOURCE_TABLE_LOAD_PRIORITY, 80);
 
         this.annotationRawTransformationEnabled = conf.getBoolean(ANNOTATION_RAW_TRANSFORMATION_ENABLED, false);
 
@@ -120,13 +138,14 @@ public class AnnotationHelper {
      */
     public String[] getAnnotationTableNames(String[] tableNames) {
         if (tableNames == null || tableNames.length == 0) {
-            return new String[] {this.annotationTableName, this.annotationSourceTableName};
+            return new String[] {this.annotationTableName, this.annotationSourceTableName, this.truthmarkTableName, this.truthmarkSourceTableName};
         } else {
-            String[] annotationTableNames = new String[tableNames.length + 2];
+            String[] annotationTableNames = new String[tableNames.length + 4];
             System.arraycopy(tableNames, 0, annotationTableNames, 0, tableNames.length);
             annotationTableNames[tableNames.length] = this.annotationTableName;
             annotationTableNames[tableNames.length + 1] = this.annotationSourceTableName;
-
+            annotationTableNames[tableNames.length + 2] = this.truthmarkTableName;
+            annotationTableNames[tableNames.length + 3] = this.truthmarkSourceTableName;
             return annotationTableNames;
         }
     }
@@ -139,12 +158,15 @@ public class AnnotationHelper {
      */
     public int[] getAnnotationTableLoaderPriorities(int[] tableLoaderPriorities) {
         if (tableLoaderPriorities == null || tableLoaderPriorities.length == 0) {
-            return new int[] {this.annotationTableLoaderPriority, this.annotationSourceTableLoaderPriority};
+            return new int[] {this.annotationTableLoaderPriority, this.annotationSourceTableLoaderPriority, this.truthmarkTableLoaderPriority,
+                    this.truthmarkSourceTableLoaderPriority};
         } else {
-            int[] annotationTableLoaderPriorities = new int[tableLoaderPriorities.length + 2];
+            int[] annotationTableLoaderPriorities = new int[tableLoaderPriorities.length + 4];
             System.arraycopy(tableLoaderPriorities, 0, annotationTableLoaderPriorities, 0, tableLoaderPriorities.length);
             annotationTableLoaderPriorities[tableLoaderPriorities.length] = this.annotationTableLoaderPriority;
             annotationTableLoaderPriorities[tableLoaderPriorities.length + 1] = this.annotationSourceTableLoaderPriority;
+            annotationTableLoaderPriorities[tableLoaderPriorities.length + 2] = this.truthmarkTableLoaderPriority;
+            annotationTableLoaderPriorities[tableLoaderPriorities.length + 3] = this.truthmarkSourceTableLoaderPriority;
 
             return annotationTableLoaderPriorities;
         }

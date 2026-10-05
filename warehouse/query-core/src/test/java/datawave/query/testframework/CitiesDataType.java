@@ -22,7 +22,6 @@ import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
-import datawave.marking.MarkingFunctions;
 
 /**
  * Contains all of the relevant data needed to configure any of the cities data types.
@@ -256,7 +255,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
 
     @Override
     public String getSecurityMarkingFieldDomains() {
-        return MarkingFunctions.Default.COLUMN_VISIBILITY;
+        return "columnVisibility";
     }
 
     @Override

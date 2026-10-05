@@ -13,6 +13,8 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import datawave.util.StringUtils;
 
 /**
+ * Deprecated, use {@link datawave.table.hash.SnowflakeUID}
+ * <p>
  * Internal, DATAWAVE-specific, unique identifier. Instead of using a UID based on hash values, however, this class uses a 96-bit ID based on a 52-bit
  * timestamp, 20-bit machine ID, and a 24-bit one-up sequence ID.
  * <p>
@@ -23,6 +25,7 @@ import datawave.util.StringUtils;
  * A {@link SnowflakeUID} cannot be used like a {@link HashUID} to recreate equivalent instances from duplicate data. The trade-off is that it helps contiguous
  * entries compress <i>much</i> better in Accumulo.
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public class SnowflakeUID extends UID {
 
     private static final long serialVersionUID = 1856715886248436235L;

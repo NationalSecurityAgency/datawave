@@ -6,8 +6,16 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 import datawave.query.jexl.functions.ContentFunctions;
+import datawave.table.constants.QueryConstants;
 
+/**
+ * {@link #NULL} is deprecated, please use {@link QueryConstants#NULL}
+ * <p>
+ * {@link #MAX_UNICODE_STRING} is deprecated, please use {@link QueryConstants#MAX_UNICODE_STRING}
+ */
 public class Constants {
+
+    @Deprecated
     public static final String NULL = "\u0000";
     public static final String NULL_BYTE_STRING = "\u0000";
     public static final Value NULL_VALUE = new Value(new byte[0]);
@@ -18,6 +26,7 @@ public class Constants {
 
     public static final String FIELD_INDEX_PREFIX = "fi" + NULL;
 
+    @Deprecated
     public static final String MAX_UNICODE_STRING = new String(Character.toChars(Character.MAX_CODE_POINT));
 
     public static final String SPACE = " ";

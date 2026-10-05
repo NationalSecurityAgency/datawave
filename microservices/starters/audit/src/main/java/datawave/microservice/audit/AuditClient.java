@@ -165,7 +165,7 @@ public class AuditClient {
                 params.set(AuditParameters.QUERY_AUDIT_TYPE, b.auditType.name());
             }
             if (null != b.marking) {
-                params.set(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, b.marking.toColumnVisibilityString());
+                params.set(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, b.marking.toAccessExpressionString());
             }
             if (null != b.queryLogic) {
                 params.set(AuditParameters.QUERY_LOGIC_CLASS, b.queryLogic);

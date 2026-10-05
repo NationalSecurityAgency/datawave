@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import datawave.query.attributes.Attribute;
@@ -23,25 +23,25 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
     private BigDecimal sum;
 
     /**
-     * The column visibilities of all attributes aggregated.
+     * The access expressions of all attributes aggregated.
      */
-    private final Set<ColumnVisibility> columnVisibilities;
+    private final Set<AccessExpression> accessExpressions;
 
     public static SumAggregator of(String field, TypeAttribute<BigDecimal> attribute) {
         BigDecimal sum = attribute.getType().getDelegate();
-        return new SumAggregator(field, sum, attribute.getColumnVisibility());
+        return new SumAggregator(field, sum, attribute.getAccessExpression());
     }
 
     public SumAggregator(String field) {
         super(field);
-        this.columnVisibilities = new HashSet<>();
+        this.accessExpressions = new HashSet<>();
     }
 
-    private SumAggregator(String field, BigDecimal sum, ColumnVisibility visibility) {
+    private SumAggregator(String field, BigDecimal sum, AccessExpression expression) {
         this(field);
         this.sum = sum;
-        if (visibility != null) {
-            this.columnVisibilities.add(visibility);
+        if (expression != null) {
+            this.accessExpressions.add(expression);
         }
     }
 
@@ -56,8 +56,8 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
     }
 
     @Override
-    public Set<ColumnVisibility> getColumnVisibilities() {
-        return Collections.unmodifiableSet(columnVisibilities);
+    public Set<AccessExpression> getAccessExpressions() {
+        return Collections.unmodifiableSet(accessExpressions);
     }
 
     /**
@@ -96,7 +96,7 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
         } else {
             sum = sum.add(number);
         }
-        columnVisibilities.add(value.getColumnVisibility());
+        accessExpressions.add(value.getAccessExpression());
     }
 
     @Override
@@ -104,7 +104,7 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
         if (other instanceof SumAggregator) {
             SumAggregator aggregator = (SumAggregator) other;
             this.sum = this.sum.add(aggregator.sum);
-            this.columnVisibilities.addAll(aggregator.columnVisibilities);
+            this.accessExpressions.addAll(aggregator.accessExpressions);
         } else {
             throw new IllegalArgumentException("Cannot merge instance of " + other.getAggregation());
         }
@@ -112,6 +112,6 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("field", field).append("sum", sum).append("columnVisibilities", columnVisibilities).toString();
+        return new ToStringBuilder(this).append("field", field).append("sum", sum).append("accessExpressions", accessExpressions).toString();
     }
 }

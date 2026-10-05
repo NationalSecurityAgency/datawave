@@ -6,7 +6,6 @@ package datawave.ingest.data.config;
  * will be used.
  */
 import java.io.UnsupportedEncodingException;
-import java.util.Map;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -15,6 +14,7 @@ import org.apache.hadoop.io.Text;
 import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.config.MimeDecoder;
+import datawave.marking.Markings;
 
 public class NormalizedFieldAndValue extends BaseNormalizedContent implements GroupedNormalizedContentInterface {
     private boolean grouped = false;
@@ -42,7 +42,7 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
         super(field, value);
     }
 
-    public NormalizedFieldAndValue(String field, String value, Map<String,String> markings) {
+    public NormalizedFieldAndValue(String field, String value, Markings<?> markings) {
         super(field, value, markings);
     }
 

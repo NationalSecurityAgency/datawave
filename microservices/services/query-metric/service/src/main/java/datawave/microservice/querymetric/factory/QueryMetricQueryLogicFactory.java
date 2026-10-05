@@ -16,14 +16,14 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 @Component
 public class QueryMetricQueryLogicFactory implements FactoryBean<ShardQueryLogic> {
 
-    private MarkingFunctions markingFunctions;
+    private MarkingFunctions<?> markingFunctions;
     private ResponseObjectFactory responseObjectFactory;
     private QueryMetricHandlerProperties queryMetricHandlerProperties;
     private DateIndexHelperFactory dateIndexHelperFactory;
     private MetadataHelperFactory metadataHelperFactory;
 
     @Autowired
-    public QueryMetricQueryLogicFactory(MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
+    public QueryMetricQueryLogicFactory(MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
                     DateIndexHelperFactory dateIndexHelperFactory, MetadataHelperFactory metadataHelperFactory,
                     QueryMetricHandlerProperties queryMetricHandlerProperties) {
         this.markingFunctions = markingFunctions;

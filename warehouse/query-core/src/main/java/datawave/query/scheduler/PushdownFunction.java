@@ -80,8 +80,10 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                 options.addScanIterator(setting);
             }
 
-            // apply execution hints
-            String tableName = tableId.canonical();
+            // Apply execution hints and the consistency level. Both maps are keyed by table name, so the lookup must use the table name and not
+            // tableId.canonical(), which is the numeric table id against a real Accumulo instance. This went unnoticed because InMemoryAccumuloClient
+            // reports the table name as its table id, so the lookup only ever missed outside of the in-memory tests.
+            String tableName = config.getShardTableName();
             options.applyExecutionHints(tableName, config.getTableHints());
             options.applyConsistencyLevel(tableName, config.getTableConsistencyLevels());
 

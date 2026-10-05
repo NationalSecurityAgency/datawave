@@ -754,6 +754,41 @@ public class ShardRendezvousHostBalancerTest {
 
     }
 
+    @Test
+    public void testComputeTabletAssignmentCountsByHostCount_canLeaveTabletsUnassignedDueToRounding() throws Exception {
+
+        tableProps.clear();
+        tableProps.put("table.custom.volume.tier.names", "t1");
+        tableProps.put("table.custom.volume.tiered.t1.days.back", "0");
+        tableProps.put("table.custom.volume.tiered.t1.tservers", "host.*");
+
+        // Three groups with equal total tserver weight:
+        // Group key=1: 6 hosts with 1 tserver each -> contribution = 6
+        // Group key=2: 3 hosts with 2 tservers each -> contribution = 6
+        // Group key=3: 2 hosts with 3 tservers each -> contribution = 6
+        // Total tservers = 18
+        generateTabletServers(0, 6, 1).forEach(testTServers::addTServer);
+        generateTabletServers(6, 3, 2).forEach(testTServers::addTServer);
+        generateTabletServers(9, 2, 3).forEach(testTServers::addTServer);
+        assertEquals(18, testTServers.tservers.size(), "Not all expected Tservers have been created.");
+
+        // For 16 tablets, each group gets round(16 * 6/18) = round(5.33) = 5
+        // Total assigned = 15, but 16 were requested.
+        // tabletsLeft = 1, triggering the Preconditions.checkState failure.
+        tablets.addAll(createShards(tableId, "20000101", 1, 16));
+        today.set(parseDay("20000101"));
+
+        balancer.getAssignments(new TestAssignmentParams(testTServers.getCurrent(), testTServers.getUnassigned(tablets), aout));
+        testTServers.applyAssignments(aout);
+
+        String regex = "host00002.*";
+        assertEquals(Map.of(TabletId.of(TableId.of("1"), "20000101_13", null), new TabletServerIdImpl("host00002", 9997, "1234")),
+                        filter(regex, testTServers.getLocationProvider()));
+        // check the regex used above
+        assertEquals(1, testTServers.getCurrent().keySet().stream().filter(tabletServerId -> tabletServerId.getHost().matches(regex)).count());
+        assertEquals(18, testTServers.getCurrent().size());
+    }
+
     private static String getDay(TabletId tabletId) {
         return ShardRendezvousHostBalancer.PARTITIONER.apply(tabletId);
     }

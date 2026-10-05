@@ -11,7 +11,7 @@ import datawave.core.iterators.filesystem.FileSystemCache;
 /**
  * Created on 2/6/17.
  */
-public interface QueryLock extends AutoCloseable {
+public interface QueryLock {
 
     void startQuery() throws Exception;
 
@@ -20,11 +20,6 @@ public interface QueryLock extends AutoCloseable {
     void stopQuery() throws Exception;
 
     void cleanup() throws Exception;
-
-    @Override
-    default void close() throws Exception {
-        cleanup();
-    }
 
     class Builder {
         private String queryId;

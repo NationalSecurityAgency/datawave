@@ -47,7 +47,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected ProxiedUserDetails serverUser;
 
     protected Set<String> requiredRoles;
-    protected MarkingFunctions markingFunctions;
+    protected MarkingFunctions<?> markingFunctions;
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
     protected ResponseEnricherBuilder responseEnricherBuilder = null;
@@ -100,11 +100,11 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         return settings.getQuery();
     }
 
-    public MarkingFunctions getMarkingFunctions() {
+    public MarkingFunctions<?> getMarkingFunctions() {
         return markingFunctions;
     }
 
-    public void setMarkingFunctions(MarkingFunctions markingFunctions) {
+    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
         this.markingFunctions = markingFunctions;
     }
 

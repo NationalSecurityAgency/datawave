@@ -11,13 +11,18 @@ import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.WritableComparable;
 
-import datawave.core.query.configuration.ResultContext;
-
 public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
-    private ResultContext context;
     private String term, field, type, date, columnVisibility;
     private final VLongWritable count;
     private final MapWritable countsByColumnVisibility;
+
+    {
+        this.term = "";
+        this.field = "";
+        this.type = "";
+        this.date = "";
+        this.columnVisibility = "";
+    }
 
     public DiscoveredThing(String term, String field, String type, String date, String columnVisibility, long count, MapWritable countsByColumnVisibility) {
         this.term = term;
@@ -27,6 +32,13 @@ public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
         this.columnVisibility = columnVisibility;
         this.count = new VLongWritable(count);
         this.countsByColumnVisibility = countsByColumnVisibility;
+    }
+
+    public DiscoveredThing(String term, String columnVisibility) {
+        this.term = term;
+        this.columnVisibility = columnVisibility;
+        this.count = new VLongWritable(0L);
+        this.countsByColumnVisibility = new MapWritable();
     }
 
     public DiscoveredThing() {

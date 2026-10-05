@@ -18,6 +18,8 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.Markings;
 import datawave.webservice.query.result.event.MapSchema;
 import datawave.webservice.xml.util.StringMapAdapter;
 import io.protostuff.Input;
@@ -32,8 +34,7 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
     private static final long serialVersionUID = 6614332701390895105L;
 
     @XmlElement(name = "markings")
-    @XmlJavaTypeAdapter(StringMapAdapter.class)
-    private HashMap<String,String> markings = null;
+    private Markings<?> markings;
 
     @XmlElement(name = "language")
     private String language = null;
@@ -47,21 +48,13 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
     private List<DefaultTagCloudEntry> tags = null;
 
     @Override
-    public Map<String,String> getMarkings() {
-        if (markings != null) {
-            return markings;
-        } else {
-            return super.getMarkings();
-        }
+    public Markings<?> getMarkings() {
+        return markings;
     }
 
-    public void setMarkings(Map<String,String> markings) {
-        if (null != markings) {
-            this.markings = new HashMap<>(markings);
-        } else {
-            this.markings = null;
-        }
-        super.setMarkings(this.markings);
+    @Override
+    public void setMarkings(Markings<?> markings) {
+        this.markings = markings;
     }
 
     @Override
@@ -121,7 +114,7 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
 
         public void writeTo(Output output, DefaultTagCloud message) throws IOException {
             if (message.markings != null)
-                output.writeObject(1, message.markings, MapSchema.SCHEMA, false);
+                output.writeObject(1, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
 
             if (message.language != null) {
                 output.writeString(2, message.language, false);
@@ -150,8 +143,8 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {
                     case 1:
-                        message.markings = new HashMap<String,String>();
-                        input.mergeObject(message.markings, MapSchema.SCHEMA);
+                        message.markings = AccessExpressionMarkings.builder().build();
+                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
                         break;
                     case 2:
                         message.language = input.readString();
