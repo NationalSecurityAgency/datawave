@@ -24,12 +24,12 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Lists;
 
 import datawave.ingest.protobuf.Uid;
-import datawave.query.tld.TLD;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
 import datawave.query.util.ValueSerializer;
 import datawave.query.util.ValueSerializerType;
 import datawave.query.util.count.CountMap;
+import datawave.table.util.TLD;
 
 /**
  * <pre>

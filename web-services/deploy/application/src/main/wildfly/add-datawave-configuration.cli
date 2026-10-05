@@ -9,16 +9,7 @@ batch
 embed-server --server-config=standalone-full.xml
 
 # Add the MySQL Connector as a module
-module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
-
-# Remove the Elytron security subsystem entirely. Our JAAS security setup doesn't work
-# with it due to some bugs (the RunAsLoginModule doesn't work -- WFLY-11892) so we'll
-# just continue to use the deprecated system for now
-/subsystem=elytron:remove
-
-# Remove the metrics subsystem since it is currently buggy (thread-safety issue) and can cause deployment failures
-# See WFLY-11801 for details.
-/subsystem=microprofile-metrics-smallrye:remove
+module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api,com.fasterxml.jackson.core.jackson-core --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
 
 # Change default ports to listen on all interfaces (can still override on command line)
 /interface=public/:write-attribute(name=inet-address,value="${jboss.bind.address:0.0.0.0}")
@@ -94,7 +85,18 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.model.defaultTableName:add(value=${table.name.metadata})
 /system-property=dw.basemaps:add(value="${basemaps}")
 
-# proxied entities to be pruned from credentials
+# Security SSL Properties
+/system-property=dw.ssl.context.info.keyStoreURL:add(value=file://${KEYSTORE})
+/system-property=dw.ssl.context.info.keyStoreType:add(value="${KEYSTORE_TYPE}")
+/system-property=dw.ssl.context.info.keyStorePassword:add(value="${KEYSTORE_PASSWORD}")
+/system-property=dw.ssl.context.info.trustStoreURL:add(value=file://${TRUSTSTORE})
+/system-property=dw.ssl.context.info.trustStoreType:add(value="${TRUSTSTORE_TYPE}")
+/system-property=dw.ssl.context.info.trustStorePassword:add(value="${TRUSTSTORE_PASSWORD}")
+
+# Required to allow the elytron module to lookup a SecurityEJBProvider instance from JNDI.
+/system-property=dw.security.ejb.provider.jndi:add(value=java:global/datawave-ws-deploy-application-${project.version}-${build.env}/gov.nsa.datawave.webservices-datawave-ws-security-${project.version}/SecurityEJBProviderImpl)
+
+# Proxied entities to be pruned from credentials.
 /system-property=dw.trusted.proxied.entities:add(value="${trusted.proxied.entities}")
 
 # Enable/disable the test authorization service (enable for development use only)
@@ -147,41 +149,133 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=jexl.function.namespace.registry:add(value="datawave.query.jexl.functions.JexlFunctionNamespaceRegistry.class")
 
 #
-# Add cache container for the security realm
+# Configure SSL.
 #
-/subsystem=infinispan/cache-container=security:add
-/subsystem=infinispan/cache-container=security/local-cache=security:add
-/subsystem=infinispan/cache-container=security:write-attribute(name=default-cache,value=security)
-/subsystem=infinispan/cache-container=security/local-cache=security/component=expiration:add(lifespan=300000)
+
+# Create the server key store.
+/subsystem=elytron/key-store=serverKeyStore:add( \
+  path=${KEYSTORE}, \
+  credential-reference={clear-text="${KEYSTORE_PASSWORD}"}, \
+  type=${KEYSTORE_TYPE})
+
+# Create the server key manager.
+/subsystem=elytron/key-manager=serverKeyManager:add( \
+  key-store=serverKeyStore, \
+  credential-reference={clear-text="${KEYSTORE_PASSWORD}"})
+
+# Create the server trust store.
+/subsystem=elytron/key-store=serverTrustStore:add( \
+  path=${TRUSTSTORE}, \
+  credential-reference={clear-text="${TRUSTSTORE_PASSWORD}"}, \
+  type=${TRUSTSTORE_TYPE})
+
+# Create the server trust manager.
+/subsystem=elytron/trust-manager=serverTrustManager:add( \
+  key-store=serverTrustStore)
+
+# Create the server SSL context. The protocols "TLSv1.1", "TLSv1.2", and "TLSv1.3" will be supported, a client certificate will be required on an SSL handshake, and the
+# security-domain 'datawaveElytron' will be used for authentication during the SSL session establishment.
+/subsystem=elytron/server-ssl-context=serverSSLContext:add( \
+  key-manager=serverKeyManager, \
+  trust-manager=serverTrustManager, \
+  protocols=["TLSv1.1","TLSv1.2","TLSv1.3"], \
+  want-client-auth=true)
 
 #
-# Add security realm and domain
+# Configure the datawave security domain.
 #
-/core-service=management/security-realm=SSLRealm/:add
-/core-service=management/security-realm=SSLRealm/server-identity=ssl/:add(enabled-protocols=["TLSv1.1","TLSv1.2"],keystore-path=${KEYSTORE},keystore-provider=${KEYSTORE_TYPE},keystore-password="${KEYSTORE_PASSWORD}")
-/core-service=management/security-realm=SSLRealm/authentication=truststore/:add(keystore-path=${TRUSTSTORE},keystore-provider=${TRUSTSTORE_TYPE},keystore-password="${TRUSTSTORE_PASSWORD}")
-/core-service=management/security-realm=SSLRealm/authentication=jaas/:add(name=datawave)
 
-/subsystem=security/security-domain=datawave:add(cache-type=infinispan)
-/subsystem=security/security-domain=datawave/authentication=classic:add
-/subsystem=security/security-domain=datawave/authentication=classic/login-module=Remoting:add(code=Remoting,flag=optional,module-options={password-stacking=useFirstPass})
-/subsystem=security/security-domain=datawave/authentication=classic/login-module=RunAs:add(code=RunAs,flag=required,module-options={roleName=InternalUser})
-/subsystem=security/security-domain=datawave/authentication=classic/login-module=Datawave:add(code=datawave.security.login.DatawavePrincipalLoginModule,flag=required,module-options={principalClass=datawave.security.authorization.DatawavePrincipal,verifier=datawave.security.login.DatawaveCertVerifier,ocspLevel=off,allowUserProxying=false,trustedHeaderLogin="${dw.trusted.header.authentication:false}"})
-/subsystem=security/security-domain=datawave/jsse=classic:add(keystore={type="${KEYSTORE_TYPE}",password="${KEYSTORE_PASSWORD}",url="file://${KEYSTORE}"},truststore={type="${TRUSTSTORE_TYPE}",password="${TRUSTSTORE_PASSWORD}",url="file://${TRUSTSTORE}"})
-/subsystem=security/security-domain=JmsXARealm:add(cache-type=default)
-/subsystem=security/security-domain=JmsXARealm/authentication=classic:add
-/subsystem=security/security-domain=JmsXARealm/authentication=classic/login-module=ConfiguredIdentity:add(code=ConfiguredIdentity,flag=required,module-options={principal=${dw.hornetq.system.userName},userName=${dw.hornetq.system.userName},password=${dw.hornetq.system.password},managedConnectionFactoryName="jboss.jca:service=TxCM,name=JmsXA"})
+# Create a custom role decoder that will decode the roles a user has from a DatawavePrincipal. The decoder can be
+# configured via the configuration attribute. See the class datawave.security.realm.DatawaveRoleDecoder for supported
+# configuration options.
+/subsystem=elytron/custom-role-decoder=datawaveRoleDecoder:add( \
+    class-name=datawave.security.realm.DatawaveRoleDecoder, \
+    module="datawave.webservice.datawave-security-elytron-module", \
+    configuration={ \
+    })
 
-/subsystem=security/security-domain=datawave-client:add(cache-type=infinispan)
-/subsystem=security/security-domain=datawave-client/authentication=classic:add
-/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=ClientCert:add(code=datawave.security.login.ClientCertLoginModule,flag=required,module-options={password-stacking=useFirstPass})
-/subsystem=security/security-domain=datawave-client/authentication=classic/login-module=Client:add(code=Client,flag=required,module-options={password-stacking=useFirstPass,restore-login-identity=true})
+# Create a custom evidence decoder that will decode a DatawavePrincipal from evidence. The evidence decoder can be configured via the configuration attribute.
+# See the class datawave.security.realm.DatawaveEvidenceDecoder for supported configuration options.
+/subsystem=elytron/custom-evidence-decoder=datawaveEvidenceDecoder:add( \
+    class-name=datawave.security.realm.DatawaveEvidenceDecoder, \
+    module="datawave.webservice.datawave-security-elytron-module", \
+    configuration={ \
+        jwtEnabled="${dw.jwt.header.authentication:false}", \
+        trustedHeadersEnabled="${dw.trusted.header.authentication:false}", \
+        maxCacheEntries="${dw.security.cache.maxEntries:20000}", \
+        maxCacheAge="${dw.security.cache.maxAge:300000}" \
+    })
 
+# Create a custom realm that handles preparing the DatawavePrincipal for authentication. The realm can be configured via
+# the configuration attribute. See the class datawave.security.realm.DatawaveSecurityRealm for supported configuration
+# options.
+/subsystem=elytron/custom-realm=datawaveRealm:add( \
+    class-name=datawave.security.realm.DatawaveSecurityRealm, \
+    module="datawave.webservice.datawave-security-elytron-module", \
+    configuration={ \
+        certVerifier="datawave.security.cert.DatawaveCertVerifier", \
+        oscpLevel="off", \
+        maxCacheEntries="${dw.security.cache.maxEntries:20000}", \
+        maxCacheAge="${dw.security.cache.maxAge:300000}" \
+    })
+
+# Create and configure the security domain 'datawaveElytron' that will handle the authentication and authorization.
+/subsystem=elytron/security-domain=datawaveElytron:add( \
+    default-realm=datawaveRealm, \
+    realms=[{realm=datawaveRealm}], \
+    role-decoder=datawaveRoleDecoder, \
+    evidence-decoder=datawaveEvidenceDecoder, \
+    permission-mapper=default-permission-mapper)
+
+# Grant anonymous principals login-permission, they just won't have any roles to call protected API methods (or auths)
+/subsystem=elytron/simple-permission-mapper=default-permission-mapper:list-add(name=permission-mappings[0].permission-sets, value={permission-set=login-permission}, index=0)
+
+#
 # Configure the HTTP/HTTPS listener for undertow
+#
+# Switch https-listener from the legacy security-realm to the Elytron server ssl context.
+/subsystem=undertow/server=default-server/https-listener=https/:undefine-attribute(name=security-realm)
+/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=ssl-context,value=serverSSLContext)
+
+# Ensure that we log the start time.
 /subsystem=undertow/server=default-server/http-listener=default/:write-attribute(name=record-request-start-time,value=true)
 /subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=record-request-start-time,value=true)
-/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=security-realm,value=SSLRealm)
-/subsystem=undertow/server=default-server/https-listener=https/:write-attribute(name=verify-client,value=REQUESTED)
+
+#
+# Configure the authentication mechanism for Elytron.
+#
+/subsystem=elytron/service-loader-http-server-mechanism-factory=datawaveMechanismFactory:add( \
+    module=datawave.webservice.datawave-security-elytron-module)
+# Wrap the mechanism factory in a configurable factory so that we can pass in custom configuration options in the
+# properties attribute. See the class datawave.security.auth.DatawaveHttpAuthenticationMechanism for supported
+# configuration options.
+/subsystem=elytron/configurable-http-server-mechanism-factory=configurableDatawaveMechanismFactory:add( \
+    http-server-mechanism-factory=datawaveMechanismFactory, \
+    properties={ \
+    })
+
+# Create an authentication factory that references the configurable mechanism factory.
+/subsystem=elytron/http-authentication-factory=datawaveAuthenticationFactory:add( \
+    http-server-mechanism-factory=configurableDatawaveMechanismFactory, \
+    security-domain=datawaveElytron, \
+    mechanism-configurations=[{ \
+        mechanism-name=DATAWAVE-AUTH, \
+        mechanism-realm-configurations=[{realm-name=datawave}] \
+    }])
+
+#
+# Ensure undertow is configured to use the custom authentication mechanism.
+#
+
+# Configure a security domain for the application that uses the datawave mechanism factory. Override the deployment
+# config in order to support the use of DATAWAVE-AUTH instead of BASIC only by default.
+/subsystem=undertow/application-security-domain=datawave:add( \
+    http-authentication-factory=datawaveAuthenticationFactory, \
+    override-deployment-config=true)
+
+# Ensure the default application security domain is 'datawave'.
+/subsystem=undertow:write-attribute( \
+    name=default-security-domain, value="datawave")
 
 #
 # Set up ActiveMQ, JMS Topics/Queues/DLQs
@@ -201,6 +295,8 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 #
 # EJB subsystem configuration
 #
+# Map the 'datawaveElytron' security domain to the name 'datawave' and make it discoverable by EJBs.
+/subsystem=ejb3/application-security-domain=datawave:add(security-domain=datawaveElytron)
 /subsystem=ejb3/:write-attribute(name=in-vm-remote-interface-invocation-pass-by-value,value=false)
 /subsystem=ejb3/thread-pool=default/:write-attribute(name=max-threads,value=${jboss.ejb3.async.threads})
 /subsystem=ejb3/strict-max-bean-instance-pool=mdb-strict-max-pool/:undefine-attribute(name=derive-size)
@@ -216,11 +312,32 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=ee/managed-executor-service=default:write-attribute(name=max-threads,value=${jboss.managed.executor.service.default.max.threads})
 
 # Configure the JDBC DataSource used by MySQL
-/subsystem=datasources/jdbc-driver=mysql:add(driver-name=mysql,driver-module-name=com.mysql.driver)
-/subsystem=datasources/data-source=CachedResultsDS:add(jndi-name=java:jboss/datasources/CachedResultsDS,connection-url="jdbc:mysql://${mysql.host}:3306/${mysql.dbname}?zeroDateTimeBehavior=convertToNull",min-pool-size=${mysql.pool.min.size},max-pool-size=${mysql.pool.max.size},blocking-timeout-wait-millis=5000,idle-timeout-minutes=15,exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter,valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker,user-name=${mysql.user.name},password=${mysql.user.password},driver-name=mysql)
+# Add a driver for MySQL.
+/subsystem=datasources/jdbc-driver=mysql:add( \
+  driver-name=mysql, \
+  driver-module-name=com.mysql.driver)
+
+# Add a MySQL datasource for caching results.
+/subsystem=datasources/data-source=CachedResultsDS:add( \
+  jndi-name=java:jboss/datasources/CachedResultsDS, \
+  connection-url="jdbc:mysql://${mysql.host}:3306/${mysql.dbname}?zeroDateTimeBehavior=convertToNull", \
+  min-pool-size=${mysql.pool.min.size}, \
+  max-pool-size=${mysql.pool.max.size}, \
+  blocking-timeout-wait-millis=5000, \
+  idle-timeout-minutes=15, \
+  exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter, \
+  valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker, \
+  user-name=${mysql.user.name}, \
+  password=${mysql.user.password}, \
+  driver-name=mysql)
 
 # Configure the H2 DataSource used by the DatabaseUserService
-/subsystem=datasources/data-source=DatabaseUserServiceDS:add(jndi-name=java:jboss/datasources/DatabaseUserServiceDS,connection-url="jdbc:h2:${jboss.server.config.dir}/h2/databaseDatawaveUsers",user-name=sa,password=sa,driver-name=h2)
+/subsystem=datasources/data-source=DatabaseUserServiceDS:add( \
+  jndi-name=java:jboss/datasources/DatabaseUserServiceDS, \
+  connection-url="jdbc:h2:${jboss.server.config.dir}/h2/databaseDatawaveUsers", \
+  user-name=sa, \
+  password=sa, \
+  driver-name=h2)
 
 #
 # Configure custom loggers and categories
@@ -235,6 +352,7 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/periodic-rotating-file-handler=MODIFICATION_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"ModificationService.log"})
 /subsystem=logging/periodic-rotating-file-handler=DISTRIBUTED_QUERY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"DistributedQueryService.log"})
 /subsystem=logging/periodic-rotating-file-handler=RESTEASY_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"RestEasy.log"})
+/subsystem=logging/periodic-rotating-file-handler=JBOSS_LOG/:add(level=TRACE,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"JBoss.log"})
 
 /subsystem=logging/logger=datawave.query:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=DEBUG)
 /subsystem=logging/logger=datawave.webservice.common.cache.SharedCacheCoordinator:add(use-parent-handlers=false,handlers=["QUERY_LOG"],level=INFO)
@@ -257,6 +375,10 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=datawave.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.auth:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=org.jboss.security.authorization.modules.ejb.EJBPolicyModuleDelegate:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+# Uncomment the following three lines to also capture logging from the Wildfly Elytron framework if desired.
+#/subsystem=logging/logger=org.wildfly.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+#/subsystem=logging/logger=org.wildfly.security.tls:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
+#/subsystem=logging/logger=org.wildfly.extension.elytron:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 /subsystem=logging/logger=datawave.webservice.modification:add(use-parent-handlers=false,handlers=["MODIFICATION_LOG"])
 /subsystem=logging/logger=datawave.webservice.query.distributed:add(use-parent-handlers=false,handlers=["DISTRIBUTED_QUERY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.core:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
@@ -264,6 +386,10 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=org.jboss.resteasy.plugins.server:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=org.jboss.resteasy.specimpl:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
 /subsystem=logging/logger=datawave.resteasy.interceptor:add(use-parent-handlers=false,handlers=["RESTEASY_LOG"])
+
+# Add trace logging for JBoss module class loading. The JBoss.log file will get big fast if activated, so uncomment this
+# only when you need to see exactly which libraries/modules Wildfly is loading classes from in the classloaders.
+# /subsystem=logging/logger=org.jboss.modules:add(use-parent-handlers=false, handlers=["JBOSS_LOG"])
 
 # Custom log levels
 /subsystem=logging/logger=httpclient.wire:add(level=TRACE)

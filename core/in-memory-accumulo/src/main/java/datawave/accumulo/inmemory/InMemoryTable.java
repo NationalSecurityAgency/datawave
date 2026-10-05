@@ -36,6 +36,7 @@ import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.data.constraints.DefaultKeySizeConstraint;
 import org.apache.accumulo.core.iteratorsImpl.IteratorConfigUtil;
 import org.apache.accumulo.core.security.TablePermission;
 import org.apache.hadoop.io.Text;
@@ -95,7 +96,13 @@ public class InMemoryTable {
     InMemoryTable(boolean limitVersion, TimeType timeType, String tableId) {
         this.timeType = timeType;
         this.tableId = tableId;
-        settings = IteratorConfigUtil.generateInitialTableProperties(limitVersion);
+        // Accumulo 2.1.5 replaced generateInitialTableProperties(limitVersion) with separate accessors for the default
+        // iterators and the constraint, so apply the versioning iterators only when versions are being limited.
+        settings = new TreeMap<>();
+        if (limitVersion) {
+            settings.putAll(IteratorConfigUtil.getInitialTableIterators());
+        }
+        settings.put(Property.TABLE_CONSTRAINT_PREFIX + "1", DefaultKeySizeConstraint.class.getName());
         for (Entry<String,String> entry : DefaultConfiguration.getInstance()) {
             String key = entry.getKey();
             if (key.startsWith(Property.TABLE_PREFIX.getKey()))
