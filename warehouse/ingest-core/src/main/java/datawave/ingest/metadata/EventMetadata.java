@@ -111,7 +111,7 @@ public class EventMetadata implements RawRecordMetadata {
     private final MetadataCounterGroup indexedCounts = new MetadataCounterGroup(MetadataColumnFamilyConstants.COLF_I);
     private final MetadataCounterGroup reverseIndexedCounts = new MetadataCounterGroup(MetadataColumnFamilyConstants.COLF_RI);
 
-    private final MetadataWithEarliestDate whindexFieldsInfo = new MetadataWithEarliestDate(ColumnFamilyConstants.COLF_WCD);
+    private final MetadataWithEarliestDate whindexFieldsInfo = new MetadataWithEarliestDate(MetadataColumnFamilyConstants.COLF_WCD);
 
     private boolean writeFrequencyCounts = false;
 
