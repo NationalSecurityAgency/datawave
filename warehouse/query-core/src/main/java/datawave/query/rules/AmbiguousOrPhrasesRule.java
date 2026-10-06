@@ -24,6 +24,8 @@ public class AmbiguousOrPhrasesRule extends ShardQueryRule {
 
     private static final Logger log = Logger.getLogger(AmbiguousOrPhrasesRule.class);
 
+    public AmbiguousOrPhrasesRule() {}
+
     public AmbiguousOrPhrasesRule(String name) {
         super(name);
     }
