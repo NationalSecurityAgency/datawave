@@ -94,6 +94,7 @@
 
     <!-- Sample configuration for the query limit configuration.
 
+        - enabled: Whether to enable the query limit feature. Defaults to false.
         - defaultSystemQueryLimit: The default number of active concurrent queries that may be running on a system. A
             value less than zero will indicate that by default, there is no max limit for queries on systems. When
             there is no limit for the system, the total queries for the system will not be aggregated when checking
@@ -108,6 +109,7 @@
     -->
     <!--
     <bean id="queryLimitConfiguration" class="datawave.webservice.query.limit.QueryLimitConfiguration">
+        <property name="enabled" value="true"/>
         <property name="defaultSystemQueryLimit" value="5000"/>
         <property name="defaultUserQueryLimit" value="100"/>
         <property name="internalCacheMaxSize" value="200"/>
@@ -132,6 +134,7 @@
 
     <!-- Configuration for the QueryLimitConfiguration. -->
     <bean id="queryLimitConfiguration" class="datawave.webservice.query.limit.QueryLimitConfiguration">
+        <property name="enabled" value="true"/>
         <property name="defaultSystemQueryLimit" value="5000"/>
         <property name="defaultUserQueryLimit" value="100"/>
     </bean>
