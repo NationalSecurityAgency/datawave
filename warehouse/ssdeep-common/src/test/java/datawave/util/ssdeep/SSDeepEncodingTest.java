@@ -1,7 +1,8 @@
 package datawave.util.ssdeep;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 public class SSDeepEncodingTest {
 
@@ -16,7 +17,7 @@ public class SSDeepEncodingTest {
         for (String e : testData) {
             byte[] b = encoding.encode(e);
             String s = new String(b);
-            Assert.assertEquals(e, s);
+            assertEquals(e, s);
         }
     }
 
@@ -27,7 +28,7 @@ public class SSDeepEncodingTest {
             byte[] b = new byte[e.length()];
             encoding.encodeToBytes(e, b, 0);
             String s = new String(b);
-            Assert.assertEquals(e, s);
+            assertEquals(e, s);
         }
     }
 }
