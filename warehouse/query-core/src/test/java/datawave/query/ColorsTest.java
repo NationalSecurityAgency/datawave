@@ -45,7 +45,6 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ColorsIngest;
-import datawave.table.constants.TableName;
 
 /**
  * A set of tests that exercises multi-shard, multi-day queries
@@ -102,9 +101,9 @@ public class ColorsTest extends AbstractQueryTest {
 
         ingestUtil.write(client, auths);
 
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printShardTable(client, auths);
+        PrintUtility.printShardIndexTable(client, auths);
+        PrintUtility.printMetadataTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
     @BeforeEach

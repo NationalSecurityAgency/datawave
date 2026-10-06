@@ -81,7 +81,6 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
-import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 import datawave.webservice.query.runner.QueryExecutorBean;
@@ -208,15 +207,13 @@ public class AnnotationManagerBeanFunctionalTest {
 
         // dump the contents of the various tables used for this test
         Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        PrintUtility.printTable(client, auths, annotationTableName);
-        PrintUtility.printTable(client, auths, annotationSourceTableName);
-        PrintUtility.printTable(client, auths, truthmarkTableName);
-        PrintUtility.printTable(client, auths, truthmarkSourceTableName);
+        PrintUtility.printShardIndexTable(client, auths);
+        PrintUtility.printShardTable(client, auths);
+        PrintUtility.printMetadataTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printAnnotationTable(client, auths, annotationTableName);
+        PrintUtility.printAnnotationSourceTable(client, auths, annotationSourceTableName);
+        PrintUtility.printAnnotationTable(client, auths, truthmarkTableName);
+        PrintUtility.printAnnotationSourceTable(client, auths, truthmarkSourceTableName);
 
         // set up the executor used for federated reads.
         final ExecutorService federatedReadExecutorDelegate = Executors.newCachedThreadPool();

@@ -78,12 +78,6 @@ public class CompositeFunctionsTest extends AbstractQueryTest {
         client = qtth.client;
 
         WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
-        // PrintUtility.printTable(client, auths, TableName.SHARD);
-        // PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        // PrintUtility.printTable(client, auths, TableName.SHARD_DAY_INDEX);
-        // PrintUtility.printTable(client, auths, TableName.SHARD_YEAR_INDEX);
-        // PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-        // PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
     @BeforeEach

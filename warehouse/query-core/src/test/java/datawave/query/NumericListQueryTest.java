@@ -35,7 +35,6 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.CommonalityTokenTestDataIngest;
-import datawave.table.constants.TableName;
 
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
@@ -130,9 +129,9 @@ public class NumericListQueryTest extends AbstractQueryTest {
         // ingest with the document range only; CommonalityTokenTestDataIngest already uses IndexIngestUtil
         // internally to derive the other shard index table variants that AbstractQueryTest iterates over.
         CommonalityTokenTestDataIngest.writeItAll(clientForTest, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
-        PrintUtility.printTable(clientForTest, auths, TableName.SHARD);
-        PrintUtility.printTable(clientForTest, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(clientForTest, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printShardTable(clientForTest, auths);
+        PrintUtility.printShardIndexTable(clientForTest, auths);
+        PrintUtility.printMetadataTable(clientForTest, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
     @AfterAll

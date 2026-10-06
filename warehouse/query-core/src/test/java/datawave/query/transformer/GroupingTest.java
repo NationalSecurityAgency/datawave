@@ -474,9 +474,9 @@ public class GroupingTest extends AbstractQueryTest {
         // TODO: use normal client for this
         AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log, teardown, interrupt).client;
         dataWriter.accept(client);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, TableName.METADATA);
+        PrintUtility.printShardTable(client, auths);
+        PrintUtility.printShardIndexTable(client, auths);
+        PrintUtility.printMetadataTable(client, auths);
         return client;
     }
 

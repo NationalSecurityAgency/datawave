@@ -92,10 +92,10 @@ class GroupingAccumuloWriter {
         writeShardIndexKeys(bwConfig, data, TableName.SHARD_INDEX, false);
         writeShardIndexKeys(bwConfig, data, TableName.SHARD_RINDEX, true);
 
-        PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_INDEX);
-        PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
-        PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_RINDEX);
+        PrintUtility.printMetadataTable(this.client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
+        PrintUtility.printShardIndexTable(this.client, AbstractDataTypeConfig.getTestAuths());
+        PrintUtility.printShardTable(this.client, AbstractDataTypeConfig.getTestAuths());
+        PrintUtility.printShardRIndexTable(this.client, AbstractDataTypeConfig.getTestAuths());
     }
 
     private void writeMetaData(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data)
