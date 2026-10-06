@@ -1,15 +1,14 @@
 package datawave.concurrent;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Preconditions;
 
 /**
  * Utilities for working with threads and thread pools.
@@ -30,7 +29,7 @@ public final class ThreadUtils {
      * @return true if all tasks completed within the timeout period, or false if the tasks did not finish completing or if the thread was interrupted
      */
     public static boolean shutdownAndWait(ThreadPoolExecutor executor, long timeout, TimeUnit timeoutUnit) {
-        Preconditions.checkNotNull(executor, "executor cannot be null");
+        requireNonNull(executor, "executor cannot be null");
         executor.shutdown();
         try {
             return executor.awaitTermination(timeout, timeoutUnit);
@@ -94,7 +93,17 @@ public final class ThreadUtils {
     }
 
     /**
+     * The shortest time {@link #blockUntil} will sleep between condition checks. Poll intervals below this (including 0) are raised to it, so the method never
+     * busy-spins.
+     */
+    private static final long MIN_POLL_INTERVAL_NANOS = TimeUnit.MILLISECONDS.toNanos(1);
+
+    /**
      * Blocks the execution of the current thread until the given condition evaluates to true, or until the timeout has been exceeded.
+     * <p>
+     * The condition is always evaluated at least once, even if the timeout is 0. Poll intervals shorter than 1 millisecond (including 0) are treated as 1
+     * millisecond to avoid busy-waiting. A timeout too large to represent in nanoseconds is capped at {@link Long#MAX_VALUE} nanoseconds (roughly 292 years),
+     * which in practice means "wait indefinitely".
      *
      * @param timeout
      *            the timeout to wait (0 or greater)
@@ -110,85 +119,40 @@ public final class ThreadUtils {
      * @throws InterruptedException
      *             if the thread is interrupted
      * @throws IllegalArgumentException
-     *             if timeoutMs or pollIntervalMs are less than 0
+     *             if timeout or pollInterval are less than 0
      * @throws NullPointerException
      *             if timeoutUnit, pollIntervalUnit, or condition are null
      */
     public static boolean blockUntil(long timeout, TimeUnit timeoutUnit, long pollInterval, TimeUnit pollIntervalUnit, BooleanSupplier condition)
                     throws InterruptedException {
-        Preconditions.checkArgument(timeout >= 0, "timeout must be 0 or greater");
-        Preconditions.checkNotNull(timeoutUnit, "timeout unit cannot be null");
-        Preconditions.checkArgument(pollInterval >= 0, "pollInterval must be 0 or greater");
-        Preconditions.checkNotNull(pollIntervalUnit, "pollIntervalUnit cannot be null");
-        Preconditions.checkNotNull(condition, "condition cannot be null");
+        if (timeout < 0) {
+            throw new IllegalArgumentException("timeout must be 0 or greater");
+        }
+        requireNonNull(timeoutUnit, "timeout unit cannot be null");
+        if (pollInterval < 0) {
+            throw new IllegalArgumentException("pollInterval must be 0 or greater");
+        }
+        requireNonNull(pollIntervalUnit, "pollIntervalUnit cannot be null");
+        requireNonNull(condition, "condition cannot be null");
 
-        long deadline = getDeadline(timeout, timeoutUnit);
-        long pollIntervalNanos = convertOrCap(pollInterval, pollIntervalUnit::toNanos);
+        // TimeUnit.toNanos saturates at Long.MAX_VALUE rather than overflowing.
+        long deadline = System.nanoTime() + timeoutUnit.toNanos(timeout);
+
+        // Require a minimum poll interval of MIN_POLL_INTERVAL_NANOS to avoid busy-waiting.
+        long pollIntervalNanos = Math.max(pollIntervalUnit.toNanos(pollInterval), MIN_POLL_INTERVAL_NANOS);
 
         // If the condition does not return true yet, sleep for another interval.
-        while (!(condition.getAsBoolean())) {
-            long currentTime = System.nanoTime();
-            if (currentTime > deadline) {
+        while (!condition.getAsBoolean()) {
+            // System.nanoTime() has an arbitrary origin (it may be negative). The deadline must be compared by difference, and not by the comparison of the
+            // raw values.
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0) {
                 return false;
             }
             // Sleep for either the poll interval or the remaining time until the timeout, whichever one is shorter.
-            long interval = Math.min(pollIntervalNanos, deadline - currentTime);
-            // noinspection BusyWait
-            Thread.sleep(TimeUnit.NANOSECONDS.toMillis(interval));
+            TimeUnit.NANOSECONDS.sleep(Math.min(pollIntervalNanos, remaining));
         }
         return true;
-    }
-
-    /**
-     * Calculates the deadline of the given timeout based on a start time of the current system nano time. This method will return:
-     * <ul>
-     * <li>The current system nano time if the timeout is less than 1.</li>
-     * <li>{@link Long#MAX_VALUE} if the calculated deadline would overflow into a negative number.</li>
-     * <li>The deadline in nanos if there is no chance of overflow.</li>
-     * </ul>
-     *
-     * @param timeout
-     *            the timeout
-     * @param timeoutUnit
-     *            the timeout unit
-     * @return the deadline in nanos
-     * @throws NullPointerException
-     *             if timeoutUnit is null
-     */
-    public static long getDeadline(long timeout, TimeUnit timeoutUnit) {
-        if (timeout <= 0) {
-            return System.nanoTime();
-        }
-
-        long timeoutNanos = convertOrCap(timeout, timeoutUnit::toNanos);
-        // If timeoutNanos overflowed into a negative number, cap the deadline at Long.MAX_VALUE.
-        if (timeoutNanos <= 0) {
-            return Long.MAX_VALUE;
-        } else {
-            long now = System.nanoTime();
-            // If adding now + timeoutNanos would result in an overflow, cap the deadline at Long.MAX_VALUE.
-            if (Long.MAX_VALUE - timeoutNanos < now) {
-                return Long.MAX_VALUE;
-            } else {
-                // Otherwise return the calculated deadline.
-                return now + timeoutNanos;
-            }
-        }
-    }
-
-    /**
-     * Returns the value of the given time converted by the given function, e.g. {@code TimeUnit::toMillis}. If the converted value is less than one, it is
-     * assumed that the resulting long overflowed, and {@link Long#MAX_VALUE} will be returned.
-     *
-     * @param time
-     *            the time
-     * @param function
-     *            the function to covert the time to a different unit
-     * @return the conversion
-     */
-    public static long convertOrCap(long time, Function<Long,Long> function) {
-        long conversion = function.apply(time);
-        return conversion <= 0 ? Long.MAX_VALUE : conversion;
     }
 
     private ThreadUtils() {
