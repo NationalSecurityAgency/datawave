@@ -7,6 +7,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -86,6 +88,101 @@ public class QueryClusteringTest {
         Result second = new QueryClusterer().cluster(analyzer.analyze(queries, Syntax.JEXL));
         assertEquals(identities(first), identities(second));
         assertEquals(first.getComparisonCount(), second.getComparisonCount());
+        assertEquals(first.getFeatureTruncatedFingerprintCount(), second.getFeatureTruncatedFingerprintCount());
+        assertEquals(first.getCandidateTruncatedFingerprintCount(), second.getCandidateTruncatedFingerprintCount());
+        assertEquals(first.getFeaturePostingEvictionCount(), second.getFeaturePostingEvictionCount());
+        assertEquals(first.getFallbackPostingEvictionCount(), second.getFallbackPostingEvictionCount());
+        assertEquals(first.getMeanBestRejectedScore(), second.getMeanBestRejectedScore());
+        for (int i = 0; i < first.getGroups().size(); i++) {
+            assertEquals(first.getGroups().get(i).getMeanSimilarity(), second.getGroups().get(i).getMeanSimilarity(), 0);
+        }
+    }
+
+    @Test
+    public void reportsSimilarityOncePerFingerprintAndSeparatesFailures() {
+        AnalysisReport report = new QueryAnalyzer().analyze(
+                        List.of("A == 1 && B == 2", "A == 1 && B == 2", "A == 9 && B == 8", "A == 1 && B == 2 && C == 3", "A ==", "A.size() > 0"), Syntax.JEXL);
+        Result result = new QueryClusterer().cluster(report, new Options(0, 100, 100, 100));
+        assertEquals(1, result.getInvalidCount());
+        assertEquals(1, result.getUnsupportedCount());
+        assertEquals(2, result.getExactStructuralFamilyCount());
+        assertEquals(1, result.getGroups().size());
+        Group group = result.getGroups().get(0);
+        assertEquals(4, group.getOccurrenceCount());
+        assertEquals(3, group.getDistinctQueryCount());
+        assertEquals(2, group.getFingerprintCount());
+        Map<String,QueryFingerprint> fingerprints = new TreeMap<>();
+        for (QueryAnalysis member : group.getMembers()) {
+            fingerprints.put(member.getFingerprint().getKey(), member.getFingerprint());
+        }
+        double expectedMean = fingerprints.values().stream().mapToDouble(fp -> QuerySimilarity.score(fp, group.getRepresentative().getFingerprint())).average()
+                        .getAsDouble();
+        assertEquals(expectedMean, group.getMeanSimilarity(), 0);
+        assertEquals(1, result.getComparisonCount());
+        assertEquals(1, result.getNewProfileGroupCount());
+        assertEquals(0, result.getNoQualifyingCandidateGroupCount());
+        assertFalse(result.getMinimumBestRejectedScore().isPresent());
+        assertFalse(result.getMeanBestRejectedScore().isPresent());
+        assertFalse(result.getMaximumBestRejectedScore().isPresent());
+    }
+
+    @Test
+    public void countsOnlyActualLimitTruncationAndPostingEviction() {
+        AnalysisReport report = new QueryAnalyzer().analyze(List.of("FIELD_A == 1", "FIELD_B == 1", "FIELD_C == 1"), Syntax.JEXL);
+        int featureCount = featureKeys(report.getQueries().get(0).getFingerprint()).size();
+        assertTrue(featureCount > 1);
+        Result boundary = new QueryClusterer().cluster(report, new Options(1, featureCount, 3, 2));
+        assertEquals(3, boundary.getGroups().size());
+        assertEquals(0, boundary.getFeatureTruncatedFingerprintCount());
+        assertEquals(0, boundary.getCandidateTruncatedFingerprintCount());
+        assertEquals(0, boundary.getFeaturePostingEvictionCount());
+        assertEquals(0, boundary.getFallbackPostingEvictionCount());
+        assertEquals(3, boundary.getComparisonCount());
+        Result truncated = new QueryClusterer().cluster(report, new Options(1, featureCount - 1, 3, 1));
+        assertEquals(3, truncated.getFeatureTruncatedFingerprintCount());
+        assertEquals(1, truncated.getCandidateTruncatedFingerprintCount());
+        assertEquals(2, truncated.getComparisonCount());
+        assertEquals(identities(boundary), identities(truncated));
+
+        Map<String,Integer> postingSizes = new HashMap<>();
+        for (QueryAnalysis query : report.getQueries()) {
+            for (String feature : featureKeys(query.getFingerprint())) {
+                postingSizes.merge(feature, 1, Integer::sum);
+            }
+        }
+        long expectedFeatureEvictions = postingSizes.values().stream().mapToLong(size -> Math.max(0, size - 1)).sum();
+        Result evicted = new QueryClusterer().cluster(report, new Options(1, featureCount, 1, 10));
+        assertEquals(expectedFeatureEvictions, evicted.getFeaturePostingEvictionCount());
+        assertEquals(2, evicted.getFallbackPostingEvictionCount());
+        assertEquals(0, evicted.getCandidateTruncatedFingerprintCount());
+        assertEquals(identities(boundary), identities(evicted));
+    }
+
+    @Test
+    public void rejectedCandidateScoresExcludeProfileSeedsAndReuseComparedScores() {
+        AnalysisReport report = new QueryAnalyzer().analyze(List.of("A == 1", "B == 2", "C == 3", "A =~ 'x.*'"), Syntax.JEXL);
+        Result result = new QueryClusterer().cluster(report, new Options(1, 100, 100, 100));
+        assertEquals(4, result.getGroups().size());
+        assertEquals(2, result.getNewProfileGroupCount());
+        assertEquals(2, result.getNoQualifyingCandidateGroupCount());
+        assertEquals(3, result.getComparisonCount());
+        List<QueryAnalysis> equalities = new ArrayList<>(report.getQueries().subList(0, 3));
+        equalities.sort(Comparator.comparing(query -> query.getFingerprint().getKey()));
+        double firstRejected = QuerySimilarity.score(equalities.get(1).getFingerprint(), equalities.get(0).getFingerprint());
+        double secondRejected = Math.max(QuerySimilarity.score(equalities.get(2).getFingerprint(), equalities.get(0).getFingerprint()),
+                        QuerySimilarity.score(equalities.get(2).getFingerprint(), equalities.get(1).getFingerprint()));
+        assertEquals(Math.min(firstRejected, secondRejected), result.getMinimumBestRejectedScore().getAsDouble(), 0);
+        assertEquals((firstRejected + secondRejected) / 2, result.getMeanBestRejectedScore().getAsDouble(), 0);
+        assertEquals(Math.max(firstRejected, secondRejected), result.getMaximumBestRejectedScore().getAsDouble(), 0);
+        assertTrue(result.getGroups().stream().allMatch(group -> group.getMeanSimilarity() == 1 && group.getFingerprintCount() == 1));
+        assertMembership(result);
+    }
+
+    private static List<String> featureKeys(QueryFingerprint fingerprint) {
+        List<String> keys = new ArrayList<>();
+        fingerprint.getBindings().forEach(binding -> keys.add("B:" + binding));
+        fingerprint.getTopology().forEach(token -> keys.add("T:" + token));
+        return keys;
     }
 
     @Test
@@ -94,6 +191,12 @@ public class QueryClusteringTest {
         Result invalid = new QueryClusterer().cluster(new QueryAnalyzer().analyze(List.of("A ==", "A = 1"), Syntax.JEXL));
         assertTrue(invalid.getGroups().isEmpty());
         assertEquals(2, invalid.getExcludedCount());
+        assertEquals(1, invalid.getInvalidCount());
+        assertEquals(1, invalid.getUnsupportedCount());
+        assertEquals(0, invalid.getExactStructuralFamilyCount());
+        assertEquals(0, invalid.getNewProfileGroupCount());
+        assertEquals(0, invalid.getNoQualifyingCandidateGroupCount());
+        assertFalse(invalid.getMeanBestRejectedScore().isPresent());
         for (double threshold : new double[] {-1, 2, Double.NaN, Double.POSITIVE_INFINITY}) {
             assertThrows(IllegalArgumentException.class, () -> new Options(threshold, 4, 32, 64));
         }

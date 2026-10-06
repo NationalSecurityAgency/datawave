@@ -4,11 +4,14 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.OptionalDouble;
+import java.util.Set;
 import java.util.TreeMap;
 
 import datawave.query.analysis.QueryAnalyzer.QueryAnalysis;
@@ -66,18 +69,26 @@ public final class QueryWorkloadSelector {
 
     /** Mutable, non-thread-safe in-memory cursor. A fresh cursor on the same result reproduces the same sequence. */
     public static final class Cursor implements Iterator<Selection> {
+        private final QueryClusterer.Result result;
         private final Options options;
         private final List<GroupState> active = new ArrayList<>();
         private final Deque<GroupState> waiting = new ArrayDeque<>();
         private final List<GroupState> window = new ArrayList<>();
         private final List<QueryFingerprint> first = new ArrayList<>();
         private final Deque<QueryFingerprint> recent = new ArrayDeque<>();
+        private final Set<String> coveredProfiles = new HashSet<>();
         private int remaining;
         private int emitted;
         private int round;
+        private int coveredGroups;
+        private int coveredFingerprints;
+        private int representedOccurrences;
+        private double minimumDiversityDistance = 1;
+        private double totalDiversityDistance;
         private long comparisons;
 
         private Cursor(QueryClusterer.Result result, Options options) {
+            this.result = result;
             this.options = options;
             for (Group group : result.getGroups()) {
                 GroupState state = new GroupState(group);
@@ -113,11 +124,24 @@ public final class QueryWorkloadSelector {
                     }
                 }
             }
+            QueryFingerprint fingerprint = bestQuery.query.getFingerprint();
+            if (!bestGroup.started) {
+                coveredGroups++;
+            }
+            if (bestGroup.unseen.containsKey(fingerprint.getKey())) {
+                coveredFingerprints++;
+            }
+            coveredProfiles.add(fingerprint.getProtectedProfile());
+            representedOccurrences += bestQuery.indexes.size();
+            // The first selection has no landmarks, so its default distance is not a diversity observation.
+            if (emitted > 0) {
+                minimumDiversityDistance = Math.min(minimumDiversityDistance, bestDistance);
+                totalDiversityDistance += bestDistance;
+            }
             bestGroup.consume(bestQuery);
             window.remove(bestGroup);
             remaining--;
             emitted++;
-            QueryFingerprint fingerprint = bestQuery.query.getFingerprint();
             if (first.size() < options.firstLandmarks) {
                 first.add(fingerprint);
             }
@@ -153,6 +177,38 @@ public final class QueryWorkloadSelector {
 
         public Options getOptions() {
             return options;
+        }
+
+        QueryClusterer.Result getClusteringResult() {
+            return result;
+        }
+
+        int getCurrentRound() {
+            return round;
+        }
+
+        int getCoveredGroupCount() {
+            return coveredGroups;
+        }
+
+        int getCoveredFingerprintCount() {
+            return coveredFingerprints;
+        }
+
+        int getCoveredProfileCount() {
+            return coveredProfiles.size();
+        }
+
+        int getRepresentedOccurrenceCount() {
+            return representedOccurrences;
+        }
+
+        OptionalDouble getMinimumDiversityDistance() {
+            return emitted < 2 ? OptionalDouble.empty() : OptionalDouble.of(minimumDiversityDistance);
+        }
+
+        OptionalDouble getMeanDiversityDistance() {
+            return emitted < 2 ? OptionalDouble.empty() : OptionalDouble.of(totalDiversityDistance / (emitted - 1));
         }
 
         private boolean before(GroupState group, DistinctQuery query, GroupState bestGroup, DistinctQuery bestQuery) {

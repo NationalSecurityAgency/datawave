@@ -5,7 +5,10 @@
  * QueryAnalyzer.AnalysisReport analysis = new QueryAnalyzer().analyze(queries, QueryAnalyzer.Syntax.JEXL);
  * QueryClusterer.Result groups = new QueryClusterer().cluster(analysis);
  * QueryWorkloadSelector.Cursor cursor = new QueryWorkloadSelector().cursor(groups);
+ * QueryMinimizationReport clusteringSummary = new QueryAnalyzer().summarizeMinimization(groups);
  * List&lt;QueryWorkloadSelector.Selection&gt; firstBatch = cursor.take(100);
+ * QueryMinimizationReport progress = new QueryAnalyzer().summarizeMinimization(cursor);
+ * System.out.println(progress.describe());
  * // Later calls continue the same sequence until all distinct text/syntax pairs have been emitted.
  * </pre>
  *
@@ -32,5 +35,32 @@
  * costs also depend on query size. Neither operation allocates a dense pairwise distance matrix. Input permutations produce the same group identities and
  * selected query identities, with indexes remapped to the current input. A cursor is mutable, in-memory, and not thread safe; a new cursor deterministically
  * replays the sequence.
+ *
+ * <p>
+ * Minimization reports expose immutable structured clustering statistics and, for the cursor overload, a snapshot of selection progress. Reporting does not
+ * advance the cursor, rerun analysis, or perform similarity comparisons. Distinct queries are exact original text/syntax identities; duplicate occurrences are
+ * successful inputs beyond those identities. Exact structural families refer to the legacy signatures, while enriched fingerprints retain additional
+ * planning-sensitive features. Invalid and unsupported inputs are counted separately and excluded from reduction and coverage denominators.
+ *
+ * <p>
+ * Potential reduction is {@code 1 - groups / successfulOccurrences}, or separately {@code 1 - groups / distinctQueries}, when keeping one representative per
+ * group. Size distributions use nearest-rank p50 and p95. Representative similarity counts each distinct fingerprint once, including a representative score of
+ * one; group means and the overall mean use fingerprint weighting, so duplicates and literal variants do not inflate similarity. Complete group and
+ * protected-profile statistics are available through the structured API. The description highlights up to five largest groups and five weakest groups with
+ * multiple fingerprints, deduplicated by stable ID. It describes representative structure without printing original query text.
+ *
+ * <p>
+ * Limit diagnostics count actual feature/candidate truncations and posting evictions observed during grouping. Group creation distinguishes new profiles from
+ * cases where no considered candidate qualifies. Best rejected scores cover only the latter cases, using the best score among candidates actually compared.
+ * These measurements do not prove that a compatible group was missed by bounded discovery. Threshold guidance respects protected-profile boundaries; larger
+ * discovery limits, selection windows, and retained landmark counts can increase comparison work. No parameter sweep or automatic numeric recommendation is
+ * performed.
+ *
+ * <p>
+ * Selection coverage counts emitted groups, enriched fingerprints, and protected profiles against the original clustering result. Occurrence coverage counts
+ * only input identities actually emitted and their exact duplicates against successful inputs; it does not attribute an entire group to its representative.
+ * Diversity statistics summarize the distance observed when each query was selected, excluding the first selection because no previous landmarks exist.
+ * Snapshots retain no selection history. Empty distributions and zero-denominator rates use {@code OptionalDouble.empty()} and render as {@code n/a}.
+ * Descriptions are deterministic and use locale-independent numeric formatting.
  */
 package datawave.query.analysis;

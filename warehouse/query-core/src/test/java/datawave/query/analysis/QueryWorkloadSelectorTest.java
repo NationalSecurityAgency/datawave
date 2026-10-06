@@ -3,6 +3,7 @@ package datawave.query.analysis;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -105,9 +106,101 @@ public class QueryWorkloadSelectorTest {
     }
 
     @Test
+    public void snapshotsTrackOnlyEmittedQueriesWithoutAdvancingOrChangingSelection() {
+        Result groups = cluster(List.of("A == 1 && B == 2", "A == 1 && B == 2", "A == 4 && B == 5", "A == 1 && B == 2 && C == 3", "A == 4 && B == 5 && C == 6",
+                        "A =~ 'a.*'", "A =~ 'b.*'", "A =="));
+        Options options = new Options(2, 2, 1, 2);
+        Cursor cursor = new QueryWorkloadSelector().cursor(groups, options);
+        Cursor replay = new QueryWorkloadSelector().cursor(groups, options);
+        QueryAnalyzer analyzer = new QueryAnalyzer();
+        List<Selection> selected = new ArrayList<>();
+        QueryMinimizationReport initial = analyzer.summarizeMinimization(cursor);
+        assertSame(groups, cursor.getClusteringResult());
+        assertCursorDiagnostics(cursor, selected);
+        QueryMinimizationReport partial = null;
+        QueryMinimizationReport first = null;
+        while (cursor.hasNext()) {
+            Selection actual = cursor.next();
+            Selection expected = replay.next();
+            selected.add(actual);
+            assertEquals(identities(List.of(expected)), identities(List.of(actual)));
+            assertEquals(expected.getDiversityDistance(), actual.getDiversityDistance(), 0);
+            assertEquals(replay.getComparisonCount(), cursor.getComparisonCount());
+            assertCursorDiagnostics(cursor, selected);
+            for (int snapshot = 0; snapshot < 3; snapshot++) {
+                QueryMinimizationReport report = analyzer.summarizeMinimization(cursor);
+                report.describe();
+                assertSnapshotDiagnostics(cursor, report);
+                assertEquals(replay.getEmittedCount(), cursor.getEmittedCount());
+                assertEquals(replay.getRemainingCount(), cursor.getRemainingCount());
+                assertEquals(replay.getComparisonCount(), cursor.getComparisonCount());
+            }
+            if (selected.size() == 1) {
+                first = analyzer.summarizeMinimization(cursor);
+                assertTrue(cursor.getRepresentedOccurrenceCount() < groups.getGroups().stream().filter(group -> group.getId().equals(actual.getGroupId()))
+                                .findFirst().get().getOccurrenceCount());
+            } else if (selected.size() == 2) {
+                partial = analyzer.summarizeMinimization(cursor);
+            }
+        }
+        assertFalse(replay.hasNext());
+        assertEquals(6, cursor.getEmittedCount());
+        assertEquals(7, cursor.getRepresentedOccurrenceCount());
+        assertEquals(groups.getGroups().size(), cursor.getCoveredGroupCount());
+        assertEquals(groups.getFingerprintCount(), cursor.getCoveredFingerprintCount());
+        assertEquals(0, initial.getSelection().get().getEmittedCount());
+        assertEquals(6, initial.getSelection().get().getRemainingCount());
+        assertEquals(0, initial.getSelection().get().getRepresentedOccurrenceCount());
+        assertFalse(initial.getSelection().get().getMinimumDiversityDistance().isPresent());
+        assertEquals(1, first.getSelection().get().getEmittedCount());
+        assertFalse(first.getSelection().get().getMeanDiversityDistance().isPresent());
+        assertEquals(2, partial.getSelection().get().getEmittedCount());
+        assertEquals(4, partial.getSelection().get().getRemainingCount());
+        assertEquals(selected.get(1).getDiversityDistance(), partial.getSelection().get().getMinimumDiversityDistance().getAsDouble(), 0);
+        assertEquals(selected.get(1).getDiversityDistance(), partial.getSelection().get().getMeanDiversityDistance().getAsDouble(), 0);
+        assertSnapshotDiagnostics(cursor, analyzer.summarizeMinimization(cursor));
+    }
+
+    private void assertCursorDiagnostics(Cursor cursor, List<Selection> selected) {
+        assertEquals(selected.size(), cursor.getEmittedCount());
+        assertEquals(selected.isEmpty() ? 0 : selected.get(selected.size() - 1).getRound(), cursor.getCurrentRound());
+        assertEquals(selected.stream().map(Selection::getGroupId).distinct().count(), cursor.getCoveredGroupCount());
+        assertEquals(selected.stream().map(selection -> selection.getQuery().getFingerprint().getKey()).distinct().count(),
+                        cursor.getCoveredFingerprintCount());
+        assertEquals(selected.stream().map(selection -> selection.getQuery().getFingerprint().getProtectedProfile()).distinct().count(),
+                        cursor.getCoveredProfileCount());
+        assertEquals(selected.stream().mapToInt(Selection::getOccurrenceCount).sum(), cursor.getRepresentedOccurrenceCount());
+        if (selected.size() < 2) {
+            assertFalse(cursor.getMinimumDiversityDistance().isPresent());
+            assertFalse(cursor.getMeanDiversityDistance().isPresent());
+        } else {
+            assertEquals(selected.stream().skip(1).mapToDouble(Selection::getDiversityDistance).min().getAsDouble(),
+                            cursor.getMinimumDiversityDistance().getAsDouble(), 0);
+            assertEquals(selected.stream().skip(1).mapToDouble(Selection::getDiversityDistance).average().getAsDouble(),
+                            cursor.getMeanDiversityDistance().getAsDouble(), 1e-12);
+        }
+    }
+
+    private void assertSnapshotDiagnostics(Cursor cursor, QueryMinimizationReport report) {
+        assertEquals(cursor.getEmittedCount(), report.getSelection().get().getEmittedCount());
+        assertEquals(cursor.getRemainingCount(), report.getSelection().get().getRemainingCount());
+        assertEquals(cursor.getCurrentRound(), report.getSelection().get().getCurrentRound());
+        assertEquals(cursor.getCoveredGroupCount(), report.getSelection().get().getCoveredGroupCount());
+        assertEquals(cursor.getCoveredFingerprintCount(), report.getSelection().get().getCoveredFingerprintCount());
+        assertEquals(cursor.getCoveredProfileCount(), report.getSelection().get().getCoveredProfileCount());
+        assertEquals(cursor.getRepresentedOccurrenceCount(), report.getSelection().get().getRepresentedOccurrenceCount());
+        assertEquals(cursor.getComparisonCount(), report.getSelection().get().getComparisonCount());
+        assertSame(cursor.getOptions(), report.getSelection().get().getOptions());
+        assertEquals(cursor.getMinimumDiversityDistance(), report.getSelection().get().getMinimumDiversityDistance());
+        assertEquals(cursor.getMeanDiversityDistance(), report.getSelection().get().getMeanDiversityDistance());
+    }
+
+    @Test
     public void handlesEmptyAndInvalidOptions() {
         Cursor empty = new QueryWorkloadSelector().cursor(cluster(List.of()));
         assertFalse(empty.hasNext());
+        assertCursorDiagnostics(empty, List.of());
+        assertSnapshotDiagnostics(empty, new QueryAnalyzer().summarizeMinimization(empty));
         assertTrue(empty.take(10).isEmpty());
         assertThrows(NoSuchElementException.class, empty::next);
         assertThrows(IllegalArgumentException.class, () -> empty.take(-1));

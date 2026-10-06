@@ -83,6 +83,16 @@ public final class QueryAnalyzer {
         return new AnalysisReport(results);
     }
 
+    /** Summarize an existing clustering result without analyzing queries or comparing fingerprints again. */
+    public QueryMinimizationReport summarizeMinimization(QueryClusterer.Result result) {
+        return QueryMinimizationReport.from(Objects.requireNonNull(result, "result"));
+    }
+
+    /** Capture immutable clustering and selection statistics without advancing the mutable cursor. */
+    public QueryMinimizationReport summarizeMinimization(QueryWorkloadSelector.Cursor cursor) {
+        return QueryMinimizationReport.from(Objects.requireNonNull(cursor, "cursor"));
+    }
+
     private QueryAnalysis analyze(int index, QueryInput input) {
         if (input == null || input.getSyntax() == null || input.getQuery() == null || input.getQuery().trim().isEmpty()) {
             return QueryAnalysis.failure(index, input, Status.INVALID, "Query text and syntax are required");
