@@ -1,10 +1,12 @@
 package datawave.query.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -18,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Demonstrates that {@link TypeMetadata#toString()} mutates instance state, which is unsafe because a {@link TypeMetadata} is shared between concurrent queries
@@ -61,31 +63,33 @@ public class TypeMetadataSerializationRaceTest {
      * Serializing the same instance from several threads must produce the same string every time. The mini-maps are built on the first serialization, so the
      * structural writes only race the first time an instance is serialized, which is why this only bites shortly after a metadata cache refresh.
      */
-    @Test(timeout = 20_000)
+    @Test
     public void testConcurrentSerializationIsConsistent() throws Exception {
-        ExecutorService executor = Executors.newFixedThreadPool(THREADS);
-        try {
-            for (int round = 0; round < ROUNDS; round++) {
-                TypeMetadata shared = newTypeMetadata();
-                String expected = newTypeMetadata().toString();
+        assertTimeoutPreemptively(Duration.ofSeconds(20), () -> {
+            ExecutorService executor = Executors.newFixedThreadPool(THREADS);
+            try {
+                for (int round = 0; round < ROUNDS; round++) {
+                    TypeMetadata shared = newTypeMetadata();
+                    String expected = newTypeMetadata().toString();
 
-                CyclicBarrier barrier = new CyclicBarrier(THREADS);
-                // @formatter:off
-                List<Callable<String>> tasks = IntStream.range(0, THREADS)
-                                .mapToObj(i -> (Callable<String>) () -> {
-                                    barrier.await(30, TimeUnit.SECONDS);
-                                    return shared.toString();
-                                })
-                                .collect(Collectors.toList());
-                // @formatter:on
+                    CyclicBarrier barrier = new CyclicBarrier(THREADS);
+                    // @formatter:off
+                    List<Callable<String>> tasks = IntStream.range(0, THREADS)
+                                    .mapToObj(i -> (Callable<String>) () -> {
+                                        barrier.await(30, TimeUnit.SECONDS);
+                                        return shared.toString();
+                                    })
+                                    .collect(Collectors.toList());
+                    // @formatter:on
 
-                for (Future<String> future : executor.invokeAll(tasks)) {
-                    assertEquals("round " + round + " serialized a shared TypeMetadata inconsistently", expected, future.get());
+                    for (Future<String> future : executor.invokeAll(tasks)) {
+                        assertEquals(expected, future.get(), "round " + round + " serialized a shared TypeMetadata inconsistently");
+                    }
                 }
+            } finally {
+                executor.shutdownNow();
             }
-        } finally {
-            executor.shutdownNow();
-        }
+        });
     }
 
     /**
@@ -94,7 +98,7 @@ public class TypeMetadataSerializationRaceTest {
     @Test
     public void testEmptyTypeMetadataRoundTrips() {
         String serialized = new TypeMetadata().toString();
-        assertTrue("empty TypeMetadata serialized to an unterminated string: " + serialized, serialized.endsWith("]") || serialized.endsWith("];"));
+        assertTrue(serialized.endsWith("]") || serialized.endsWith("];"), "empty TypeMetadata serialized to an unterminated string: " + serialized);
         assertTrue(new TypeMetadata(serialized).isEmpty());
     }
 
@@ -108,7 +112,7 @@ public class TypeMetadataSerializationRaceTest {
         Set<String> filter = Collections.singleton("ingest_not_in_the_metadata_table");
 
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> typeMetadata.fold(filter));
-        assertTrue(e.getMessage(), e.getMessage().contains("ingest_not_in_the_metadata_table"));
+        assertTrue(e.getMessage().contains("ingest_not_in_the_metadata_table"), e.getMessage());
     }
 
     /**
@@ -127,7 +131,7 @@ public class TypeMetadataSerializationRaceTest {
     public void testUnterminatedIngestTypeMiniMapThrows() {
         IllegalStateException e = assertThrows(IllegalStateException.class,
                         () -> new TypeMetadata("dts:[0:ingestA,1:ingestB;types:[0:LcNoDiacriticsType];FIELD1:[0:0];FIELD2:[0:0]"));
-        assertTrue(e.getMessage(), e.getMessage().contains("closing bracket"));
+        assertTrue(e.getMessage().contains("closing bracket"), e.getMessage());
     }
 
     /**
@@ -138,7 +142,7 @@ public class TypeMetadataSerializationRaceTest {
     public void testUnterminatedNormalizerMiniMapThrows() {
         IllegalStateException e = assertThrows(IllegalStateException.class,
                         () -> new TypeMetadata("dts:[0:ingestA];types:[0:LcNoDiacriticsType;FIELD1:[0:0];FIELD2:[0:0]"));
-        assertTrue(e.getMessage(), e.getMessage().contains("closing bracket"));
+        assertTrue(e.getMessage().contains("closing bracket"), e.getMessage());
     }
 
     /**
@@ -147,7 +151,7 @@ public class TypeMetadataSerializationRaceTest {
     @Test
     public void testFieldEntryWithoutListThrows() {
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> new TypeMetadata("dts:[0:ingestA];types:[0:LcNoDiacriticsType];FIELD"));
-        assertTrue(e.getMessage(), e.getMessage().contains("FIELD"));
+        assertTrue(e.getMessage().contains("FIELD"), e.getMessage());
     }
 
     /**
@@ -156,7 +160,7 @@ public class TypeMetadataSerializationRaceTest {
     @Test
     public void testUnterminatedFieldEntryThrows() {
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> new TypeMetadata("dts:[0:ingestA];types:[0:LcNoDiacriticsType];FIELD:[0:0"));
-        assertTrue(e.getMessage(), e.getMessage().contains("bracketed list"));
+        assertTrue(e.getMessage().contains("bracketed list"), e.getMessage());
     }
 
     /**
@@ -165,7 +169,7 @@ public class TypeMetadataSerializationRaceTest {
     @Test
     public void testMalformedIndexPairThrows() {
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> new TypeMetadata("dts:[0:ingestA];types:[0:LcNoDiacriticsType];FIELD:[0]"));
-        assertTrue(e.getMessage(), e.getMessage().contains("index pair"));
+        assertTrue(e.getMessage().contains("index pair"), e.getMessage());
     }
 
     /**

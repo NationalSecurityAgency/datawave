@@ -1,14 +1,14 @@
 package datawave.query.util;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -55,8 +55,8 @@ public class CachingConsistencyTest {
                             if (cacheKey.startsWith("#p")) {
                                 // validate based on argument count vs name
                                 int argCount = Integer.parseInt(cacheKey.substring(2));
-                                assertTrue("cacheKey: " + cacheKey + " doesn't have a matching argument in method: " + method,
-                                                argCount < method.getParameters().length);
+                                assertTrue(argCount < method.getParameters().length,
+                                                "cacheKey: " + cacheKey + " doesn't have a matching argument in method: " + method);
                             } else {
                                 // had better match a param
                                 boolean found = false;
@@ -67,7 +67,7 @@ public class CachingConsistencyTest {
                                     }
                                 }
 
-                                assertTrue("didn't find key parameter " + cacheKey + " in method:" + method, found);
+                                assertTrue(found, "didn't find key parameter " + cacheKey + " in method:" + method);
                             }
                         } else {
                             String rootKey = cacheKey.substring(6);
@@ -82,7 +82,7 @@ public class CachingConsistencyTest {
                                         break;
                                     }
                                 }
-                                assertTrue("could not locate defined field for key: " + cacheKey + " in method: " + method, found);
+                                assertTrue(found, "could not locate defined field for key: " + cacheKey + " in method: " + method);
                             } else {
                                 fail("unknown root key: " + cacheKey);
                             }
