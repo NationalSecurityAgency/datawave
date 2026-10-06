@@ -9,20 +9,20 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.Locations;
+import org.apache.accumulo.core.client.admin.TabletAvailability;
+import org.apache.accumulo.core.client.admin.TabletInformation;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.TabletId;
+import org.apache.accumulo.core.data.RowRange;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.time.DateUtils;
@@ -36,6 +36,8 @@ import datawave.util.time.DateHelper;
  * will create maker key/values for the specified data types if requested
  */
 public class GenerateShardSplits {
+
+    private static final String CURRENT_LOCATION_PREFIX = "CURRENT:";
 
     private static final ColumnVisibility EMPTY_VIS = new ColumnVisibility();
     private static final Text EMPTY_TEXT = new Text();
@@ -243,9 +245,9 @@ public class GenerateShardSplits {
 
                         // Extract a batch of splits from the front of the list
                         SortedSet<Text> batch = new TreeSet<>(splits.subList(0, reducedBatchSize));
-                        List<Range> rangesToWaitFor = new ArrayList<>();
+                        List<RowRange> rowsToWaitFor = new ArrayList<>();
                         for (Text t : batch) {
-                            rangesToWaitFor.add(new Range(t));
+                            rowsToWaitFor.add(RowRange.closed(t));
                         }
 
                         long startAddSplits = System.currentTimeMillis();
@@ -256,15 +258,21 @@ public class GenerateShardSplits {
                         // Remove the processed batch from the list
                         splits.subList(0, reducedBatchSize).clear();
 
-                        Set<String> tabletLocations = getTabletLocations(client, tableName, rangesToWaitFor);
+                        List<TabletInformation> tablets = getTabletInformation(client, tableName, rowsToWaitFor);
 
-                        long currentBatchDelay = System.currentTimeMillis() - startAddSplits;
+                        // Only HOSTED tablets are assigned to a tserver without being asked for, so only they can be waited on to balance. ONDEMAND and
+                        // UNHOSTED tablets never get a location here; the manager assigns them through the balancer when they are first used.
+                        if (anyHosted(tablets)) {
+                            Set<String> tabletLocations = currentLocations(tablets);
 
-                        // Ensure at least half the tablets have balanced off the original tserver
-                        while ((tabletLocations.size() < reducedBatchSize * pctBatchBalanceRequired) && (currentBatchDelay < maxBalancerDelay)) {
-                            tabletLocations = getTabletLocations(client, tableName, rangesToWaitFor);
-                            Thread.sleep(balancerDelay);
-                            currentBatchDelay = currentBatchDelay + balancerDelay;
+                            long currentBatchDelay = System.currentTimeMillis() - startAddSplits;
+
+                            // Ensure at least half the tablets have balanced off the original tserver
+                            while ((tabletLocations.size() < reducedBatchSize * pctBatchBalanceRequired) && (currentBatchDelay < maxBalancerDelay)) {
+                                Thread.sleep(balancerDelay);
+                                currentBatchDelay = currentBatchDelay + balancerDelay;
+                                tabletLocations = currentLocations(getTabletInformation(client, tableName, rowsToWaitFor));
+                            }
                         }
                     }
                 }
@@ -295,16 +303,37 @@ public class GenerateShardSplits {
         }
     }
 
-    private static Set<String> getTabletLocations(AccumuloClient client, String tableName, List<Range> rangesToWaitFor)
-                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        Locations locations = client.tableOperations().locate(tableName, rangesToWaitFor);
-        Set<String> tabletLocations = new HashSet<>();
-        for (Range range : rangesToWaitFor) {
-            TabletId id = locations.groupByRange().get(range).get(0);
-            tabletLocations.add(locations.getTabletLocation(id));
-            System.out.println(range.getStartKey() + "," + range.getEndKey() + "," + locations.getTabletLocation(id));
+    private static List<TabletInformation> getTabletInformation(AccumuloClient client, String tableName, List<RowRange> rows) throws TableNotFoundException {
+        try (Stream<TabletInformation> tablets = client.tableOperations().getTabletInformation(tableName, rows, TabletInformation.Field.LOCATION,
+                        TabletInformation.Field.AVAILABILITY)) {
+            return tablets.collect(Collectors.toList());
         }
-        return tabletLocations;
+    }
+
+    /**
+     * @param tablets
+     *            the tablets to check
+     * @return true if any of the tablets has HOSTED availability
+     */
+    static boolean anyHosted(List<TabletInformation> tablets) {
+        return tablets.stream().anyMatch(t -> t.getTabletAvailability() == TabletAvailability.HOSTED);
+    }
+
+    /**
+     * Collect the distinct tservers the tablets are currently hosted on. A FUTURE location is an assignment still in flight, so it does not count.
+     *
+     * @param tablets
+     *            the tablets to check
+     * @return the distinct current locations, as host:port
+     */
+    static Set<String> currentLocations(List<TabletInformation> tablets) {
+        Set<String> locations = new HashSet<>();
+        for (TabletInformation tablet : tablets) {
+            tablet.getLocation().filter(l -> l.startsWith(CURRENT_LOCATION_PREFIX))
+                            .ifPresent(l -> locations.add(l.substring(CURRENT_LOCATION_PREFIX.length())));
+        }
+        System.out.println("Tablets in batch: " + tablets.size() + ", distinct current locations: " + locations);
+        return locations;
     }
 
     protected static void calculateMidpoints(List<Text> splits, List<Text> midpoints) {
