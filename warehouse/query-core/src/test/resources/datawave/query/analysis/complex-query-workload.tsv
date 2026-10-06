@@ -1,0 +1,42 @@
+id	syntax	family	query	hits
+eq-lucene	LUCENE	equality-name	NAME:alice	0
+eq-jexl	JEXL	equality-name	NAME == 'alice'	0
+eq-value	JEXL	equality-name	NAME == 'bob'	1
+eq-duplicate	LUCENE	equality-name	NAME:alice	0
+eq-city	JEXL	equality-city	CITY == 'paris'	0,2
+and-two	JEXL	and-equality	NAME == 'alice' && CITY == 'paris'	0
+and-three	JEXL	and-equality	AGE == '30' && CITY == 'paris' && NAME == 'alice'	0
+prefix-lucene	LUCENE	prefix	NAME:al*	0,2
+prefix-jexl	JEXL	prefix	NAME =~ 'al.*'	0,2
+prefix-longer	JEXL	prefix	NAME =~ 'ali.*'	0,2
+prefix-value	JEXL	prefix	NAME =~ 'bo.*'	1
+suffix	JEXL	suffix	NAME =~ '.*ice'	0
+suffix-value	JEXL	suffix	NAME =~ '.*cia'	2
+both	JEXL	both	NAME =~ 'a.*e'	0
+both-value	JEXL	both	NAME =~ 'b.*b'	1
+unanchored	JEXL	unanchored	NAME =~ '.*lic.*'	0,2
+unanchored-value	JEXL	unanchored	NAME =~ '.*ob.*'	1
+literal-regex	JEXL	literal-regex	NAME =~ 'alice'	0
+and-prefix-lucene	LUCENE	and-prefix	CITY:paris AND NAME:al*	0,2
+and-prefix-jexl	JEXL	and-prefix	NAME =~ 'al.*' && CITY == 'paris'	0,2
+or-lucene	LUCENE	or-equality	CITY:paris OR NAME:bob	0,1,2
+or-jexl	JEXL	or-equality	NAME == 'bob' || CITY == 'paris'	0,1,2
+nested	JEXL	nested	(NAME =~ 'al.*' || NAME =~ 'bo.*') && CITY == 'paris'	0,2
+nested-reordered	JEXL	nested	CITY == 'paris' && (NAME =~ 'bo.*' || NAME =~ 'al.*')	0,2
+negated	JEXL	negation	!(NAME == 'bob')	0,2
+negated-value	JEXL	negation	!(NAME == 'alice')	1,2
+and-negation-lucene	LUCENE	and-negation	CITY:paris NOT NAME:bob	0,2
+and-negation-jexl	JEXL	and-negation	CITY == 'paris' && !(NAME == 'bob')	0,2
+bounded-lucene	LUCENE	bounded	AGE:[20 TO 40]	0,2
+bounded-jexl	JEXL	bounded	((_Bounded_ = true) && (AGE >= '20' && AGE <= '40'))	0,2
+one-sided	JEXL	one-sided	AGE > '25'	0,1
+function-lucene	LUCENE	function-prefix	#INCLUDE(NAME, 'al.*')	0,2
+function-jexl	JEXL	function-prefix	filter:includeRegex(NAME, 'al.*')	0,2
+function-unanchored	JEXL	function-unanchored	filter:includeRegex(NAME, '.*lic.*')	0,2
+compare-any	JEXL	compare-any	filter:compare(NAME, '==', 'ANY', NAME)	0,1,2
+compare-all	JEXL	compare-all	filter:compare(NAME, '==', 'ALL', NAME)	0,1,2
+within-near	JEXL	within	content:within(TEXT, 3, termOffsetMap, 'quick', 'fox')	-
+within-farther	JEXL	within	content:within(TEXT, 4, termOffsetMap, 'quick', 'fox')	-
+phrase	JEXL	phrase	content:phrase(TEXT, termOffsetMap, 'quick', 'fox')	-
+delayed	JEXL	delayed	((_Delayed_ = true) && NAME == 'alice')	-
+invalid	JEXL	invalid	NAME ==	-
