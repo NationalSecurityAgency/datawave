@@ -202,4 +202,40 @@ public class UnfieldedRegexExpansionIteratorRebuildTest {
         assertEquals(distinct.size(), emitted.size(), "scan emitted duplicates: " + emitted);
     }
 
+    /**
+     * A value is only worth reporting once per field, so an accepted key advances to the next column family and the remaining shards for that value and field
+     * are never visited. A rebuilt stack is seeked at the last returned key, which lands inside the column family the previous stack skipped, so it has to skip
+     * that column family as well rather than report the value a second time.
+     */
+    @Test
+    public void testRebuiltStackSkipsTheColumnFamilyItAlreadyReportedOn() throws Exception {
+        withData("aa", "FIELD_A", "20250804_0" + NULL_BYTE + "datatype-a");
+        withData("aa", "FIELD_A", "20250804_1" + NULL_BYTE + "datatype-a");
+        withData("ab", "FIELD_A", "20250804_0" + NULL_BYTE + "datatype-a");
+        withOptions("a.*", "20250804", "20250804");
+
+        UnfieldedRegexExpansionIterator iterator = rebuild(new Range());
+        assertTrue(iterator.hasTop());
+        Key lastKey = iterator.getTopKey();
+        assertEquals("aa FIELD_A", describe(lastKey));
+
+        UnfieldedRegexExpansionIterator rebuilt = rebuild(new Range(lastKey, false, null, false));
+        assertTrue(rebuilt.hasTop());
+        assertEquals("ab FIELD_A", describe(rebuilt.getTopKey()));
+    }
+
+    /**
+     * The invariant the tablet server relies on: tearing the stack down between every key produces exactly the scan that was never torn down.
+     */
+    @Test
+    public void testRebuildingAfterEveryKeyMatchesAnUninterruptedScan() throws Exception {
+        withData("aa", "FIELD_A", "20250804_0" + NULL_BYTE + "datatype-a");
+        withData("aa", "FIELD_A", "20250804_1" + NULL_BYTE + "datatype-a");
+        withData("aa", "FIELD_B", "20250804_0" + NULL_BYTE + "datatype-a");
+        withData("ab", "FIELD_A", "20250804_0" + NULL_BYTE + "datatype-a");
+        withOptions("a.*", "20250804", "20250804");
+
+        assertEquals(scanToCompletion(), scanRebuildingAfterEveryKey(data.size() * 4));
+    }
+
 }

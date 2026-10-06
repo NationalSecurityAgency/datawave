@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>modification-service</artifactId>
@@ -18,13 +18,13 @@
     </scm>
     <properties>
         <start-class>datawave.microservice.modification.ModificationService</start-class>
-        <version.datawave>8.0.0-SNAPSHOT</version.datawave>
-        <version.datawave.authorization-api>8.0.0-SNAPSHOT</version.datawave.authorization-api>
-        <version.datawave.modification-api>8.0.0-SNAPSHOT</version.datawave.modification-api>
-        <version.datawave.query-api>8.0.0-SNAPSHOT</version.datawave.query-api>
-        <version.datawave.starter>8.0.0-SNAPSHOT</version.datawave.starter>
-        <version.datawave.starter-metadata>8.0.0-SNAPSHOT</version.datawave.starter-metadata>
-        <version.in-memory-accumulo>8.0.0-SNAPSHOT</version.in-memory-accumulo>
+        <version.datawave>9.0.0-SNAPSHOT</version.datawave>
+        <version.datawave.authorization-api>9.0.0-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.modification-api>9.0.0-SNAPSHOT</version.datawave.modification-api>
+        <version.datawave.query-api>9.0.0-SNAPSHOT</version.datawave.query-api>
+        <version.datawave.starter>9.0.0-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter-metadata>9.0.0-SNAPSHOT</version.datawave.starter-metadata>
+        <version.in-memory-accumulo>9.0.0-SNAPSHOT</version.in-memory-accumulo>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->

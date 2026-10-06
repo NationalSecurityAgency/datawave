@@ -18,7 +18,6 @@ services:
         cp /opt/datawave-ingest/current/accumulo-warehouse/lib/*.jar "$${target}/"
         cp /opt/datawave-ingest/current/accumulo-warehouse/lib/ext/*.jar "$${target}/"
         cp /opt/datawave-ingest/current/lib/accumulo-access-core-*.jar "$${target}/"
-        cp /opt/datawave-ingest/current/lib/jaxb-api-*.jar "$${target}/"
         chmod 0644 "$${target}/"*.jar
     volumes:
       - datawave_accumulo_ext:/opt/accumulo/lib/ext
@@ -26,7 +25,7 @@ services:
 
   hdfs-nn:
     profiles: [datawave-stack]
-    image: &stack-image ghcr.io/nationalsecurityagency/datawave-stack-accumulo:${DATAWAVE_STACK_ACCUMULO_VERSION:-2.1.6}
+    image: &stack-image ghcr.io/nationalsecurityagency/datawave-stack-accumulo:${DATAWAVE_STACK_ACCUMULO_VERSION:-4.0.0-alpha-1}
     user: hdfs
     entrypoint: ["/bin/bash", "/stack/start-hadoop.sh"]
     command: [namenode]
@@ -77,6 +76,7 @@ services:
     command: [resourcemanager]
     environment:
       - HADOOP_CONF_DIR=/stack
+      - YARN_CONF_DIR=/stack
     ports:
       - "8032:8032"
       - "8088:8088"
@@ -100,6 +100,7 @@ services:
     command: [nodemanager]
     environment:
       - HADOOP_CONF_DIR=/stack
+      - YARN_CONF_DIR=/stack
     ports:
       - "8042:8042"
     volumes:
@@ -118,10 +119,10 @@ services:
     profiles: [datawave-stack]
     image: *stack-image
     user: zookeeper
-    entrypoint: ["/usr/lib/zookeeper/bin/zkServer.sh"]
-    command: ["--config", "/etc/zookeeper/conf.dist", "start-foreground"]
+    entrypoint: ["/opt/zookeeper/bin/zkServer.sh"]
+    command: ["--config", "/opt/zookeeper/conf", "start-foreground"]
     environment:
-      - ZOOBINDIR=/usr/lib/zookeeper/bin
+      - ZOOBINDIR=/opt/zookeeper/bin
       - ZOO_LOG_DIR=/var/log/zookeeper
     ports:
       - "2181:2181"
@@ -138,11 +139,12 @@ services:
   accumulo-manager:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [manager]
+    command: ["proc", "manager"]
     environment:
       - ACCUMULO_INSTANCE_NAME=my-instance-01
       - ACCUMULO_ROOT_PASSWORD=secret
       - HADOOP_CONF_DIR=/stack
+      - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
     volumes:
       - ./stack:/stack:ro
       - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
@@ -167,9 +169,10 @@ services:
   accumulo-tserver:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [tserver]
+    command: ["proc", "tserver"]
     environment:
       - HADOOP_CONF_DIR=/stack
+      - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
     volumes:
       - ./stack:/stack:ro
       - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
@@ -181,7 +184,11 @@ services:
       accumulo-manager:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9997'"]
+      # Accumulo 4 changed tserver.port.client from 9997 to the range 9800-9899
+      # (core Property.java: TSERV_CLIENTPORT default "9800-9899"). Probing 9997
+      # fails forever against a perfectly healthy tserver, which then blocks
+      # ingest/query/webservice/metrics from ever starting.
+      test: ["CMD-SHELL", "for p in $$(seq 9800 9810); do bash -c \"</dev/tcp/localhost/$$p\" 2>/dev/null && exit 0; done; exit 1"]
       interval: 3s
       timeout: 3s
       retries: 30
@@ -189,9 +196,10 @@ services:
   accumulo-gc:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [gc]
+    command: ["proc", "gc"]
     environment:
       - HADOOP_CONF_DIR=/stack
+      - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
     volumes:
       - ./stack:/stack:ro
       - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
@@ -206,9 +214,10 @@ services:
   accumulo-monitor:
     profiles: [datawave-stack]
     image: *stack-image
-    command: [monitor]
+    command: ["proc", "monitor"]
     environment:
       - HADOOP_CONF_DIR=/stack
+      - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
     ports:
       - "9995:9995"
     volumes:

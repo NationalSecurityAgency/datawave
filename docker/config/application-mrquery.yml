@@ -10,7 +10,7 @@ datawave:
       mapReduceBaseDirectory: "/datawave/MapReduceService"
       restrictInputFormats: true
       validInputFormats:
-        - "org.apache.accumulo.core.client.mapreduce.AccumuloInputFormat"
+        - "org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat"
         - "datawave.mr.bulk.BulkInputFormat"
       jobs:
         'BulkResultsJob':

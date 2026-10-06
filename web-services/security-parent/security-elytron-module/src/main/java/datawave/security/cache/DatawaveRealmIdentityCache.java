@@ -3,13 +3,11 @@ package datawave.security.cache;
 import java.security.Principal;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.security.auth.server.RealmIdentity;
@@ -65,12 +63,9 @@ public class DatawaveRealmIdentityCache implements RealmIdentityCache, ElytronCa
 
         // Drop the reverse mapping for an entry the cache evicted on its own. Only the evicted domain principal is unmapped. Other domain principals that
         // resolve to the same realm identity principal may still have live entries.
-        cacheBuilder.evictionListener(new RemovalListener<Principal,RealmIdentity>() {
-            @Override
-            public void onRemoval(@Nullable Principal principal, @Nullable RealmIdentity realmIdentity, RemovalCause removalCause) {
-                if (removalCause == RemovalCause.EXPIRED || removalCause == RemovalCause.SIZE) {
-                    unmapDomainPrincipal(principal, realmIdentity);
-                }
+        cacheBuilder.evictionListener((RemovalListener<Principal,RealmIdentity>) (principal, realmIdentity, removalCause) -> {
+            if (removalCause == RemovalCause.EXPIRED || removalCause == RemovalCause.SIZE) {
+                unmapDomainPrincipal(principal, realmIdentity);
             }
         });
 
@@ -232,9 +227,7 @@ public class DatawaveRealmIdentityCache implements RealmIdentityCache, ElytronCa
         }
 
         int totalEvictions = 0;
-        Iterator<DatawavePrincipal> principals = domainPrincipalsToRealmIdentities.asMap().keySet().iterator();
-        while (principals.hasNext()) {
-            DatawavePrincipal principal = principals.next();
+        for (DatawavePrincipal principal : domainPrincipalsToRealmIdentities.asMap().keySet()) {
             if (principal.getProxiedUsers().stream().anyMatch(user -> name.equals(user.getName()))) {
                 totalEvictions++;
                 remove(principal);

@@ -23,6 +23,7 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.minicluster.ServerType;
+import org.apache.accumulo.miniclusterImpl.ClusterServerConfiguration;
 import org.apache.accumulo.miniclusterImpl.MiniAccumuloClusterImpl;
 import org.apache.accumulo.miniclusterImpl.MiniAccumuloConfigImpl;
 import org.apache.hadoop.io.Text;
@@ -159,8 +160,10 @@ public class ScanServerOfflineTableIT extends AbstractQueryTest {
     @BeforeAll
     public static void beforeAll() throws Exception {
         MiniAccumuloConfigImpl cfg = new MiniAccumuloConfigImpl(folder.toFile(), PASSWORD);
-        cfg.setNumTservers(1);
-        cfg.setNumScanServers(1);
+
+        ClusterServerConfiguration serverCfg = cfg.getClusterServerConfiguration();
+        serverCfg.setNumDefaultTabletServers(1);
+        serverCfg.setNumDefaultScanServers(1);
 
         mac = new MiniAccumuloClusterImpl(cfg);
         mac.start();
