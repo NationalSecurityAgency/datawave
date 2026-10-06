@@ -1,5 +1,7 @@
 package datawave.query.iterator;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.EnumSet;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -14,8 +16,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -53,12 +54,12 @@ public class QueriesTableAgeOffIteratorTest {
         Scanner scanner = client.createScanner(TABLE_NAME, new Authorizations());
         for (Entry<Key,Value> entry : scanner) {
             if (entry.getKey().getRow().toString().equals("row1"))
-                Assert.fail("We saw row1 when it should be expired.");
+                fail("We saw row1 when it should be expired.");
             if (entry.getKey().getRow().toString().equals("row2"))
                 sawRow2 = true;
         }
         if (!sawRow2)
-            Assert.fail("We did not see row2 and we should have");
+            fail("We did not see row2 and we should have");
     }
 
 }
