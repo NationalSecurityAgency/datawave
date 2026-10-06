@@ -36,6 +36,8 @@ spring:
     deserialization:
       fail-on-unknown-properties: false
 annotation:
+  system-from: "datawave-annotation-service"
+
   health:
     rabbit:
       enabled: true
@@ -107,8 +109,8 @@ annotation:
       enabled: false
     accumulo:
       enabled: true
-      annotationTableName: '${annotation.annotationTableName}'
-      annotationSourceTableName: '${annotation.annotationSourceTableName}'
+      health:
+        enabled: true
       accumuloConfig:
         zookeepers: '${accumulo.zookeepers}'
         instanceName: '${accumulo.instanceName}'
