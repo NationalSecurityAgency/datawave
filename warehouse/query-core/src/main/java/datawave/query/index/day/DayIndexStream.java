@@ -77,8 +77,8 @@ public class DayIndexStream implements QueryPlanStream {
         public FullIndexStream(DayIndexConfig config) {
             this.config = config;
 
-            RangeStream.NumShardFinder numShardFinder = new RangeStream.NumShardFinder(config.getClient(), config.getTableHints(),
-                            config.getConsistencyLevels());
+            RangeStream.NumShardFinder numShardFinder = new RangeStream.NumShardFinder(config.getClient(), config.getMetadataTableName(),
+                            config.getTableHints(), config.getConsistencyLevels());
             this.delegate = new ShardSpecificIndexIterator(config.getNode(), numShardFinder, config.getStartDate(), config.getEndDate());
         }
 

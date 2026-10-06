@@ -26,7 +26,7 @@ import datawave.microservice.authorization.user.DatawaveUserDetailsFactory;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 
 /**
  * An {@link AuthenticationUserDetailsService} that retrieves user information from a remote authorization service for a set of proxied entity names, and
@@ -94,7 +94,7 @@ public class RemoteAuthorizationServiceUserDetailsService implements Authenticat
         return "<" +
             Stream.concat(principal.getProxiedEntities().stream(), Stream.of(principal.getCallerPrincipal()))
                 .map(dnFunc)
-                .map(ProxiedEntityUtils::buildProxiedDN)
+                .map(DnUtils::buildProxiedDN)
                 .collect(Collectors.joining("><"))
             + ">";
         // @formatter:on
