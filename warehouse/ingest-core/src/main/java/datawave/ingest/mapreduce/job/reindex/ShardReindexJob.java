@@ -61,7 +61,7 @@ import datawave.ingest.mapreduce.job.DelegatingPartitioner;
 import datawave.ingest.mapreduce.job.IngestJob;
 import datawave.ingest.mapreduce.job.MultiRFileOutputFormatter;
 import datawave.ingest.mapreduce.job.RFileInputFormat;
-import datawave.ingest.mapreduce.job.SplitsFile;
+import datawave.ingest.mapreduce.job.SplitsCache;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
 import datawave.ingest.mapreduce.job.util.AccumuloUtil;
@@ -230,7 +230,7 @@ public class ShardReindexJob implements Tool {
         // all changes to configuration must be before this line
         Job j = Job.getInstance(getConf());
         Configuration config = j.getConfiguration();
-        SplitsFile.setupFile(j, config);
+        SplitsCache.getInstance(config).setupJob(j, config);
 
         // check if using some form of accumulo in input
         if (jobConfig.inputFiles == null) {

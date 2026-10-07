@@ -1,5 +1,8 @@
 package datawave.ingest.mapreduce.job;
 
+import static datawave.ingest.mapreduce.job.SplitsConstants.SPLITS_CACHE_DIR;
+import static datawave.ingest.mapreduce.job.SplitsConstants.SPLITS_CACHE_FILE;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -27,6 +31,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.metadata.MetadataServicer;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -51,14 +56,12 @@ import datawave.ingest.util.ShardLocationTrieMap;
 public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     public static final String REFRESH_SPLITS = "datawave.ingest.refresh.splits";
-    public static final String SPLITS_CACHE_DIR = "datawave.ingest.splits.cache.dir";
-    public static final String SPLITS_CACHE_FILE = "datawave.ingest.splits.cache.fileName";
+    public static final String DEFAULT_SPLITS_CACHE_FILE = "all-splits.txt";
 
-    public static final String MAX_SPLIT_DECREASE = "datawave.ingest.splits.max.decrease.number";
-    public static final String MAX_SPLIT_PERCENTAGE_DECREASE = "datawave.ingest.splits.max.decrease.percentage";
+    private static final String MAX_SPLIT_DECREASE = "datawave.ingest.splits.max.decrease.number";
+    private static final String MAX_SPLIT_PERCENTAGE_DECREASE = "datawave.ingest.splits.max.decrease.percentage";
     private static final Logger log = Logger.getLogger(TableSplitsCache.class);
     private static final String DEFAULT_SPLITS_CACHE_DIR = "/data/splitsCache";
-    public static final String DEFAULT_SPLITS_CACHE_FILE = "all-splits.txt";
     private static final short DEFAULT_MAX_SPLIT_DECREASE = 42;
     private static final double DEFAULT_MAX_SPLIT_PERCENTAGE_DECREASE = .5;
     private static final boolean DEFAULT_REFRESH_SPLITS = true;
@@ -67,7 +70,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private static final String EQUALS = "=";
     private static final String COMMA = ",";
     private static final String COLON = ":";
-    private static TableSplitsCache cache;
+    private static final ConcurrentHashMap<Path,TableSplitsCache> CACHES_BY_PATH = new ConcurrentHashMap<>();
     private volatile boolean cacheFileRead = false;
     private Object semaphore = new Object();
 
@@ -105,16 +108,23 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     }
 
+    /**
+     * Get or create the TableSplitsCache for the splits path resolved from conf. Configurations resolving to the same path share one instance; configurations
+     * resolving to different paths each get their own, correctly initialized instance.
+     *
+     * @param conf
+     *            the configuration to resolve the splits path from and, on first request for that path, initialize the new instance with
+     * @return the TableSplitsCache instance for the resolved splits path
+     */
     public static TableSplitsCache getCurrentCache(Configuration conf) {
-        if (null == cache) {
-            cache = new TableSplitsCache(conf);
-        }
-
-        return cache;
+        return CACHES_BY_PATH.computeIfAbsent(getSplitsPath(conf), path -> new TableSplitsCache(conf));
     }
 
+    /**
+     * Clears all cached instances so the next access reinitializes them. Used by tests to avoid cross-test pollution.
+     */
     public static void clear() {
-        cache = null;
+        CACHES_BY_PATH.clear();
     }
 
     /**
@@ -157,6 +167,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
 
     public static Path getSplitsPath(Configuration conf) {
+        Validate.notNull(conf, "Configuration object passed in null");
         return new Path(conf.get(SPLITS_CACHE_DIR, DEFAULT_SPLITS_CACHE_DIR), conf.get(SPLITS_CACHE_FILE, DEFAULT_SPLITS_CACHE_FILE));
     }
 
