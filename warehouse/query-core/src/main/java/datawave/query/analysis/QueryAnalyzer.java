@@ -73,7 +73,7 @@ public final class QueryAnalyzer {
         return analyze(inputs);
     }
 
-    /** Analyze a mixed-syntax batch, retaining input order and isolating errors to individual entries. */
+    /** Analyze a mixed-syntax batch, retaining input order and isolating errors to individual entries. Stack depth limits produce UNSUPPORTED entries. */
     public synchronized AnalysisReport analyze(List<QueryInput> queries) {
         Objects.requireNonNull(queries, "queries");
         List<QueryAnalysis> results = new ArrayList<>(queries.size());
@@ -97,21 +97,26 @@ public final class QueryAnalyzer {
         if (input == null || input.getSyntax() == null || input.getQuery() == null || input.getQuery().trim().isEmpty()) {
             return QueryAnalysis.failure(index, input, Status.INVALID, "Query text and syntax are required");
         }
-        String jexl;
-        ASTJexlScript script;
         try {
-            jexl = input.getSyntax() == Syntax.LUCENE ? luceneParser.parse(input.getQuery()).getOriginalQuery() : input.getQuery();
-            script = JexlASTHelper.parseJexlQuery(jexl);
-        } catch (datawave.query.language.parser.ParseException | org.apache.commons.jexl3.parser.ParseException | IllegalArgumentException e) {
-            return QueryAnalysis.failure(index, input, Status.INVALID, "Unable to parse " + input.getSyntax() + ": " + e.getMessage());
-        }
-        try {
-            QueryShape shape = new QueryShape();
-            String signature = shape.analyze(script);
-            QueryFingerprint fingerprint = new QueryFingerprintBuilder().build(script);
-            return new QueryAnalysis(index, input, Status.SUCCESS, jexl, signature, shape.categories, shape.fields, shape.functions, null, fingerprint);
-        } catch (UnsupportedOperationException e) {
-            return QueryAnalysis.failure(index, input, Status.UNSUPPORTED, e.getMessage());
+            String jexl;
+            ASTJexlScript script;
+            try {
+                jexl = input.getSyntax() == Syntax.LUCENE ? luceneParser.parse(input.getQuery()).getOriginalQuery() : input.getQuery();
+                script = JexlASTHelper.parseJexlQuery(jexl);
+            } catch (datawave.query.language.parser.ParseException | org.apache.commons.jexl3.parser.ParseException | IllegalArgumentException e) {
+                return QueryAnalysis.failure(index, input, Status.INVALID, "Unable to parse " + input.getSyntax() + ": " + e.getMessage());
+            }
+            try {
+                QueryShape shape = new QueryShape();
+                String signature = shape.analyze(script);
+                QueryFingerprint fingerprint = new QueryFingerprintBuilder().build(script);
+                return new QueryAnalysis(index, input, Status.SUCCESS, jexl, signature, shape.categories, shape.fields, shape.functions, null, fingerprint);
+            } catch (UnsupportedOperationException e) {
+                return QueryAnalysis.failure(index, input, Status.UNSUPPORTED, e.getMessage());
+            }
+        } catch (StackOverflowError e) {
+            // Parsing and remaining recursive visitors can still exhaust the stack on deeply nested input.
+            return QueryAnalysis.failure(index, input, Status.UNSUPPORTED, "Query exceeds parser or analyzer stack depth limits");
         }
     }
 

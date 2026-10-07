@@ -1,7 +1,9 @@
 package datawave.query.analysis;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -153,13 +155,18 @@ final class QueryShape {
     }
 
     private void collectJunction(JexlNode original, Class<?> type, List<String> children) {
-        JexlNode node = unwrap(original);
-        if (node.getClass() == type && !QueryPropertyMarker.findInstance(node).isAnyType()) {
-            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                collectJunction(node.jjtGetChild(i), type, children);
+        Deque<JexlNode> pending = new ArrayDeque<>();
+        pending.push(original);
+        while (!pending.isEmpty()) {
+            JexlNode node = unwrap(pending.pop());
+            if (node.getClass() == type && !QueryPropertyMarker.findInstance(node).isAnyType()) {
+                // Reverse the push order to retain left-to-right traversal without recursing through wide junctions.
+                for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
+                    pending.push(node.jjtGetChild(i));
+                }
+            } else {
+                children.add(shape(node));
             }
-        } else {
-            children.add(shape(node));
         }
     }
 

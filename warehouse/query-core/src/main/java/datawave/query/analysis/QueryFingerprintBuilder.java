@@ -1,8 +1,10 @@
 package datawave.query.analysis;
 
 import java.math.BigDecimal;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -297,13 +299,18 @@ final class QueryFingerprintBuilder {
     }
 
     private void flatten(JexlNode original, Class<?> type, List<JexlNode> result) {
-        JexlNode node = unwrap(original);
-        if (node.getClass() == type && !QueryPropertyMarker.findInstance(node).isAnyType()) {
-            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                flatten(node.jjtGetChild(i), type, result);
+        Deque<JexlNode> pending = new ArrayDeque<>();
+        pending.push(original);
+        while (!pending.isEmpty()) {
+            JexlNode node = unwrap(pending.pop());
+            if (node.getClass() == type && !QueryPropertyMarker.findInstance(node).isAnyType()) {
+                // Reverse the push order to retain left-to-right traversal without recursing through wide junctions.
+                for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
+                    pending.push(node.jjtGetChild(i));
+                }
+            } else {
+                result.add(node);
             }
-        } else {
-            result.add(node);
         }
     }
 
