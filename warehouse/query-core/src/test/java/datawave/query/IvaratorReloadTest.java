@@ -1,8 +1,12 @@
 package datawave.query;
 
 import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,10 +27,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.google.common.collect.Maps;
 
@@ -44,8 +46,8 @@ public class IvaratorReloadTest {
     public static List<Map.Entry<Key,Value>> sourceList = new ArrayList<>();
     public static SortedKeyValueIterator source = new SortedListKeyValueIterator(sourceList);
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     /**
      * Basically create an ivarator, seek it and verify it persisted. Then create a second ivarator against the same directory, and verify it reused the same
@@ -58,7 +60,7 @@ public class IvaratorReloadTest {
     public void reloadTest() throws Exception {
         setupKeyValues();
 
-        File tempDir = temporaryFolder.newFolder();
+        File tempDir = Files.createTempDirectory(temporaryFolder.toPath(), "ivarator-").toFile();
 
         LocalFileSystem fs = new LocalFileSystem();
         fs.initialize(tempDir.toURI(), new Configuration());
@@ -74,8 +76,8 @@ public class IvaratorReloadTest {
         File completeFile = new File(shardDir, "complete");
 
         IvaratorDirState state1 = getIvaratorDirState(shardDir);
-        Assert.assertTrue("Missing complete file", state1.complete);
-        Assert.assertFalse("Missing sorted set files", state1.sortedSetBytes.isEmpty());
+        assertTrue(state1.complete, "Missing complete file");
+        assertFalse(state1.sortedSetBytes.isEmpty(), "Missing sorted set files");
 
         DatawaveFieldIndexRangeIteratorJexl secondRangeIvarator = createRangeIvarator(fs, uniqueDir);
         secondRangeIvarator.init(source, null, null);
@@ -84,7 +86,7 @@ public class IvaratorReloadTest {
         secondRangeIvarator.seek(range2, new HashSet<>(), false);
 
         IvaratorDirState state2 = getIvaratorDirState(shardDir);
-        Assert.assertEquals("Ivarator dir changed but it should not have", state1, state2);
+        assertEquals(state1, state2, "Ivarator dir changed but it should not have");
     }
 
     public static DatawaveFieldIndexRangeIteratorJexl createRangeIvarator(FileSystem fs, Path uniqueDir) {
