@@ -15,6 +15,7 @@
         <entry key="geo" value="datawave.query.jexl.functions.GeoFunctions"/>
         <entry key="geowave" value="datawave.query.jexl.functions.GeoWaveFunctions"/>
         <entry key="content" value="datawave.query.jexl.functions.ContentFunctions"/>
+        <entry key="document" value="datawave.query.jexl.functions.DocumentFunctions"/>
         <entry key="normalize" value="datawave.query.jexl.functions.NormalizationFunctions"/>
         <entry key="filter" value="datawave.query.jexl.functions.EvaluationPhaseFilterFunctions"/>
         <entry key="grouping" value="datawave.query.jexl.functions.GroupingRequiredFilterFunctions"/>

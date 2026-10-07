@@ -21,7 +21,6 @@ import datawave.query.jexl.JexlASTHelper;
  * This filter only operates on event keys.
  */
 public class EventDataQueryFieldFilter implements EventDataQueryFilter {
-
     private Key document = null;
     // the number of times next is called before issuing a seek
     private int maxNextCount = -1;

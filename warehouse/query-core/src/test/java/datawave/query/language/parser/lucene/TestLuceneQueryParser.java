@@ -204,6 +204,12 @@ public class TestLuceneQueryParser {
                         luceneParser.parse("field:selector AND #include(field, testbade\\.scape)").getContents());
         Assert.assertEquals("[AND,field:selector][posFilter: filter(true, AND, field, testbade\\.scape)]",
                         luceneParser.parse("field:selector AND #text(field, testbade\\.scape)").getContents());
+        Assert.assertEquals("[AND,field:selector][posFilter: document:match(car)]",
+                        luceneParser.parse("field:selector AND #DOCUMENT_MATCH(car)").getContents());
+        Assert.assertEquals("[AND,field:selector][posFilter: document:match(BODY, car)]",
+                        luceneParser.parse("field:selector AND #DOCUMENT_MATCH(BODY, car)").getContents());
+        Assert.assertEquals("[AND,field:selector][posFilter: document:match(BODY*, car)]",
+                        luceneParser.parse("field:selector AND #DOCUMENT_MATCH(BODY*, car)").getContents());
     }
 
     @Test
