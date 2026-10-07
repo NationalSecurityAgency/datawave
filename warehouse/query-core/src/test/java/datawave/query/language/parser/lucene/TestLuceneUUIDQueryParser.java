@@ -1,10 +1,12 @@
 package datawave.query.language.parser.lucene;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.data.UUIDType;
 import datawave.query.language.parser.ParseException;
@@ -17,7 +19,7 @@ public class TestLuceneUUIDQueryParser {
         uuidTypes.add(new UUIDType("FIELD", "view", 10));
         queryParser.setUuidTypes(uuidTypes);
 
-        Assert.assertEquals("FIELD:0123456789*", queryParser.parse("FIELD:0123456789*").getContents());
+        assertEquals("FIELD:0123456789*", queryParser.parse("FIELD:0123456789*").getContents());
     }
 
     @Test
@@ -27,16 +29,17 @@ public class TestLuceneUUIDQueryParser {
         uuidTypes.add(new UUIDType("FIELD", "view", 10));
         queryParser.setUuidTypes(uuidTypes);
 
-        Assert.assertEquals("FIELD:0123456789*", queryParser.parse("FIELD:0123456789*").getContents());
+        assertEquals("FIELD:0123456789*", queryParser.parse("FIELD:0123456789*").getContents());
     }
 
-    @Test(expected = ParseException.class)
+    @Test
     public void test3() throws ParseException {
         LuceneUUIDQueryParser queryParser = new LuceneUUIDQueryParser();
         List<UUIDType> uuidTypes = new ArrayList<>();
         uuidTypes.add(new UUIDType("WRONGFIELD", "view", null));
         queryParser.setUuidTypes(uuidTypes);
 
-        Assert.assertEquals("FIELD:0123456789*", queryParser.parse("FIELD:0123456789").getContents());
+        assertThrows(ParseException.class, () -> queryParser.parse("FIELD:0123456789"));
+
     }
 }
