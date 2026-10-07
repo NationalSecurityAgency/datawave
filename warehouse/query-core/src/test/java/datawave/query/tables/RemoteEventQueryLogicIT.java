@@ -3,9 +3,9 @@ package datawave.query.tables;
 import static datawave.query.tables.RemoteQueryServiceTestUtil.DEFAULT_REMOTE_LOGIC;
 import static datawave.query.tables.RemoteQueryServiceTestUtil.NON_ROUTABLE_HOST;
 import static datawave.webservice.common.remote.RemoteServiceUtil.ForeverHandler;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -13,21 +13,21 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import com.sun.net.httpserver.HttpHandler;
 
-import datawave.common.test.integration.IntegrationTest;
 import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 
-@Category(IntegrationTest.class)
+@Tag("datawave.common.test.integration.IntegrationTest")
 public class RemoteEventQueryLogicIT {
     private RemoteEventQueryLogic logic = new RemoteEventQueryLogic();
     private RemoteQueryServiceTestUtil testUtil;
@@ -35,7 +35,7 @@ public class RemoteEventQueryLogicIT {
     private UUID uuid;
     private AtomicBoolean handlerInterrupt = new AtomicBoolean(false);
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         uuid = UUID.randomUUID();
         handlerInterrupt.set(false);
@@ -49,7 +49,7 @@ public class RemoteEventQueryLogicIT {
         logic.setRemoteQueryLogic(DEFAULT_REMOTE_LOGIC);
     }
 
-    @After
+    @AfterEach
     public void after() {
         handlerInterrupt.set(true);
         testUtil.stop();
@@ -83,7 +83,7 @@ public class RemoteEventQueryLogicIT {
         }
 
         // this would be TERMINATED if the thread ran
-        assertTrue(t.getState().toString(), t.getState() == Thread.State.RUNNABLE);
+        assertTrue(t.getState() == Thread.State.RUNNABLE, t.getState().toString());
         assertFalse(r.isSetup().get());
         assertFalse(r.isCaught().get());
     }
@@ -133,7 +133,7 @@ public class RemoteEventQueryLogicIT {
         }
 
         // this would be TERMINATED if the thread ran
-        assertTrue(t.getState().toString(), t.getState() == Thread.State.RUNNABLE);
+        assertTrue(t.getState() == Thread.State.RUNNABLE, t.getState().toString());
         assertFalse(r.isSetup().get());
         assertFalse(r.isCaught().get());
     }
@@ -161,7 +161,8 @@ public class RemoteEventQueryLogicIT {
         assertTrue(r.getException() instanceof RemoteTimeoutQueryException);
     }
 
-    @Test(timeout = 30000)
+    @Test
+    @Timeout(30)
     public void testDefaultConnectionPoolTimeout() {
         RemoteHttpService remoteHttpService = (RemoteHttpService) logic.getRemoteQueryService();
         RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
@@ -250,7 +251,7 @@ public class RemoteEventQueryLogicIT {
         t1.start();
 
         try {
-            assertTrue("Timed out waiting for first request to arrive", arrivalLatch.await(35, TimeUnit.SECONDS));
+            assertTrue(arrivalLatch.await(35, TimeUnit.SECONDS), "Timed out waiting for first request to arrive");
         } catch (InterruptedException e) {
             throw new AssertionError("Interrupted while waiting for first request to arrive", e);
         }
@@ -261,7 +262,7 @@ public class RemoteEventQueryLogicIT {
 
         // wait until the exception is caught
         try {
-            assertTrue("Timed out waiting for connection pool timeout", exceptionLatch.await(35, TimeUnit.SECONDS));
+            assertTrue(exceptionLatch.await(35, TimeUnit.SECONDS), "Timed out waiting for connection pool timeout");
         } catch (InterruptedException e) {
             throw new AssertionError("Interrupted while waiting for connection pool timeout", e);
         }
@@ -291,6 +292,6 @@ public class RemoteEventQueryLogicIT {
         RemoteQueryServiceTestUtil.QueryRunnable r1 = new RemoteQueryServiceTestUtil.QueryRunnable(logic);
         r1.run();
         assertTrue(r1.isCaught().get());
-        assertTrue(r1.getException().getMessage(), r1.getException() instanceof RemoteTimeoutQueryRuntimeException);
+        assertTrue(r1.getException() instanceof RemoteTimeoutQueryRuntimeException, r1.getException().getMessage());
     }
 }
