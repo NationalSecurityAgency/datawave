@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -391,11 +392,24 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
 
         script = TreeFlatteningRebuildingVisitor.flatten(script);
 
+        verifyQueryIsFielded(script);
+
         EdgeTableRangeBuildingVisitor visitor = new EdgeTableRangeBuildingVisitor(getConfig().includeStats(), getConfig().getDataTypes(),
                         getConfig().getMaxQueryTerms(), getConfig().getRegexDataTypes(), getEdgeFields());
         visitationContext = (VisitationContext) script.jjtAccept(visitor, null);
 
         return visitationContext.getRanges();
+    }
+
+    /**
+     * Reject unfielded edge query terms (bare values that the parsers map to ANY_FIELD) early with a clear message instead of a confusing downstream failure.
+     */
+    private void verifyQueryIsFielded(ASTJexlScript script) {
+        AtomicBoolean hasUnfieldedTerm = new AtomicBoolean(false);
+        script.jjtAccept(new JexlASTHelper.HasUnfieldedTermVisitor(), hasUnfieldedTerm);
+        if (hasUnfieldedTerm.get()) {
+            throw new IllegalArgumentException("Edge queries do not support unfielded terms; every term must specify a field (e.g. SOURCE == 'value').");
+        }
     }
 
     /**
