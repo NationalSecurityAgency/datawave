@@ -1,5 +1,9 @@
 package datawave.query.tables.ssdeep.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.HashMap;
@@ -17,7 +21,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.query.tables.ssdeep.SSDeepSimilarityQueryTest;
@@ -106,15 +109,15 @@ public class SSDeepTestUtil {
     public static void assertSSDeepSimilarityMatch(String querySsdeep, String matchingSsdeep, String overlapScore, String overlapSsdeepNgrams,
                     String weightedScore, Map<String,Map<String,String>> observedEvents) {
         final Map<String,String> observedFields = observedEvents.get(querySsdeep + "#" + matchingSsdeep);
-        Assert.assertNotNull("Observed fields was null", observedFields);
-        Assert.assertFalse("Observed fields was unexpectedly empty", observedFields.isEmpty());
-        Assert.assertEquals(overlapScore, observedFields.remove("OVERLAP_SCORE"));
-        Assert.assertEquals(overlapSsdeepNgrams, observedFields.remove("OVERLAP_SSDEEP_NGRAMS"));
+        assertNotNull("Observed fields was null", observedFields);
+        assertFalse("Observed fields was unexpectedly empty", observedFields.isEmpty());
+        assertEquals(overlapScore, observedFields.remove("OVERLAP_SCORE"));
+        assertEquals(overlapSsdeepNgrams, observedFields.remove("OVERLAP_SSDEEP_NGRAMS"));
 
-        Assert.assertEquals(weightedScore, observedFields.remove("WEIGHTED_SCORE"));
-        Assert.assertEquals(querySsdeep, observedFields.remove("QUERY_SSDEEP"));
-        Assert.assertEquals(matchingSsdeep, observedFields.remove("MATCHING_SSDEEP"));
-        Assert.assertTrue("Observed unexpected field(s) in full match: " + observedFields, observedFields.isEmpty());
+        assertEquals(weightedScore, observedFields.remove("WEIGHTED_SCORE"));
+        assertEquals(querySsdeep, observedFields.remove("QUERY_SSDEEP"));
+        assertEquals(matchingSsdeep, observedFields.remove("MATCHING_SSDEEP"));
+        assertTrue("Observed unexpected field(s) in full match: " + observedFields, observedFields.isEmpty());
     }
 
     /**
@@ -129,7 +132,7 @@ public class SSDeepTestUtil {
      */
     public static void assertNoMatch(String querySsdeep, String matchingSsdeep, Map<String,Map<String,String>> observedEvents) {
         final Map<String,String> observedFields = observedEvents.get(querySsdeep + "#" + matchingSsdeep);
-        Assert.assertTrue("Observed fields was not empty", observedFields.isEmpty());
+        assertTrue("Observed fields was not empty", observedFields.isEmpty());
 
     }
 
