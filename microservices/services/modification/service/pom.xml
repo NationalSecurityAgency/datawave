@@ -263,6 +263,12 @@
                 <artifactId>git-commit-id-maven-plugin</artifactId>
             </plugin>
             <plugin>
+                <!-- This was added to ensure project only uses public API -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.6.0</version>
+            </plugin>
+            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
             <plugin>
