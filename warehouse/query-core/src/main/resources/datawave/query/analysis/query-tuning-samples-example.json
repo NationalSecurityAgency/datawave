@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "samples": [
+    {"id": "identity-1", "query": "NAME == 'alice' && CITY == 'paris'", "syntax": "JEXL", "bucket": "identity"},
+    {"id": "identity-2", "query": "NAME:bob AND STATE:maine", "syntax": "LUCENE", "bucket": "identity"},
+    {"id": "identity-3", "query": "NAME == 'carol' && COUNTRY == 'france'", "syntax": "JEXL", "bucket": "identity"},
+    {"id": "identity-4", "query": "NAME:dave AND POSTCODE:12345", "syntax": "LUCENE", "bucket": "identity"},
+    {"id": "account-1", "query": "ACCOUNT == '123' && STATUS == 'active'", "syntax": "JEXL", "bucket": "account"},
+    {"id": "account-2", "query": "ACCOUNT:456 AND TYPE:retail", "syntax": "LUCENE", "bucket": "account"},
+    {"id": "account-3", "query": "ACCOUNT == '789' && REGION == 'north'", "syntax": "JEXL", "bucket": "account"},
+    {"id": "account-4", "query": "ACCOUNT:012 AND BRANCH:london", "syntax": "LUCENE", "bucket": "account"}
+  ]
+}

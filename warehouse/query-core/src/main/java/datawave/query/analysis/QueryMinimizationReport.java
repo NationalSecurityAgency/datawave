@@ -63,6 +63,9 @@ public final class QueryMinimizationReport {
                         .append(", mean ").append(number(c.meanSimilarity)).append(".\n");
         text.append(String.format(Locale.ROOT, "Clustering: threshold %.3f; feature limit %d; posting limit %d; candidate limit %d; comparisons %d.%n",
                         c.options.getThreshold(), c.options.getFeatureLimit(), c.options.getPostingLimit(), c.options.getCandidateLimit(), c.comparisonCount));
+        QuerySimilarity.Weights weights = c.options.getWeights();
+        text.append(String.format(Locale.ROOT, "Similarity weights: bindings %.3f; counts %.3f; topology %.3f; complexity %.3f.%n", weights.getBindings(),
+                        weights.getCounts(), weights.getTopology(), weights.getComplexity()));
         text.append(String.format(Locale.ROOT,
                         "Restricted searches: feature-truncated fingerprints %d; candidate-truncated fingerprints %d; feature-posting evictions %d; fallback-posting evictions %d.%n"
                                         + "New groups: new protected profile %d; no considered candidate met threshold %d; best rejected scores min/mean/max %s/%s/%s.%n",

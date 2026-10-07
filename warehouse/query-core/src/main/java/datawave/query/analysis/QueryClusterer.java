@@ -71,7 +71,7 @@ public final class QueryClusterer {
             double bestConsideredScore = -1;
             for (GroupBuilder candidate : partition.candidates(features)) {
                 comparisons++;
-                double score = QuerySimilarity.score(fingerprint, candidate.representative.getFingerprint());
+                double score = QuerySimilarity.score(fingerprint, candidate.representative.getFingerprint(), options.weights);
                 bestConsideredScore = Math.max(bestConsideredScore, score);
                 if (score >= options.threshold && (score > bestScore || (score == bestScore && candidate.id.compareTo(best.id) < 0))) {
                     best = candidate;
@@ -201,12 +201,17 @@ public final class QueryClusterer {
         private final int featureLimit;
         private final int postingLimit;
         private final int candidateLimit;
+        private final QuerySimilarity.Weights weights;
 
         public Options() {
             this(0.70, 4, 32, 64);
         }
 
         public Options(double threshold, int featureLimit, int postingLimit, int candidateLimit) {
+            this(threshold, featureLimit, postingLimit, candidateLimit, QuerySimilarity.Weights.DEFAULT);
+        }
+
+        public Options(double threshold, int featureLimit, int postingLimit, int candidateLimit, QuerySimilarity.Weights weights) {
             if (!Double.isFinite(threshold) || threshold < 0 || threshold > 1 || featureLimit < 1 || postingLimit < 1 || candidateLimit < 1) {
                 throw new IllegalArgumentException("Threshold must be in [0,1] and comparison limits must be positive");
             }
@@ -214,6 +219,7 @@ public final class QueryClusterer {
             this.featureLimit = featureLimit;
             this.postingLimit = postingLimit;
             this.candidateLimit = candidateLimit;
+            this.weights = Objects.requireNonNull(weights, "weights");
         }
 
         public double getThreshold() {
@@ -230,6 +236,10 @@ public final class QueryClusterer {
 
         public int getCandidateLimit() {
             return candidateLimit;
+        }
+
+        public QuerySimilarity.Weights getWeights() {
+            return weights;
         }
     }
 

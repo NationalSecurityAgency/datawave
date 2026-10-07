@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:datawave:query-analysis:tuning-samples:1",
+  "title": "DataWave labeled query tuning samples, version 1",
+  "$comment": "The reader additionally rejects duplicate JSON keys, trailing documents, and duplicate provided sample IDs. Lexical duplicate keys and cross-item ID uniqueness cannot be expressed by standard JSON Schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "samples"],
+  "properties": {
+    "schemaVersion": {"type": "integer", "const": 1},
+    "samples": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 9999,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["query", "syntax", "bucket"],
+        "properties": {
+          "id": {"$ref": "#/$defs/nonblank", "description": "Optional nonblank ID; provided IDs must be unique across all samples."},
+          "query": {"$ref": "#/$defs/nonblank", "description": "Original query text, preserved exactly. Parsing occurs only in the configured analyzer."},
+          "syntax": {"type": "string", "enum": ["LUCENE", "JEXL"]},
+          "bucket": {"$ref": "#/$defs/nonblank", "description": "Desired grouping label, preserved exactly. It is not a persistent classification name."}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonblank": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "[^\\u0009-\\u000D\\u001C-\\u0020\\u1680\\u2000-\\u2006\\u2008-\\u200A\\u2028\\u2029\\u205F\\u3000]",
+      "description": "Contains at least one character outside the Java 11 Character.isWhitespace set. Whitespace around content is preserved."
+    }
+  }
+}

@@ -226,6 +226,11 @@ public final class QueryAnalyzer {
             clusters = Collections.unmodifiableMap(grouped);
         }
 
+        // Subset an already parsed batch without changing its original input indexes.
+        static AnalysisReport fromAnalyses(List<QueryAnalysis> queries) {
+            return new AnalysisReport(queries);
+        }
+
         public List<QueryAnalysis> getQueries() {
             return queries;
         }

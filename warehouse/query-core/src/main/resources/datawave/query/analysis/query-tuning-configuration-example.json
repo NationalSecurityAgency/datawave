@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "fingerprintVersion": 2,
+  "clustering": {
+    "threshold": 0.70,
+    "featureLimit": 4,
+    "postingLimit": 32,
+    "candidateLimit": 64,
+    "weights": {"bindings": 0.35, "counts": 0.30, "topology": 0.20, "complexity": 0.15}
+  }
+}

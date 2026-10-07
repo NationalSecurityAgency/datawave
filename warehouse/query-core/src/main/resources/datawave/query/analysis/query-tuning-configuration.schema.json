@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:datawave:query-analysis:tuning-configuration:1",
+  "title": "DataWave query tuning configuration, version 1",
+  "$comment": "The reader additionally rejects duplicate JSON keys and trailing documents. Numeric values must convert to finite Java doubles; weights must retain a positive total after conversion. Configuration does not serialize the deployment's parser settings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "fingerprintVersion", "clustering"],
+  "properties": {
+    "schemaVersion": {"type": "integer", "const": 1},
+    "fingerprintVersion": {"type": "integer", "const": 2},
+    "clustering": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["threshold", "featureLimit", "postingLimit", "candidateLimit", "weights"],
+      "properties": {
+        "threshold": {"type": "number", "minimum": 0, "maximum": 1},
+        "featureLimit": {"$ref": "#/$defs/positiveInt"},
+        "postingLimit": {"$ref": "#/$defs/positiveInt"},
+        "candidateLimit": {"$ref": "#/$defs/positiveInt"},
+        "weights": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bindings", "counts", "topology", "complexity"],
+          "description": "Finite nonnegative relative weights with positive total. The reader normalizes them; the writer emits the normalized values.",
+          "properties": {
+            "bindings": {"$ref": "#/$defs/weight"},
+            "counts": {"$ref": "#/$defs/weight"},
+            "topology": {"$ref": "#/$defs/weight"},
+            "complexity": {"$ref": "#/$defs/weight"}
+          },
+          "anyOf": [
+            {"properties": {"bindings": {"exclusiveMinimum": 0}}},
+            {"properties": {"counts": {"exclusiveMinimum": 0}}},
+            {"properties": {"topology": {"exclusiveMinimum": 0}}},
+            {"properties": {"complexity": {"exclusiveMinimum": 0}}}
+          ]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "positiveInt": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+    "weight": {"type": "number", "minimum": 0, "maximum": 1.7976931348623157e308}
+  }
+}

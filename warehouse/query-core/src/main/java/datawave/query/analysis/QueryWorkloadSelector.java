@@ -223,15 +223,16 @@ public final class QueryWorkloadSelector {
             double minimum = 1;
             for (QueryFingerprint landmark : first) {
                 comparisons++;
-                minimum = Math.min(minimum, QuerySimilarity.distance(candidate, landmark));
+                minimum = Math.min(minimum, QuerySimilarity.distance(candidate, landmark, result.getOptions().getWeights()));
             }
             for (QueryFingerprint landmark : recent) {
                 comparisons++;
-                minimum = Math.min(minimum, QuerySimilarity.distance(candidate, landmark));
+                minimum = Math.min(minimum, QuerySimilarity.distance(candidate, landmark, result.getOptions().getWeights()));
             }
             if (group.started) {
                 comparisons++;
-                minimum = Math.min(minimum, QuerySimilarity.distance(candidate, group.group.getRepresentative().getFingerprint()));
+                minimum = Math.min(minimum,
+                                QuerySimilarity.distance(candidate, group.group.getRepresentative().getFingerprint(), result.getOptions().getWeights()));
             }
             return minimum;
         }

@@ -19,9 +19,10 @@
  * field indexing, data distributions, normalization, and planner configuration are not available here.
  *
  * <p>
- * Similarity combines field bindings (35%), context-sensitive operation counts (30%), topology (20%), and normalized complexity measurements (15%). The default
- * threshold is 0.70. Protected profiles must match regardless of score. Group representatives remain fixed; similarity to every other member is not guaranteed.
- * Bounded candidate discovery can produce additional groups. Identical enriched fingerprints always receive the same assignment within a run.
+ * Similarity defaults to field bindings (35%), context-sensitive operation counts (30%), topology (20%), and normalized complexity measurements (15%).
+ * Immutable weights can change these relative contributions. The default threshold is 0.70. Protected profiles must match regardless of score. Group
+ * representatives remain fixed; similarity to every other member is not guaranteed. Bounded candidate discovery can produce additional groups. Identical
+ * enriched fingerprints always receive the same assignment within a run.
  *
  * <p>
  * Selection emits a representative from each group first, then continues in balanced rounds. A window of 16 eligible groups and up to eight members per group
@@ -53,8 +54,27 @@
  * Limit diagnostics count actual feature/candidate truncations and posting evictions observed during grouping. Group creation distinguishes new profiles from
  * cases where no considered candidate qualifies. Best rejected scores cover only the latter cases, using the best score among candidates actually compared.
  * These measurements do not prove that a compatible group was missed by bounded discovery. Threshold guidance respects protected-profile boundaries; larger
- * discovery limits, selection windows, and retained landmark counts can increase comparison work. No parameter sweep or automatic numeric recommendation is
- * performed.
+ * discovery limits, selection windows, and retained landmark counts can increase comparison work. Reporting itself performs no parameter sweep.
+ *
+ * <p>
+ * {@link datawave.query.analysis.QueryAutoTuner} tunes a threshold and similarity weights from 1-9999 labeled raw queries through a supplied analyzer. Desired
+ * bucket labels guide a reusable grouping policy rather than persistent named classification. Each distinct successful fingerprint has equal mass in the
+ * B-cubed F1 objective; contradictory labels share that fingerprint's mass equally and remain in training. Duplicate occurrences and literal variants do not
+ * add voting weight. Invalid/unsupported samples are excluded with diagnostics, and an entirely excluded workload fails. Protected profiles and configured
+ * discovery limits remain unchanged. The default deterministic grid/refinement search evaluates at most 128 distinct settings and makes no optimality claim.
+ *
+ * <p>
+ * Holdout validation groups complete fingerprints and requires at least two labels with four conflict-free fingerprints each. Each eligible label reserves
+ * approximately 20%, with at least two holdout and two training fingerprints; conflicts and ineligible labels remain in training. After selection, the holdout
+ * is clustered separately with fixed settings and never causes retuning. Scores cover eligible labels rather than every future distribution. Results expose
+ * baseline/selected fit, split details, search work, and exclusion/conflict/enrichment diagnostics.
+ *
+ * <p>
+ * {@link datawave.query.analysis.QueryTuningJson} reads strict version-1 sample JSON and reads/writes immutable configurations tied to fingerprint version 2.
+ * Draft-2020-12 schemas and examples reside under {@code datawave/query/analysis} in main resources. Unknown properties, duplicate keys, trailing content,
+ * incompatible versions, wrong scalar types, blank fields, duplicate supplied IDs, and unsafe numeric options are rejected. Raw text and labels are preserved.
+ * Stream overloads leave caller-owned streams open; path overloads close their streams. Reuse the same deployment-configured analyzer/parser when applying
+ * settings to future queries: parser configuration is not serialized. Applications invoke these APIs directly; this package supplies no CLI.
  *
  * <p>
  * Selection coverage counts emitted groups, enriched fingerprints, and protected profiles against the original clustering result. Occurrence coverage counts
