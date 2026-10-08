@@ -22,8 +22,9 @@
         <skipTests>false</skipTests>
         <skipUTs>${skipTests}</skipUTs>
         <spotbugs.excludes.file />
-        <surefire.forkCount>1C</surefire.forkCount>
-        <surefire.maxMemory>1024m</surefire.maxMemory>
+        <surefire.forkCount>1</surefire.forkCount>
+        <surefire.maxMemory>2048m</surefire.maxMemory>
+        <surefire.minMemory>128m</surefire.minMemory>
         <surefire.reuseForks>false</surefire.reuseForks>
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
@@ -387,7 +388,7 @@
                     <threadCountClasses>1</threadCountClasses>
                     <threadCountMethods>0</threadCountMethods>
                     <threadCountSuites>0</threadCountSuites>
-                    <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx${surefire.maxMemory} -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
+                    <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xms${surefire.minMemory} -Xmx${surefire.maxMemory} -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=</argLine>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>random</runOrder>
                 </configuration>

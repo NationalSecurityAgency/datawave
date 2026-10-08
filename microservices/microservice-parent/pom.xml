@@ -30,8 +30,11 @@
         </repository>
     </distributionManagement>
     <properties>
+        <argLine />
         <container.registry>ghcr.io</container.registry>
         <datawave.build.jdk.version.range>[11,12)</datawave.build.jdk.version.range>
+        <failsafe.maxMemory>${surefire.maxMemory}</failsafe.maxMemory>
+        <failsafe.minMemory>${surefire.minMemory}</failsafe.minMemory>
         <image.prefix>datawave/</image.prefix>
         <java.version>11</java.version>
         <maven.compiler.release>11</maven.compiler.release>
@@ -52,8 +55,9 @@
         <sonar.exclusions>**/*.js,**/*.css,**/*.html</sonar.exclusions>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <spotbugs.excludes.file />
-        <surefire.forkCount>1C</surefire.forkCount>
-        <surefire.maxMemory>1024m</surefire.maxMemory>
+        <surefire.forkCount>1</surefire.forkCount>
+        <surefire.maxMemory>2048m</surefire.maxMemory>
+        <surefire.minMemory>128m</surefire.minMemory>
         <surefire.reuseForks>false</surefire.reuseForks>
         <version.datawave-commons-security>8.0.0</version.datawave-commons-security>
         <version.hadoop>3.3.4</version.hadoop>
@@ -429,6 +433,9 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>3.5.2</version>
+                    <configuration>
+                        <argLine>@{argLine} -Xms${failsafe.minMemory} -Xmx${failsafe.maxMemory}</argLine>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -482,7 +489,7 @@
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx${surefire.maxMemory} -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc= -Dcom.google.protobuf.use_unsafe_pre22_gencode</argLine>
+                        <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xms${surefire.minMemory} -Xmx${surefire.maxMemory} -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc= -Dcom.google.protobuf.use_unsafe_pre22_gencode</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <runOrder>random</runOrder>
                     </configuration>
