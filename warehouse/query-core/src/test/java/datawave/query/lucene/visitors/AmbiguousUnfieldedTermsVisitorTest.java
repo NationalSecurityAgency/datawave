@@ -169,11 +169,61 @@ class AmbiguousUnfieldedTermsVisitorTest {
     }
 
     /**
+     * Test a query with a fielded quoted term and a non-fielded term that are implied to be AND'd, with the target junction AND.
+     */
+    @Test
+    void testPrecedingQuotedTermWithImpliedAndGivenJunctionAND() throws QueryNodeParseException {
+        givenQuery("FOO:\"abc\" def");
+        givenJunction("AND");
+
+        expectNode("FOO:\"abc\" def");
+
+        assertResult();
+    }
+
+    /**
+     * Test a query with a fielded quoted term and a non-fielded term that are implied to be AND'd, with the target junction AND.
+     */
+    @Test
+    void testSubsequentQuotedTermWithImpliedAndGivenJunctionAND() throws QueryNodeParseException {
+        givenQuery("FOO:abc \"def\"");
+        givenJunction("AND");
+
+        expectNode("FOO:abc \"def\"");
+
+        assertResult();
+    }
+
+    /**
      * Test a query with a fielded term and a non-fielded term that are implied to be AND'd, with the target junction OR.
      */
     @Test
     void testQueryWithImpliedAndGivenJunctionOR() throws QueryNodeParseException {
         givenQuery("FOO:abc def");
+        givenJunction("OR");
+
+        // Do not expect any results.
+        assertResult();
+    }
+
+    /**
+     * Test a query with a fielded quoted term and a non-fielded term that are implied to be AND'd, with the target junction OR.
+     */
+    @Test
+    void testPrecedingQuotedQueryWithImpliedAndGivenJunctionOR() throws QueryNodeParseException {
+        givenQuery("FOO:\"abc\" def");
+        givenJunction("OR");
+
+        // Do not expect any results.
+        assertResult();
+    }
+
+    /**
+     * Test a query with a fielded quoted term and a non-fielded term that are implied to be AND'd, with the target junction OR.
+     */
+    @Test
+    void testSubsequentQuotedQueryWithImpliedAndGivenJunctionOR() throws QueryNodeParseException {
+        givenQuery("FOO:abc \"def\"");
         givenJunction("OR");
 
         // Do not expect any results.
