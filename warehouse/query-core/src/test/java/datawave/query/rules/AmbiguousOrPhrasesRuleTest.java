@@ -40,7 +40,20 @@ class AmbiguousOrPhrasesRuleTest extends ShardQueryRuleTest {
     void testQueryWithQuotedPhrases() throws Exception {
         givenQuery("FOO:\"abc\" OR \"def\"");
 
-        // Do not expect any results.
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: FOO:\"abc\" OR \"def\". Recommended: FOO:(\"abc\" OR \"def\")");
+
+        assertResult();
+    }
+
+    /**
+     * Test a query with quoted and unquoted phrases.
+     */
+    @Test
+    void testQueryWithQuotedAndUnquotedPhrases() throws Exception {
+        givenQuery("FOO:abc OR \"def\"");
+
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: FOO:abc OR \"def\". Recommended: FOO:(abc OR \"def\")");
+
         assertResult();
     }
 
@@ -70,7 +83,7 @@ class AmbiguousOrPhrasesRuleTest extends ShardQueryRuleTest {
      * Test a query where ambiguous phrases are separated by an AND.
      */
     @Test
-    void testAndedPhrase() throws Exception {
+    void testPhraseWithJunctionAND() throws Exception {
         givenQuery("FOO:abc AND def");
 
         // Do not expect any results.
@@ -106,7 +119,7 @@ class AmbiguousOrPhrasesRuleTest extends ShardQueryRuleTest {
     void testQueryWithAmbiguousPhrase() throws Exception {
         givenQuery("FOO:abc OR def OR efg");
 
-        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: FOO:abc OR def OR efg Recommended: FOO:(abc OR def OR efg)");
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: FOO:abc OR def OR efg. Recommended: FOO:(abc OR def OR efg)");
 
         assertResult();
     }
@@ -118,7 +131,7 @@ class AmbiguousOrPhrasesRuleTest extends ShardQueryRuleTest {
     void testWrappedQueryWithAmbiguousPhrase() throws Exception {
         givenQuery("(FOO:abc OR def OR efg)");
 
-        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: ( FOO:abc OR def OR efg ) Recommended: FOO:(abc OR def OR efg)");
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: ( FOO:abc OR def OR efg ). Recommended: FOO:(abc OR def OR efg)");
 
         assertResult();
     }
@@ -130,7 +143,7 @@ class AmbiguousOrPhrasesRuleTest extends ShardQueryRuleTest {
     void testQueryWithNestedAmbiguousPhrases() throws Exception {
         givenQuery("(FOO:abc OR (def OR efg))");
 
-        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: ( FOO:abc OR ( def OR efg ) ) Recommended: FOO:(abc OR def OR efg)");
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: ( FOO:abc OR ( def OR efg ) ). Recommended: FOO:(abc OR def OR efg)");
 
         assertResult();
     }
@@ -142,9 +155,10 @@ class AmbiguousOrPhrasesRuleTest extends ShardQueryRuleTest {
     void testQueryWithMultipleAmbiguousPhrases() throws Exception {
         givenQuery("FOO:aaa AND bbb AND (BAR:aaa OR bbb OR ccc OR HAT:\"ear\" nose) OR (aaa OR bbb OR VEE:eee OR 123 OR (gee OR \"wiz\")) AND (EGG:yolk OR shell)");
 
-        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: BAR:aaa OR bbb OR ccc Recommended: BAR:(aaa OR bbb OR ccc)");
-        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: VEE:eee OR 123 Recommended: VEE:(eee OR 123)");
-        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: ( EGG:yolk OR shell ) Recommended: EGG:(yolk OR shell)");
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: BAR:aaa OR bbb OR ccc. Recommended: BAR:(aaa OR bbb OR ccc)");
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: VEE:eee OR 123 OR ( gee OR \"wiz\" ). Recommended: VEE:(eee OR 123 OR gee "
+                        + "OR \"wiz\")");
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: ( EGG:yolk OR shell ). Recommended: EGG:(yolk OR shell)");
 
         assertResult();
     }
@@ -156,7 +170,7 @@ class AmbiguousOrPhrasesRuleTest extends ShardQueryRuleTest {
     void testQueryWithAmbiguousPhraseInSeparateGroups() throws Exception {
         givenQuery("((FOO:abc OR def) OR (aaa OR bbb))");
 
-        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: ( FOO:abc OR def ) Recommended: FOO:(abc OR def)");
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: ( FOO:abc OR def ). Recommended: FOO:(abc OR def)");
 
         assertResult();
     }
@@ -168,8 +182,8 @@ class AmbiguousOrPhrasesRuleTest extends ShardQueryRuleTest {
     void testQueryWithConsecutiveAmbiguousPhrases() throws Exception {
         givenQuery("FOO:abc OR def OR BAR:aaa OR bbb");
 
-        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: FOO:abc OR def Recommended: FOO:(abc OR def)");
-        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: BAR:aaa OR bbb Recommended: BAR:(aaa OR bbb)");
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: FOO:abc OR def. Recommended: FOO:(abc OR def)");
+        expectMessage("Ambiguous unfielded terms OR'd with fielded term detected: BAR:aaa OR bbb. Recommended: BAR:(aaa OR bbb)");
 
         assertResult();
     }

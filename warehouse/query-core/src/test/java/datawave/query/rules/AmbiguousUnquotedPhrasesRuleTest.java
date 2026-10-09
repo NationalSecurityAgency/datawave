@@ -37,8 +37,17 @@ class AmbiguousUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
     @Test
     void testAmbiguousPhraseAfterQuotedFieldedTerm() throws Exception {
         givenQuery("FOO:\"abc\" def ghi");
+        expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: FOO:\"abc\" AND def AND ghi. Recommended: FOO:\"abc def ghi\"");
+        assertResult();
+    }
 
-        // Do not expect any results.
+    /**
+     * Test a query with ambiguous phrases before a quoted phrase.
+     */
+    @Test
+    void testAmbiguousPhraseBeforeQuotedFieldedTerm() throws Exception {
+        givenQuery("FOO:abc \"def\" ghi");
+        expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: FOO:abc AND \"def\" AND ghi. Recommended: FOO:\"abc def ghi\"");
         assertResult();
     }
 
@@ -62,6 +71,7 @@ class AmbiguousUnquotedPhrasesRuleTest extends ShardQueryRuleTest {
 
         expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: FOO:abc AND def AND ghi. Recommended: FOO:\"abc def ghi\"");
         expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: BAR:aaa AND bbb AND ccc. Recommended: BAR:\"aaa bbb ccc\"");
+        expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: HAT:\"111\" AND 222. Recommended: HAT:\"111 222\"");
         expectMessage("Ambiguous unfielded terms AND'd with fielded term detected: VEE:elephant AND zebra. Recommended: VEE:\"elephant zebra\"");
 
         assertResult();
