@@ -11,15 +11,21 @@
     <artifactId>annotation-cache-service</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <description>DATAWAVE Annotation Cache Microservice</description>
-    <!-- TODO All the other boilerplate stuff-->
+    <url>https://github.com/NationalSecurityAgency/datawave</url>
+    <scm>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
+    </scm>
 
     <properties>
         <start-class>datawave.microservice.annotationCache.AnnotationCacheService</start-class>
         <version.datawave>8.1.0</version.datawave>
         <version.datawave.annotation-cache-api>1.0.0-SNAPSHOT</version.datawave.annotation-cache-api>
         <version.datawave.annotation-messaging>1.0.0-SNAPSHOT</version.datawave.annotation-messaging>
-        <version.datawave.starter>4.0.9</version.datawave.starter>
-        <version.hazelcast.service>4.0.8-SNAPSHOT</version.hazelcast.service>
+        <version.datawave.hazelcast-service>4.0.7</version.datawave.hazelcast-service>
+        <version.datawave.starter>4.0.13</version.datawave.starter>
     </properties>
 
     <dependencyManagement>
@@ -28,6 +34,7 @@
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>datawave-core-annotation</artifactId>
                 <version>${version.datawave}</version>
+                <!-- Only the generated protobuf model is needed; annotation-messaging supplies its runtime. -->
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
@@ -37,13 +44,24 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>annotation-cache-api</artifactId>
+                <version>${version.datawave.annotation-cache-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>annotation-messaging</artifactId>
+                <version>${version.datawave.annotation-messaging}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>hazelcast-service</artifactId>
-                <version>${version.hazelcast.service}</version>
+                <version>${version.datawave.hazelcast-service}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
                 <version>${version.datawave.starter}</version>
+                <!-- Use the explicitly declared javax.annotation-api rather than duplicate JBoss annotations. -->
                 <exclusions>
                     <exclusion>
                         <groupId>org.jboss.spec.javax.annotation</groupId>
@@ -55,18 +73,20 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-annotation</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>annotation-cache-api</artifactId>
-            <version>${version.datawave.annotation-cache-api}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>annotation-messaging</artifactId>
-            <version>${version.datawave.annotation-messaging}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -75,6 +95,26 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>spring-boot-starter-datawave</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-messaging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-amqp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-rabbit</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -87,6 +127,38 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test-autoconfigure</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>

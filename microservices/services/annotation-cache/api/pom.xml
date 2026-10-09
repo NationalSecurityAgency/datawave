@@ -3,50 +3,65 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
-        <artifactId>annotation-cache-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <artifactId>datawave-microservice-parent</artifactId>
+        <version>4.0.14</version>
+        <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>annotation-cache-api</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+    <url>https://github.com/NationalSecurityAgency/datawave</url>
+    <scm>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
+    </scm>
 
     <properties>
-        <version.datawave>8.1.0</version.datawave>
+        <version.hazelcast>5.1.2</version.hazelcast>
+        <!-- Keep Spring versions aligned with the service parent's Spring Boot 2.7.1 BOM. -->
+        <version.spring>5.3.21</version.spring>
+        <version.spring.boot>2.7.1</version.spring.boot>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>datawave-core-annotation</artifactId>
-                <version>${version.datawave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
+                <groupId>com.hazelcast</groupId>
+                <artifactId>hazelcast</artifactId>
+                <version>${version.hazelcast}</version>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>hazelcast-common</artifactId>
-                <version>${version.hazelcast.common}</version>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>${version.spring}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot</artifactId>
+                <version>${version.spring.boot}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
         <dependency>
-            <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>datawave-core-annotation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>hazelcast-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <repositories>
