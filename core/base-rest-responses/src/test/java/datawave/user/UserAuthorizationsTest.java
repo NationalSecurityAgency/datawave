@@ -2,17 +2,11 @@ package datawave.user;
 
 import java.util.TreeSet;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import datawave.webservice.ProtobufSerializationTestBase;
+import datawave.webservice.ProtobufSerializationTestBaseJUnit5;
 
-public class UserAuthorizationsTest extends ProtobufSerializationTestBase {
-    @Before
-    public void setup() {
-        super.setUp();
-    }
-
+public class UserAuthorizationsTest extends ProtobufSerializationTestBaseJUnit5 {
     @Test
     public void testFieldConfiguration() {
         String[] expecteds = new String[] {"SCHEMA", "auths", "serialVersionUID"};
