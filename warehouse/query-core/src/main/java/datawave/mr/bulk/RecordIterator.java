@@ -527,7 +527,6 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 CachableBlockFile.CachableBuilder builder = new CachableBlockFile.CachableBuilder()
                         .input(closeable.getInputStream(), CachableBlockFile.pathToCacheId(path))
                         .cryptoService(CRYPTO_SERVICE)
-                        .fsPath(fs, path)
                         .length(length)
                         .conf(conf);
                 //@formatter:on
