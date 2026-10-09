@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
-public class CardinalityAggregator extends PropogatingCombiner {
+public class CardinalityAggregator extends PropagatingCombiner {
 
     public static final Value EMPTY_VALUE = new Value(new byte[0]);
     private static final Logger log = Logger.getLogger(CardinalityAggregator.class);
@@ -32,7 +32,7 @@ public class CardinalityAggregator extends PropogatingCombiner {
             throw new RuntimeException("Unexpected error aggregating cardinalities " + e.toString(), e);
         }
 
-        this.propogate = false;
+        this.propagate = false;
         return EMPTY_VALUE;
     }
 
@@ -40,6 +40,6 @@ public class CardinalityAggregator extends PropogatingCombiner {
     public void reset() {
         if (log.isDebugEnabled())
             log.debug("Resetting CardinalityAggregator");
-        this.propogate = true;
+        this.propagate = true;
     }
 }
