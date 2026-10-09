@@ -2,15 +2,15 @@ package datawave.query.jexl.lookups;
 
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.getCurrentArgument;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,23 +24,26 @@ import java.util.concurrent.Executors;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.hadoop.io.Text;
 import org.easymock.EasyMockSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import datawave.microservice.query.QueryImpl;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.jexl.LiteralRange;
@@ -69,11 +72,6 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
 
     private final SortedSet<String> expected = new TreeSet<>();
 
-    // variables for large row test
-    private BoundedRangeIndexLookup largeLookup;
-    private ShardQueryConfiguration largeConfig;
-    private ScannerFactory largeScannerFactory;
-
     private ScanMonitor monitor;
 
     @BeforeClass
@@ -96,10 +94,6 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         executorService = Executors.newFixedThreadPool(5);
 
         expected.clear();
-
-        // large lookup
-        largeConfig = new ShardQueryConfiguration();
-        largeScannerFactory = createMock(ScannerFactory.class);
 
         monitor = ScanMonitor.of(25_000, "test", null);
     }
@@ -356,43 +350,54 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         return values;
     }
 
-    @Ignore
     @Test
     public void largeRowInBoundedRangeTest() throws TableNotFoundException {
-        ExecutorService s = Executors.newSingleThreadExecutor();
-        Date begin = new Date();
-        Date end = new Date();
-        config.setBeginDate(begin);
-        config.setEndDate(end);
-        config.setNumQueryThreads(1);
+        withDateRange("20240701", "20240701");
         // defaults to 5000
         config.setMaxValueExpansionThreshold(1);
-        SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMdd");
-        LiteralRange range = new LiteralRange("R", true, "S", false, "FOO", LiteralRange.NodeOperand.OR);
-        largeLookup = new BoundedRangeIndexLookup(config, largeScannerFactory, range, s);
+        AccumuloClient lookupClient = createMock(AccumuloClient.class);
+        config.setClient(lookupClient);
+        LiteralRange<String> range = new LiteralRange<>("R", true, "S", false, "FOO", LiteralRange.NodeOperand.OR);
+        BoundedRangeIndexLookup largeLookup = createLookup(range);
         // create index data to iterate over
         List<Map.Entry<Key,Value>> src = new ArrayList<>();
         for (int i = 0; i < 10000; i++) {
-            src.add(new AbstractMap.SimpleImmutableEntry<>(new Key("R" + i, "FOO", sdf.format(begin) + "_1" + '\0' + "myDataType"), new Value()));
+            src.add(new AbstractMap.SimpleImmutableEntry<>(new Key("R" + i, "FOO", "20240701_1" + '\0' + "myDataType"), new Value()));
         }
         SortedListKeyValueIterator itr = new SortedListKeyValueIterator(src);
-        LocalBatchScanner scanner = new LocalBatchScanner(itr, true);
-        // add expects for the scanner factory
-        expect(largeScannerFactory.newScanner(eq("shardIndex"), isA(Set.class), eq(1), isA(QueryImpl.class), eq("shardIndex"))).andAnswer(() -> scanner);
-        expect(largeScannerFactory.close(scanner)).andReturn(true);
+        LocalBatchScanner localScanner = new LocalBatchScanner(itr, true);
+        // Route the current Scanner API through the instrumented local iterator stack.
+        Scanner scanner = createMock(Scanner.class);
+        expect(lookupClient.createScanner(eq(TableName.SHARD_INDEX), isA(Authorizations.class))).andReturn(scanner);
+        scanner.setRange(isA(Range.class));
+        expectLastCall().andAnswer(() -> {
+            Range scanRange = getCurrentArgument(0);
+            localScanner.setRanges(Set.of(scanRange));
+            return null;
+        });
+        scanner.fetchColumnFamily(isA(Text.class));
+        expectLastCall().andAnswer(() -> {
+            Text columnFamily = getCurrentArgument(0);
+            localScanner.fetchColumnFamily(columnFamily);
+            return null;
+        });
+        scanner.addScanIterator(isA(IteratorSetting.class));
+        expectLastCall().andAnswer(() -> {
+            localScanner.addScanIterator(getCurrentArgument(0));
+            return null;
+        });
+        expect(scanner.iterator()).andAnswer(localScanner::iterator);
+        scanner.close();
         replayAll();
         largeLookup.submit();
         IndexLookupMap map = largeLookup.lookup();
         // verify we went over all the data even though the threshold was lower than this
-        assertEquals(10001, scanner.getSeekCount()); // with new iterator this is initial seek + one seek per unique row in the range
+        assertEquals(10001, localScanner.getSeekCount()); // initial seek + one seek per unique row in the range
         // this represents data collapsed and sent back to the client by the WholeRowIterator
-        assertEquals(0, scanner.getNextCount()); // no next cals with seeking filter
+        assertEquals(0, localScanner.getNextCount()); // no next calls with seeking filter
         assertNotNull(map);
-        if (map.containsKey("FOO")) {
-            assertTrue(map.get("FOO").isThresholdExceeded());
-        } else {
-            assertTrue(map.isEmpty());
-        }
+        assertTrue(map.containsKey("FOO"));
+        assertTrue(map.get("FOO").isThresholdExceeded());
         verifyAll();
     }
 }

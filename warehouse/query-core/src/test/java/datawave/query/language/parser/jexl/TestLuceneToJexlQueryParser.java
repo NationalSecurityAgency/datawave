@@ -68,6 +68,18 @@ public class TestLuceneToJexlQueryParser {
     }
 
     @Test
+    public void testFunctionWithNoArguments() throws ParseException {
+        assertEquals("f:summary()", parseQuery("#SUMMARY()"));
+    }
+
+    @Test
+    public void testFunctionWithNoArgumentsStillValidated() {
+        ParseException exception = assertThrows(ParseException.class, () -> parseQuery("#UNIQUE()"));
+        assertTrue(exception.getCause() instanceof IllegalArgumentException);
+        assertTrue(exception.getCause().getMessage().contains("unique requires at least one argument"));
+    }
+
+    @Test
     public void testOneCharacterFunctionArgument() throws ParseException {
         assertEquals("F == 'S' && filter:includeRegex(F, 'test')", parseQuery("F:S AND #INCLUDE(F, 'test')"));
     }

@@ -2,6 +2,7 @@ package datawave.next;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
@@ -66,6 +67,111 @@ public class ScanResultTest {
         assertResults(Set.of(1, 2, 3, 4), left.getResults());
         assertTrue(left.isTimeout());
         assertTrue(right.isTimeout());
+        assertTrue(left.isSubtractionSafe());
+        assertFalse(left.isMatchComplete());
+    }
+
+    @Test
+    public void testUnionClearsLeafSource() {
+        ScanResult left = createScanResult(1);
+        ScanResult right = createScanResult(2);
+        left.setSource(SOURCE.EQ);
+        right.setSource(SOURCE.EQ);
+
+        left.union(right);
+
+        assertNull(left.getSource());
+    }
+
+    @Test
+    public void testTimeoutContainsConfirmedButIncompleteMatches() {
+        ScanResult result = createScanResult(1, 2);
+
+        result.setTimeout(true);
+
+        assertTrue(result.isSubtractionSafe());
+        assertFalse(result.isMatchComplete());
+    }
+
+    @Test
+    public void testSubtractIncompleteConfirmedMatchesPreservesConservativeResult() {
+        ScanResult result = createScanResult(1, 2, 3);
+        ScanResult partial = createScanResult(1);
+        partial.setTimeout(true);
+
+        result.subtractConfirmedMatches(partial);
+
+        assertResults(Set.of(2, 3), result.getResults());
+        assertFalse(result.isSubtractionSafe());
+        assertTrue(result.isMatchComplete());
+    }
+
+    @Test
+    public void testUnconfirmedMatchesAreNotSubtracted() {
+        ScanResult result = createScanResult(1, 2, 3);
+        ScanResult candidates = createScanResult(1, 2);
+        candidates.setSubtractionSafe(false);
+
+        result.subtractConfirmedMatches(candidates);
+
+        assertResults(Set.of(1, 2, 3), result.getResults());
+        assertFalse(result.isSubtractionSafe());
+        assertTrue(result.isMatchComplete());
+    }
+
+    @Test
+    public void testPartialIntersectionProducesCompleteUnconfirmedCandidates() {
+        ScanResult left = createScanResult(1, 2, 3, 4, 5);
+        ScanResult right = createScanResult(2, 4);
+        setPartial(left, right);
+
+        left.intersect(right);
+
+        assertResults(Set.of(2, 4, 5), left.getResults());
+        assertFalse(left.isSubtractionSafe());
+        assertTrue(left.isMatchComplete());
+    }
+
+    @Test
+    public void testIncompleteRightSideDoesNotNarrowIntersection() {
+        ScanResult left = createScanResult(1, 2, 3);
+        ScanResult right = createScanResult(1);
+        right.setMatchComplete(false);
+
+        left.intersect(right);
+
+        assertResults(Set.of(1, 2, 3), left.getResults());
+        assertFalse(left.isSubtractionSafe());
+        assertTrue(left.isMatchComplete());
+    }
+
+    @Test
+    public void testCompleteRightSideReplacesIncompleteLeftCandidateUniverse() {
+        ScanResult left = createScanResult(1);
+        ScanResult right = createScanResult(1, 2, 3);
+        left.setTimeout(true);
+        left.setSource(SOURCE.EQ);
+
+        left.intersect(right);
+
+        assertResults(Set.of(1, 2, 3), left.getResults());
+        assertFalse(left.isSubtractionSafe());
+        assertTrue(left.isMatchComplete());
+        assertFalse(left.isTimeout());
+        assertNull(left.getSource());
+    }
+
+    @Test
+    public void testCompleteRightSideReplacesEmptyIncompleteLeftCandidateUniverse() {
+        ScanResult left = createScanResult();
+        ScanResult right = createScanResult(1, 2, 3);
+        left.setMatchComplete(false);
+
+        left.intersect(right);
+
+        assertResults(Set.of(1, 2, 3), left.getResults());
+        assertFalse(left.isSubtractionSafe());
+        assertTrue(left.isMatchComplete());
     }
 
     @Test

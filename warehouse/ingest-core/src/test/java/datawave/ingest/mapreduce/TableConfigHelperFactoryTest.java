@@ -2,16 +2,17 @@ package datawave.ingest.mapreduce;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.util.Map;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -25,11 +26,12 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.table.constants.TableName;
 
 /**
- * Test uses mini accumulo cluster. Files are stored in warehouse/ingest-core/target/mac/datawave.ingest.mapreduce.TableConfigHelperFactoryTest
+ * Test uses a temporary MiniAccumulo cluster.
  */
 public class TableConfigHelperFactoryTest {
     private static final Logger logger = Logger.getLogger(TableConfigHelperFactoryTest.class);
     private static MiniAccumuloCluster mac;
+    private static AccumuloClient client;
 
     private Configuration conf;
     private TableOperations tops;
@@ -38,15 +40,11 @@ public class TableConfigHelperFactoryTest {
 
     @BeforeAll
     public static void startCluster() throws Exception {
-        File macDir = new File(System.getProperty("user.dir") + "/target/mac/" + TableConfigHelperFactoryTest.class.getName());
-        if (macDir.exists()) {
-            FileUtils.deleteDirectory(macDir);
-        }
-
-        assertTrue(macDir.mkdirs(), "Could not create directory for MiniAccumuloCluster");
+        File macDir = Files.createTempDirectory("datawave-table-config-").toFile();
 
         MiniAccumuloConfig config = new MiniAccumuloConfig(macDir, "pass");
         config.setNumTservers(1);
+        config.setSiteConfig(Map.of(Property.INSTANCE_VOLUMES.getKey(), macDir.toPath().resolve("accumulo").toUri().toString()));
 
         mac = new MiniAccumuloCluster(config);
         mac.start();
@@ -63,7 +61,10 @@ public class TableConfigHelperFactoryTest {
         conf.set("testShard.table.config.class", ShardTableConfigHelper.class.getName());
         conf.set("testShard.table.config.prefix", "test");
 
-        AccumuloClient client = mac.createAccumuloClient("root", new PasswordToken("pass"));
+        if (client != null) {
+            client.close();
+        }
+        client = mac.createAccumuloClient("root", new PasswordToken("pass"));
         tops = client.tableOperations();
 
         recreateTable(tops, TableName.SHARD);
@@ -72,7 +73,12 @@ public class TableConfigHelperFactoryTest {
 
     @AfterAll
     public static void shutdown() throws Exception {
-        mac.stop();
+        if (client != null) {
+            client.close();
+        }
+        if (mac != null) {
+            mac.stop();
+        }
     }
 
     private static void recreateTable(TableOperations tops, String table) throws Exception {

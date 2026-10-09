@@ -23,7 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
 
 import datawave.data.hash.UID;
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
@@ -88,6 +90,7 @@ public class SizesIngest {
     private final int sizeTotal = sizeSmallRatio + sizeMediumRatio + sizeLargeRatio;
 
     private List<Multimap<String,String>> events;
+    private final Multiset<List<String>> eventCounts = HashMultiset.create();
     private final AccumuloClient client;
 
     public SizesIngest(AccumuloClient client) {
@@ -211,9 +214,14 @@ public class SizesIngest {
 
     private Multimap<String,String> createRandomEvent() {
         Multimap<String,String> event = HashMultimap.create();
-        event.put("COLOR", getRandomValue(colorValues));
-        event.put("SIZE", getRandomSize(sizeValues));
-        event.put("SHAPE", getRandomValue(shapeValues));
+        // Keep one known match alongside the random events and count matches before indexing them.
+        String color = numberOfEvents == 0 ? "green" : getRandomValue(colorValues);
+        String size = numberOfEvents == 0 ? "small" : getRandomSize(sizeValues);
+        String shape = numberOfEvents == 0 ? "triangle" : getRandomValue(shapeValues);
+        event.put("COLOR", color);
+        event.put("SIZE", size);
+        event.put("SHAPE", shape);
+        eventCounts.add(List.of(size, color, shape));
 
         // write unique counter
         event.put("COUNTER", String.valueOf(numberOfEvents++));
@@ -332,6 +340,11 @@ public class SizesIngest {
 
     public int getNumEventsPerShard() {
         return EVENTS_PER_SHARD;
+    }
+
+    // Count matching fixture events independently of query planning and execution.
+    public int getEventCount(String size, String color, String shape) {
+        return eventCounts.count(List.of(size, color, shape));
     }
 
     protected String normalizerNameForField(String field) {

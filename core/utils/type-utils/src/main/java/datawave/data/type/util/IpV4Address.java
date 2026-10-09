@@ -242,8 +242,13 @@ public class IpV4Address extends IpAddress {
 
     public static String toString(byte[] address, boolean zeroPadded, int wc_loc, int numOctets, boolean reverse) {
         StringBuilder builder = new StringBuilder(15);
-        for (int i = 0; i < address.length; i++) {
-            if (wc_loc != -1 && numOctets - 1 < i) {
+        // Skip octets omitted from the forward wildcard representation when reversing it.
+        int start = 0;
+        if (reverse && wc_loc != -1) {
+            start = wc_loc == address.length - 1 ? Math.max(0, address.length - numOctets) : wc_loc;
+        }
+        for (int i = start; i < address.length; i++) {
+            if (!reverse && wc_loc != -1 && numOctets - 1 < i) {
                 break;
             }
 
@@ -253,7 +258,7 @@ public class IpV4Address extends IpAddress {
 
             if (i == wc_loc) {
                 builder.append("*");
-                if (wc_loc != 0) {
+                if (!reverse && wc_loc != 0) {
                     break;
                 }
             } else {
