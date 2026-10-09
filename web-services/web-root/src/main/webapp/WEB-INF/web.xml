@@ -12,7 +12,7 @@
     -->
     <login-config>
         <auth-method>DATAWAVE-AUTH</auth-method>
-        <realm-name>DATAWAVE Web Services</realm-name>
+        <realm-name>datawave</realm-name>
     </login-config>
 
     <security-constraint>

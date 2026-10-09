@@ -16,7 +16,6 @@ import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.factory.QueryMetricQueryLogicFactory;
 import datawave.microservice.querymetric.handler.QueryMetricCombiner;
 import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
-import datawave.microservice.security.util.DnUtils;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 
 @ImportAutoConfiguration({RefreshAutoConfiguration.class})
@@ -48,9 +47,8 @@ public class AlternateQueryMetricConfiguration {
     @Bean
     public ShardTableQueryMetricHandler shardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties,
                     AccumuloConnectionFactory connectionFactory, QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory,
-                    MarkingFunctions<?> markingFunctions, QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser,
-                    DnUtils dnUtils) {
+                    MarkingFunctions<?> markingFunctions, QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser) {
         return new AlternateShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions,
-                        queryMetricCombiner, luceneToJexlQueryParser, dnUtils);
+                        queryMetricCombiner, luceneToJexlQueryParser);
     }
 }

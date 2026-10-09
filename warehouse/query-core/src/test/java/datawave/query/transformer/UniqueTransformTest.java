@@ -66,8 +66,8 @@ public class UniqueTransformTest {
     protected static final List<String> randomValues = new ArrayList<>();
 
     /** Per-page timeout used by the intermediate-result tests, paired with {@link #PAGE_START} to drive the transform's clock. */
-    private static final long PAGE_TIMEOUT_MS = 1000L;
-    private static final Instant PAGE_START = Instant.parse("2026-01-01T00:00:00Z");
+    protected static final long PAGE_TIMEOUT_MS = 1000L;
+    protected static final Instant PAGE_START = Instant.parse("2026-01-01T00:00:00Z");
 
     protected final List<Document> inputDocuments = new ArrayList<>();
     protected final List<Document> expectedUniqueDocuments = new ArrayList<>();
@@ -189,11 +189,11 @@ public class UniqueTransformTest {
         return uniqueTransform;
     }
 
-    private static void setClockTo(DocumentTransform.DefaultDocumentTransform transform, Instant instant) {
+    protected static void setClockTo(DocumentTransform.DefaultDocumentTransform transform, Instant instant) {
         transform.clock = Clock.fixed(instant, ZoneOffset.UTC);
     }
 
-    private static Map.Entry<Key,Document> entryFor(Document document) {
+    protected static Map.Entry<Key,Document> entryFor(Document document) {
         return Maps.immutableEntry(document.getMetadata(), document);
     }
 
@@ -619,6 +619,28 @@ public class UniqueTransformTest {
         }
     }
 
+    /**
+     * The tserver-side iterator path must not emit intermediate results, even once the page timeout has elapsed. Nothing on the tserver sets a page start time,
+     * and {@link Document#isIntermediateResult()} is not carried across serialization, so an intermediate result emitted there would reach the web server as an
+     * ordinary empty document and be mistaken for a real one.
+     */
+    @Test
+    public void testIntermediateResultsAreNotEmittedOnTheIteratorPath() {
+        givenInputDocument(1).withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument(2).withKeyValue("ATTR0", randomValues.get(1));
+        givenInputDocument(3).withKeyValue("ATTR0", randomValues.get(0));
+
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+
+        // the tserver never sets a page start time, so any elapsed time exceeds this timeout
+        List<Document> documents = getUniqueDocuments(inputDocuments, getUniqueTransform(1L));
+
+        for (Document document : documents) {
+            assertFalse("The iterator path must not emit intermediate results", document.isIntermediateResult());
+        }
+        assertEquals("Unexpected number of unique documents", 2, documents.size());
+    }
+
     protected void assertUniqueDocuments() {
         List<Document> actual = getUniqueDocumentsWithUpdateConfigCalls(inputDocuments);
         Collections.sort(expectedUniqueDocuments);
@@ -635,12 +657,19 @@ public class UniqueTransformTest {
     }
 
     protected List<Document> getUniqueDocuments(List<Document> documents) {
+        return getUniqueDocuments(documents, getUniqueTransform());
+    }
+
+    protected List<Document> getUniqueDocuments(List<Document> documents, UniqueTransform uniqueTransform) {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
-        UniqueTransform uniqueTransform = getUniqueTransform();
         Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator, null);
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
-                        .map(Map.Entry::getValue).collect(Collectors.toList());
+        // @formatter:off
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false)
+                .filter(Objects::nonNull)
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toList());
+        // @formatter:on
     }
 
     protected List<Document> getUniqueDocumentsWithUpdateConfigCalls(List<Document> documents) {
@@ -680,8 +709,12 @@ public class UniqueTransformTest {
     }
 
     protected UniqueTransform getUniqueTransform() {
+        return getUniqueTransform(Long.MAX_VALUE);
+    }
+
+    protected UniqueTransform getUniqueTransform(long queryExecutionForPageTimeout) {
         try {
-            return new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(Long.MAX_VALUE).build();
+            return new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(queryExecutionForPageTimeout).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
