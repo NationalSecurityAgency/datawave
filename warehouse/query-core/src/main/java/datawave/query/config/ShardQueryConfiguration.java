@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -102,9 +103,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int maxIndexBatchSize = 1000;
     private boolean allTermsIndexOnly;
-    private long maxIndexScanTimeMillis = Long.MAX_VALUE;
-    private long maxAnyFieldScanTimeMillis = Long.MAX_VALUE;
-
+    /**
+     * Default is seven minutes, not unbounded, so a stalled scan cannot block query planning indefinitely.
+     */
+    private long maxIndexScanTimeMillis = TimeUnit.MINUTES.toMillis(7);
+    /**
+     * Default is seven minutes, not unbounded, so a stalled scan cannot block query planning indefinitely.
+     */
+    private long maxAnyFieldScanTimeMillis = TimeUnit.MINUTES.toMillis(7);
     @Deprecated
     private boolean useNewIndexLookups = false;
 

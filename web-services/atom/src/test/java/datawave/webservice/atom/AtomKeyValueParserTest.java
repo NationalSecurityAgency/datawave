@@ -1,7 +1,10 @@
 package datawave.webservice.atom;
 
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 
@@ -12,15 +15,14 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.ValueFormatException;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class AtomKeyValueParserTest {
 
     public AtomKeyValueParser kv;
 
-    @Before
+    @BeforeEach
     public void before() {
         kv = new AtomKeyValueParser();
     }
@@ -29,12 +31,12 @@ public class AtomKeyValueParserTest {
     public void testGettersAndSetters() {
         kv.setValue("valueForTests");
 
-        Assert.assertNull(kv.getCollectionName());
-        Assert.assertNull(kv.getId());
-        Assert.assertNull(kv.getUpdated());
-        Assert.assertNull(kv.getColumnVisibility());
-        Assert.assertNull(kv.getUuid());
-        Assert.assertEquals("valueForTests", kv.getValue());
+        assertNull(kv.getCollectionName());
+        assertNull(kv.getId());
+        assertNull(kv.getUpdated());
+        assertNull(kv.getColumnVisibility());
+        assertNull(kv.getUuid());
+        assertEquals("valueForTests", kv.getValue());
     }
 
     @SuppressWarnings("static-access")
@@ -44,9 +46,9 @@ public class AtomKeyValueParserTest {
         String encodedID = AtomKeyValueParser.encodeId(id);
         String decodedID = AtomKeyValueParser.decodeId(encodedID);
 
-        Assert.assertNotEquals(id, encodedID);
-        Assert.assertNotEquals(decodedID, encodedID);
-        Assert.assertEquals(id, decodedID);
+        assertNotEquals(id, encodedID);
+        assertNotEquals(decodedID, encodedID);
+        assertEquals(id, decodedID);
     }
 
     @Test
@@ -58,9 +60,9 @@ public class AtomKeyValueParserTest {
         IRI iri = new IRI("https://hostForTests:portForTests/DataWave/Atom/null/null");
 
         Entry entry = kv.toEntry(abdera, host, port);
-        Assert.assertEquals(iri, entry.getId());
-        Assert.assertEquals("(null) null with null @ null null", entry.getTitle());
-        Assert.assertNull(entry.getUpdated());
+        assertEquals(iri, entry.getId());
+        assertEquals("(null) null with null @ null null", entry.getTitle());
+        assertNull(entry.getUpdated());
     }
 
     @SuppressWarnings("static-access")
@@ -72,10 +74,10 @@ public class AtomKeyValueParserTest {
 
         AtomKeyValueParser resultKV = AtomKeyValueParser.parse(key, value);
 
-        Assert.assertEquals("row1", resultKV.getCollectionName());
-        Assert.assertNotEquals(resultKV.getId(), AtomKeyValueParser.decodeId(resultKV.getId()));
-        Assert.assertEquals("color", resultKV.getUuid());
-        Assert.assertEquals("fi", resultKV.getValue());
+        assertEquals("row1", resultKV.getCollectionName());
+        assertNotEquals(resultKV.getId(), AtomKeyValueParser.decodeId(resultKV.getId()));
+        assertEquals("color", resultKV.getUuid());
+        assertEquals("fi", resultKV.getValue());
     }
 
     @SuppressWarnings("static-access")
