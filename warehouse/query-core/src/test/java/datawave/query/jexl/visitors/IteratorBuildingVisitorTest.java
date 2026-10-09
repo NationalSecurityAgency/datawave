@@ -37,7 +37,6 @@ import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableNestedIterator;
 import datawave.query.iterator.SortedListKeyValueIterator;
@@ -131,10 +130,7 @@ public class IteratorBuildingVisitorTest {
         Assert.assertEquals(0, visitor.getDeepCopiesCalled());
     }
 
-    /**
-     * index only null value should result in an error
-     */
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void visitEqNode_nullValueIndexOnlyTest() {
         ASTEQNode node = (ASTEQNode) JexlNodeFactory.buildEQNode("FIELD", "blah");
         node.jjtAddChild(JexlNodes.makeStringLiteral(), 1);
@@ -144,8 +140,9 @@ public class IteratorBuildingVisitorTest {
 
         node.jjtAccept(visitor, null);
 
-        // this should never be reached
-        Assert.assertFalse(true);
+        NestedIterator<Key> root = visitor.root();
+
+        Assert.assertNotNull("Root iterator should not be null", root);
     }
 
     /**
@@ -167,10 +164,7 @@ public class IteratorBuildingVisitorTest {
         Assert.assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
-    /**
-     * null value should result in an error. In this case a top level negation is not allowed, so pair it with an indexed lookup
-     */
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void visitNeNode_nullValueIndexOnlyTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar' && FIELD != null");
 
@@ -179,8 +173,8 @@ public class IteratorBuildingVisitorTest {
 
         query.jjtAccept(visitor, null);
 
-        // this should never be reached
-        Assert.assertFalse(true);
+        NestedIterator<Key> root = visitor.root();
+        Assert.assertNotNull("Root iterator should not be null", root);
     }
 
     @Test
