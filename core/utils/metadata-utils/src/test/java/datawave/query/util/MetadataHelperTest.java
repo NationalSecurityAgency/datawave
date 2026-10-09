@@ -512,7 +512,7 @@ public class MetadataHelperTest {
             assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"), "20190101",
                             "20191231", Collections.emptySet()));
         }
-        
+
         @Test
         void testFirstDatatypeStaleDoesNotHideLaterDatatypes() throws TableNotFoundException {
             // Aggregated: first datatype (csv) is stale, later datatype (wiki) has in-range data.
@@ -527,14 +527,13 @@ public class MetadataHelperTest {
             writeMutations();
 
             // No datatype filter: only FOO should be flagged.
-            assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"),
-                            Collections.emptySet(), "20200101", "20200120", Collections.emptySet()));
+            assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"), Collections.emptySet(), "20200101", "20200120",
+                            Collections.emptySet()));
             // With a datatype filter spanning both stale and live datatypes: still not missing.
-            assertEquals(Collections.emptySet(), helper.getMissingFieldsInDateRange(Set.of("NAME"), Set.of("csv", "wiki"),
-                            "20200101", "20200120", Collections.emptySet()));
+            assertEquals(Collections.emptySet(),
+                            helper.getMissingFieldsInDateRange(Set.of("NAME"), Set.of("csv", "wiki"), "20200101", "20200120", Collections.emptySet()));
             // Filtered to only the stale datatype: correctly reported missing.
-            assertEquals(Set.of("NAME"), helper.getMissingFieldsInDateRange(Set.of("NAME"),
-                            Set.of("csv"), "20200101", "20200120", Collections.emptySet()));
+            assertEquals(Set.of("NAME"), helper.getMissingFieldsInDateRange(Set.of("NAME"), Set.of("csv"), "20200101", "20200120", Collections.emptySet()));
         }
 
     }
