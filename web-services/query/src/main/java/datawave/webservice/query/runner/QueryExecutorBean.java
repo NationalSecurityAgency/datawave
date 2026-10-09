@@ -256,6 +256,14 @@ public class QueryExecutorBean implements QueryExecutor {
     @Inject
     private QueryMetricFactory metricFactory;
 
+    /*
+     * Lifecycle states reported by the plan endpoint. Dedicated PLANNING and PLANNED states would describe planning more accurately, but query-metric-api is
+     * released independently of this repository and the pinned release (4.1.7) does not carry them. Until it does and version.datawave.query-metric-api is
+     * bumped, the plan endpoint reports the closest existing equivalents so that planning still produces a metric.
+     */
+    private static final QueryMetric.Lifecycle PLANNING_LIFECYCLE = QueryMetric.Lifecycle.DEFINED;
+    private static final QueryMetric.Lifecycle PLANNED_LIFECYCLE = QueryMetric.Lifecycle.CLOSED;
+
     @Inject
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
 
@@ -901,6 +909,10 @@ public class QueryExecutorBean implements QueryExecutor {
         Query q = null;
         AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
+        // Planning takes a non-trivial amount of time and occupies a connection factory slot, so it is tracked with its
+        // own query metric. Unlike create, there is no RunningQuery here to carry the metric, so it is managed directly.
+        BaseQueryMetric metric = null;
+        long planStartTime = System.currentTimeMillis();
         try {
             // Default hasResults to true.
             response.setHasResults(true);
@@ -920,6 +932,14 @@ public class QueryExecutorBean implements QueryExecutor {
             try {
                 Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
+                if (qd.logic.getCollectQueryMetrics()) {
+                    metric = metricFactory.createMetric();
+                    metric.populate(q);
+                    metric.setQueryType(RunningQuery.class.getSimpleName());
+                    metric.setProxyServers(qd.proxyServers);
+                    metric.setLifecycle(PLANNING_LIFECYCLE);
+                    updatePlanMetric(metric);
+                }
                 auditType = qd.logic.getAuditType(q);
             } finally {
                 queryParameters.add(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
@@ -984,9 +1004,24 @@ public class QueryExecutorBean implements QueryExecutor {
             response.setResult(plan);
             updateMessages(q, response);
 
+            if (metric != null) {
+                long planTime = System.currentTimeMillis() - planStartTime;
+                metric.setPlan(plan);
+                metric.setSetupTime(planTime);
+                metric.setCreateCallTime(planTime);
+                metric.setLifecycle(PLANNED_LIFECYCLE);
+                updatePlanMetric(metric);
+            }
+
             return response;
         } catch (Throwable t) {
             response.setHasResults(false);
+
+            if (metric != null) {
+                metric.setError(t);
+                metric.setSetupTime(System.currentTimeMillis() - planStartTime);
+                updatePlanMetric(metric);
+            }
 
             /*
              * Allow web services to throw their own WebApplicationExceptions
@@ -1031,6 +1066,23 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
             }
 
+        }
+    }
+
+    /**
+     * Submit a query metric for the plan endpoint. Metric reporting must never fail the plan call itself, so any error is logged and swallowed.
+     *
+     * @param metric
+     *            the metric to update
+     */
+    private void updatePlanMetric(BaseQueryMetric metric) {
+        if (metrics == null) {
+            return;
+        }
+        try {
+            metrics.updateMetric(metric);
+        } catch (Exception e) {
+            log.error("Error updating plan query metric", e);
         }
     }
 
