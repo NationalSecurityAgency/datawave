@@ -1947,7 +1947,7 @@
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <groups>datawave.common.test.integration.IntegrationTest</groups>
+                        <groups>datawave.common.test.integration.IntegrationTest,IntegrationTest</groups>
                     </configuration>
                     <executions>
                         <execution>

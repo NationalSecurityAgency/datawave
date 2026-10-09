@@ -143,7 +143,7 @@ public class SharedCacheCoordinatorTest {
     }
 
     @Test
-    @Tag("datawave.common.test.integration.IntegrationTest")
+    @Tag("IntegrationTest")
     public void testSharedCounterUpdateAfterConnectionLost() throws Exception {
         final String COUNTER = "testCounter";
         final ConnectionState[] state = new ConnectionState[] {ConnectionState.CONNECTED};
