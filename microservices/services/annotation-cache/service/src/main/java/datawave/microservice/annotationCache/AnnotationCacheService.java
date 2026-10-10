@@ -1,0 +1,17 @@
+package datawave.microservice.annotationCache;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+/** Application entry point for the regional annotation cache and its scheduled topology monitoring. */
+@EnableDiscoveryClient
+@EnableScheduling
+@SpringBootApplication(scanBasePackages = {"datawave.microservice"}, exclude = {ErrorMvcAutoConfiguration.class})
+public class AnnotationCacheService {
+    public static void main(String[] args) {
+        SpringApplication.run(AnnotationCacheService.class, args);
+    }
+}

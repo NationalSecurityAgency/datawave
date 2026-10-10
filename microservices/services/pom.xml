@@ -12,6 +12,17 @@
     <modules />
     <profiles>
         <profile>
+            <id>service-annotation-cache</id>
+            <activation>
+                <property>
+                    <name>service-annotation-cache</name>
+                </property>
+            </activation>
+            <modules>
+                <module>annotation-cache</module>
+            </modules>
+        </profile>
+        <profile>
             <id>service-accumulo</id>
             <activation>
                 <property>
@@ -164,6 +175,7 @@
             <modules>
                 <module>accumulo</module>
                 <module>annotation</module>
+                <module>annotation-cache</module>
                 <module>audit</module>
                 <module>authorization</module>
                 <module>config</module>
