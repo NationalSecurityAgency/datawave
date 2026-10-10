@@ -13,7 +13,7 @@ Keys are immutable composite keys. See the [API README](../api/README.md) for ma
 
 Both maps have HASH indexes on `(__key.idType, __key.documentId)` and on `__key.documentId`. These support exact document-and-type lookups and document-ID lookups across identifier types.
 
-The map names do not depend on document IDs. Entry count and memory use still depend on traffic and retention. Sonicweb also uses a separate `annotation-cache` map for health checks.
+The map names do not depend on document IDs. Entry count and memory use still depend on traffic and retention. Sonicweb also uses a separate `annotation-health` map for health checks.
 
 ## Writes and federation
 
