@@ -40,7 +40,7 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Tests for setting and persisting of scan consistency level

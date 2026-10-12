@@ -398,7 +398,7 @@ public class RawRecordContainerImplTest {
             if (getVisibility() == null && getSecurityMarkings() == null) {
                 if (markingsHelper != null) {
                     setSecurityMarkings(markingsHelper.getDefaultMarkings());
-                } else {}
+                }
             }
 
             if (getSecurityMarkings() == null) {

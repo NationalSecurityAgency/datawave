@@ -1,13 +1,12 @@
 package datawave.ingest.data.config;
 
-import java.util.Map;
-
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Test;
 
 import datawave.ingest.data.Type;
-import datawave.marking.MarkingFunctions;
+import datawave.marking.AccessExpressionMarkings;
+import datawave.marking.Markings;
 
 public class MarkingsHelperTest {
     public static final String FIELD_NAME = "FIELDNAME1";
@@ -36,10 +35,10 @@ public class MarkingsHelperTest {
 
         // use the same type name to retrieve a markings helper and retrieve the field marking
         MarkingsHelper markingsHelper = new MarkingsHelper.NoOp(conf, createType(typeName));
-        Map<String,String> fieldMarkingMap = markingsHelper.getFieldMarking(FIELD_NAME);
+        Markings<?> fieldMarkings = markingsHelper.getFieldMarking(FIELD_NAME);
 
-        Assert.assertNotNull(fieldMarkingMap);
-        Assert.assertEquals(FIELD_MARKING_VALUE, fieldMarkingMap.get(MarkingFunctions.Default.COLUMN_VISIBILITY));
+        Assert.assertNotNull(fieldMarkings);
+        Assert.assertEquals(FIELD_MARKING_VALUE, ((AccessExpressionMarkings) fieldMarkings).getAccessExpression().getExpression());
     }
 
     private Configuration createConfWithFieldMarking(String typeName) {

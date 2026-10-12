@@ -11,13 +11,13 @@ import java.util.Set;
  */
 public interface TagCloudUtils {
     /**
-     * Aggregate visibilities by concatenating them together with an AND ('&amp;'), and then flatten them using the Accumulo column visibility class.
+     * Aggregate visibilities by concatenating them together with an AND ('&amp;'), and then normalizing the resulting expression.
      *
      * @param visibilities
      *            a set of valid visibility strings.
-     * @return a single visibility
+     * @return a combined visibility string, or {@code null} if there are no visibilities
      */
-    Map<String,String> generateCombinedVisibility(Set<String> visibilities);
+    String generateCombinedVisibility(Set<String> visibilities);
 
     /**
      * Aggregate metadata from multiple sources, combining multi-valued entries into a flattened string

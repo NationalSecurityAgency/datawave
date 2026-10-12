@@ -10,17 +10,10 @@ public class AllHit {
     private float confidence;
 
     @JsonProperty
-    private List<Term> oneBestContext = new ArrayList<>();
+    private List<Term> context = new ArrayList<>();
 
-    @JsonProperty
-    private List<TermHit> termHits = new ArrayList<>();
-
-    public List<Term> getOneBestContext() {
-        return oneBestContext;
-    }
-
-    public List<TermHit> getTermHits() {
-        return termHits;
+    public List<Term> getContext() {
+        return context;
     }
 
     public float getConfidence() {

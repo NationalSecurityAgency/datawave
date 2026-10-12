@@ -719,7 +719,7 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
     /**
      * This is the iterator for a persisted FileSortedMap
      */
-    protected class FileIterator implements Iterator<Map.Entry<K,V>>, AutoCloseable {
+    protected class FileIterator implements Iterator<Map.Entry<K,V>> {
         private SortedMapInputStream<K,V> stream;
         private Map.Entry<K,V> next;
 
@@ -777,8 +777,9 @@ public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, R
         }
 
         @Override
-        public void close() {
+        protected void finalize() throws Throwable {
             cleanup();
+            super.finalize();
         }
     }
 

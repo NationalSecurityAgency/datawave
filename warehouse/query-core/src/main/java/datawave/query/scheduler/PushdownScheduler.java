@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -13,11 +13,10 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.TableId;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
@@ -37,12 +36,15 @@ import datawave.core.query.logic.QueryKey;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
+import datawave.query.tables.BatchScannerSessionBuilder;
+import datawave.query.tables.ScanSessionManager;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.scan.ExecutionHintHelper;
 
 /**
  * Purpose: Pushes down individual queries to the Tservers. Is aware that each server may have a different query, thus bins ranges per tserver and keeps the
@@ -56,10 +58,7 @@ public class PushdownScheduler extends Scheduler {
      * Configuration reference.
      */
     protected final ShardQueryConfiguration config;
-    /**
-     * Scanner factory reference.
-     */
-    protected final ScannerFactory scannerFactory;
+
     /**
      * Count for the number of QueryPlans that we have
      */
@@ -69,7 +68,7 @@ public class PushdownScheduler extends Scheduler {
      */
     protected BatchScannerSession session = null;
 
-    protected Iterator<Entry<Key,Value>> currentIterator = null;
+    protected ScanSessionManager sessionManager = new ScanSessionManager();
 
     protected List<Function<IteratorSetting,IteratorSetting>> customizedFunctionList;
 
@@ -80,14 +79,39 @@ public class PushdownScheduler extends Scheduler {
 
     protected MetadataHelper metadataHelper;
 
+    @Deprecated(forRemoval = true, since = "7.40.0")
     public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
         this(config, scannerFactory, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()));
     }
 
+    @Deprecated(forRemoval = true, since = "7.40.0")
     protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
+        this(config, helper);
+    }
+
+    /**
+     * Constructor that accepts a {@link ShardQueryConfiguration} and a {@link MetadataHelperFactory}
+     *
+     * @param config
+     *            the shard query config
+     * @param metaFactory
+     *            the metadata helper factory
+     */
+    public PushdownScheduler(ShardQueryConfiguration config, MetadataHelperFactory metaFactory) {
+        this(config, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()));
+    }
+
+    /**
+     * Constructor that accepts a {@link ShardQueryConfiguration} and a {@link MetadataHelper}
+     *
+     * @param config
+     *            the shard query config
+     * @param helper
+     *            the metadata helper
+     */
+    protected PushdownScheduler(ShardQueryConfiguration config, MetadataHelper helper) {
         this.config = config;
         this.metadataHelper = helper;
-        this.scannerFactory = scannerFactory;
         customizedFunctionList = Lists.newArrayList();
         Preconditions.checkNotNull(config.getClient());
     }
@@ -162,7 +186,28 @@ public class PushdownScheduler extends Scheduler {
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), getPushdownFunction());
 
         try {
-            session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery()).setConfig(config);
+            //  @formatter:off
+            BatchScannerSessionBuilder builder = BatchScannerSessionBuilder.create(client)
+                    .setTableName(tableName)
+                    .setAuthorizations(auths)
+                    .setQuery(config.getQuery())
+                    .setNumQueryThreads(config.getNumQueryThreads());
+            //  @formatter:on
+
+            ConsistencyLevel consistencyLevel = ExecutionHintHelper.getConsistencyLevel(tableName, config.getTableConsistencyLevels());
+            if (consistencyLevel != null) {
+                builder.setConsistencyLevel(consistencyLevel);
+            }
+
+            Map<String,String> executionHints = ExecutionHintHelper.getExecutionHints(tableName, config.getTableHints());
+            if (executionHints != null) {
+                builder.setScanType(ExecutionHintHelper.getScanType(executionHints));
+                builder.setScanPriority(ExecutionHintHelper.getPriority(executionHints));
+            }
+
+            session = builder.build();
+            session.setConfig(config);
+            sessionManager.addScanner(session);
 
             if (config.getBypassAccumulo()) {
                 session.setDelegatedInitializer(RfileResource.class);
@@ -209,9 +254,7 @@ public class PushdownScheduler extends Scheduler {
      */
     @Override
     public void close() {
-        if (session != null)
-            scannerFactory.close(session);
-
+        sessionManager.close();
         log.debug("Ran " + count.get() + " queries for a single user query");
     }
 

@@ -17,7 +17,7 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class LoadDateTableConfigHelper extends AbstractTableConfigHelper {
     public static final String LOAD_DATES_ENABLED_PROP = "metadata.loaddates.enabled";

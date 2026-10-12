@@ -24,6 +24,7 @@ import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
+import lombok.Setter;
 
 @XmlRootElement(name = "EdgeDictionary")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -33,6 +34,7 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
 
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "Edge Dictionary", SEP = ", ";
+    @Setter
     private String edgeDictionarySystem = null;
 
     @XmlElementWrapper(name = "EdgeMetadata")
@@ -62,10 +64,6 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
 
     public String getEdgeDictionarySystem() {
         return edgeDictionarySystem == null ? null : edgeDictionarySystem;
-    }
-
-    public void setEdgeDictionarySystem(String edgeDictionarySystem) {
-        this.edgeDictionarySystem = edgeDictionarySystem;
     }
 
     public static Schema<DefaultEdgeDictionary> getSchema() {
@@ -227,7 +225,7 @@ public class DefaultEdgeDictionary extends EdgeDictionaryBase<DefaultEdgeDiction
                 fieldBuilder.append(field).append(SEP);
             }
 
-            String fieldNames = fieldBuilder.toString().substring(0, fieldBuilder.length() - 2);
+            String fieldNames = fieldBuilder.substring(0, fieldBuilder.length() - 2);
             String date = metadata.getStartDate();
 
             builder.append("<td>").append(type).append("</td>");

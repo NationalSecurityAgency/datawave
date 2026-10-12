@@ -21,6 +21,11 @@ public class TruncatedRangeStream extends RangeStream {
 
     private static final Logger log = LoggerFactory.getLogger(TruncatedRangeStream.class);
 
+    public TruncatedRangeStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
+        super(config, metadataHelper);
+    }
+
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public TruncatedRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         super(config, scanners, metadataHelper);
     }

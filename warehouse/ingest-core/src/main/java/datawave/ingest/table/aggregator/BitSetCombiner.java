@@ -6,7 +6,7 @@ import java.util.Iterator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * A combiner that operates on the {@link TableName#SHARD_YEAR_INDEX} and {@link TableName#SHARD_DAY_INDEX}.

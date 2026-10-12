@@ -3,12 +3,16 @@ package datawave.query.common.grouping;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.marking.AccessExpressionUtil;
 
 /**
  * Represents a grouping of values for fields specified via the #GROUP_BY functionality, with information about the total number of times the grouping was seen,
@@ -22,14 +26,14 @@ public class Group {
     private final ImmutableGrouping grouping;
 
     /**
-     * The different column visibilities seen for each attribute that makes up the grouping.
+     * The different access expressions seen for each attribute that makes up the grouping.
      */
-    private final Multimap<GroupingAttribute<?>,ColumnVisibility> attributeVisibilities = HashMultimap.create();
+    private final Multimap<GroupingAttribute<?>,AccessExpression> attributeExpressions = HashMultimap.create();
 
     /**
-     * The column visibilities for each document that contributed entries to this grouping.
+     * The access expressions for each document that contributed entries to this grouping.
      */
-    private final Set<ColumnVisibility> documentVisibilities = new HashSet<>();
+    private final Set<AccessExpression> documentExpressions = new HashSet<>();
 
     /**
      * The total number of times the distinct grouping was seen.
@@ -47,7 +51,7 @@ public class Group {
 
     public Group(Grouping grouping, int count) {
         this.grouping = new ImmutableGrouping(grouping);
-        addAttributeVisibilities(this.grouping);
+        addAttributeExpressions(this.grouping);
         this.count = count;
     }
 
@@ -70,45 +74,65 @@ public class Group {
     }
 
     /**
-     * Add the column visibilities from each of the given attributes to the set of attribute visibilities for this group.
+     * Add the access expressions from each of the given attributes to the set of attribute expressions for this group.
      *
      * @param grouping
-     *            the attributes to add visibilities from
+     *            the attributes to add expressions from
      */
-    public void addAttributeVisibilities(Grouping grouping) {
+    public void addAttributeExpressions(Grouping grouping) {
         for (GroupingAttribute<?> attribute : grouping) {
-            attributeVisibilities.put(attribute, attribute.getColumnVisibility());
+            attributeExpressions.put(attribute, attribute.getAccessExpression());
         }
     }
 
     /**
-     * Return the set of column visibilities seen for the given attribute.
+     * Return the set of visibilities seen for the given attribute.
      *
      * @param attribute
      *            the attribute
-     * @return the column visibilities seen for the given attributes
+     * @return the access expressions converted to ColumnVisibilities seen for the given attribute
      */
-    public Collection<ColumnVisibility> getVisibilitiesForAttribute(GroupingAttribute<?> attribute) {
-        return attributeVisibilities.get(attribute);
+    public Collection<ColumnVisibility> getColumnVisibilitiesForAttribute(GroupingAttribute<?> attribute) {
+        return attributeExpressions.get(attribute).stream().map(AccessExpressionUtil::toColumnVisibility).collect(Collectors.toSet());
     }
 
     /**
-     * Add the column visibility to the set of visibilities of documents for which we have seen the grouping of this group in.
+     * Return the set of access expressions seen for the given attribute.
      *
-     * @param columnVisibility
-     *            the visibility to add
+     * @param attribute
+     *            the attribute
+     * @return the access expressions seen for the given attribute
      */
-    public void addDocumentVisibility(ColumnVisibility columnVisibility) {
-        this.documentVisibilities.add(columnVisibility);
+    public Collection<AccessExpression> getAccessExpressionsForAttribute(GroupingAttribute<?> attribute) {
+        return attributeExpressions.get(attribute);
     }
 
     /**
-     * Return the set of all distinct column visibilities from documents that we have seen this group in.
+     * Add the access expression to the set of expressions of documents for which we have seen the grouping of this group in.
      *
-     * @return the document column visibilities
+     * @param expression
+     *            the expression to add
+     */
+    public void addDocumentExpression(AccessExpression expression) {
+        this.documentExpressions.add(expression);
+    }
+
+    /**
+     * Return the set of all distinct access expressions from documents that we have seen this group in.
+     *
+     * @return the document access expressions
+     */
+    public Set<AccessExpression> getDocumentExpressions() {
+        return documentExpressions;
+    }
+
+    /**
+     * Return the set of all distinct visibilities from documents that we have seen this group in.
+     *
+     * @return the document access expressions converted into ColumnVisibilities
      */
     public Set<ColumnVisibility> getDocumentVisibilities() {
-        return documentVisibilities;
+        return documentExpressions.stream().map(AccessExpressionUtil::toColumnVisibility).collect(Collectors.toSet());
     }
 
     /**
@@ -163,15 +187,15 @@ public class Group {
      *            the group to merge
      */
     public void merge(Group other) {
-        this.attributeVisibilities.putAll(other.attributeVisibilities);
-        this.documentVisibilities.addAll(other.documentVisibilities);
+        this.attributeExpressions.putAll(other.attributeExpressions);
+        this.documentExpressions.addAll(other.documentExpressions);
         this.count += other.count;
         this.fieldAggregator.merge(other.fieldAggregator);
     }
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("grouping", grouping).append("attributeVisibilities", attributeVisibilities)
-                        .append("documentVisibilities", documentVisibilities).append("count", count).append("aggregatedFields", fieldAggregator).toString();
+        return new ToStringBuilder(this).append("grouping", grouping).append("attributeExpressions", attributeExpressions)
+                        .append("documentExpressions", documentExpressions).append("count", count).append("aggregatedFields", fieldAggregator).toString();
     }
 }

@@ -5,7 +5,9 @@ import java.io.Serializable;
 /**
  * The scheduler stats are associated with the config object which is shared among multiple threads.
  * <p>
- * Note: great care must be taken when incrementing the underlying objects. In each case only a single thread would ever update the variable.
+ * Every method is synchronized because this instance is the single point at which per-scan stats are aggregated. Search threads merge candidate stats,
+ * retrieval threads merge timing stats, and the query thread reads all of it. The nested stats objects are plain data holders and are only safe to touch while
+ * holding this lock. Note that the merges happen once per scan rather than once per key, so the lock is not on a hot path.
  */
 public class DocumentSchedulerStats implements Serializable {
 
@@ -28,39 +30,57 @@ public class DocumentSchedulerStats implements Serializable {
     // document retrieval timing stats
     private final DocumentRetrievalStats retrievalStats = new DocumentRetrievalStats();
 
-    public void setConsumerStats(QueryDataConsumerStats consumerStats) {
+    public synchronized void setConsumerStats(QueryDataConsumerStats consumerStats) {
         this.consumerStats = consumerStats;
     }
 
-    public void incrementTotalDocumentScansSubmitted() {
+    public synchronized void incrementTotalDocumentScansSubmitted() {
         this.totalDocumentScansSubmitted++;
     }
 
-    public long getTotalDocumentScansSubmitted() {
+    public synchronized long getTotalDocumentScansSubmitted() {
         return totalDocumentScansSubmitted;
     }
 
-    public void incrementTotalResultsReturned() {
+    public synchronized void incrementTotalResultsReturned() {
         this.totalResultsReturned++;
     }
 
-    public long getTotalResultsReturned() {
+    public synchronized long getTotalResultsReturned() {
         return totalResultsReturned;
     }
 
-    public void merge(DocIterStats iteratorStats) {
+    /**
+     * Merge iterator stats returned by a field index scan. Called by every search thread.
+     *
+     * @param iteratorStats
+     *            the stats to merge
+     */
+    public synchronized void merge(DocIterStats iteratorStats) {
         this.iteratorStats.merge(iteratorStats);
     }
 
-    public void merge(DocIdQueryIterStats queryStats) {
+    /**
+     * Merge candidate stats returned by a field index scan. Called by every search thread.
+     *
+     * @param queryStats
+     *            the stats to merge
+     */
+    public synchronized void merge(DocIdQueryIterStats queryStats) {
         this.candidateStats.merge(queryStats);
     }
 
-    public void merge(ScanTimeStats retrievalStats) {
+    /**
+     * Merge timing stats for a completed document retrieval. Called by every retrieval thread.
+     *
+     * @param retrievalStats
+     *            the stats to merge
+     */
+    public synchronized void merge(ScanTimeStats retrievalStats) {
         this.retrievalStats.merge(retrievalStats);
     }
 
-    public String logStats(String queryId) {
+    public synchronized String logStats(String queryId) {
         StringBuilder sb = new StringBuilder();
         sb.append("\n=== ").append(queryId).append(" DocumentScheduler stats ===\n");
         if (consumerStats != null) {

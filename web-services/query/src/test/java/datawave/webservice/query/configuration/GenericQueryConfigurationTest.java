@@ -9,7 +9,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Test;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class GenericQueryConfigurationTest {
 

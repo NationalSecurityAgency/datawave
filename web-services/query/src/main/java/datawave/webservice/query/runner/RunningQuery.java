@@ -19,6 +19,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
 
@@ -82,7 +83,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
     private boolean allowIntermediateEmptyPages = false;
-    private boolean useResultsThread = true;
+    private boolean useResultsThread = false;
 
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -255,6 +256,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     hasNext.notifyAll();
                 }
                 // wait until the queue is emptied
+                if (log.isDebugEnabled()) {
+                    log.debug(this.settings.getId() + " : Waiting for resultsThreadQueue to be emptied or termination");
+                }
                 while (running.get() && !this.finished && !this.canceled && !resultsThreadQueue.isEmpty()) {
                     try {
                         Thread.sleep(1);
@@ -265,12 +269,22 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
                 // if the queue is available and we are still running, then get the next result
                 if (running.get() && !this.finished && !this.canceled && resultsThreadQueue.isEmpty()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(this.settings.getId() + " : Get next async result");
+                    }
                     Object o = this.iter.next();
                     if (o != null) {
+                        if (log.isDebugEnabled()) {
+                            log.debug(this.settings.getId() + " : Offering result to resultsThreadQueue");
+                        }
                         resultsThreadQueue.offer(o);
                         synchronized (gotNext) {
                             gotNext.incrementAndGet();
                             gotNext.notifyAll();
+                        }
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug(this.settings.getId() + " : Null result returned");
                         }
                     }
 
@@ -278,9 +292,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     if (iter.getTransformer() instanceof WritesQueryMetrics) {
                         ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
                     }
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug(this.settings.getId() + " : running:" + running.get() + " finished:" + this.finished + " canceled:" + this.canceled);
+                    }
                 }
             }
         } catch (Exception e) {
+            log.error(this.settings.getId() + " : Results thread exception", e);
             resultsThreadException = e;
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
@@ -332,6 +351,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
                                     : Long.MAX_VALUE);
                     try {
+                        if (log.isDebugEnabled()) {
+                            log.debug("hasNext waiting for " + timeout + " ms");
+                        }
                         hasNext.wait(timeout);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -383,6 +405,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
                                     : Long.MAX_VALUE);
                     try {
+                        if (log.isDebugEnabled()) {
+                            log.debug("getNext waiting for " + timeout + " ms");
+                        }
                         gotNext.wait(timeout);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
@@ -433,6 +458,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         // update AbstractRunningQuery.lastUsed
         touch();
         long pageStartTime = System.currentTimeMillis();
+        if (log.isDebugEnabled()) {
+            log.debug("Starting next call at " + pageStartTime);
+        }
         this.logic.setPageProcessingStartTime(pageStartTime);
         List<Object> resultList = new ArrayList<>();
         boolean hitIntermediateResult = false;
@@ -456,6 +484,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
             try {
                 while (!this.finished && hasNext(pageStartTime)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("hasNext(" + pageStartTime + ") returned");
+                    }
                     // if we are canceled, then break out
                     if (this.canceled) {
                         log.info("Query has been cancelled, aborting query.next call");
@@ -508,10 +539,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
                     // now get the next object
                     Object o = getNext(pageStartTime);
+                    if (log.isDebugEnabled()) {
+                        log.debug("getNext(" + pageStartTime + ") returned with " + (o == null ? "null" : "result"));
+                    }
 
                     // now that we got the next object, acknowledge via the counters
-                    hasNext.decrementAndGet();
                     gotNext.decrementAndGet();
+                    hasNext.decrementAndGet();
 
                     if (o instanceof EventBase && ((EventBase) o).isIntermediateResult()) {
                         log.info("Received an intermediate result");
@@ -529,7 +563,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
                     resultList.add(o);
                     if (this.logic.getPageByteTrigger() > 0) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Determining size of object");
+                        }
                         currentPageBytes += ObjectSizeOf.Sizer.getObjectSize(o);
+                        if (log.isDebugEnabled()) {
+                            log.debug("Current page is up to " + currentPageBytes + " bytes");
+                        }
                     }
                     currentPageCount++;
                     numResults++;
@@ -796,19 +836,20 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private void testForUncaughtException(int numResults) throws QueryException {
         QueryUncaughtExceptionHandler handler = settings.getUncaughtExceptionHandler();
         if (handler != null) {
-            if (handler.getThrowable() != null) {
+            ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
+            if (uncaughtException != null) {
                 if (numResults > 0) {
                     log.warn("Exception with Partial Results: resultList.getResults().size() is " + numResults + ", and there was an UncaughtException:"
-                                    + handler.getThrowable() + " in thread " + handler.getThread());
+                                    + uncaughtException.getLeft() + " in thread " + uncaughtException.getRight());
                 } else {
                     if (log.isDebugEnabled()) {
-                        log.debug("Throwing:" + handler.getThrowable() + " for query with no results");
+                        log.debug("Throwing:" + uncaughtException.getLeft() + " for query with no results");
                     }
                 }
-                if (handler.getThrowable() instanceof QueryException) {
-                    throw ((QueryException) handler.getThrowable());
+                if (uncaughtException.getLeft() instanceof QueryException) {
+                    throw ((QueryException) uncaughtException.getLeft());
                 }
-                throw new QueryException(handler.getThrowable());
+                throw new QueryException(uncaughtException.getLeft());
             }
         }
     }

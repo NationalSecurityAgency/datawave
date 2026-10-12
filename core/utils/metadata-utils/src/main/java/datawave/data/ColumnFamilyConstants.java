@@ -5,6 +5,7 @@ import org.apache.hadoop.io.Text;
 /**
  *
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public interface ColumnFamilyConstants {
     /**
      * A colf of 'e' denotes event fields (shard table)

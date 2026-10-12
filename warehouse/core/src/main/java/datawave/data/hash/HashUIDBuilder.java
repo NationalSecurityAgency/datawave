@@ -3,8 +3,11 @@ package datawave.data.hash;
 import java.util.Date;
 
 /**
+ * Deprecated, use {@link datawave.table.hash.HashUIDBuilder}
+ * <p>
  * Builds traditional hash-based UIDs
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public class HashUIDBuilder extends AbstractUIDBuilder<HashUID> {
 
     private static final byte[] EMPTY_BYTES = {};

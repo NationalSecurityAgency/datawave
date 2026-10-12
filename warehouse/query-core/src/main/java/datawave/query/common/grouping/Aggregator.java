@@ -3,7 +3,7 @@ package datawave.query.common.grouping;
 import java.util.Collection;
 import java.util.Set;
 
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.access.AccessExpression;
 
 import datawave.query.attributes.Attribute;
 
@@ -30,11 +30,11 @@ public interface Aggregator<AGGREGATE> {
     String getField();
 
     /**
-     * Returns an unmodifiable set of all distinct column visibilities for each attribute aggregated into this aggregator. Possibly empty, but never null.
+     * Returns an unmodifiable set of all distinct access expressions for each attribute aggregated into this aggregator. Possibly empty, but never null.
      *
-     * @return a set of the column visibilities
+     * @return a set of the access expressions
      */
-    Set<ColumnVisibility> getColumnVisibilities();
+    Set<AccessExpression> getAccessExpressions();
 
     /**
      * Return the aggregation result.

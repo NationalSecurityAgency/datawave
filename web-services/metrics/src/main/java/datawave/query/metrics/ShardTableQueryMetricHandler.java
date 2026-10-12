@@ -75,7 +75,7 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryImpl.Parameter;
@@ -104,7 +104,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 
 @ApplicationScoped
 @SuppressWarnings("unused")
-public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> implements AutoCloseable {
+public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
 
     private static final String QUERY_METRICS_LOGIC_NAME = "QueryMetricsQuery";
@@ -188,7 +188,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
 
     @Override
-    public void close() throws IOException, InterruptedException {
+    protected void finalize() throws Throwable {
+        super.finalize();
         this.recordWriter.close(null);
     }
 
@@ -278,13 +279,12 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         event.setDataType(type);
         event.setTimestamp(storedQueryMetric.getCreateDate().getTime());
         // get security markings from metric, otherwise default to PUBLIC
-        Map<String,String> markings = updatedQueryMetric.getMarkings();
+        Markings<?> markings = updatedQueryMetric.getMarkings();
         if (markings == null || markings.isEmpty()) {
             event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
         } else {
             try {
-                MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-                event.setVisibility(markingFunctions.translateToColumnVisibility(markings));
+                event.setVisibility(markings.toColumnVisibility());
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
                 event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));

@@ -41,6 +41,7 @@ import datawave.core.query.logic.composite.CompositeLogicException;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.core.query.logic.filtered.FilteredQueryLogic;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.AuthorizationException;
@@ -50,7 +51,7 @@ import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.query.exception.QueryException;
@@ -152,13 +153,13 @@ public class CompositeQueryLogicTest {
         }
 
         @Override
-        public void setMarkings(Map<String,String> markings) {
+        public void setMarkings(Markings<?> markings) {
             this.markings = markings;
         }
 
         @Override
-        public Map<String,String> getMarkings() {
-            return Collections.unmodifiableMap(markings);
+        public Markings<?> getMarkings() {
+            return this.markings;
         }
     }
 
@@ -184,7 +185,7 @@ public class CompositeQueryLogicTest {
 
     public static class TestQueryLogicTransformer extends BaseQueryLogicTransformer<Entry<?,?>,TestQueryResponse> {
 
-        public TestQueryLogicTransformer(MarkingFunctions markingFunctions) {
+        public TestQueryLogicTransformer(MarkingFunctions<?> markingFunctions) {
             super(markingFunctions);
         }
 
@@ -224,7 +225,7 @@ public class CompositeQueryLogicTest {
 
     public static class DifferentTestQueryLogicTransformer extends BaseQueryLogicTransformer<Entry<?,?>,TestQueryResponse> {
 
-        public DifferentTestQueryLogicTransformer(MarkingFunctions markingFunctions) {
+        public DifferentTestQueryLogicTransformer(MarkingFunctions<?> markingFunctions) {
             super(markingFunctions);
         }
 
@@ -505,7 +506,7 @@ public class CompositeQueryLogicTest {
 
     @Before
     public void setup() {
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
     }
 

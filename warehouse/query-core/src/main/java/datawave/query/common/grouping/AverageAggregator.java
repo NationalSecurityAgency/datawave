@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import datawave.query.attributes.Attribute;
@@ -37,26 +37,26 @@ public class AverageAggregator extends AbstractAggregator<BigDecimal> {
     private BigDecimal average;
 
     /**
-     * The column visibilities of all attributes aggregated.
+     * The access expressions of all attributes aggregated.
      */
-    private final Set<ColumnVisibility> columnVisibilities;
+    private final Set<AccessExpression> accessExpressions;
 
     public static AverageAggregator of(String field, TypeAttribute<BigDecimal> numerator, TypeAttribute<BigDecimal> divisor) {
-        return new AverageAggregator(field, numerator.getType().getDelegate(), divisor.getType().getDelegate(), numerator.getColumnVisibility());
+        return new AverageAggregator(field, numerator.getType().getDelegate(), divisor.getType().getDelegate(), numerator.getAccessExpression());
     }
 
     public AverageAggregator(String field) {
         super(field);
-        this.columnVisibilities = new HashSet<>();
+        this.accessExpressions = new HashSet<>();
     }
 
-    private AverageAggregator(String field, BigDecimal numerator, BigDecimal divisor, ColumnVisibility columnVisibility) {
+    private AverageAggregator(String field, BigDecimal numerator, BigDecimal divisor, AccessExpression expression) {
         this(field);
         this.numerator = numerator;
         this.divisor = divisor;
         this.average = numerator.divide(divisor, MATH_CONTEXT);
-        if (columnVisibility != null) {
-            this.columnVisibilities.add(columnVisibility);
+        if (expression != null) {
+            this.accessExpressions.add(expression);
         }
     }
 
@@ -71,8 +71,8 @@ public class AverageAggregator extends AbstractAggregator<BigDecimal> {
     }
 
     @Override
-    public Set<ColumnVisibility> getColumnVisibilities() {
-        return Collections.unmodifiableSet(columnVisibilities);
+    public Set<AccessExpression> getAccessExpressions() {
+        return Collections.unmodifiableSet(accessExpressions);
     }
 
     /**
@@ -129,7 +129,7 @@ public class AverageAggregator extends AbstractAggregator<BigDecimal> {
             divisor = divisor.add(BigDecimal.ONE);
         }
         average = numerator.divide(divisor, MATH_CONTEXT);
-        columnVisibilities.add(value.getColumnVisibility());
+        accessExpressions.add(value.getAccessExpression());
     }
 
     @Override
@@ -139,7 +139,7 @@ public class AverageAggregator extends AbstractAggregator<BigDecimal> {
             this.numerator = numerator.add(aggregator.numerator);
             this.divisor = divisor.add(aggregator.divisor);
             this.average = this.numerator.divide(this.divisor, MATH_CONTEXT);
-            this.columnVisibilities.addAll(aggregator.columnVisibilities);
+            this.accessExpressions.addAll(aggregator.accessExpressions);
         } else {
             throw new IllegalArgumentException("Cannot merge instance of " + other.getClass().getName());
         }
@@ -148,6 +148,6 @@ public class AverageAggregator extends AbstractAggregator<BigDecimal> {
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("field", field).append("average", average).append("numerator", numerator).append("divisor", divisor)
-                        .append("columnVisibilities", columnVisibilities).toString();
+                        .append("accessExpressions", accessExpressions).toString();
     }
 }

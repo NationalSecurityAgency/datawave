@@ -5,8 +5,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -40,27 +38,30 @@ public class ActiveQueryTracker implements AutoCloseable {
     private static final String SYSTEMS_CONTAINER_PATH = "/systems";
     private static final String USERS_CONTAINER_PATH = "/users";
 
-    private final String zookeeperConfig;
-    private final long cleanUpClientInterval;
     private final Lock clientLock = new ReentrantLock();
 
     private CuratorFramework client;
-    private long lastClientAccess;
-    private Timer clientCleanupTimer;
 
     /**
      * Create and return a new {@link ActiveQueryTracker} instance
      *
      * @param zookeeperConfig
      *            the zookeeper config
-     * @param clientCleanupInterval
-     *            the interval in milliseconds after which the zookeeper client should be cleaned up since its last access
      * @throws QuorumPeerConfig.ConfigException
      *             if an error occurs when verifying the zookeeper configuration
      */
-    public ActiveQueryTracker(String zookeeperConfig, long clientCleanupInterval) throws QuorumPeerConfig.ConfigException {
-        this.zookeeperConfig = getQuorumPeerConfig(zookeeperConfig);
-        this.cleanUpClientInterval = clientCleanupInterval;
+    public ActiveQueryTracker(String zookeeperConfig) throws QuorumPeerConfig.ConfigException {
+        // @formatter:off
+        this.client = CuratorFrameworkFactory.builder()
+                        .namespace(ZOOKEEPER_NAMESPACE)
+                        .connectString(getQuorumPeerConfig(zookeeperConfig))
+                        .sessionTimeoutMs(60000)
+                        .connectionTimeoutMs(60000)
+                        .retryPolicy(new RetryNTimes(10, 1000))
+                        .build();
+
+        // @formatter:on
+        client.start();
     }
 
     private static String getQuorumPeerConfig(String zookeeperConfig) throws QuorumPeerConfig.ConfigException {
@@ -137,8 +138,6 @@ public class ActiveQueryTracker implements AutoCloseable {
 
         clientLock.lock();
         try {
-            // Initialize the client if needed.
-            initClient();
             try {
                 // Verify we are not already tracking the query.
                 String systemQueryIdPath = getSystemQueryIdPath(system, queryLogic, queryId);
@@ -166,8 +165,9 @@ public class ActiveQueryTracker implements AutoCloseable {
                     // Do nothing, the queryLogic was tracked on another thread.
                 }
 
-                // Create ephemeral nodes for the query ID. These nodes will not persist beyond the lifetime of the client created here.
-                CuratorFramework client = createClient();
+                // Create ephemeral nodes for the query ID. These nodes will not persist beyond the lifetime of the tracker's client.
+                // NOTE: If the application-level ActiveQueryTracker or its zookeeper client is closed, all ephemeral nodes created via the ActiveQueryTracker
+                // will be deleted.
                 List<PersistentNode> nodes = new ArrayList<>();
                 nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, systemQueryIdPath, EMPTY_DATA, false));
                 if (systemCountsAgainstUserLimit) {
@@ -253,9 +253,6 @@ public class ActiveQueryTracker implements AutoCloseable {
     private int getTotalChildrenWithLock(String path) throws Exception {
         clientLock.lock();
         try {
-            // Initialize the client if needed.
-            initClient();
-
             return getTotalChildren(path);
         } catch (Exception e) {
             log.error("Failed to get total children for path " + path, e);
@@ -342,9 +339,6 @@ public class ActiveQueryTracker implements AutoCloseable {
                     Function<String,String> ownerPathFunction, BiFunction<String,String,String> queryLogicPathFunction) throws Exception {
         clientLock.lock();
         try {
-            // Initialize the client if needed.
-            initClient();
-
             try {
                 int total = initialTotal;
                 // Get the set of query logic nodes underneath the owner node.
@@ -409,8 +403,6 @@ public class ActiveQueryTracker implements AutoCloseable {
         }
         clientLock.lock();
         try {
-            // Initialize the client if needed.
-            initClient();
             // If any query logics were tracked, return them.
             Stat stat = client.checkExists().forPath(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
             if (stat != null) {
@@ -517,85 +509,19 @@ public class ActiveQueryTracker implements AutoCloseable {
     }
 
     /**
-     * Initialize the zookeeper client and cleanup timer if not already initialize. Calling this method will update the last time the client was accessed to the
-     * current time.
+     * Close the underlying client used by this {@link ActiveQueryTracker}. NOTE: all ephemeral nodes for {@link QueryHeartbeat} instances created by this
+     * {@link ActiveQueryTracker} will be deleted.
      */
-    private void initClient() {
-        if (client == null) {
-            clientLock.lock();
-            try {
-                // @formatter:off
-                client = createClient();
-                if (cleanUpClientInterval > 0) {
-                    createCleanupTimer();
-                }
-            } finally {
-                clientLock.unlock();
-            }
-        }
-        // Update the last time the client was accessed.
-        lastClientAccess = System.currentTimeMillis();
-    }
-
-    /**
-     * Return a new zookeeper client targeting the namespace {@value #ZOOKEEPER_NAMESPACE}.
-     * @return the client
-     */
-    private CuratorFramework createClient() {
-        CuratorFramework client = CuratorFrameworkFactory.builder()
-                        .namespace(ZOOKEEPER_NAMESPACE)
-                        .connectString(zookeeperConfig)
-                        .sessionTimeoutMs(60000)
-                        .connectionTimeoutMs(60000)
-                        .retryPolicy(new RetryNTimes(10, 1000))
-                        .build();
-
-        // @formatter:on
-        client.start();
-        return client;
-    }
-
-    /**
-     * Create the cleanup timer.
-     */
-    private void createCleanupTimer() {
-        if (clientCleanupTimer == null) {
-            clientCleanupTimer = new Timer("Zookeeper Client Cleanup");
-        }
-
-        clientCleanupTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if (lastClientAccess + cleanUpClientInterval <= System.currentTimeMillis()) {
-                    cancel();
-                } else if (client == null) {
-                    cancel();
-                }
-            }
-        }, cleanUpClientInterval, cleanUpClientInterval);
-    }
-
-    /**
-     * Clean up the underlying resources used by this {@link ActiveQueryTracker}.
-     */
-    public void cleanup() {
-        closeClientAndTimer();
-    }
-
-    /**
-     * Close the client and clean up timer, and nullify them.
-     */
-    private void closeClientAndTimer() {
+    @Override
+    public void close() {
         if (client != null) {
             clientLock.lock();
             try {
-                if (clientCleanupTimer != null) {
-                    clientCleanupTimer.cancel();
-                    clientCleanupTimer = null;
-                }
                 if (client != null) {
                     try {
                         client.close();
+                    } catch (Exception e) {
+                        log.error("Failed to close client", e);
                     } finally {
                         client = null;
                     }
@@ -604,13 +530,5 @@ public class ActiveQueryTracker implements AutoCloseable {
                 clientLock.unlock();
             }
         }
-    }
-
-    /**
-     * Close this {@link ActiveQueryTracker} and call {@link #cleanup()}.
-     */
-    @Override
-    public void close() {
-        cleanup();
     }
 }

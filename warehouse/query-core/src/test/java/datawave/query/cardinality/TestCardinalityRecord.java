@@ -1,11 +1,22 @@
 package datawave.query.cardinality;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 import org.locationtech.jts.util.Assert;
@@ -108,5 +119,54 @@ public class TestCardinalityRecord {
 
         int expectedSize = list1.size() * list2.size() * list3.size() * list4.size() * list5.size();
         Assert.equals(expectedSize, results.size());
+    }
+
+    /**
+     * The asynchronous write used to call {@link Object#notifyAll()} on the target file while holding an unrelated monitor, which raised an
+     * {@link IllegalMonitorStateException} on the executor thread after every write.
+     */
+    @Test
+    public void testWriteToDiskDoesNotThrowOnTheExecutorThread() throws Exception {
+
+        Set<String> recordedFields = new HashSet<>();
+        recordedFields.add("FIELD1");
+        CardinalityRecord cr = new CardinalityRecord(recordedFields, CardinalityRecord.DateType.DOCUMENT);
+
+        Map<String,List<String>> valueMap = new HashMap<>();
+        valueMap.put("FIELD1", Collections.singletonList("L1V1"));
+        cr.addEntry(valueMap, "eventId", "datatype", "20260729");
+
+        Path directory = Files.createTempDirectory("cardinality-record-test");
+        File file = new File(directory.toFile(), "cardinality.obj");
+
+        AtomicReference<Throwable> uncaught = new AtomicReference<>();
+        CountDownLatch uncaughtLatch = new CountDownLatch(1);
+        Thread.UncaughtExceptionHandler previousHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            uncaught.set(throwable);
+            uncaughtLatch.countDown();
+        });
+
+        try {
+            CardinalityRecord.writeToDisk(cr, file);
+
+            // the write is asynchronous, so wait for the record to land before checking whether it also failed
+            Clock clock = Clock.systemUTC();
+            long deadline = clock.millis() + TimeUnit.SECONDS.toMillis(10);
+            CardinalityRecord written = null;
+            while (written == null && clock.millis() < deadline) {
+                Thread.sleep(50);
+                written = CardinalityRecord.readFromDisk(file);
+            }
+            assertNotNull("record was never written to disk", written);
+
+            // the monitor violation is raised immediately after the stream is closed, so give it a chance to surface
+            uncaughtLatch.await(500, TimeUnit.MILLISECONDS);
+            assertNull("writeToDisk failed on the executor thread", uncaught.get());
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(previousHandler);
+            file.delete();
+            directory.toFile().delete();
+        }
     }
 }

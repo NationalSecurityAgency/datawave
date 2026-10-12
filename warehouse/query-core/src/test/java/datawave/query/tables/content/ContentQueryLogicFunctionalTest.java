@@ -1,99 +1,77 @@
 package datawave.query.tables.content;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.text.ParseException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.UUID;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.ExcerptTest;
 import datawave.query.QueryTestTableHelper;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.query.util.TypedValue;
 
-@RunWith(Arquillian.class)
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
 public class ContentQueryLogicFunctionalTest {
-    protected static AccumuloClient connector = null;
 
     private static final Logger log = Logger.getLogger(ContentQueryLogicFunctionalTest.class);
+
+    protected static AccumuloClient connector;
+
     protected Authorizations auths = new Authorizations("ALL");
     protected Set<Authorizations> authSet = Set.of(auths);
 
-    @Inject
-    @SpringBean(name = "ContentQuery")
+    @Autowired
+    @Qualifier("ContentQuery")
     protected ContentQueryLogic logic;
 
     private final Map<String,String> extraParameters = new HashMap<>();
     private final Set<String> expectedResults = new HashSet<>();
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
-
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
-        QueryTestTableHelper qtth = new QueryTestTableHelper(ExcerptTest.DocumentRangeTest.class.toString(), log);
+        QueryTestTableHelper qtth = new QueryTestTableHelper(ContentQueryLogicFunctionalTest.class.toString(), log);
         connector = qtth.client;
-
-        Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
-
         WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
-        Authorizations auths = new Authorizations("ALL");
-        PrintUtility.printTable(connector, auths, TableName.SHARD);
-        PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    @Before
-    public void setup() throws ParseException {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        log.setLevel(Level.TRACE);
+    @BeforeEach
+    public void setup() {
+        expectedResults.clear();
+        extraParameters.clear();
     }
 
     @Test
@@ -156,13 +134,7 @@ public class ContentQueryLogicFunctionalTest {
             }
         }
 
-        assertTrue("unexpected fields returned: " + unexpectedFields, unexpectedFields.isEmpty());
-        assertTrue(expectedResults + " was not empty", expectedResults.isEmpty());
+        assertTrue(unexpectedFields.isEmpty(), "unexpected fields returned: " + unexpectedFields);
+        assertTrue(expectedResults.isEmpty(), expectedResults + " was not empty");
     }
-
-    @AfterClass
-    public static void teardown() {
-        TypeRegistry.reset();
-    }
-
 }

@@ -3,7 +3,7 @@ package datawave.query.function;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 
-import datawave.query.tld.TLD;
+import datawave.table.util.TLD;
 
 /**
  * <p>
