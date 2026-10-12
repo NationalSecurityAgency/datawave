@@ -1,5 +1,8 @@
 package datawave.index.validation;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -22,10 +25,9 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -62,7 +64,7 @@ public class AccumuloIndexAgeDisplayTest {
 
     private AccumuloIndexAgeDisplay aiad = null;
 
-    @Before
+    @BeforeEach
     public void setup() throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         // set hadoop.home.dir so we don't get an IOException about it. Doesn't appear to be used though
         System.setProperty("hadoop.home.dir", "/tmp");
@@ -102,7 +104,7 @@ public class AccumuloIndexAgeDisplayTest {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         deleteFile(fileName);
     }
@@ -116,13 +118,13 @@ public class AccumuloIndexAgeDisplayTest {
         aiad.setBuckets(null);
         Integer[] expected = {180, 90, 60, 30, 14, 7, 2};
         Integer[] actual = aiad.getBuckets();
-        Assert.assertArrayEquals(expected, actual);
+        assertArrayEquals(expected, actual);
 
         Integer[] useExpectedWithTooSmallNumber = {1, 2, 3, 4, 5};
         expected = new Integer[] {5, 4, 3, 2};
         aiad.setBuckets(useExpectedWithTooSmallNumber);
         actual = aiad.getBuckets();
-        Assert.assertArrayEquals(expected, actual);
+        assertArrayEquals(expected, actual);
     }
 
     /**
@@ -137,7 +139,7 @@ public class AccumuloIndexAgeDisplayTest {
 
         String expectedLogSummary = getAssortedSimulatedLogOutput();
         String actualLogSummary = aiad.logAgeSummary();
-        Assert.assertEquals(expectedLogSummary, actualLogSummary);
+        assertEquals(expectedLogSummary, actualLogSummary);
     }
 
     /**
@@ -152,7 +154,7 @@ public class AccumuloIndexAgeDisplayTest {
 
         String expectedFileOutput = getAssortedSimulatedFileOutput();
         String generatedOutput = readGeneratedFile();
-        Assert.assertEquals(expectedFileOutput, generatedOutput);
+        assertEquals(expectedFileOutput, generatedOutput);
     }
 
     /**
@@ -166,7 +168,7 @@ public class AccumuloIndexAgeDisplayTest {
 
         String expectedLogSummary = getOneHourSimulatedLogOutput();
         String actualLogSummary = aiad.logAgeSummary();
-        Assert.assertEquals(expectedLogSummary, actualLogSummary);
+        assertEquals(expectedLogSummary, actualLogSummary);
     }
 
     /**
@@ -180,7 +182,7 @@ public class AccumuloIndexAgeDisplayTest {
 
         String expectedFileOutput = getOneHourOldDataSimulatedFileOutput();
         String generatedOutput = readGeneratedFile();
-        Assert.assertEquals(expectedFileOutput, generatedOutput);
+        assertEquals(expectedFileOutput, generatedOutput);
     }
 
     /**
@@ -194,7 +196,7 @@ public class AccumuloIndexAgeDisplayTest {
 
         String expectedLogSummary = getAssortedDataThreeDaySimulatedLogOutput();
         String actualLogSummary = aiad.logAgeSummary();
-        Assert.assertEquals(expectedLogSummary, actualLogSummary);
+        assertEquals(expectedLogSummary, actualLogSummary);
     }
 
     /**
@@ -208,7 +210,7 @@ public class AccumuloIndexAgeDisplayTest {
 
         String expectedFileOutput = getAssortedDataThreeDayBucketSimulatedFileOutput();
         String generatedOutput = readGeneratedFile();
-        Assert.assertEquals(expectedFileOutput, generatedOutput);
+        assertEquals(expectedFileOutput, generatedOutput);
     }
 
     /**

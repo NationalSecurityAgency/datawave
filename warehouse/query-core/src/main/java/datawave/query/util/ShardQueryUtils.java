@@ -84,9 +84,8 @@ public class ShardQueryUtils {
     }
 
     /**
-     * Applies the query model to the given query script and query configuration. If cacheDataTypes is true and allFieldTypeMap is not null, allFieldTypeMap
-     * will be used to fetch the set of all fields seen for the set of datatype filters within the config, and will be updated as needed. If log is not null,
-     * messages documenting the field expansion changes will be logged at the trace level.
+     * Applies the query model to the given query script and query configuration. If log is not null, messages documenting the field expansion changes will be
+     * logged at the trace level.
      *
      * @param script
      *            the query script

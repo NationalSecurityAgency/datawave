@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                            http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <!--
+        A query logic factory for reading tables that have been taken offline.
+
+        Accumulo 2.1.5 allows a client to scan an offline table through a scan server, but only when the scan is issued
+        with the EVENTUAL consistency level - an IMMEDIATE scan is routed to a tablet server, which has unloaded the
+        offline table and answers with a TableOfflineException.
+
+        The stock 'EventQuery' logic inherited from QueryLogicFactory.xml uses DefaultConsistencyLevels, which pins every
+        table to IMMEDIATE, so it cannot read an offline shard or shard index. 'ScanServerEventQuery' below is identical
+        except that the data tables are flipped to EVENTUAL.
+    -->
+    <import resource="QueryLogicFactory.xml"/>
+
+    <!--
+        DatawaveMetadata stays IMMEDIATE because the metadata table remains online. The 'expansion' key is the reserved
+        hint key used for index expansion scans, and it is listed explicitly because ScannerFactory resolves a
+        consistency level by hint key before falling back to the table name.
+    -->
+    <util:map id="ScanServerConsistencyLevels" scope="prototype" key-type="java.lang.String">
+        <entry key="shard" value-ref="EVENTUAL" />
+        <entry key="shardIndex" value-ref="EVENTUAL" />
+        <entry key="shardReverseIndex" value-ref="EVENTUAL" />
+        <entry key="expansion" value-ref="EVENTUAL" />
+        <entry key="DatawaveMetadata" value-ref="IMMEDIATE" />
+    </util:map>
+
+    <bean id="ScanServerEventQuery" scope="prototype" parent="BaseEventQuery">
+        <property name="logicDescription" value="Event query that reads offline data tables via scan servers" />
+        <property name="tableConsistencyLevels" ref="ScanServerConsistencyLevels" />
+    </bean>
+
+</beans>

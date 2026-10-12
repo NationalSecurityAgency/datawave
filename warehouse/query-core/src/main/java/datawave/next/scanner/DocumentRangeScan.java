@@ -145,11 +145,14 @@ public class DocumentRangeScan implements RunnableWithContext {
     }
 
     /**
-     * Create a scanner and configure it with an execution hint and consistency level
+     * Create a scanner and configure it with an execution hint and consistency level.
+     * <p>
+     * An execution hint and a consistency level are required. The document scheduler relies on its scans being routed to a dedicated executor pool, so a scan
+     * that is missing either is a configuration error rather than something to fall back from.
      *
      * @return a configured scanner
      */
-    private Scanner createScanner() {
+    protected Scanner createScanner() {
         String tableName = keyWithContext.getContext().getTableName();
 
         Preconditions.checkNotNull(tableName);
@@ -192,8 +195,8 @@ public class DocumentRangeScan implements RunnableWithContext {
             setting.addOption(QueryOptions.QUERY, queryData.getQuery());
         }
 
-        try (Scanner scanner = ScannerBuilder.create(config.getClient()).setTableName(keyWithContext.getContext().getTableName()).setAuthorizations(auths)
-                        .build()) {
+        // this is the default retrieval path, so it must honour the configured execution hint and consistency level
+        try (Scanner scanner = createScanner()) {
             scanner.addScanIterator(setting);
 
             Key start = new Key(keyWithContext.getKey().getRow());

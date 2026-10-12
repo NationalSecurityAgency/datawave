@@ -4,11 +4,11 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>5.0.13</version>
+        <version>5.0.15</version>
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>query-metric-service</artifactId>
-    <version>4.1.14-SNAPSHOT</version>
+    <version>4.1.15-SNAPSHOT</version>
     <description>DATAWAVE Query Metric Microservice</description>
     <url>https://code.nsa.gov/datawave-query-metric-service</url>
     <scm>
@@ -20,24 +20,24 @@
     <properties>
         <spotbugs.excludes.file>${basedir}/spotbugs-exclude.xml</spotbugs.excludes.file>
         <start-class>datawave.microservice.querymetric.QueryMetricService</start-class>
-        <version.accumulo>2.1.4-5792fed3-bulkv2</version.accumulo>
+        <version.accumulo>2.1.5</version.accumulo>
         <version.cache-api>1.1.1</version.cache-api>
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang3>3.20.0</version.commons-lang3>
-        <version.datawave>7.41.1</version.datawave>
-        <version.datawave.accumulo-api>4.0.5</version.datawave.accumulo-api>
-        <version.datawave.audit-api>4.0.4</version.datawave.audit-api>
-        <version.datawave.authorization-api>4.0.4</version.datawave.authorization-api>
-        <version.datawave.hazelcast-common>4.0.6</version.datawave.hazelcast-common>
-        <version.datawave.query-api>1.0.3</version.datawave.query-api>
-        <version.datawave.query-metric-api>4.1.7</version.datawave.query-metric-api>
-        <version.datawave.starter>4.0.11</version.datawave.starter>
-        <version.datawave.starter-metadata>3.0.6</version.datawave.starter-metadata>
-        <version.datawave.starter-query-metric>3.0.7</version.datawave.starter-query-metric>
+        <version.datawave>8.0.0</version.datawave>
+        <version.datawave.accumulo-api>4.0.6</version.datawave.accumulo-api>
+        <version.datawave.audit-api>4.0.5</version.datawave.audit-api>
+        <version.datawave.authorization-api>4.0.5</version.datawave.authorization-api>
+        <version.datawave.hazelcast-common>4.0.7</version.datawave.hazelcast-common>
+        <version.datawave.query-api>1.0.4</version.datawave.query-api>
+        <version.datawave.query-metric-api>4.1.8</version.datawave.query-metric-api>
+        <version.datawave.starter>4.0.13</version.datawave.starter>
+        <version.datawave.starter-metadata>3.0.7</version.datawave.starter-metadata>
+        <version.datawave.starter-query-metric>3.0.8</version.datawave.starter-query-metric>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
         <version.hazelcast-kubernetes>2.2.3</version.hazelcast-kubernetes>
-        <version.in-memory-accumulo>4.0.4</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.6</version.in-memory-accumulo>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
@@ -419,6 +419,11 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.commons</groupId>
+            <artifactId>datawave-commons-security</artifactId>
+            <version>${version.datawave-commons-security}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>

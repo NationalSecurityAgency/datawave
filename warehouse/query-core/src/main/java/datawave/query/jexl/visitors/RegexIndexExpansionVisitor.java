@@ -242,8 +242,9 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             throw new DatawaveFatalQueryException(e);
         }
 
-        // Given the structure of the tree, we don't *have* to expand this regex node
-        if (config.getMaxIndexScanTimeMillis() == Long.MAX_VALUE && (!config.isExpandAllTerms() && !shouldProcessRegexFromStructure(node, markedParents))) {
+        // Given the structure of the tree, we don't *have* to expand this regex node unless the caller has requested an expansion.
+        boolean expansionRequested = config.isExpandAllTerms() || config.isExpandFields() || config.isExpandValues();
+        if (!expansionRequested && !shouldProcessRegexFromStructure(node, markedParents)) {
             // However, given the characteristics of the query terms, we may still want to
             // expand this regex because it would be more efficient to do so
             if (!shouldProcessRegexFromCost(node)) {
@@ -264,10 +265,6 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
 
                 return QueryPropertyMarker.create(node, DELAYED); // wrap in a delayed predicate to avoid using in RangeStream
             }
-        } else {
-            if (config.getMaxIndexScanTimeMillis() != Long.MAX_VALUE) {
-                log.trace("Skipping cost estimation because there is a timeout configured for index expansion");
-            }
         }
 
         try {
@@ -279,11 +276,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
             throw new DatawaveFatalQueryException(e);
         }
 
-        if (config.isUseNewIndexLookups()) {
-            return buildIndexLookup(node, false, false, () -> createFieldedRegexIndexLookup(node));
-        } else {
-            return buildIndexLookup(node, false, false, () -> createLookup(node));
-        }
+        return buildIndexLookup(node, false, false, () -> createFieldedRegexIndexLookup(node));
     }
 
     @Override
@@ -492,11 +485,6 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      */
     protected boolean shouldExpand(JexlNode node) {
         return (!negated || expandUnfieldedNegations || !hasUnfieldedIdentifier(node)) && (node instanceof ASTERNode);
-    }
-
-    protected IndexLookup createLookup(JexlNode node) {
-        String fieldName = JexlASTHelper.getIdentifier(node);
-        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, config, scannerFactory, fieldName, helper, executor);
     }
 
     /**

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.3" name="datawave.webservice.datawave-security-elytron-module">
+    <resources>
+        <resource-root path="datawave-ws-security-elytron-module-${project.version}.jar"/>
+    </resources>
+    <dependencies>
+        <module name="datawave.commons.datawave-commons-security"/>
+        <module name="datawave.webservice.datawave-security-elytron"/>
+        <module name="io.jsonwebtoken.jjwt-api"/>
+        <module name="io.jsonwebtoken.jjwt-impl" export="true"/>
+        <module name="org.apache.commons.lang3" />
+        <module name="com.fasterxml.jackson.core.jackson-databind"/>
+        <module name="com.fasterxml.jackson.datatype.jackson-datatype-guava"/>
+        <module name="com.fasterxml.jackson.module.jackson-module-jaxb-annotations"/>
+        <module name="javax.annotation.api"/>
+        <module name="org.slf4j"/>
+        <module name="com.google.guava"/>
+        <!-- Use the caffeine library bundled with Wildfly. We do not need to worry about conflicts with the EAR
+        deployment since datawave-ws-elytron-module is not imported in the jboss-deployment-structure.xml. -->
+        <module name="com.github.ben-manes.caffeine"/>
+        <module name="org.wildfly.security.elytron"/>
+        <module name="org.wildfly.extension.elytron"/>
+    </dependencies>
+</module>
