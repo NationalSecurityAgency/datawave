@@ -30,7 +30,6 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.AbstractQueryTest;
-import datawave.table.constants.TableName;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
 /**
@@ -107,9 +106,9 @@ public class GroupingRequiredFilterFunctionsIntegrationTest extends AbstractQuer
         // ingest with the document range only; GroupingFiltersIngest already calls IndexIngestUtil
         // internally to derive the other shard index table variants that AbstractQueryTest iterates over.
         GroupingFiltersIngest.writeItAll(clientForTest, GroupingFiltersIngest.Range.DOCUMENT);
-        PrintUtility.printTable(clientForTest, auths, TableName.SHARD);
-        PrintUtility.printTable(clientForTest, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(clientForTest, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printShardTable(clientForTest, auths);
+        PrintUtility.printShardIndexTable(clientForTest, auths);
+        PrintUtility.printMetadataTable(clientForTest, auths);
     }
 
     @AfterAll

@@ -41,7 +41,6 @@ import datawave.query.config.TermFrequencyQueryConfiguration;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.WiseGuysIngest;
-import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
@@ -82,9 +81,9 @@ public class TermFrequencyQueryTableTest {
         client = new QueryTestTableHelper(TermFrequencyQueryTableTest.class.toString(), log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY,
                         RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER).client;
         WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printShardTable(client, auths);
+        PrintUtility.printShardIndexTable(client, auths);
+        PrintUtility.printMetadataTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
     @BeforeEach

@@ -91,12 +91,12 @@ public class QueryTestTableHelper {
     }
 
     public void printTables(Authorizations auths) throws TableNotFoundException {
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, TableName.SHARD_RINDEX);
+        PrintUtility.printMetadataTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+        PrintUtility.printShardTable(client, auths);
+        PrintUtility.printShardIndexTable(client, auths);
+        PrintUtility.printShardRIndexTable(client, auths);
         // Don't print until there's something in there...otherwise you get an error about not specifying a column
-        // PrintUtility.printTable(client, auths, TableName.SHARD_DAY_INDEX);
+        // PrintUtility.printTable(client, auths, TableName.SHARD_DAY_INDEX, PrintUtility.SIMPLE_TABLE_PRINTER);
     }
 
     protected void createTables() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {

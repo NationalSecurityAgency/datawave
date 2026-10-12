@@ -31,7 +31,6 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.TLDQueryLogic;
 import datawave.query.util.WiseGuysIngest.WhatKindaRange;
-import datawave.table.constants.TableName;
 
 @ExtendWith(SpringExtension.class)
 @ComponentScan(basePackages = "datawave.query")
@@ -139,9 +138,9 @@ public class SummaryTest extends AbstractQueryTest {
         client = qtth.client;
 
         WiseGuysIngest.writeItAll(client, WhatKindaRange.DOCUMENT);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printShardTable(client, auths);
+        PrintUtility.printShardIndexTable(client, auths);
+        PrintUtility.printMetadataTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
     private void runTestQuery(String queryString, Map<String,String> extraParams, Set<String> expectedGoodResults, boolean shouldReturnSomething,

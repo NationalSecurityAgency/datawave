@@ -2,167 +2,424 @@ package datawave.helpers;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.PrintStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map.Entry;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.BitSet;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.google.protobuf.InvalidProtocolBufferException;
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
-import datawave.edge.util.EdgeValue;
+import datawave.annotation.protobuf.v1.AnnotationSource;
+import datawave.annotation.protobuf.v1.Segment;
 import datawave.edge.util.ExtendedHyperLogLogPlus;
+import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
+import datawave.metadata.protobuf.EdgeMetadata;
+import datawave.query.model.DateFrequencyMap;
+import datawave.query.table.parser.ContentKeyValueFactory;
+import datawave.table.constants.TableName;
 import datawave.util.CompositeTimestamp;
 
 /**
- * A set of static methods for printing tables in mock Accumulo instance.
+ * A utility class for printing accumulo tables.
  */
-public class PrintUtility {
+public final class PrintUtility {
 
-    private static final Logger logger = Logger.getLogger(PrintUtility.class);
-
-    /**
-     * Hide default constructor
-     */
-    private PrintUtility() {
-        // Nothing to do
-    }
+    private static final Logger log = LoggerFactory.getLogger(PrintUtility.class);
 
     /**
-     * Utility class to print all the entries in a table
+     * Print the table {@value TableName#SHARD} as a shard table.
      *
      * @param client
-     *            Connector to mock accumulo
-     * @param authorizations
-     *            Authorizations to run scanner with
-     * @param tableName
-     *            Table to scan
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
      * @throws TableNotFoundException
-     *             Invalid table name
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
      */
-    public static void printTable(final AccumuloClient client, final Authorizations authorizations, final String tableName) throws TableNotFoundException {
-        if (logger.isDebugEnabled()) {
-            final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd HHmmss");
-
-            final StringBuilder sb = new StringBuilder("\n--Begin entire " + tableName + " table--");
-
-            sb.append("\n");
-
-            final Scanner scanner = client.createScanner(tableName, authorizations);
-            for (final Entry<Key,Value> e : scanner) {
-                sb.append(e.getKey().toStringNoTime());
-                sb.append(" EventDate ");
-                sb.append(dateFormat.format(new Date(CompositeTimestamp.getEventDate(e.getKey().getTimestamp()))));
-                sb.append(" AgeOffDate ");
-                sb.append(dateFormat.format(new Date(CompositeTimestamp.getAgeOffDate(e.getKey().getTimestamp()))));
-                sb.append('\t');
-                sb.append(getPrintableValue(tableName, e.getKey(), e.getValue()));
-                sb.append("\n");
-            }
-
-            sb.append("--End entire ").append(tableName).append(" table--").append("\n");
-
-            logger.debug(sb.toString());
-        }
-    }
-
-    public static void printTable(final AccumuloClient client, final Authorizations authorizations, final String tableName, final PrintStream out)
-                    throws TableNotFoundException {
-        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd HHmmss");
-
-        final StringBuilder sb = new StringBuilder("--Begin entire " + tableName + " table--");
-
-        sb.append("\n");
-
-        final Scanner scanner = client.createScanner(tableName, authorizations);
-        for (final Entry<Key,Value> e : scanner) {
-            sb.append(e.getKey().toStringNoTime());
-            sb.append(" EventDate ");
-            sb.append(dateFormat.format(new Date(CompositeTimestamp.getEventDate(e.getKey().getTimestamp()))));
-            sb.append(" AgeOffDate ");
-            sb.append(dateFormat.format(new Date(CompositeTimestamp.getAgeOffDate(e.getKey().getTimestamp()))));
-            sb.append('\t');
-            sb.append(getPrintableValue(tableName, e.getKey(), e.getValue()));
-            sb.append("\n");
-        }
-
-        sb.append("--End entire ").append(tableName).append(" table--").append("\n");
-
-        out.println(sb);
+    public static void printShardTable(final AccumuloClient client, final Authorizations auths) throws TableNotFoundException {
+        printShardTable(client, auths, TableName.SHARD);
     }
 
     /**
-     * List all the mock tables
+     * Print the specified table as a shard table.
      *
      * @param client
-     *            Connector to mock accumulo
+     *            the accumulo client
+     * @param auths
+     *            sthe auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
      */
-    public static void listTables(final AccumuloClient client) {
-        final StringBuilder sb = new StringBuilder("--Begin tables list--\n");
-
-        for (final String tableName : client.tableOperations().list()) {
-            sb.append(tableName).append('\n');
-        }
-
-        sb.append("--End table list--").append("\n");
-
-        logger.debug(sb.toString());
+    public static void printShardTable(final AccumuloClient client, final Authorizations auths, final String tableName) throws TableNotFoundException {
+        printTableToDebugLog(client, auths, tableName, new ShardTableWriter());
     }
 
-    public static String getPrintableValue(final String tableName, final Key key, final Value value) {
-        if ((value == null) || value.getSize() < 1) {
-            return "";
+    /**
+     * Print the table {@value TableName#SHARD_INDEX} as a shard index table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printShardIndexTable(final AccumuloClient client, final Authorizations auths) throws TableNotFoundException {
+        printShardIndexTable(client, auths, TableName.SHARD_INDEX);
+    }
+
+    /**
+     * Print the specified table as a shard index table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printShardIndexTable(final AccumuloClient client, final Authorizations auths, final String tableName) throws TableNotFoundException {
+        printTableToDebugLog(client, auths, tableName, new ShardIndexTableWriter());
+    }
+
+    /**
+     * Print the table {@value TableName#SHARD_RINDEX} as a shard reverse index table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printShardRIndexTable(final AccumuloClient client, final Authorizations auths) throws TableNotFoundException {
+        printShardRIndexTable(client, auths, TableName.SHARD_RINDEX);
+    }
+
+    /**
+     * Print the specified table as a shard reverse index table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printShardRIndexTable(final AccumuloClient client, final Authorizations auths, final String tableName) throws TableNotFoundException {
+        printShardIndexTable(client, auths, tableName);
+    }
+
+    /**
+     * Print the table {@value TableName#DATE_INDEX} as a date index table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printDateIndexTable(final AccumuloClient client, final Authorizations auths) throws TableNotFoundException {
+        printDateIndexTable(client, auths, TableName.DATE_INDEX);
+    }
+
+    /**
+     * Print the specified table as a date index table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printDateIndexTable(final AccumuloClient client, final Authorizations auths, final String tableName) throws TableNotFoundException {
+        printTableToDebugLog(client, auths, tableName, new DateIndexTableWriter());
+    }
+
+    /**
+     * Print the table {@value TableName#METADATA} as a datawave metadata table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printMetadataTable(final AccumuloClient client, final Authorizations auths) throws TableNotFoundException {
+        printMetadataTable(client, auths, TableName.METADATA);
+    }
+
+    /**
+     * Print the specified table as a datawave metadata table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printMetadataTable(final AccumuloClient client, final Authorizations auths, final String tableName) throws TableNotFoundException {
+        printTableToDebugLog(client, auths, tableName, new MetadataTableWriter());
+    }
+
+    /**
+     * Print the specified table as a facet table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printFacetTable(final AccumuloClient client, final Authorizations auths, final String tableName) throws TableNotFoundException {
+        printTableToDebugLog(client, auths, tableName, new FacetTableWriter());
+    }
+
+    /**
+     * Print the specified table as an annotation table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printAnnotationTable(final AccumuloClient client, final Authorizations auths, final String tableName) throws TableNotFoundException {
+        printTableToDebugLog(client, auths, tableName, new AnnotationTableWriter());
+    }
+
+    /**
+     * Print the specified table as an annotation source table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     * @throws TableNotFoundException
+     *             if the table could not be found
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printAnnotationSourceTable(final AccumuloClient client, final Authorizations auths, final String tableName)
+                    throws TableNotFoundException {
+        printTableToDebugLog(client, auths, tableName, new AnnotationSourceTableWriter());
+    }
+
+    /**
+     * Print the specified table as a simple table.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     * @see #printTableToDebugLog(AccumuloClient, Authorizations, String, TableWriter)
+     */
+    public static void printSimpleTable(final AccumuloClient client, final Authorizations auths, final String tableName) throws TableNotFoundException {
+        printTableToDebugLog(client, auths, tableName, new TableWriter());
+    }
+
+    /**
+     * Print the specified table using the given table writer to the {@link PrintUtility}'s logger as DEBUG statements if DEBUG is enabled.
+     *
+     * @param client
+     *            the accumulo client
+     * @param auths
+     *            the auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     * @param writer
+     *            the table writer
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     */
+    public static void printTableToDebugLog(final AccumuloClient client, final Authorizations auths, final String tableName, final TableWriter writer)
+                    throws TableNotFoundException {
+        if (log.isDebugEnabled()) {
+            writer.writeTable(client, auths, tableName, Slf4jOutput.debug(log));
         }
+    }
 
-        String lastError = "";
+    private static final DateTimeFormatter ISO_DATE_TIME_MILLIS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneId.systemDefault());
 
+    /**
+     * Format the given timestamp.
+     */
+    public static String formatTimestamp(long timestamp) {
+        return ISO_DATE_TIME_MILLIS.format(Instant.ofEpochMilli(timestamp));
+    }
+
+    /**
+     * Return the formatted event and age-off date of the given composite timestamp.
+     */
+    public static String formatCompositeTimestamp(long timestamp) {
+        return "Event date: " + formatTimestamp(CompositeTimestamp.getEventDate(timestamp)) + " Age-off date: "
+                        + formatTimestamp(CompositeTimestamp.getAgeOffDate(timestamp));
+    }
+
+    /**
+     * Decode the given value as an {@link DateFrequencyMap}.
+     */
+    public static String decodeDateFrequencyMap(Value value) {
         try {
-            final Uid.List uidList = Uid.List.parseFrom(value.get());
-            return (uidList.getUIDList().toString());
-        } catch (final InvalidProtocolBufferException e) {
-            logger.trace("Deserialization as Uid.List, trying other methods", e);
-            lastError = e.getMessage();
+            return new DateFrequencyMap(value.get()).toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+    }
 
-        try {
-            return (ReflectionToStringBuilder.toString(EdgeValue.decode(value), ToStringStyle.SHORT_PREFIX_STYLE));
-        } catch (final Exception e) {
-            logger.trace("Deserialization as decodedEdgeValue failed, trying other methods", e);
-            lastError = e.getMessage();
-        }
-
-        try {
-            final ExtendedHyperLogLogPlus ehllp = new ExtendedHyperLogLogPlus(value);
-            return (String.valueOf(ehllp.getCardinality()));
-        } catch (final Exception e) {
-            logger.trace("Deserialization as ExtendedHyperLogLogPlus failed, trying other methods", e);
-            lastError = e.getMessage();
-        }
-
+    /**
+     * Decode the given value as a long.
+     */
+    public static String decodeLong(Value value) {
         try {
             ByteArrayInputStream byteStream = new ByteArrayInputStream(value.get());
-            DataInputStream inputStream = new DataInputStream(byteStream);
-            return String.valueOf(WritableUtils.readVLong(inputStream));
-        } catch (final Exception e) {
-            logger.trace("Deserialization as long value failed", e);
-            lastError = e.getMessage();
+            DataInputStream dataInputStream = new DataInputStream(byteStream);
+            return Long.toString(WritableUtils.readVLong(dataInputStream));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
+    }
 
-        // TODO: Metadata table?
+    /**
+     * Decode the given value as an {@link HyperLogLogPlus} cardinality.
+     */
+    public static String decodeHyperLogLogPlusCardinality(Value value) {
+        try {
+            ExtendedHyperLogLogPlus hyperLogLogPlus = new ExtendedHyperLogLogPlus(value);
+            return Long.toString(hyperLogLogPlus.getCardinality());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-        logger.warn("Could not deserialize protobuff for table '" + tableName + "'; key: '" + key.toString() + "' error: '" + lastError + "'");
+    /**
+     * Decode the given value as an {@link Uid.List}.
+     */
+    public static String decodeUidList(Value value) {
+        try {
+            return Uid.List.parseFrom(value.get()).getUIDList().toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-        return "(unable to deserialize value)";
+    /**
+     * Decode the given value as an {@link TermWeight.Info}.
+     */
+    public static String decodeTermWeightInfo(Value value) {
+        try {
+            return TermWeight.Info.parseFrom(value.get()).toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Decode the given value as an {@link EdgeMetadata.MetadataValue}.
+     */
+    public static String decodeEdgeMetadata(Value value) {
+        try {
+            EdgeMetadata.MetadataValue metadataValue = EdgeMetadata.MetadataValue.parseFrom(value.get());
+            return metadataValue.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Decode the given value as a compressed and encoded document.
+     */
+    public static String decodeDocument(Value value) {
+        try {
+            final byte[] decodedContent = ContentKeyValueFactory.decodeAndDecompressContent(value.get());
+            return new String(decodedContent, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Decode the given value as an {@link BitSet}.
+     */
+    public static String decodeBitset(Value value) {
+        try {
+            BitSet bitSet = BitSet.valueOf(value.get());
+            return bitSet.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Decode the given value as an {@link Segment}.
+     */
+    public static String decodeAnnotationSegment(Value value) {
+        try {
+            return Segment.parseFrom(value.get()).toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Decode the given value as an {@link AnnotationSource}.
+     */
+    public static String decodeAnnotationSource(Value value) {
+        try {
+            return AnnotationSource.parseFrom(value.get()).toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private PrintUtility() {
+        throw new UnsupportedOperationException();
     }
 }

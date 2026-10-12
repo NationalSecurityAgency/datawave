@@ -39,7 +39,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.WiseGuysIngest;
-import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -139,9 +138,9 @@ public class UniqueTest extends AbstractQueryTest {
         client = qtth.client;
 
         WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
-        PrintUtility.printTable(client, auths, TableName.SHARD);
-        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        PrintUtility.printShardTable(client, auths);
+        PrintUtility.printShardIndexTable(client, auths);
+        PrintUtility.printMetadataTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
     @BeforeEach
