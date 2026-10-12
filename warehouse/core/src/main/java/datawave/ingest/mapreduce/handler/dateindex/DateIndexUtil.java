@@ -30,13 +30,13 @@ import datawave.util.time.DateHelper;
  * Defines standard constants for common date index types (EVENT, LOADED, ACTIVITY).
  */
 public class DateIndexUtil {
-    
+
     public static final String EVENT_DATE_TYPE = "EVENT";
     public static final String LOADED_DATE_TYPE = "LOADED";
     public static final String ACTIVITY_DATE_TYPE = "ACTIVITY";
     private static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
     private static final Logger log = LoggerFactory.getLogger(DateIndexUtil.class);
-    public static final ThreadLocal<DateTimeFormatter> formatter = ThreadLocal.withInitial(() -> DateTimeFormatter.BASIC_ISO_DATE);
+    public static final DateTimeFormatter formatter = DateTimeFormatter.BASIC_ISO_DATE;
     private static final int MAX_MILLIS = 999_000_000;
 
     /**
@@ -49,7 +49,7 @@ public class DateIndexUtil {
     public static String format(Date date) {
         Preconditions.checkNotNull(date, "date cannot be null");
         LocalDate local = date.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
-        return local.format(formatter.get());
+        return local.format(formatter);
     }
 
     /**
@@ -63,7 +63,7 @@ public class DateIndexUtil {
      */
     public static Date getBeginDate(String dateStr) throws ParseException {
         Preconditions.checkArgument(dateStr != null && !dateStr.isBlank(), "date string cannot be null or blank");
-        TemporalAccessor temp = formatter.get().parse(dateStr);
+        TemporalAccessor temp = formatter.parse(dateStr);
         LocalDate local = LocalDate.from(temp);
         return Date.from(local.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
@@ -79,7 +79,7 @@ public class DateIndexUtil {
      */
     public static Date getEndDate(String dateStr) throws ParseException {
         Preconditions.checkArgument(dateStr != null && !dateStr.isBlank(), "date string cannot be null or blank");
-        TemporalAccessor temp = formatter.get().parse(dateStr);
+        TemporalAccessor temp = formatter.parse(dateStr);
         LocalDate local = LocalDate.from(temp);
         return Date.from(local.atTime(23, 59, 59, MAX_MILLIS).atZone(ZoneId.systemDefault()).toInstant());
     }
