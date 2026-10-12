@@ -34,6 +34,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.ProtocolResolver;
 import org.springframework.core.io.Resource;
+import org.springframework.core.metrics.ApplicationStartup;
 
 @ExtendWith(EasyMockExtension.class)
 class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
@@ -617,6 +618,54 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     void testGetResource() {
         Resource expected = EasyMock.mock(Resource.class);
         assertExecutedWithReadLock(() -> delegateContext.getResource("location"), () -> threadSafeContext.getResource("location"), expected);
+    }
+
+    /**
+     * Verify that {@link ThreadSafeClassPathXmlApplicationContext#setApplicationStartup(ApplicationStartup)} is only executed after obtaining a write lock.
+     */
+    @Test
+    void testSetApplicationStartup() {
+        ApplicationStartup startup = EasyMock.createMock(ApplicationStartup.class);
+        assertExecutedWithWriteLock(() -> delegateContext.setApplicationStartup(startup), () -> threadSafeContext.setApplicationStartup(startup));
+    }
+
+    /**
+     * Verify that {@link ThreadSafeClassPathXmlApplicationContext#getApplicationStartup()} is only executed after obtaining a read lock.
+     */
+    @Test
+    void testGetApplicationStartup() {
+        ApplicationStartup expected = EasyMock.createMock(ApplicationStartup.class);
+        assertExecutedWithReadLock(() -> delegateContext.getApplicationStartup(), () -> threadSafeContext.getApplicationStartup(), expected);
+    }
+
+    /**
+     * Verify that {@link ThreadSafeClassPathXmlApplicationContext#setClassLoader(ClassLoader)} is only executed after obtaining a write lock.
+     */
+    @Test
+    void testSetClassLoader() {
+        ClassLoader classLoader = EasyMock.createMock(ClassLoader.class);
+        assertExecutedWithWriteLock(() -> delegateContext.setClassLoader(classLoader), () -> threadSafeContext.setClassLoader(classLoader));
+    }
+
+    /**
+     * Verify that {@link ThreadSafeClassPathXmlApplicationContext#getBeanProvider(Class, boolean)} is only executed after obtaining a read lock.
+     */
+    @Test
+    void testGetBeanProviderGivenClassAndAllowEagerInit() {
+        ObjectProvider<String> expected = EasyMock.createMock(ObjectProvider.class);
+        assertExecutedWithReadLock(() -> delegateContext.getBeanProvider(String.class, true), () -> threadSafeContext.getBeanProvider(String.class, true),
+                        expected);
+    }
+
+    /**
+     * Verify that {@link ThreadSafeClassPathXmlApplicationContext#getBeanProvider(ResolvableType, boolean)} is only executed after obtaining a read lock.
+     */
+    @Test
+    void testGetBeanProviderGivenResolvableTypeAndAllowEagerInit() {
+        ObjectProvider<?> expected = EasyMock.createMock(ObjectProvider.class);
+        ResolvableType resolvableType = EasyMock.createMock(ResolvableType.class);
+        assertExecutedWithReadLock(() -> delegateContext.getBeanProvider(resolvableType, true), () -> threadSafeContext.getBeanProvider(resolvableType, true),
+                        expected);
     }
 
     /**
