@@ -1,14 +1,11 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -16,20 +13,16 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.hash.BloomFilter;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.config.IngestConfiguration;
@@ -39,23 +32,17 @@ import datawave.ingest.data.Type;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.mapreduce.MemberShipTest;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.statsd.StatsDEnabledDataTypeHandler;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.LoadDateTableConfigHelper;
-import datawave.ingest.util.BloomFilterUtil;
-import datawave.ingest.util.BloomFilterWrapper;
-import datawave.ingest.util.DiskSpaceStarvationStrategy;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
 import datawave.query.model.Direction;
 import datawave.table.constants.TableName;
-import datawave.util.CompositeTimestamp;
-import datawave.util.TextUtil;
-import datawave.util.time.DateHelper;
 
 /**
  * <p>
@@ -132,17 +119,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     public static final String NUM_SHARDS = ShardIdFactory.NUM_SHARDS;
     public static final String SHARD_TNAME = "shard.table.name";
-    public static final String SHARD_ININDEX_BLOOM = "shard.table.index.bloom.enable";
-    public static final String SHARD_ININDEX_BLOOM_DISK_THRESHOLD = "shard.table.index.bloom.min.disk.percent"; // % of remaining disk space before n-grams will
-                                                                                                                // cease to be added to the bloom filter
-    public static final String SHARD_ININDEX_BLOOM_DISK_THRESHOLD_PATH = "shard.table.index.bloom.min.disk.path"; // Path used to measure the remaining disk
-                                                                                                                  // space
-    public static final String SHARD_ININDEX_BLOOM_MEMORY_THRESHOLD = "shard.table.index.bloom.min.memory.percent"; // % of remaining memory before n-grams will
-                                                                                                                    // cease to be added to the bloom filter
-    public static final String SHARD_ININDEX_BLOOM_TIMEOUT_THRESHOLD = "shard.table.index.bloom.min.timeout.percent"; // % of remaining time (with respect to
-                                                                                                                      // mapred.task.timeout) before n-grams
-                                                                                                                      // will stop being added to a bloom filter
-    public static final String SHARD_ININDEX_BLOOM_OPTIMUM_MAX_FILTER_SIZE = "shard.table.index.bloom.optimum.max.filter.size"; // Bytes
     public static final String SHARD_STATS_TNAME = "shard.stats.table.name";
     public static final String SHARD_GIDX_TNAME = "shard.global.index.table.name";
     public static final String SHARD_BITSET_INDEX_TABLE_NAME = "shard.bitset.index.table.name";
@@ -173,7 +149,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * term dictionary optimization table
      */
 
-    public static final String SHARD_DINDX_LPRIORITY = "shard.dicitonary.index.table.loader.priority";
+    public static final String SHARD_DINDX_LPRIORITY = "shard.dictionary.index.table.loader.priority";
     public static final String SHARD_DICTIONARY_CACHE_ENTRIES = "shard.dictionary.cache.entries";
     public static final String SHARD_DINDX_NAME = "shard.dictionary.index.table.name";
     public static final Text SHARD_DINDX_FLABEL = new Text("for");
@@ -200,13 +176,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     // Config option name for all tables that are "sharded"
     public static final String SHARDED_TNAMES = "sharded.table.names";
 
-    private static final long MS_PER_DAY = TimeUnit.DAYS.toMillis(1);
+    /**
+     * The {@code 'fi'} column family prefix used for field index entries in the shard table (see {@link #createShardFieldIndexColumn}).
+     */
+    protected static final byte[] FI_COLF_PREFIX = {'f', 'i'};
 
-    private float bloomFilteringDiskThreshold;
-    private String bloomFilteringDiskThresholdPath;
-    private float bloomFilteringMemoryThreshold;
-    private int bloomFilteringOptimumMaxFilterSize;
-    private float bloomFilteringTimeoutThreshold;
     private Text shardTableName = null;
     private Text shardIndexTableName = null;
     private Text shardBitsetIndexTableName = null;
@@ -236,10 +210,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Determines whether or not we produce cardinality estimates for data
      */
     protected boolean produceStats = false;
-    /**
-     * Determines whether or not the bloom filter is enabled.
-     */
-    private boolean bloomFiltersEnabled = false;
 
     boolean isReindexEnabled;
     private Collection<String> requestedFieldsForReindex;
@@ -341,17 +311,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         }
 
         setupToReindexIfEnabled(conf);
-
-        // enabled by default
-        this.bloomFiltersEnabled = conf.getBoolean(SHARD_ININDEX_BLOOM, false);
-        if (this.bloomFiltersEnabled) {
-            this.bloomFilteringDiskThreshold = conf.getFloat(SHARD_ININDEX_BLOOM_DISK_THRESHOLD, 0.0f);
-            this.bloomFilteringDiskThresholdPath = conf.get(SHARD_ININDEX_BLOOM_DISK_THRESHOLD_PATH,
-                            DiskSpaceStarvationStrategy.DEFAULT_PATH_FOR_DISK_SPACE_VALIDATION);
-            this.bloomFilteringMemoryThreshold = conf.getFloat(SHARD_ININDEX_BLOOM_MEMORY_THRESHOLD, 0.0f);
-            this.bloomFilteringTimeoutThreshold = conf.getFloat(SHARD_ININDEX_BLOOM_TIMEOUT_THRESHOLD, 0.0f);
-            this.bloomFilteringOptimumMaxFilterSize = conf.getInt(SHARD_ININDEX_BLOOM_OPTIMUM_MAX_FILTER_SIZE, -1);
-        }
 
         // Event key suppression
         this.suppressEventKeys = conf.getBoolean(SUPPRESS_EVENT_KEYS, false);
@@ -538,8 +497,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // Colf: DataType : UID
             // Colq: FieldName : FieldValue
             // Value: NULL
-            Text colf = new Text(event.getDataType().outputName());
-            TextUtil.textAppend(colf, event.getId().toString(), helper.getReplaceMalformedUTF8());
+            byte[] colf = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName()), ShardUtil.utf8(event.getId().toString()));
 
             Value indexedValue = createUidArray(event.getId().toString(), helper.getDeleteMode());
 
@@ -650,8 +608,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         String fieldName = value.getIndexedFieldName();
         String fieldValue = value.getIndexedFieldValue();
         // produce field index.
-        values.putAll(createShardFieldIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        createBloomFilter(event, fields, reporter)));
+        values.putAll(createShardFieldIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, NULL_VALUE));
 
         // produce index column
         values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
@@ -682,89 +639,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             filteredMap.putAll(requestedField, eventFields.get(requestedField));
         }
         return filteredMap;
-    }
-
-    /**
-     * Creates a bloom filter based on a multi-map of normalized fields. The returned wrapper contains not only an instance of the finalized {@link BloomFilter}
-     * class, but also counts of applied field values and n-grams to assist with statistical reporting.
-     *
-     * @param fields
-     *            a multi-map of normalized fields
-     * @return a wrapped bloom filter created from a multi-map of normalized fields
-     */
-    protected BloomFilterWrapper createBloomFilter(final Multimap<String,NormalizedContentInterface> fields) {
-        final BloomFilterUtil factory = BloomFilterUtil.newInstance();
-        return factory.newMultimapBasedFilter(fields);
-    }
-
-    /**
-     * @param event
-     *            the event container
-     * @param fields
-     *            the event fields
-     * @param reporter
-     *            the status reporter
-     * @return the bloom filter
-     */
-    protected Value createBloomFilter(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, StatusReporter reporter) {
-        Value filterValue = DataTypeHandler.NULL_VALUE;
-        if (this.bloomFiltersEnabled) {
-
-            try {
-                // Create and start the stopwatch
-                final Stopwatch stopWatch = Stopwatch.createStarted();
-
-                // Create the bloom filter, which may involve NGram expansion
-                final BloomFilterWrapper result = this.createBloomFilter(fields);
-                final BloomFilter<String> bloomFilter = result.getFilter();
-                filterValue = MemberShipTest.toValue(bloomFilter);
-
-                // Stop the stopwatch
-                stopWatch.stop();
-
-                if (null != reporter) {
-                    final Counter filterCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterCreated");
-                    if (null != filterCounter) {
-                        filterCounter.increment(1);
-                    }
-
-                    final Counter sizeCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterSize");
-                    if (null != sizeCounter) {
-                        sizeCounter.increment(filterValue.getSize());
-                    }
-
-                    final Counter fieldsCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterAppliedFields");
-                    if (null != fieldsCounter) {
-                        fieldsCounter.increment(result.getFieldValuesAppliedToFilter());
-                    }
-
-                    final Counter ngramsCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterAppliedNGrams");
-                    if (null != ngramsCounter) {
-                        ngramsCounter.increment(result.getNGramsAppliedToFilter());
-                    }
-
-                    final Counter prunedCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterPrunedNGrams");
-                    if (null != prunedCounter) {
-                        prunedCounter.increment(result.getNGramsPrunedFromFilter());
-                    }
-
-                    final Counter creationTime = reporter.getCounter(MemberShipTest.class.getSimpleName(), "Creation Time-(ms)");
-                    if (null != creationTime) {
-                        creationTime.increment(stopWatch.elapsed(TimeUnit.MILLISECONDS));
-                    }
-                }
-            } catch (Exception e) {
-                if (null != reporter) {
-                    final Counter errorCounter = reporter.getCounter(MemberShipTest.class.getSimpleName(), "BloomFilterError");
-                    if (null != errorCounter) {
-                        errorCounter.increment(filterValue.getSize());
-                    }
-                }
-            }
-        }
-
-        return filterValue;
-
     }
 
     /**
@@ -847,9 +721,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // It was observed that the normalized mask values aren't coming back reversed, so account for that before creating the row.
             String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
 
-            Text colf = new Text(column);
-            Text colq = new Text(shardId);
-            TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
+            byte[] colq = ShardUtil.joinWithNulls(shardId, ShardUtil.utf8(event.getDataType().outputName()));
 
             // if this method was called with the intention to create reverse index keys, ensure the masked values are reversed.
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
@@ -860,21 +732,19 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     }
                 }
                 // Create a key for the masked field value with the masked visibility.
-                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getTimestamp(), false);
+                Key k = ShardUtil.createIndexKey(normalizedMaskedValue, column, colq, maskedVisibility, event.getTimestamp(), false);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, indexValue);
             }
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
-                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getTimestamp(), deleteMode);
+                Key k = ShardUtil.createIndexKey(fieldValue, column, colq, visibility, event.getTimestamp(), deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, indexValue);
             }
         } else if (!StringUtils.isEmpty(fieldValue)) {
             // This field is not masked. Add a key with the original field value and masked visibility
-            Text colf = new Text(column);
-            Text colq = new Text(shardId);
-            TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
+            byte[] colq = ShardUtil.joinWithNulls(shardId, ShardUtil.utf8(event.getDataType().outputName()));
 
             /*
              * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
@@ -886,7 +756,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getTimestamp(), deleteMode);
+            Key k = ShardUtil.createIndexKey(fieldValue, column, colq, refVisibility, event.getTimestamp(), deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
             values.put(bkey, indexValue);
         }
@@ -921,12 +791,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     public void writeBitsetIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
         if (shardId != null && value != null && field != null && visibility != null) {
-            String fullShard = new String(shardId);
-            String cq = fullShard.substring(0, 8) + '\u0000' + event.getDataType().outputName();
-            String viz = new String(visibility);
-            long ts = getIndexTimestamp(event.getTimestamp());
+            String fullShard = new String(shardId, StandardCharsets.UTF_8);
+            byte[] cf = ShardUtil.utf8(field);
+            byte[] cq = ShardUtil.shardPrefixedBytes(shardId, 8, ShardUtil.utf8(event.getDataType().outputName()));
+            long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
 
-            Key key = new Key(value, field, cq, viz, ts);
+            Key key = ShardUtil.buildKey(ShardUtil.utf8(value), cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardBitsetIndexTableName(), key);
             Value bitSetValue = getValueForBitsetIndex(fullShard);
             values.put(bulkIngestKey, bitSetValue);
@@ -935,8 +805,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 // write both the masked value and masked visibility
                 // and the original value at the masked visibility
                 String maskedValue = maskedFieldHelper.get(field);
-                String maskedViz = new String(maskedVisibility);
-                Key maskedKey = new Key(maskedValue, field, cq, maskedViz, ts);
+                Key maskedKey = ShardUtil.buildKey(ShardUtil.utf8(maskedValue), cf, cf.length, cq, cq.length, maskedVisibility, ts, false);
                 BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardBitsetIndexTableName(), maskedKey);
                 values.put(maskedBulkIngestKey, bitSetValue);
             }
@@ -972,24 +841,23 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     public void writeShardDayIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
         if (shardId != null && value != null && field != null && visibility != null) {
-            String fullShard = new String(shardId);
-            String row = fullShard.substring(0, 8) + '\u0000' + value;
-            String cq = event.getDataType().outputName();
-            String viz = new String(visibility);
-            long ts = getIndexTimestamp(event.getTimestamp());
+            String fullShard = new String(shardId, StandardCharsets.UTF_8);
+            byte[] cf = ShardUtil.utf8(field);
+            byte[] cq = ShardUtil.utf8(event.getDataType().outputName());
+            byte[] row = ShardUtil.shardPrefixedBytes(shardId, 8, ShardUtil.utf8(value));
+            long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
 
-            Key key = new Key(row, field, cq, viz, ts);
+            Key key = ShardUtil.buildKey(row, cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
-            Value bitSetValue = getValueForDayIndex(fullShard);
+            Value bitSetValue = DateIndexUtil.getValueForDayIndex(fullShard);
             values.put(bulkIngestKey, bitSetValue);
 
             if (maskedFieldHelper != null && maskedFieldHelper.contains(field)) {
                 // write both the masked value and masked visibility
                 // and the original value at the masked visibility
                 String maskedValue = maskedFieldHelper.get(field);
-                String maskedRow = fullShard.substring(0, 8) + '\u0000' + maskedValue;
-                String maskedViz = new String(maskedVisibility);
-                Key maskedKey = new Key(maskedRow, field, cq, maskedViz, ts);
+                byte[] maskedRow = ShardUtil.shardPrefixedBytes(shardId, 8, ShardUtil.utf8(maskedValue));
+                Key maskedKey = ShardUtil.buildKey(maskedRow, cf, cf.length, cq, cq.length, maskedVisibility, ts, false);
                 BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), maskedKey);
                 values.put(maskedBulkIngestKey, bitSetValue);
             }
@@ -997,44 +865,17 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     }
 
     /**
-     * Constructs a {@link Value} that contains a {@link BitSet}'s backing byte array. The bitset index is set to the shard offset.
+     * Constructs a {@link Value} that contains a {@link java.util.BitSet}'s backing byte array. The bitset index is set to the shard offset.
+     * <p>
+     * This is the same offset computation as the day index ({@link DateIndexUtil#getValueForDayIndex(String)}); delegate to it rather than duplicating the
+     * parsing logic.
      *
      * @param shard
      *            the full shard
      * @return a Value containing a BitSet
      */
     public Value getValueForBitsetIndex(String shard) {
-        int underscoreIndex = shard.indexOf('_');
-        Preconditions.checkArgument(underscoreIndex > 0, "shard did not contain an underscore: " + shard);
-        String shardId = shard.substring(underscoreIndex + 1);
-        int offset = Integer.parseInt(shardId);
-        BitSet bitset = new BitSet();
-        bitset.set(offset);
-        return new Value(bitset.toByteArray());
-    }
-
-    public Value getValueForDayIndex(String shardId) {
-        // get the shard number
-        int shardNumber = getOffsetForDayIndex(shardId);
-        BitSet bits = new BitSet();
-        bits.set(shardNumber);
-        return new Value(bits.toByteArray());
-    }
-
-    /**
-     * Get the shard number used as the offset for the day index
-     * <p>
-     * TODO: move to utility
-     *
-     * @param shard
-     *            the shard
-     * @return the day index offset
-     */
-    public int getOffsetForDayIndex(String shard) {
-        int underscoreIndex = shard.indexOf('_');
-        Preconditions.checkArgument(underscoreIndex > 0, "shard did not contain an underscore: " + shard);
-        String bucket = shard.substring(underscoreIndex + 1);
-        return Integer.parseInt(bucket);
+        return DateIndexUtil.getValueForDayIndex(shard);
     }
 
     /**
@@ -1067,56 +908,28 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
 
         if (shardId != null && value != null && field != null && visibility != null) {
-            String fullShard = new String(shardId);
+            String fullShard = new String(shardId, StandardCharsets.UTF_8);
+            byte[] cf = ShardUtil.utf8(field);
+            byte[] cq = ShardUtil.utf8(event.getDataType().outputName());
             // you are insane if the data is from the year 999 or 10,000
-            String row = fullShard.substring(0, 4) + '\u0000' + value;
-            String cq = event.getDataType().outputName();
-            String viz = new String(visibility);
+            byte[] row = ShardUtil.shardPrefixedBytes(shardId, 4, ShardUtil.utf8(value));
+            long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
 
-            Key key = new Key(row, field, cq, viz, getIndexTimestamp(event.getTimestamp()));
+            Key key = ShardUtil.buildKey(row, cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), key);
-            Value bitsetValue = getValueForYearIndex(fullShard);
+            Value bitsetValue = DateIndexUtil.getValueForYearIndex(fullShard);
             values.put(bulkIngestKey, bitsetValue);
 
             if (maskedFieldHelper != null && maskedFieldHelper.contains(field)) {
                 // write both the masked value and masked visibility
                 // and the original value at the masked visibility
                 String maskedValue = maskedFieldHelper.get(field);
-                String maskedRow = fullShard.substring(0, 4) + '\u0000' + maskedValue;
-                String maskedViz = new String(maskedVisibility);
-                Key maskedKey = new Key(maskedRow, field, cq, maskedViz, getIndexTimestamp(event.getTimestamp()));
+                byte[] maskedRow = ShardUtil.shardPrefixedBytes(shardId, 4, ShardUtil.utf8(maskedValue));
+                Key maskedKey = ShardUtil.buildKey(maskedRow, cf, cf.length, cq, cq.length, maskedVisibility, ts, false);
                 BulkIngestKey maskedBulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), maskedKey);
                 values.put(maskedBulkIngestKey, bitsetValue);
             }
         }
-    }
-
-    public Value getValueForYearIndex(String shard) {
-        // get the shard number
-        int shardNumber = getOffsetForYearIndex(shard);
-        BitSet bits = new BitSet();
-        bits.set(shardNumber);
-        return new Value(bits.toByteArray());
-    }
-
-    /**
-     * Calculate the day of the year used as the offset for the year index
-     *
-     * @param shard
-     *            the shard
-     * @return the year index offset
-     */
-    public int getOffsetForYearIndex(String shard) {
-        int index = shard.indexOf('_');
-        String date = shard.substring(0, index);
-        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-        calendar.setTime(DateHelper.parse(date));
-
-        int dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
-        if (log.isTraceEnabled()) {
-            log.trace("day of year: " + dayOfYear);
-        }
-        return dayOfYear;
     }
 
     /**
@@ -1149,99 +962,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     }
 
     /**
-     * Create Key from input parameters
-     *
-     * @param row
-     *            the row
-     * @param colf
-     *            the column family
-     * @param colq
-     *            the column qualifier
-     * @param vis
-     *            the column visibility
-     * @param ts
-     *            the timestamp
-     * @param delete
-     *            the delete flag of the key
-     * @return Accumulo Key object
-     */
-    protected Key createKey(byte[] row, Text colf, Text colq, byte[] vis, long ts, boolean delete) {
-        Key k = new Key(row, 0, row.length, colf.getBytes(), 0, colf.getLength(), colq.getBytes(), 0, colq.getLength(), vis, 0, vis.length, ts);
-        k.setDeleted(delete);
-        return k;
-    }
-
-    /**
-     * Create Key from input parameters
-     *
-     * For global index keys, the granularity of the timestamp is to the millisecond, where the semantics of the index record is to the day. This makes
-     * MapReduce unable to reduce all index keys together unless they occurred at the same millisecond. If we truncate the timestamp to the day, we should
-     * reduce the number of keys output from a job.
-     *
-     * @param row
-     *            the row
-     * @param colf
-     *            the column family
-     * @param colq
-     *            the column qualifier
-     * @param vis
-     *            the column visibility
-     * @param ts
-     *            the timestamp
-     * @param delete
-     *            the delete flag of the key
-     * @return Accumulo Key object
-     */
-    protected Key createIndexKey(byte[] row, Text colf, Text colq, byte[] vis, long ts, boolean delete) {
-        Key k = new Key(row, 0, row.length, colf.getBytes(), 0, colf.getLength(), colq.getBytes(), 0, colq.getLength(), vis, 0, vis.length,
-                        getIndexTimestamp(ts));
-        k.setDeleted(delete);
-        return k;
-    }
-
-    /**
-     * trim the event date and ageoff portions of the ts to the beginning of the day
-     *
-     * @param ts
-     * @return the timestamp to be used for index entries
-     */
-    public static long getIndexTimestamp(long ts) {
-        long tsToDay = trimToBeginningOfDay(CompositeTimestamp.getEventDate(ts));
-        long ageOffToDay = trimToBeginningOfDay(CompositeTimestamp.getAgeOffDate(ts));
-        return CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
-    }
-
-    /**
-     * Trim ms to the beginning of the day
-     *
-     * @param date
-     * @return the time at the beginning of the day
-     */
-    public static long trimToBeginningOfDay(long date) {
-        return (date / MS_PER_DAY) * MS_PER_DAY;
-    }
-
-    /**
-     * Creates a shard column key and does *NOT* apply masking logic
-     *
-     * @param event
-     *            the event
-     * @param colf
-     *            the column family
-     * @param nFV
-     *            the normalized interface of the value
-     * @param visibility
-     *            the visibility
-     * @param shardId
-     *            the shard id
-     * @return the shard event column
-     */
-    protected Multimap<BulkIngestKey,Value> createShardEventColumn(RawRecordContainer event, Text colf, NormalizedContentInterface nFV, byte[] visibility,
-                    byte[] shardId) {
-        return createShardEventColumn(event, colf, nFV, visibility, null, null, shardId);
-    }
-
-    /**
      * Creates a shard column key and does apply masking logic
      *
      * @param event
@@ -1260,7 +980,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *            the shard id
      * @return the shard event column
      */
-    protected Multimap<BulkIngestKey,Value> createShardEventColumn(RawRecordContainer event, Text colf, NormalizedContentInterface nFV, byte[] visibility,
+    protected Multimap<BulkIngestKey,Value> createShardEventColumn(RawRecordContainer event, byte[] colf, NormalizedContentInterface nFV, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId) {
 
         Multimap<BulkIngestKey,Value> values = ArrayListMultimap.create();
@@ -1282,11 +1002,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             return values;
         }
 
-        // Create unmasked colq
-        Text unmaskedColq = new Text(fieldName);
-        if (!StringUtils.isEmpty(fieldValue)) {
-            TextUtil.textAppend(unmaskedColq, fieldValue, replaceMalformedUTF8);
-        }
+        // Create unmasked colq. This is only needed (and only computed) when there is a field value to key on, both to
+        // avoid wasted work and so that an unwritten key can never fail the record.
+        byte[] unmaskedColq = StringUtils.isEmpty(fieldValue) ? null : ShardUtil.joinWithNulls(ShardUtil.utf8(fieldName), ShardUtil.utf8(fieldValue));
 
         // If this field needs to be masked, then create two keys
         if (null != maskedFieldHelper && maskedFieldHelper.contains(indexedFieldName)) {
@@ -1295,7 +1013,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // Generate a key for the original, unmasked field field value
             if (!StringUtils.isEmpty(fieldValue)) {
                 // One key with the original value and original visibility
-                Key cbKey = createKey(shardId, colf, unmaskedColq, visibility, event.getTimestamp(), deleteMode);
+                Key cbKey = ShardUtil.createKey(shardId, colf, unmaskedColq, visibility, event.getTimestamp(), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), cbKey);
 
                 values.put(bKey, NULL_VALUE);
@@ -1317,7 +1035,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             }
 
             // Else create one key for the field with the original value and the masked visiblity
-            Key cbKey = createKey(shardId, colf, unmaskedColq, refVisibility, event.getTimestamp(), deleteMode);
+            Key cbKey = ShardUtil.createKey(shardId, colf, unmaskedColq, refVisibility, event.getTimestamp(), deleteMode);
             BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), cbKey);
             if (log.isTraceEnabled())
                 log.trace("Creating bulk ingest Key " + bKey);
@@ -1328,15 +1046,17 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     }
 
-    protected void createMaskedShardEventColumn(RawRecordContainer event, Text colf, byte[] maskedVisibility, byte[] shardId,
+    // Note: replaceMalformedUTF8 is retained for signature compatibility with overriding subclasses but is no longer
+    // consulted. ShardUtil.utf8 always replaces malformed input rather than throwing, so key construction can never
+    // fail a record.
+    protected void createMaskedShardEventColumn(RawRecordContainer event, byte[] colf, byte[] maskedVisibility, byte[] shardId,
                     Multimap<BulkIngestKey,Value> values, boolean replaceMalformedUTF8, boolean deleteMode, String fieldName, String maskedFieldValue) {
         if (!StringUtils.isEmpty(maskedFieldValue)) {
             // Create masked colq
-            Text maskedColq = new Text(fieldName);
-            TextUtil.textAppend(maskedColq, maskedFieldValue, replaceMalformedUTF8);
+            byte[] maskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldName), ShardUtil.utf8(maskedFieldValue));
 
             // Another key with masked value and masked visibility
-            Key cbKey = createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
+            Key cbKey = ShardUtil.createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
             BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), cbKey);
             values.put(bKey, NULL_VALUE);
         }
@@ -1376,17 +1096,14 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         // hold on to the helper
         IngestHelperInterface helper = this.getHelper(event.getDataType());
-        boolean replaceMalformedUTF8 = helper.getReplaceMalformedUTF8();
         boolean deleteMode = helper.getDeleteMode();
 
         Multimap<BulkIngestKey,Value> values = HashMultimap.create();
 
         if (!StringUtils.isEmpty(fieldValue)) {
-            Text colf = new Text("fi");
-            TextUtil.textAppend(colf, fieldName, replaceMalformedUTF8);
-            Text unmaskedColq = new Text(fieldValue);
-            TextUtil.textAppend(unmaskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
-            TextUtil.textAppend(unmaskedColq, event.getId().toString(), replaceMalformedUTF8);
+            byte[] colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName));
+            byte[] idSuffix = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName()), ShardUtil.utf8(event.getId().toString()));
+            byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue), idSuffix);
 
             if (value == null) {
                 value = NULL_VALUE;
@@ -1394,19 +1111,17 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
             if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
                 // Put unmasked colq with original visibility
-                Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getTimestamp(), deleteMode);
+                Key k = ShardUtil.createKey(shardId, colf, unmaskedColq, visibility, event.getTimestamp(), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
                 values.put(bKey, value);
 
                 // We need to use the normalized masked values
                 final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
                 if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                    Text maskedColq = new Text(normalizedMaskedValue);
-                    TextUtil.textAppend(maskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
-                    TextUtil.textAppend(maskedColq, event.getId().toString(), replaceMalformedUTF8);
+                    byte[] maskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(normalizedMaskedValue), idSuffix);
 
                     // Put masked colq with masked visibility
-                    Key key = createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
+                    Key key = ShardUtil.createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
                     BulkIngestKey bulkIngestKey = new BulkIngestKey(this.getShardTableName(), key);
                     values.put(bulkIngestKey, value);
                 }
@@ -1421,7 +1136,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     refVisibility = maskedVisibility;
                 }
 
-                Key k = createKey(shardId, colf, unmaskedColq, refVisibility, event.getTimestamp(), deleteMode);
+                Key k = ShardUtil.createKey(shardId, colf, unmaskedColq, refVisibility, event.getTimestamp(), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
                 values.put(bKey, value);
             }
@@ -1456,15 +1171,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     byte[] visibility, byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Value value) {
         // hold on to the helper
         IngestHelperInterface helper = this.getHelper(event.getDataType());
-        boolean replaceMalformedUTF8 = helper.getReplaceMalformedUTF8();
         boolean deleteMode = helper.getDeleteMode();
 
         if (!StringUtils.isEmpty(fieldValue)) {
-            Text colf = new Text("fi");
-            TextUtil.textAppend(colf, fieldName, replaceMalformedUTF8);
-            Text unmaskedColq = new Text(fieldValue);
-            TextUtil.textAppend(unmaskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
-            TextUtil.textAppend(unmaskedColq, event.getId().toString(), replaceMalformedUTF8);
+            byte[] colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName));
+            byte[] idSuffix = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName()), ShardUtil.utf8(event.getId().toString()));
+            byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue), idSuffix);
 
             if (value == null) {
                 value = NULL_VALUE;
@@ -1472,19 +1184,17 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
             if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
                 // Put unmasked colq with original visibility
-                Key k = createKey(shardId, colf, unmaskedColq, visibility, event.getTimestamp(), deleteMode);
+                Key k = ShardUtil.createKey(shardId, colf, unmaskedColq, visibility, event.getTimestamp(), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
                 values.put(bKey, value);
 
                 // We need to use the normalized masked values
                 final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
                 if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                    Text maskedColq = new Text(normalizedMaskedValue);
-                    TextUtil.textAppend(maskedColq, event.getDataType().outputName(), replaceMalformedUTF8);
-                    TextUtil.textAppend(maskedColq, event.getId().toString(), replaceMalformedUTF8);
+                    byte[] maskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(normalizedMaskedValue), idSuffix);
 
                     // Put masked colq with masked visibility
-                    Key key = createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
+                    Key key = ShardUtil.createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
                     BulkIngestKey bulkIngestKey = new BulkIngestKey(this.getShardTableName(), key);
                     values.put(bulkIngestKey, value);
                 }
@@ -1499,7 +1209,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     refVisibility = maskedVisibility;
                 }
 
-                Key k = createKey(shardId, colf, unmaskedColq, refVisibility, event.getTimestamp(), deleteMode);
+                Key k = ShardUtil.createKey(shardId, colf, unmaskedColq, refVisibility, event.getTimestamp(), deleteMode);
                 BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
                 values.put(bKey, value);
             }
@@ -1549,133 +1259,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     }
 
     /**
-     * Creates a global index BulkIngestKey and Value and does apply masking logic
-     *
-     * @param event
-     *            the event
-     * @param values
-     *            the map of values
-     * @param fieldName
-     *            the field name
-     * @param fieldValue
-     *            the field value
-     * @param visibility
-     *            the visibility
-     * @param maskedVisibility
-     *            the masked visibility
-     * @param maskedFieldHelper
-     *            the masked field helper
-     * @param shardId
-     *            the shard id
-     * @param tableName
-     *            the table name
-     */
-    protected void createIndexColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String fieldName, String fieldValue, byte[] visibility,
-                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Text tableName) {
-        // Shard Global Index Table Structure
-        // Row: Field Value
-        // Colf: Field Name
-        // Colq: Shard Id : DataType
-        // Value: UID
-
-        // hold on to the helper
-        IngestHelperInterface helper = this.getHelper(event.getDataType());
-        boolean deleteMode = helper.getDeleteMode();
-
-        if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
-            // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
-            final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
-
-            Text colf = new Text(fieldName);
-            Text colq = new Text(shardId);
-            TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
-
-            Value val = createUidArray(event.getId().toString(), deleteMode);
-
-            // Dont create index entries for empty values
-            if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                // Create a key for the masked field value with the masked visibility
-                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getTimestamp(), false);
-
-                BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                values.put(bkey, val);
-            }
-
-            if (!StringUtils.isEmpty(fieldValue)) {
-                // Now create a key for the unmasked value with the original visibility
-                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getTimestamp(), deleteMode);
-                BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                values.put(bkey, val);
-            }
-        } else if (!StringUtils.isEmpty(fieldValue)) {
-            // This field is not masked. Add a key with the original field value and masked visibility
-            Text colf = new Text(fieldName);
-            Text colq = new Text(shardId);
-            TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
-
-            // Create a UID object for the Value
-            Value val = createUidArray(event.getId().toString(), deleteMode);
-
-            /**
-             * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
-             * lower visibility
-             */
-            byte[] refVisibility = visibility;
-
-            if (null != maskedFieldHelper) {
-                refVisibility = maskedVisibility;
-            }
-
-            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getTimestamp(), deleteMode);
-            BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-            values.put(bkey, val);
-
-        }
-    }
-
-    /**
-     * Creates a global index BulkIngestKey and Value and does *NOT* apply masking logic
-     *
-     * @param event
-     *            the event
-     * @param values
-     *            the map of values
-     * @param fieldName
-     *            the field name
-     * @param fieldValue
-     *            the field value
-     * @param visibility
-     *            the visibility
-     * @param directionColFam
-     *            the column family direction
-     * @param tableName
-     *            the table name
-     */
-    protected void createDictionaryColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String fieldName, String fieldValue,
-                    byte[] visibility, Text directionColFam, Text tableName) {
-        if (StringUtils.isEmpty(fieldValue)) {
-            return;
-        }
-
-        // hold on to the helper
-        IngestHelperInterface helper = this.getHelper(event.getDataType());
-        // Shard Global Index Table Structure
-        // Row: Field Value
-        // Colf: Field Name
-        // Colq: Shard Id : DataType
-        // Value: UID
-        Text colf = new Text(directionColFam);
-        Text colq = new Text(fieldName);
-
-        Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getTimestamp(), false);
-        Value val = new Value("".getBytes());
-
-        BulkIngestKey bKey = new BulkIngestKey(tableName, k);
-        values.put(bKey, val);
-
-    }
-
-    /**
      * Creates a dictionary index BulkIngestKey and Value and does apply masking logic
      *
      * @param event
@@ -1713,33 +1296,23 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
             final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
 
-            Text colf = new Text(directionColFam);
-            Text colq = new Text(fieldName);
-
-            Value val = new Value("".getBytes());
-
             // Dont create index entries for empty values
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 // Create a key for the masked field value with the masked visibility
-                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getTimestamp(), false);
+                Key k = ShardUtil.createIndexKey(normalizedMaskedValue, directionColFam, fieldName, maskedVisibility, event.getTimestamp(), false);
 
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                values.put(bkey, val);
+                values.put(bkey, NULL_VALUE);
             }
 
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
-                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getTimestamp(), deleteMode);
+                Key k = ShardUtil.createIndexKey(fieldValue, directionColFam, fieldName, visibility, event.getTimestamp(), deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                values.put(bkey, val);
+                values.put(bkey, NULL_VALUE);
             }
         } else if (!StringUtils.isEmpty(fieldValue)) {
             // This field is not masked. Add a key with the original field value and masked visibility
-            Text colf = new Text(directionColFam);
-            Text colq = new Text(fieldName);
-            // TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
-
-            Value val = new Value("".getBytes());
 
             /**
              * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
@@ -1751,9 +1324,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, refVisibility, event.getTimestamp(), deleteMode);
+            Key k = ShardUtil.createIndexKey(fieldValue, directionColFam, fieldName, refVisibility, event.getTimestamp(), deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-            values.put(bkey, val);
+            values.put(bkey, NULL_VALUE);
 
         }
     }
@@ -1876,60 +1449,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     protected abstract Multimap<String,NormalizedContentInterface> getShardNamesAndValues(RawRecordContainer event,
                     Multimap<String,NormalizedContentInterface> eventFields, boolean createGlobalIndexTerms, boolean createGlobalReverseIndexTerms,
                     StatusReporter reporter);
-
-    /**
-     * Returns the minimum amount of available disk space, expressed as a percentage, allowed for creating a complete bloom filter
-     *
-     * @return the minimum amount of available disk space allowed for creating a complete bloom filter
-     */
-    public float getBloomFilteringDiskThreshold() {
-        return this.bloomFilteringDiskThreshold;
-    }
-
-    /**
-     * Returns the path checked for available disk space when creating a complete bloom filter
-     *
-     * @return the path checked for available disk space when creating a complete bloom filter
-     */
-    public String getBloomFilteringDiskThresholdPath() {
-        return this.bloomFilteringDiskThresholdPath;
-    }
-
-    /**
-     * Returns a value indicating whether or not bloom filters are enabled, which is determined during setup.
-     *
-     * @return true if bloom filters are enabled
-     */
-    public boolean getBloomFiltersEnabled() {
-        return this.bloomFiltersEnabled;
-    }
-
-    /**
-     * Returns the minimum amount of available memory, expressed as a percentage, allowed for creating a complete bloom filter
-     *
-     * @return the minimum amount of available memory allowed for creating a complete bloom filter
-     */
-    public float getBloomFilteringMemoryThreshold() {
-        return this.bloomFilteringMemoryThreshold;
-    }
-
-    /**
-     * Returns the largest ideal size of bloom filters, in bytes, created for normalized content during ingest
-     *
-     * @return the largest ideal size of bloom filters, in bytes, created for normalized content during ingest
-     */
-    public int getBloomFilteringOptimumMaxFilterSize() {
-        return this.bloomFilteringOptimumMaxFilterSize;
-    }
-
-    /**
-     * Returns the minimum amount of remaining task time, expressed as a percentage, allowed for creating a complete bloom filter
-     *
-     * @return the minimum amount of remaining task time, expressed as a percentage, allowed for creating a complete bloom filter
-     */
-    public float getBloomFilteringTimeoutThreshold() {
-        return this.bloomFilteringTimeoutThreshold;
-    }
 
     /**
      * @return map of field names (key) to normalized field values (value) or null

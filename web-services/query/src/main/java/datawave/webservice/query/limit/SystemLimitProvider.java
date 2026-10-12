@@ -278,6 +278,11 @@ public class SystemLimitProvider {
                 comparison = Boolean.compare(o.countsAgainstUserLimit, countsAgainstUserLimit);
             }
 
+            // Finally, compare on the equality of the matchers to ensure the underlying system pattern is compared.
+            if (comparison == 0) {
+                comparison = matcher.equals(o.matcher) ? 0 : 1;
+            }
+
             return comparison;
         }
     }

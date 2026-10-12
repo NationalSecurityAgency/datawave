@@ -1,9 +1,10 @@
-#!/bin/sh
+#!/usr/bin/env bash
 if [[ "${@/keepdata}" == "$@" ]]; then
-  docker volume rm docker_quickstart_data
+  docker compose down --volumes --remove-orphans
+else
+  docker compose down --remove-orphans
 fi
 docker image prune -f
-docker system prune -f
 if [[ "${@/keeplog}" == "$@" ]]; then
   sudo find logs -type f -name '*log*' -delete
 fi
