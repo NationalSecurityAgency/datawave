@@ -15,7 +15,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +29,7 @@ import datawave.next.retrieval.DocumentIterator;
 import datawave.next.retrieval.DocumentIteratorOptions;
 import datawave.next.stats.ScanTimeStats;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.util.IterationInterruptedCheck;
 import datawave.scan.ScannerBuilder;
 
 /**
@@ -95,7 +95,10 @@ public class DocumentRangeScan implements RunnableWithContext {
                         executeDocumentScan();
                     }
                     executing = false;
-                } catch (IterationInterruptedException e) {
+                } catch (RuntimeException e) {
+                    if (!IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                        throw e;
+                    }
                     log.warn("time sliced, resubmitting scan for {}", getContext());
                 }
             }
