@@ -4,8 +4,11 @@ set -euo pipefail
 readonly INGEST_HOME=/opt/datawave-ingest/current
 readonly HDFS_INGEST_DIR=/datawave/ingest
 readonly FIXTURES=/opt/datawave-test-data
+readonly SHARD_SPLITS=/stack/shard-splits.txt
+readonly NUM_SHARDS_FLOOR_DATE=19000101
+readonly ACCUMULO_CLIENT_PROPS=/opt/accumulo/conf/accumulo-client.properties
 
-until accumulo shell -u root -p secret -e info >/dev/null 2>&1; do
+until accumulo shell -c "${ACCUMULO_CLIENT_PROPS}" -e info >/dev/null 2>&1; do
     echo "Waiting for Accumulo..."
     sleep 2
 done
@@ -15,15 +18,23 @@ done
 HADOOP_USER_NAME=hdfs hdfs dfs -mkdir -p \
     /accumulo /tmp/hadoop-yarn/staging/history "${HDFS_INGEST_DIR}"
 HADOOP_USER_NAME=hdfs hdfs dfs -chmod -R 777 /tmp /datawave
-accumulo shell -u root -p secret -e \
+accumulo shell -c "${ACCUMULO_CLIENT_PROPS}" -e \
     "setauths -u root -s JBOSS_ADMIN,DW_ADMIN,AUTH_USER,BAR,FOO,PRIVATE,PUBLIC,PUB,PVT,DEF,A,B,C,D,E,F,G,H,I,DW_USER,DW_SERV"
-accumulo shell -u root -p secret -e "createnamespace datawave" 2>/dev/null || true
-accumulo shell -u root -p secret -e "createtable datawave.queryMetrics_m" 2>/dev/null || true
-accumulo shell -u root -p secret -e "createtable datawave.queryMetrics_s" 2>/dev/null || true
+accumulo shell -c "${ACCUMULO_CLIENT_PROPS}" -e "createnamespace datawave" 2>/dev/null || true
+accumulo shell -c "${ACCUMULO_CLIENT_PROPS}" -e "createtable datawave.queryMetrics_m" 2>/dev/null || true
+accumulo shell -c "${ACCUMULO_CLIENT_PROPS}" -e "createtable datawave.queryMetrics_s" 2>/dev/null || true
 
 mkdir -p /srv/logs/ingest /srv/data/datawave/flags /var/run/datawave
 
 "${INGEST_HOME}/bin/ingest/create-all-tables.sh"
+
+# Otherwise the whole sharded schema lives in one tablet.
+accumulo shell -c "${ACCUMULO_CLIENT_PROPS}" -e "addsplits -t datawave.shard -sf ${SHARD_SPLITS}"
+
+# The query side expands a day into shards from this entry, not from num.shards.
+num_shards=$(cut -d_ -f2 "${SHARD_SPLITS}" | sort -u | wc -l)
+accumulo shell -c "${ACCUMULO_CLIENT_PROPS}" -e "insert num_shards ns ${NUM_SHARDS_FLOOR_DATE}_${num_shards} '' -t datawave.metadata"
+
 "${INGEST_HOME}/bin/ingest/load-job-cache.sh"
 
 run_ingest() {

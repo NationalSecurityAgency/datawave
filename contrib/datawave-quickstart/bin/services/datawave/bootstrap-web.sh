@@ -139,8 +139,33 @@ function datawaveWebIsDeployed() {
    return 0
 }
 
+# Client ports the running tservers report holding, space separated, empty when
+# none are running. 'accumulo-service tserver list' prints only its header and
+# still exits 0 in that case, so the port lines are what we read, not the exit
+# status. The port field can name more than one port, comma separated.
+function tserverClientPorts() {
+    "${ACCUMULO_HOME}/bin/accumulo-service" tserver list 2>/dev/null | awk 'NR > 1 { print $NF }' | tr ',' ' '
+}
+
+# Accumulo 4 tservers no longer bind the fixed 9997 client port (tserver.port.client
+# now defaults to the 9800-9899 range). Ask accumulo-service which ports the running
+# tservers hold, and confirm one of them is actually being listened on.
+#
+# One listening tserver is deliberate. This gate only decides whether Accumulo can
+# serve the web tier, which the fixed 9997 check it replaces also answered with a
+# single port, and the quickstart runs one tserver. Requiring every tserver to be
+# listening would make startup stricter than it was before a4 and would stall on a
+# straggler for no benefit.
+function tserverIsListening() {
+    local port
+    for port in $(tserverClientPorts) ; do
+        ss -ln | grep -qE "[:.]${port}([[:space:]]|\$)" && return 0
+    done
+    return 1
+}
+
 function datawaveWebReadyToStart() {
-    ss -ln | grep 8020 && ss -ln | grep 2181 && ss -ln | grep 9997 && return 0
+    ss -ln | grep 8020 && ss -ln | grep 2181 && tserverIsListening && return 0
     return 1
 }
 
@@ -171,7 +196,20 @@ function datawaveWebStart() {
 
        sleep $pollInterval
     done
-    datawaveWebReadyToStart || return 1
+    if ! datawaveWebReadyToStart ; then
+       # Say why once, rather than leaving the poll counter as the only clue.
+       if ! tserverIsListening ; then
+          # One row per tserver, so flatten the newlines for a readable message.
+          local tserverPorts="$(tserverClientPorts)"
+          tserverPorts="${tserverPorts//$'\n'/ }"
+          if [[ -n "${tserverPorts// /}" ]] ; then
+             error "No tserver is listening on any of its client ports: ${tserverPorts}"
+          else
+             error "No tserver processes are running"
+          fi
+       fi
+       return 1
+    fi
 
     if datawaveWebIsRunning ; then
        info "Wildfly is already running"

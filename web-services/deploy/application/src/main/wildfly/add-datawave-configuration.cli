@@ -203,7 +203,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
         jwtEnabled="${dw.jwt.header.authentication:false}", \
         trustedHeadersEnabled="${dw.trusted.header.authentication:false}", \
         maxCacheEntries="${dw.security.cache.maxEntries:20000}", \
-        maxCacheAge="${dw.security.cache.maxAge:30000}" \
+        maxCacheAge="${dw.security.cache.maxAge:300000}" \
     })
 
 # Create a custom realm that handles preparing the DatawavePrincipal for authentication. The realm can be configured via
@@ -216,7 +216,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
         certVerifier="datawave.security.cert.DatawaveCertVerifier", \
         oscpLevel="off", \
         maxCacheEntries="${dw.security.cache.maxEntries:20000}", \
-        maxCacheAge="${dw.security.cache.maxAge:30000}" \
+        maxCacheAge="${dw.security.cache.maxAge:300000}" \
     })
 
 # Create and configure the security domain 'datawaveElytron' that will handle the authentication and authorization.

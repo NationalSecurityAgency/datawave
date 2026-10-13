@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>8.0.0-SNAPSHOT</version>
+    <version>9.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -39,7 +39,12 @@
         <!-- build.env and env should get overridden if any other read-properties profile is specified (e.g. comnpose)compose -->
         <build.env>dev</build.env>
         <container.registry>ghcr.io</container.registry>
+        <datawave.build.jdk.version.range>[17,18)</datawave.build.jdk.version.range>
         <env>dev</env>
+        <!-- Integration-test fork settings. Default to the surefire values so a module only has to set
+             the surefire property to move both plugins; override these to split unit and integration tests. -->
+        <failsafe.maxMemory>${surefire.maxMemory}</failsafe.maxMemory>
+        <failsafe.reuseForks>${surefire.reuseForks}</failsafe.reuseForks>
         <image.prefix>datawave/</image.prefix>
         <java.version>17</java.version>
         <maven.compiler.release>17</maven.compiler.release>
@@ -52,7 +57,13 @@
         <sonar.exclusions>**/StandardLexer.java,**/*.js,**/*.css,**/*.html</sonar.exclusions>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <version.accumulo>4.0.0-SNAPSHOT</version.accumulo>
+        <!-- Test JVM heap. Override in a module that needs more or less than the inherited default. -->
+        <surefire.maxMemory>1024m</surefire.maxMemory>
+        <!-- Fork per test class. A module whose tests do not leak static state can set this to true in its
+             own properties to reuse forks and skip the per-class JVM startup. Verify the module's tests
+             still pass before enabling: shared static caches and registries are the usual blocker. -->
+        <surefire.reuseForks>false</surefire.reuseForks>
+        <version.accumulo>4.0.0-alpha-1</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-embedded>2.1.0.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
@@ -77,14 +88,14 @@
         <version.commons-text>1.11.0</version.commons-text>
         <version.curator>5.9.0</version.curator>
         <version.curator.test>5.9.0</version.curator.test>
-        <version.datawave.accumulo-api>8.0.0-SNAPSHOT</version.datawave.accumulo-api>
-        <version.datawave.audit-api>8.0.0-SNAPSHOT</version.datawave.audit-api>
-        <version.datawave.authorization-api>8.0.0-SNAPSHOT</version.datawave.authorization-api>
-        <version.datawave.dictionary-api>8.0.0-SNAPSHOT</version.datawave.dictionary-api>
-        <version.datawave.mapreduce-query-api>8.0.0-SNAPSHOT</version.datawave.mapreduce-query-api>
-        <version.datawave.metrics-reporter>8.0.0-SNAPSHOT</version.datawave.metrics-reporter>
-        <version.datawave.query-api>8.0.0-SNAPSHOT</version.datawave.query-api>
-        <version.datawave.query-metric-api>8.0.0-SNAPSHOT</version.datawave.query-metric-api>
+        <version.datawave.accumulo-api>9.0.0-SNAPSHOT</version.datawave.accumulo-api>
+        <version.datawave.audit-api>9.0.0-SNAPSHOT</version.datawave.audit-api>
+        <version.datawave.authorization-api>9.0.0-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.dictionary-api>9.0.0-SNAPSHOT</version.datawave.dictionary-api>
+        <version.datawave.mapreduce-query-api>9.0.0-SNAPSHOT</version.datawave.mapreduce-query-api>
+        <version.datawave.metrics-reporter>9.0.0-SNAPSHOT</version.datawave.metrics-reporter>
+        <version.datawave.query-api>9.0.0-SNAPSHOT</version.datawave.query-api>
+        <version.datawave.query-metric-api>9.0.0-SNAPSHOT</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.easymock>5.2.0</version.easymock>
@@ -101,7 +112,7 @@
         <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>8.0.0-SNAPSHOT</version.in-memory-accumulo>
+        <version.in-memory-accumulo>9.0.0-SNAPSHOT</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.12.7</version.jackson>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
@@ -1822,6 +1833,7 @@
                         <encoding>UTF-8</encoding>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
+                        <release>${maven.compiler.release}</release>
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                             <arg>-Xlint:-processing</arg>
@@ -1862,6 +1874,9 @@
                                     <requireMavenVersion>
                                         <version>3.6.3</version>
                                     </requireMavenVersion>
+                                    <requireJavaVersion>
+                                        <version>${datawave.build.jdk.version.range}</version>
+                                    </requireJavaVersion>
                                 </rules>
                                 <fail>true</fail>
                             </configuration>
@@ -1926,7 +1941,7 @@
                     <configuration>
                         <skipTests>${skipTests}</skipTests>
                         <skipITs>${skipITs}</skipITs>
-                        <reuseForks>false</reuseForks>
+                        <reuseForks>${failsafe.reuseForks}</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
                         <threadCount>1</threadCount>
                         <threadCountClasses>1</threadCountClasses>
@@ -2102,9 +2117,19 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
     <profiles>
+        <profile>
+            <id>java17</id>
+            <properties>
+                <datawave.build.jdk.version.range>[17,18)</datawave.build.jdk.version.range>
+            </properties>
+        </profile>
         <profile>
             <id>coverage</id>
             <modules>

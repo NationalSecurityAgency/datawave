@@ -151,6 +151,18 @@
         <Bug pattern="CN_IDIOM_NO_SUPER_CALL" />
     </Match>
 
+    <Match>
+        <Class name="datawave.accumulo.inmemory.InMemoryBatchScanner" />
+        <Method name="clone" />
+        <Bug pattern="CN_IDIOM_NO_SUPER_CALL" />
+    </Match>
+
+    <!-- Intentional: a thin public subclass that exposes Accumulo's IteratorAdapter under the in-memory package -->
+    <Match>
+        <Class name="datawave.accumulo.inmemory.IteratorAdapter" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS" />
+    </Match>
+
     <!-- False-positive: byteSeq local var is clearly being used in multiple places (??) -->
     <Match>
         <Class name="datawave.query.transformer.UniqueTransform" />

@@ -1,16 +1,17 @@
 package datawave.ingest.data.config.ingest;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +37,7 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.FieldConfigHelper;
 import datawave.ingest.data.config.FieldConfigHelperConstants;
+import datawave.ingest.data.config.FieldLookupCache;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -89,6 +91,20 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      * datatypes and fields, so a valid value would be something like {@code product.productid.data.field.type.class}
      */
     public static final String FIELD_TYPE = ".data.field.type.class";
+
+    /**
+     * Prefix for the settings controlling the cache of resolved field types. Both settings honor an {@code all} datatype fallback -- see
+     * {@link FieldLookupCache}.
+     */
+    public static final String FIELD_TYPE_CACHE = ".data.field.type.cache";
+
+    /**
+     * The maximum number of fields the resolved type cache may hold. When unset, the cache is unbounded -- see {@link FieldLookupCache}.
+     */
+    public static final String FIELD_TYPE_CACHE_MAX_SIZE = FIELD_TYPE_CACHE + FieldLookupCache.MAX_SIZE_SUFFIX;
+
+    /** What a lookup does once the resolved type cache is full, one of {@link FieldLookupCache.OverflowPolicy}. */
+    public static final String FIELD_TYPE_CACHE_OVERFLOW_POLICY = FIELD_TYPE_CACHE + FieldLookupCache.OVERFLOW_POLICY_SUFFIX;
 
     /**
      * Configuration parameter to specify whether to use type regex hierarchy. If true, this will use the datatype associated with the "most precise" regex. If
@@ -147,6 +163,22 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
     private Multimap<String,datawave.data.type.Type<?>> typePatternMap = null;
     private TreeMultimap<Matcher,datawave.data.type.Type<?>> typeCompiledPatternMap = null;
+    /**
+     * Memoizes the fully resolved types per field name, including pattern matches and the default-type fallback. Keyed by the field name exactly as supplied,
+     * so a hit costs one hash probe with no case fold and no pattern walk. The cache's bound and overflow policy are described by the {@link #FIELD_TYPE_CACHE}
+     * settings. Not thread-safe: instances are confined to a single thread, as with {@code XMLFieldConfigHelper#resolvedFields}.
+     */
+    private FieldLookupCache<String,ResolvedTypes> typeResolvedMap = new FieldLookupCache<>();
+
+    /** the mapping function passed to {@code computeIfAbsent} on every lookup, held so the capturing method reference is allocated once */
+    private final Function<String,ResolvedTypes> resolveDataTypesFunction = this::resolveDataTypes;
+
+    /**
+     * The resolution shared by every field that falls back to the default type. The default does not vary by field name, so one instance serves them all rather
+     * than a fresh copy per distinct unmatched name. Discarded alongside {@link #typeResolvedMap}, since {@code updateDatawaveTypes(null, ...)} changes it.
+     */
+    private ResolvedTypes defaultResolvedTypes = null;
+
     protected Set<String> indexOnlyFields = Sets.newHashSet();
 
     protected Set<String> indexedFields = Sets.newHashSet();
@@ -192,6 +224,21 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     protected FieldConfigHelper fieldConfigHelper = null;
 
     /**
+     * The resolved types for a single field name, together with whether they came from a configured entry -- an exact field name or a matching field pattern --
+     * as opposed to the default type.
+     */
+    private static final class ResolvedTypes {
+
+        private final List<datawave.data.type.Type<?>> types;
+        private final boolean configured;
+
+        private ResolvedTypes(List<datawave.data.type.Type<?>> types, boolean configured) {
+            this.types = types;
+            this.configured = configured;
+        }
+    }
+
+    /**
      * This matcher is used to create a deterministic ordering of regular expressions
      */
     public static class MatcherComparator implements Comparator<Matcher> {
@@ -223,6 +270,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         this.typeFieldMap.put(null, new NoOpType());
         this.typePatternMap = HashMultimap.create();
         this.typeCompiledPatternMap = null;
+        // rebuilt rather than cleared, so a re-setup picks up a changed cache type or size. must happen before the field
+        // config helper is loaded below, since parsing it calls back into updateDatawaveTypes, which clears this map.
+        this.typeResolvedMap = buildTypeResolvedMap(config);
+        this.defaultResolvedTypes = null;
 
         this.useMostPreciseFieldTypeRegex = config.getBoolean(USE_MOST_PRECISE_FIELD_TYPE_REGEX, false);
 
@@ -256,7 +307,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         String configProperty = null;
 
         // Load the field helper, which takes precedence over the individual field configurations
-        this.fieldConfigHelper = ingestConfiguration.getFieldConfigHelper(config, getType(), this);
+        this.fieldConfigHelper = ingestConfiguration.getFieldConfigHelper(config, this.getType(), this);
         if (this.fieldConfigHelper != null && log.isDebugEnabled()) {
             log.debug("Field config specified: {}", this.fieldConfigHelper.describeSource());
         }
@@ -452,6 +503,26 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
     }
 
+    /**
+     * Create the cache of resolved field types described by the {@link #FIELD_TYPE_CACHE} settings for this datatype.
+     *
+     * @param config
+     *            the configuration
+     * @return a new, empty cache
+     */
+    private FieldLookupCache<String,ResolvedTypes> buildTypeResolvedMap(Configuration config) {
+        return FieldLookupCache.parse(config, this.getType().typeName(), FIELD_TYPE_CACHE);
+    }
+
+    /**
+     * Expose the resolved type cache for testing.
+     *
+     * @return the cache of resolved field types
+     */
+    FieldLookupCache<String,?> getTypeResolvedCache() {
+        return typeResolvedMap;
+    }
+
     private void moveToPatternMap(Set<String> in, Map<String,Pattern> out) {
         for (Iterator<String> itr = in.iterator(); itr.hasNext();) {
             String str = itr.next();
@@ -605,10 +676,17 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         return this.compositeIngest.isCompositeField(fieldName);
     }
 
+    /**
+     * Returns whether this field has a type of its own -- configured by exact name or matched by a field pattern -- as opposed to falling back to the default
+     * type.
+     *
+     * @param fieldName
+     *            the field name
+     * @return true if a type is configured for this field
+     */
     @Override
     public boolean isDataTypeField(String fieldName) {
-        return this.typeFieldMap.containsKey(fieldName);
-
+        return resolve(fieldName).configured;
     }
 
     private void compilePatterns() {
@@ -616,52 +694,34 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                         (o1, o2) -> o1.toString().compareTo(o2.toString()));
         if (typePatternMap != null) {
             for (String pattern : typePatternMap.keySet()) {
-                patterns.putAll(compileFieldNamePattern(pattern), typePatternMap.get(pattern));
+                // field names are upper cased before matching, so compile case insensitively to keep lower cased
+                // patterns from the configuration source reachable
+                patterns.putAll(compileFieldNamePattern(pattern, Pattern.CASE_INSENSITIVE), typePatternMap.get(pattern));
             }
         }
         typeCompiledPatternMap = patterns;
     }
 
     public static Matcher compileFieldNamePattern(String fieldNamePattern) {
-        return Pattern.compile(fieldNamePattern.replace("*", ".*")).matcher("");
+        return compileFieldNamePattern(fieldNamePattern, 0);
+    }
+
+    /**
+     * Compile a field name pattern, applying the supplied {@link Pattern} match flags.
+     *
+     * @param fieldNamePattern
+     *            the field name pattern
+     * @param flags
+     *            the {@link Pattern} match flags to compile with
+     * @return a reusable {@link Matcher} for the pattern
+     */
+    public static Matcher compileFieldNamePattern(String fieldNamePattern, int flags) {
+        return Pattern.compile(fieldNamePattern.replace("*", ".*"), flags).matcher("");
     }
 
     @Override
     public List<datawave.data.type.Type<?>> getDataTypes(String fieldName) {
-
-        final String typeFieldName = fieldName.toUpperCase();
-
-        LinkedList<datawave.data.type.Type<?>> types = new LinkedList<>(typeFieldMap.get(typeFieldName));
-
-        if (types.isEmpty()) {
-            if (typeCompiledPatternMap == null) {
-                compilePatterns();
-            }
-
-            if (useMostPreciseFieldTypeRegex) {
-                Matcher bestMatch = getBestMatch(typeCompiledPatternMap.keySet(), fieldName);
-                if (null != bestMatch) {
-                    Collection<datawave.data.type.Type<?>> bestMatchTypes = typeCompiledPatternMap.get(bestMatch);
-                    types.addAll(bestMatchTypes);
-                    typeFieldMap.putAll(fieldName, bestMatchTypes);
-                }
-            } else {
-                for (Matcher patternMatcher : typeCompiledPatternMap.keySet()) {
-                    if (patternMatcher.reset(fieldName).matches()) {
-                        Collection<datawave.data.type.Type<?>> matchTypes = typeCompiledPatternMap.get(patternMatcher);
-                        types.addAll(matchTypes);
-                        typeFieldMap.putAll(fieldName, matchTypes);
-                    }
-                }
-            }
-        }
-
-        // if no types were defined or matched via regex, use the default
-        if (types.isEmpty()) {
-            types.addAll(typeFieldMap.get(null));
-        }
-
-        return types;
+        return resolve(fieldName).types;
     }
 
     public static Matcher getBestMatch(Set<Matcher> patterns, String fieldName) {
@@ -1198,7 +1258,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      * This method allows updating the typeFieldMap from a derived helper.
      *
      * @param fieldName
-     *            the field name
+     *            the field name, or null to set the default type
      * @param typeClasses
      *            a comma-delimited string of {@link Type} classes
      */
@@ -1216,13 +1276,87 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 log.debug("Setting {} as default type.", datawaveType);
                 typeFieldMap.put(null, datawaveType);
             } else if (fieldName.indexOf('*') >= 0 || fieldName.indexOf('+') >= 0) { // We need a more conclusive test for regex
+                // store the pattern verbatim. upper casing it would corrupt the regex itself (e.g. \d becomes \D, and
+                // inline flags such as (?i) become invalid), so patterns are instead compiled case insensitively.
                 typePatternMap.put(fieldName, datawaveType);
             } else {
-                typeFieldMap.put(fieldName, datawaveType);
+                // types are looked up by upper cased field name, so store exact names that way regardless of the case
+                // supplied by the configuration source.
+                typeFieldMap.put(fieldName.toUpperCase(), datawaveType);
             }
             if (log.isDebugEnabled()) {
                 log.debug("Registered a {} for type[{}], field[{}]", typeClass, this.getType().typeName(), fieldName);
             }
         }
+
+        // registering a type invalidates anything derived from the previous registrations
+        this.typeCompiledPatternMap = null;
+        this.typeResolvedMap.clear();
+        this.defaultResolvedTypes = null;
+    }
+
+    /**
+     * Return the memoized resolution for this field name, resolving it first if it has not been seen yet.
+     *
+     * @param fieldName
+     *            the field name
+     * @return the resolved types for the field
+     */
+    private ResolvedTypes resolve(String fieldName) {
+        return typeResolvedMap.computeIfAbsent(fieldName, resolveDataTypesFunction);
+    }
+
+    /**
+     * Resolve the types for a field name: an exact match on the configured field types first, then the configured field type patterns, and finally the default
+     * type. The result is memoized by {@link #resolve(String)}, so this runs at most once per distinct field name.
+     *
+     * @param fieldName
+     *            the field name
+     * @return the resolved types for the field
+     */
+    private ResolvedTypes resolveDataTypes(String fieldName) {
+
+        // types are registered under upper cased field names and patterns, so fold before matching against either
+        final String typeFieldName = fieldName.toUpperCase();
+
+        List<datawave.data.type.Type<?>> types = new ArrayList<>(typeFieldMap.get(typeFieldName));
+
+        if (types.isEmpty()) {
+            if (typeCompiledPatternMap == null) {
+                compilePatterns();
+            }
+
+            if (useMostPreciseFieldTypeRegex) {
+                Matcher bestMatch = getBestMatch(typeCompiledPatternMap.keySet(), typeFieldName);
+                if (null != bestMatch) {
+                    types.addAll(typeCompiledPatternMap.get(bestMatch));
+                }
+            } else {
+                for (Matcher patternMatcher : typeCompiledPatternMap.keySet()) {
+                    if (patternMatcher.reset(typeFieldName).matches()) {
+                        types.addAll(typeCompiledPatternMap.get(patternMatcher));
+                    }
+                }
+            }
+        }
+
+        // if no types were defined or matched via regex, use the default
+        if (types.isEmpty()) {
+            return defaultResolvedTypes();
+        }
+
+        return new ResolvedTypes(List.copyOf(types), true);
+    }
+
+    /**
+     * Return the resolution shared by every field that falls back to the default type, building it on first use.
+     *
+     * @return the default resolution
+     */
+    private ResolvedTypes defaultResolvedTypes() {
+        if (defaultResolvedTypes == null) {
+            defaultResolvedTypes = new ResolvedTypes(List.copyOf(typeFieldMap.get(null)), false);
+        }
+        return defaultResolvedTypes;
     }
 }

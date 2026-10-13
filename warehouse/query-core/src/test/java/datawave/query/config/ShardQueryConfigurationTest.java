@@ -320,6 +320,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("limitFieldsField", "LIMITED");
         defaultValues.put("hitList", false);
         updatedValues.put("hitList", true);
+        defaultValues.put("stripHitTermGroupingContext", false);
+        updatedValues.put("stripHitTermGroupingContext", true);
         defaultValues.put("dateIndexTimeTravel", false);
         updatedValues.put("dateIndexTimeTravel", true);
         defaultValues.put("dateIndexIterator", false);

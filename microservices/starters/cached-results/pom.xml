@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-service-parent</artifactId>
-        <version>8.0.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
         <relativePath>../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>spring-boot-starter-datawave-cached-results</artifactId>
@@ -24,15 +24,15 @@
     <properties>
         <version.commons-collections4>4.3</version.commons-collections4>
         <version.commons-lang3>3.20.0</version.commons-lang3>
-        <version.datawave>8.0.0-SNAPSHOT</version.datawave>
-        <version.datawave.audit-api>8.0.0-SNAPSHOT</version.datawave.audit-api>
-        <version.datawave.authorization-api>8.0.0-SNAPSHOT</version.datawave.authorization-api>
-        <version.datawave.hazelcast-client>8.0.0-SNAPSHOT</version.datawave.hazelcast-client>
-        <version.datawave.hazelcast-common>8.0.0-SNAPSHOT</version.datawave.hazelcast-common>
-        <version.datawave.query-api>8.0.0-SNAPSHOT</version.datawave.query-api>
-        <version.datawave.starter>8.0.0-SNAPSHOT</version.datawave.starter>
-        <version.datawave.starter-audit>8.0.0-SNAPSHOT</version.datawave.starter-audit>
-        <version.datawave.starter-query>8.0.0-SNAPSHOT</version.datawave.starter-query>
+        <version.datawave>9.0.0-SNAPSHOT</version.datawave>
+        <version.datawave.audit-api>9.0.0-SNAPSHOT</version.datawave.audit-api>
+        <version.datawave.authorization-api>9.0.0-SNAPSHOT</version.datawave.authorization-api>
+        <version.datawave.hazelcast-client>9.0.0-SNAPSHOT</version.datawave.hazelcast-client>
+        <version.datawave.hazelcast-common>9.0.0-SNAPSHOT</version.datawave.hazelcast-common>
+        <version.datawave.query-api>9.0.0-SNAPSHOT</version.datawave.query-api>
+        <version.datawave.starter>9.0.0-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter-audit>9.0.0-SNAPSHOT</version.datawave.starter-audit>
+        <version.datawave.starter-query>9.0.0-SNAPSHOT</version.datawave.starter-query>
         <version.mysql-connector>9.3.0</version.mysql-connector>
     </properties>
     <dependencyManagement>
