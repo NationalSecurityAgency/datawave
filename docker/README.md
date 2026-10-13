@@ -178,9 +178,17 @@ Docker Compose version v2.21.0
 
 #### DataWave Stack Setup
 
-The default Compose profile starts Hadoop, ZooKeeper, and Accumulo from the published `datawave-stack-accumulo` image. It also starts the DataWave ingest and webservice images and loads the sample Wikipedia, annotation, JSON, and CSV data used by the existing test suites.
+The default Compose profile starts Hadoop, ZooKeeper, and Accumulo from the `datawave-stack-accumulo` image. It also starts the DataWave ingest and webservice images and loads the sample Wikipedia, annotation, JSON, and CSV data used by the existing test suites.
 
-Build the DataWave images using the following command. The infrastructure image is pulled and does not need to be rebuilt in this repository:
+On this branch the `datawave-stack-accumulo:4.0.0-alpha-1` image is not published, so build it locally first from the `accumulo4-2026-quickstart` branch of [datawave-stack-docker-images](https://github.com/NationalSecurityAgency/datawave-stack-docker-images):
+
+```bash
+git clone -b accumulo4-2026-quickstart https://github.com/NationalSecurityAgency/datawave-stack-docker-images.git
+cd datawave-stack-docker-images
+./build.sh all
+```
+
+Then build the DataWave images using the following command:
 
 ```
 mvn -T1C -Pcompose -Dservices -Dmicroservice-docker -Ddocker-release -Ddeploy -Dtar -Ddist -DskipTests -Djkube.container-image.tags.1=latest clean install
