@@ -275,10 +275,6 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
         return new DocIdQueryIterator(this, env);
     }
 
-    private static boolean isTabletClosedException(Throwable t) {
-        return AccumuloExceptionChecker.isTabletClosedException(t);
-    }
-
     /**
      * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
      * interrupted because the client is no longer listening.
@@ -302,7 +298,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
         }
-        if (isTabletClosedException(reason)) {
+        if (AccumuloExceptionChecker.isTabletClosedException(reason)) {
             tce = (RuntimeException) reason;
         }
 
@@ -315,7 +311,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
             }
-            if (isTabletClosedException(reason)) {
+            if (AccumuloExceptionChecker.isTabletClosedException(reason)) {
                 tce = (RuntimeException) reason;
             }
             depth++;

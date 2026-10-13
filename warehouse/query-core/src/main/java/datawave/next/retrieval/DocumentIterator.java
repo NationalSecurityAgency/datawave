@@ -339,10 +339,6 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
         return source.deepCopy(env);
     }
 
-    private static boolean isTabletClosedException(Throwable t) {
-        return AccumuloExceptionChecker.isTabletClosedException(t);
-    }
-
     /**
      * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
      * interrupted because the client is no longer listening.
@@ -366,7 +362,7 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
         }
-        if (isTabletClosedException(reason)) {
+        if (AccumuloExceptionChecker.isTabletClosedException(reason)) {
             tce = (RuntimeException) reason;
         }
 
@@ -379,7 +375,7 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
             }
-            if (isTabletClosedException(reason)) {
+            if (AccumuloExceptionChecker.isTabletClosedException(reason)) {
                 tce = (RuntimeException) reason;
             }
             depth++;

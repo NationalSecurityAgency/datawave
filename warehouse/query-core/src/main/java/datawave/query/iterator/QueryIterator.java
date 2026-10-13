@@ -567,10 +567,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
     }
 
-    private static boolean isTabletClosedException(Throwable t) {
-        return AccumuloExceptionChecker.isTabletClosedException(t);
-    }
-
     /**
      * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
      * interrupted because the client is no longer listening.
@@ -594,7 +590,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
         }
-        if (isTabletClosedException(reason)) {
+        if (AccumuloExceptionChecker.isTabletClosedException(reason)) {
             tce = (RuntimeException) reason;
         }
 
@@ -607,7 +603,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
             }
-            if (isTabletClosedException(reason)) {
+            if (AccumuloExceptionChecker.isTabletClosedException(reason)) {
                 tce = (RuntimeException) reason;
             }
             depth++;

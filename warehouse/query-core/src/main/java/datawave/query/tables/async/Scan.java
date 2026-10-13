@@ -290,8 +290,8 @@ public class Scan implements Callable<Scan> {
                     log.trace("not finished?" + !finished());
             } while (!finished());
         } catch (Exception e) {
-            // Check for ScanTimedOutException by class name to avoid non-public API import
-            if (isScanTimedOutException(e)) {
+            // A ScanTimedOutException means the scan is being timesliced
+            if (AccumuloExceptionChecker.isScanTimedOutException(e)) {
                 // this is okay. This means that we are being timesliced.
                 myScan.addRange(currentRange);
             } else {
@@ -309,10 +309,6 @@ public class Scan implements Callable<Scan> {
         }
         return this;
 
-    }
-
-    private boolean isScanTimedOutException(Throwable t) {
-        return AccumuloExceptionChecker.isScanTimedOutException(t);
     }
 
     private boolean isInterruptedException(Throwable t) {
