@@ -158,6 +158,67 @@ class AnnotationCacheConfigurationTest {
         assertEquals(45, config.getMapConfigs().get(FETCH_MAP).getTimeToLiveSeconds());
     }
 
+    /** Verifies that materializing the shared maps preserves policies inherited from the default map configuration. */
+    @Test
+    void preservesDefaultMapBackupAndEvictionPolicies() {
+        MapConfig defaultConfig = mapWithPolicy("default", 2, EvictionPolicy.LRU, 100);
+        config.addMapConfig(defaultConfig);
+
+        // Establish that Hazelcast resolves both names through this policy before the service configures its exact maps.
+        assertFalse(config.getMapConfigs().containsKey(ANNOTATIONS_MAP));
+        assertFalse(config.getMapConfigs().containsKey(FETCH_MAP));
+        assertMapPolicy(defaultConfig, config.findMapConfig(ANNOTATIONS_MAP));
+        assertMapPolicy(defaultConfig, config.findMapConfig(FETCH_MAP));
+
+        configure();
+
+        assertAll("Shared maps should retain their default backup and eviction policies",
+                        () -> assertMapPolicy(defaultConfig, config.findMapConfig(ANNOTATIONS_MAP)),
+                        () -> assertMapPolicy(defaultConfig, config.findMapConfig(FETCH_MAP)));
+    }
+
+    /** Verifies that a matching wildcard's policy takes precedence over the default and survives service setup. */
+    @Test
+    void preservesWildcardMapBackupAndEvictionPolicies() {
+        config.addMapConfig(mapWithPolicy("default", 1, EvictionPolicy.LRU, 100));
+        MapConfig annotationPattern = mapWithPolicy(ANNOTATIONS_MAP + "*", 2, EvictionPolicy.LFU, 200);
+        MapConfig fetchPattern = mapWithPolicy(FETCH_MAP + "*", 2, EvictionPolicy.LFU, 300);
+        config.addMapConfig(annotationPattern);
+        config.addMapConfig(fetchPattern);
+
+        // Use distinct sizes so a default policy cannot accidentally satisfy the wildcard assertions.
+        assertFalse(config.getMapConfigs().containsKey(ANNOTATIONS_MAP));
+        assertFalse(config.getMapConfigs().containsKey(FETCH_MAP));
+        assertMapPolicy(annotationPattern, config.findMapConfig(ANNOTATIONS_MAP));
+        assertMapPolicy(fetchPattern, config.findMapConfig(FETCH_MAP));
+
+        configure();
+
+        assertAll("Shared maps should retain their matching wildcard backup and eviction policies",
+                        () -> assertMapPolicy(annotationPattern, config.findMapConfig(ANNOTATIONS_MAP)),
+                        () -> assertMapPolicy(fetchPattern, config.findMapConfig(FETCH_MAP)));
+    }
+
+    /** Control case: policies provided under the exact shared map names should also survive service setup. */
+    @Test
+    void preservesExactMapBackupAndEvictionPolicies() {
+        config.addMapConfig(mapWithPolicy("default", 1, EvictionPolicy.LRU, 100));
+        config.addMapConfig(mapWithPolicy(ANNOTATIONS_MAP + "*", 1, EvictionPolicy.LRU, 150));
+        config.addMapConfig(mapWithPolicy(FETCH_MAP + "*", 1, EvictionPolicy.LRU, 150));
+        MapConfig annotationConfig = mapWithPolicy(ANNOTATIONS_MAP, 2, EvictionPolicy.LFU, 200);
+        MapConfig fetchConfig = mapWithPolicy(FETCH_MAP, 2, EvictionPolicy.LFU, 300);
+        config.addMapConfig(annotationConfig);
+        config.addMapConfig(fetchConfig);
+
+        configure();
+
+        assertAll("Exact shared map configurations should retain their policies",
+                        () -> assertSame(annotationConfig, config.getMapConfigs().get(ANNOTATIONS_MAP)),
+                        () -> assertSame(fetchConfig, config.getMapConfigs().get(FETCH_MAP)),
+                        () -> assertMapPolicy(mapWithPolicy(ANNOTATIONS_MAP, 2, EvictionPolicy.LFU, 200), config.findMapConfig(ANNOTATIONS_MAP)),
+                        () -> assertMapPolicy(mapWithPolicy(FETCH_MAP, 2, EvictionPolicy.LFU, 300), config.findMapConfig(FETCH_MAP)));
+    }
+
     /** Matching wildcard policies are inherited, while service-owned retention and persistence settings remain authoritative. */
     @Test
     void inheritsWildcardPoliciesButAppliesServiceOwnedSettings() {
