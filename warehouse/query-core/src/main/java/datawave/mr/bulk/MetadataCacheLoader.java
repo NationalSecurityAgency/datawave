@@ -14,7 +14,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
-import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
@@ -26,6 +25,7 @@ import com.google.common.collect.Sets;
 
 import datawave.query.util.Tuple2;
 import datawave.scan.ScannerBuilder;
+import datawave.table.constants.AccumuloTableConstants;
 
 /**
  * A cache loader that maps accumulo metadata ranges to the files and locations.
@@ -60,7 +60,7 @@ public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set
 
         //  @formatter:off
         ScannerBuilder builder = ScannerBuilder.create(client)
-                .setTableName(MetadataTable.NAME)
+                .setTableName(AccumuloTableConstants.METADATA_TABLE_NAME)
                 .setAuthorizations(Authorizations.EMPTY);
         //  @formatter:on
 
