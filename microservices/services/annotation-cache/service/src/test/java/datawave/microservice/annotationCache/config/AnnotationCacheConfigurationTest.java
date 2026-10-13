@@ -4,6 +4,7 @@ import static datawave.microservice.annotationCache.api.Constants.ANNOTATIONS_MA
 import static datawave.microservice.annotationCache.api.Constants.DOCUMENT_ID_KEY_ATTRIBUTE;
 import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
 import static datawave.microservice.annotationCache.api.Constants.ID_TYPE_KEY_ATTRIBUTE;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -19,9 +20,11 @@ import org.junit.jupiter.api.Test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizePolicy;
 
 import datawave.microservice.annotationCache.AnnotationMapStore;
 import datawave.microservice.annotationCache.AnnotationSyncListener;
@@ -91,6 +94,67 @@ class AnnotationCacheConfigurationTest {
         assertEquals(45, config.getMapConfigs().get(FETCH_MAP).getTimeToLiveSeconds());
     }
 
+    /** Verifies that materializing the shared maps preserves policies inherited from the default map configuration. */
+    @Test
+    void preservesDefaultMapBackupAndEvictionPolicies() {
+        MapConfig defaultConfig = mapWithPolicy("default", 2, EvictionPolicy.LRU, 100);
+        config.addMapConfig(defaultConfig);
+
+        // Establish that Hazelcast resolves both names through this policy before the service configures its exact maps.
+        assertFalse(config.getMapConfigs().containsKey(ANNOTATIONS_MAP));
+        assertFalse(config.getMapConfigs().containsKey(FETCH_MAP));
+        assertMapPolicy(defaultConfig, config.findMapConfig(ANNOTATIONS_MAP));
+        assertMapPolicy(defaultConfig, config.findMapConfig(FETCH_MAP));
+
+        configure();
+
+        assertAll("Shared maps should retain their default backup and eviction policies",
+                        () -> assertMapPolicy(defaultConfig, config.findMapConfig(ANNOTATIONS_MAP)),
+                        () -> assertMapPolicy(defaultConfig, config.findMapConfig(FETCH_MAP)));
+    }
+
+    /** Verifies that a matching wildcard's policy takes precedence over the default and survives service setup. */
+    @Test
+    void preservesWildcardMapBackupAndEvictionPolicies() {
+        config.addMapConfig(mapWithPolicy("default", 1, EvictionPolicy.LRU, 100));
+        MapConfig annotationPattern = mapWithPolicy(ANNOTATIONS_MAP + "*", 2, EvictionPolicy.LFU, 200);
+        MapConfig fetchPattern = mapWithPolicy(FETCH_MAP + "*", 2, EvictionPolicy.LFU, 300);
+        config.addMapConfig(annotationPattern);
+        config.addMapConfig(fetchPattern);
+
+        // Use distinct sizes so a default policy cannot accidentally satisfy the wildcard assertions.
+        assertFalse(config.getMapConfigs().containsKey(ANNOTATIONS_MAP));
+        assertFalse(config.getMapConfigs().containsKey(FETCH_MAP));
+        assertMapPolicy(annotationPattern, config.findMapConfig(ANNOTATIONS_MAP));
+        assertMapPolicy(fetchPattern, config.findMapConfig(FETCH_MAP));
+
+        configure();
+
+        assertAll("Shared maps should retain their matching wildcard backup and eviction policies",
+                        () -> assertMapPolicy(annotationPattern, config.findMapConfig(ANNOTATIONS_MAP)),
+                        () -> assertMapPolicy(fetchPattern, config.findMapConfig(FETCH_MAP)));
+    }
+
+    /** Control case: policies provided under the exact shared map names should also survive service setup. */
+    @Test
+    void preservesExactMapBackupAndEvictionPolicies() {
+        config.addMapConfig(mapWithPolicy("default", 1, EvictionPolicy.LRU, 100));
+        config.addMapConfig(mapWithPolicy(ANNOTATIONS_MAP + "*", 1, EvictionPolicy.LRU, 150));
+        config.addMapConfig(mapWithPolicy(FETCH_MAP + "*", 1, EvictionPolicy.LRU, 150));
+        MapConfig annotationConfig = mapWithPolicy(ANNOTATIONS_MAP, 2, EvictionPolicy.LFU, 200);
+        MapConfig fetchConfig = mapWithPolicy(FETCH_MAP, 2, EvictionPolicy.LFU, 300);
+        config.addMapConfig(annotationConfig);
+        config.addMapConfig(fetchConfig);
+
+        configure();
+
+        assertAll("Exact shared map configurations should retain their policies",
+                        () -> assertSame(annotationConfig, config.getMapConfigs().get(ANNOTATIONS_MAP)),
+                        () -> assertSame(fetchConfig, config.getMapConfigs().get(FETCH_MAP)),
+                        () -> assertMapPolicy(mapWithPolicy(ANNOTATIONS_MAP, 2, EvictionPolicy.LFU, 200), config.findMapConfig(ANNOTATIONS_MAP)),
+                        () -> assertMapPolicy(mapWithPolicy(FETCH_MAP, 2, EvictionPolicy.LFU, 300), config.findMapConfig(FETCH_MAP)));
+    }
+
     /** Checks that null, zero, and negative TTL values are rejected. */
     @Test
     void rejectsNullZeroAndNegativeDurations() {
@@ -137,6 +201,20 @@ class AnnotationCacheConfigurationTest {
 
         assertEquals(300, config.getMapConfigs().get(ANNOTATIONS_MAP).getTimeToLiveSeconds());
         assertEquals(300, config.getMapConfigs().get(FETCH_MAP).getTimeToLiveSeconds());
+    }
+
+    private MapConfig mapWithPolicy(String name, int backupCount, EvictionPolicy evictionPolicy, int size) {
+        MapConfig mapConfig = new MapConfig(name).setBackupCount(backupCount);
+        mapConfig.getEvictionConfig().setEvictionPolicy(evictionPolicy).setMaxSizePolicy(MaxSizePolicy.PER_NODE).setSize(size);
+        return mapConfig;
+    }
+
+    private void assertMapPolicy(MapConfig expected, MapConfig actual) {
+        assertAll("Map policy for " + actual.getName(), () -> assertEquals(expected.getBackupCount(), actual.getBackupCount(), "backup count"),
+                        () -> assertEquals(expected.getEvictionConfig().getEvictionPolicy(), actual.getEvictionConfig().getEvictionPolicy(), "eviction policy"),
+                        () -> assertEquals(expected.getEvictionConfig().getMaxSizePolicy(), actual.getEvictionConfig().getMaxSizePolicy(),
+                                        "maximum size policy"),
+                        () -> assertEquals(expected.getEvictionConfig().getSize(), actual.getEvictionConfig().getSize(), "eviction size limit"));
     }
 
     private void assertIndexes(MapConfig mapConfig) {
