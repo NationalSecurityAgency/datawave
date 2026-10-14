@@ -113,13 +113,14 @@ class SystemLimitProviderTest {
             assertThat(provider.getDefaultSystemQueryLimit()).isEqualTo(defaultLimit);
         }
 
-    /**
-     * Verify that a default system query limit less than -1 is set to the value of {@link QueryLimiterUtils#NO_LIMIT}.
-     */
-    @Test
-    void testDefaultSystemLessThanNegativeOne() {
-        SystemLimitProvider provider = new SystemLimitProvider(-3, maxCacheSize, Set.of(), new QueryLogicGroupLimitProvider(maxCacheSize, Set.of()));
-        assertThat(provider.getDefaultSystemQueryLimit()).isEqualTo(QueryLimiterUtils.NO_LIMIT);
+        /**
+         * Verify that a default system query limit less than -1 is set to the value of {@link QueryLimiterUtils#NO_LIMIT}.
+         */
+        @Test
+        void testDefaultSystemLessThanNegativeOne() {
+            SystemLimitProvider provider = new SystemLimitProvider(-3, maxCacheSize, Set.of(), new QueryLogicGroupLimitProvider(maxCacheSize, Set.of()));
+            assertThat(provider.getDefaultSystemQueryLimit()).isEqualTo(QueryLimiterUtils.NO_LIMIT);
+        }
     }
 
     /**
@@ -161,15 +162,15 @@ class SystemLimitProviderTest {
             assertThat(systemLimits.countsAgainstUserLimit()).isFalse();
             assertThat(systemLimits.getBestGroupLimits("TLDQueryLogic")).containsExactly(Map.entry("TLD", 20));
 
-        // Assert configuration for SYSTEM_02.
-        optional = provider.getCustomLimits("SYSTEM_02");
-        assertThat(optional).isNotEmpty();
-        systemLimits = optional.get();
-        assertThat(systemLimits.getSystemPattern()).isEqualTo("SYSTEM_02");
-        assertThat(systemLimits.getQueryLimit()).isEqualTo(QueryLimiterUtils.NO_LIMIT);
-        assertThat(systemLimits.countsAgainstUserLimit()).isTrue();
-        assertThat(systemLimits.getBestGroupLimits("TLDQueryLogic")).isEmpty();
-    }
+            // Assert configuration for SYSTEM_02.
+            optional = provider.getCustomLimits("SYSTEM_02");
+            assertThat(optional).isNotEmpty();
+            systemLimits = optional.get();
+            assertThat(systemLimits.getSystemPattern()).isEqualTo("SYSTEM_02");
+            assertThat(systemLimits.getQueryLimit()).isEqualTo(QueryLimiterUtils.NO_LIMIT);
+            assertThat(systemLimits.countsAgainstUserLimit()).isTrue();
+            assertThat(systemLimits.getBestGroupLimits("TLDQueryLogic")).isEmpty();
+        }
 
         /**
          * Verify that we support {@code *} as a wildcard pattern.
@@ -322,7 +323,6 @@ class SystemLimitProviderTest {
             systemLimits = optional.get();
             assertThat(systemLimits.getSystemPattern()).isEqualTo("SYSTEM-D.*");
             assertThat(systemLimits.getQueryLimit()).isEqualTo(30);
-
         }
     }
 
