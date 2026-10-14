@@ -24,6 +24,7 @@ import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.DelayedNonEventIndexContext;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.functions.DocumentFunctions;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.transformer.ExcerptTransform;
@@ -97,6 +98,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
             log.trace("Evaluating " + query + " against document " + input.second().getMetadata() + " with context " + input.third());
         }
 
+        DocumentMatchContext documentMatchContext = (DocumentMatchContext) input.third().get(DocumentFunctions.DOCUMENT_MATCH_CONTEXT_JEXL_VARIABLE_NAME);
         Object o = script.execute(input.third());
 
         if (log.isTraceEnabled()) {
@@ -108,6 +110,20 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         // Add delayed info to document
         if (matched && input.third() instanceof DelayedNonEventIndexContext) {
             ((DelayedNonEventIndexContext) input.third()).populateDocument(input.second());
+        }
+
+        if (matched && documentMatchContext != null) {
+            Document document = input.second();
+            for (DocumentMatchResults entry : documentMatchContext.getMatches()) {
+                String documentMatches = entry.toJson();
+                if (documentMatches.isEmpty()) {
+                    continue;
+                }
+
+                Content matchesAttribute = new Content(documentMatches, entry.getKey(), document.isToKeep());
+                matchesAttribute.setColumnVisibility(entry.getKey().getColumnVisibilityParsed());
+                document.put(DocumentFunctions.DOCUMENT_MATCHES, matchesAttribute);
+            }
         }
 
         if (arithmetic instanceof HitListArithmetic) {

@@ -30,6 +30,7 @@ import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.search.TermQuery;
 
+import datawave.query.language.functions.lucene.DocumentMatch;
 import datawave.query.language.functions.lucene.EvaluationOnly;
 import datawave.query.language.functions.lucene.Exclude;
 import datawave.query.language.functions.lucene.Include;
@@ -48,7 +49,7 @@ import datawave.webservice.query.exception.NotFoundQueryException;
 @Deprecated
 public class FunctionQueryNodeBuilder implements QueryBuilder {
 
-    private Map<String,LuceneQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String,LuceneQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<>());
 
     public FunctionQueryNodeBuilder() {
         addFunction(new IsNull());
@@ -57,6 +58,7 @@ public class FunctionQueryNodeBuilder implements QueryBuilder {
         addFunction(new Exclude());
         addFunction(new Text());
         addFunction(new Occurrence());
+        addFunction(new DocumentMatch());
         addFunction(new EvaluationOnly());
     }
 

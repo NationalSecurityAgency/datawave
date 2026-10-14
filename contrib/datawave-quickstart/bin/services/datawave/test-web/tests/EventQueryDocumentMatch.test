@@ -1,0 +1,87 @@
+
+################################################################
+# document:match query tests for EventQuery
+
+# These tests validate both the JEXL document:match(...) form and the
+# Lucene #DOCUMENT_MATCH(...) form against a known Wikipedia event whose
+# REVISION_COMMENT d-column contains the string "Origins".
+
+################################################################
+# JEXL create
+
+setCurlData query=$( urlencode "PAGE_TITLE == 'Anarchism' && document:match('REVISION_COMMENT', 'Origins')" ) \
+        queryName=EventQueryDocumentMatchJexl \
+        begin=20130301 \
+        end=20130401 \
+        pagesize=1 \
+        auths=PUBLIC \
+        columnVisibility=PRIVATE \
+        query.syntax=JEXL
+
+configureTest \
+        CreateDocumentMatchJexl \
+        "Creates a JEXL EventQuery using document:match against REVISION_COMMENT d-column content" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest --set-query-id
+
+################################################################
+# JEXL next
+
+configureTest \
+        DocumentMatchJexlPage1 \
+        "Gets the first page of results for the JEXL document:match query in JSON format" \
+        "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
+        application/json \
+        200
+
+runTest
+
+################################################################
+# JEXL close
+
+configureCloseQueryTest ${DW_QUERY_ID}
+
+runTest
+
+################################################################
+# Lucene create
+
+setCurlData query=$( urlencode "PAGE_TITLE:Anarchism AND #DOCUMENT_MATCH(REVISION_COMMENT, Origins)" ) \
+        queryName=EventQueryDocumentMatchLucene \
+        begin=20130301 \
+        end=20130401 \
+        pagesize=1 \
+        auths=PUBLIC \
+        columnVisibility=PRIVATE \
+        query.syntax=LUCENE
+
+configureTest \
+        CreateDocumentMatchLucene \
+        "Creates a Lucene EventQuery using #DOCUMENT_MATCH against REVISION_COMMENT d-column content" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest --set-query-id
+
+################################################################
+# Lucene next
+
+configureTest \
+        DocumentMatchLucenePage1 \
+        "Gets the first page of results for the Lucene #DOCUMENT_MATCH query in JSON format" \
+        "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
+        application/json \
+        200
+
+runTest
+
+################################################################
+# Lucene close
+
+configureCloseQueryTest ${DW_QUERY_ID}
+
+# This last test is executed by run.sh, as usual

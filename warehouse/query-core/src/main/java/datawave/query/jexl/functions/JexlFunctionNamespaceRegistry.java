@@ -25,6 +25,7 @@ public class JexlFunctionNamespaceRegistry {
 
     static {
         registeredFunctions.put(ContentFunctions.CONTENT_FUNCTION_NAMESPACE, ContentFunctions.class);
+        registeredFunctions.put(DocumentFunctions.DOCUMENT_FUNCTION_NAMESPACE, DocumentFunctions.class);
         registeredFunctions.put(NormalizationFunctions.NORMALIZATION_FUNCTION_NAMESPACE, NormalizationFunctions.class);
         registeredFunctions.put(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE, EvaluationPhaseFilterFunctions.class);
         registeredFunctions.put(GroupingRequiredFilterFunctions.GROUPING_REQUIRED_FUNCTION_NAMESPACE, GroupingRequiredFilterFunctions.class);
@@ -53,7 +54,7 @@ public class JexlFunctionNamespaceRegistry {
             // from the application context
             Map<String,String> functionDefs = context.getBean(JEXL_FUNCTION_NAMESPACE_BEAN_REF, java.util.Map.class); // setRegisteredFunctions gets called with
                                                                                                                       // String,String map
-            Map<String,Object> funcs = new HashMap<>();
+            Map<String,Object> funcs = new HashMap<>(registeredFunctions);
             for (Map.Entry<String,String> entry : functionDefs.entrySet()) {
                 try {
 

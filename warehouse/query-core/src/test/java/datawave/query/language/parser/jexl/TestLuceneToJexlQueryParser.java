@@ -63,6 +63,16 @@ public class TestLuceneToJexlQueryParser {
     }
 
     @Test
+    public void testDocumentMatchFunctionTranslation() throws ParseException {
+        assertEquals("document:match('car')", parseQuery("#DOCUMENT_MATCH('car')"));
+        assertEquals("document:match('car')", parseQuery("#DOCUMENT_MATCH(car)"));
+        assertEquals("document:match('BODY', 'car')", parseQuery("#DOCUMENT_MATCH('BODY', 'car')"));
+        assertEquals("document:match('BODY', 'car')", parseQuery("#DOCUMENT_MATCH(BODY, car)"));
+        assertEquals("document:match('BODY*', 'car')", parseQuery("#DOCUMENT_MATCH(BODY*, car)"));
+        assertEquals("BODY == 'capone' && document:match('car')", parseQuery("BODY:capone AND #DOCUMENT_MATCH(car)"));
+    }
+
+    @Test
     public void testComposableFunctions() throws ParseException {
         assertEquals("filter:includeRegex(foo,bar).size() > 0", parseQuery("#JEXL(\"filter:includeRegex(foo,bar).size() > 0\")"));
     }

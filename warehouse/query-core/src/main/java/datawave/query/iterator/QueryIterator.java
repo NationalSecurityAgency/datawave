@@ -68,6 +68,8 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
 import datawave.query.function.DataTypeAsField;
+import datawave.query.function.DocumentMatchConfig;
+import datawave.query.function.DocumentMatchContextFunction;
 import datawave.query.function.DocumentMetadata;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
@@ -98,12 +100,14 @@ import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.iterator.waitwindow.WaitWindowOverseerIterator;
+import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
+import datawave.query.jexl.visitors.DocumentMatchFunctionVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
@@ -975,7 +979,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             // get the function we use for the tf functionality. Note we are
             // getting an additional source deep copy for this function
-            final Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
+            Iterator<Tuple3<Key,Document,Map<String,Object>>> itrWithContext;
             // TODO: this should be dynamic based on the query fields, not a flag passed to the iterator
             if (this.isTermFrequenciesRequired()) {
 
@@ -995,6 +999,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 itrWithContext = TraceIterators.transform(tupleItr, tfFunction, "Term Frequency Lookup");
             } else {
                 itrWithContext = Iterators.transform(tupleItr, new EmptyContext<>());
+            }
+
+            if (shouldCollectDocumentMatchContext(documentSource)) {
+                SortedKeyValueIterator<Key,Value> documentMatchSource = getSourceDeepCopy("document-match context");
+                DocumentMatchConfig documentMatchConfig = new DocumentMatchConfig();
+                documentMatchConfig.setSource(documentMatchSource);
+                documentMatchConfig.setTimeFilter(getTimeFilter());
+                documentMatchConfig.setLimits(getDocumentMatchLimits());
+                Function<Tuple3<Key,Document,Map<String,Object>>,Tuple3<Key,Document,Map<String,Object>>> documentMatchFunction = buildDocumentMatchFunction(
+                                documentMatchConfig);
+                itrWithContext = TraceIterators.transform(itrWithContext, documentMatchFunction, "Document Match Context Lookup");
             }
 
             try {
@@ -1041,6 +1056,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return TFFactory.getFunction(tfConfig);
     }
 
+    /**
+     * This method exists so that extending classes can implement specific versions of the document-match context function. Specifically, so the
+     * {@link datawave.query.tld.TLDQueryIterator} can mark document-match collection as TLD-aware.
+     *
+     * @param documentMatchConfig
+     *            a document-match configuration
+     * @return a document-match context function
+     */
+    protected Function<Tuple3<Key,Document,Map<String,Object>>,Tuple3<Key,Document,Map<String,Object>>> buildDocumentMatchFunction(
+                    DocumentMatchConfig documentMatchConfig) {
+        return new DocumentMatchContextFunction(documentMatchConfig);
+    }
+
     private Range getDocumentRange(NestedQueryIterator<Key> documentSource) {
         if (null == documentSource) {
             return range;
@@ -1085,7 +1113,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             } else {
                 jexlEvaluationFunction = nestedQuery.getEvaluation();
                 if (null == jexlEvaluationFunction) {
-                    jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+                    jexlEvaluationFunction = new JexlEvaluation(nestedQuery.getQuery(), arithmetic);
                 }
             }
         }
@@ -1098,6 +1126,40 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         return jexlEvaluationFunction;
+    }
+
+    /**
+     * Determines whether the current evaluation pass needs document-match context.
+     * <p>
+     * The top-level iterator option tells us whether the planned query requires document-match context anywhere. When a nested query is being evaluated, this
+     * method narrows that decision to the nested query so we only collect document-match context when the query actually being evaluated still contains
+     * {@code document:match(...)}.
+     *
+     * @param documentSource
+     *            the nested query source for the current evaluation pass, if any
+     * @return true if document-match context should be collected for the current evaluation
+     */
+    protected boolean shouldCollectDocumentMatchContext(NestedQueryIterator<Key> documentSource) {
+        if (!isDocumentMatchContextRequired()) {
+            return false;
+        }
+
+        // At this point the planned query requires document-match context. If there is no nested source, or no nested
+        // query payload to inspect, we cannot narrow that requirement to a smaller subquery, so we conservatively keep
+        // document-match context collection enabled and return true in these cases.
+        if (documentSource == null) {
+            return true;
+        }
+        NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
+        if (nestedQuery == null || nestedQuery.getQuery() == null) {
+            return true;
+        }
+
+        ASTJexlScript nestedScript = nestedQuery.getScript();
+        if (nestedScript == null) {
+            nestedScript = ArithmeticJexlEngines.getEngine(getArithmetic()).parse(nestedQuery.getQuery());
+        }
+        return DocumentMatchFunctionVisitor.requiresDocumentMatchContext(nestedScript);
     }
 
     protected LimitFields getLimitFields() {
