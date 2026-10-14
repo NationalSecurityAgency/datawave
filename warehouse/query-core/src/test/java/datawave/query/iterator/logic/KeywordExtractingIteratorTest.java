@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -111,6 +112,25 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
      */
     private void initIterator() throws IOException {
         iterator.init(new SortedListKeyValueIterator(source), options, env);
+    }
+
+    @Test
+    public void testSimilarityThresholdOptionValidation() {
+        options.put(KeywordExtractor.MAX_SIMILARITY_THRESHOLD, "0.75");
+        assertTrue(iterator.validateOptions(options));
+
+        for (String invalid : List.of("-0.1", "1.1", "NaN", "Infinity", "-Infinity", "not-a-number")) {
+            options.put(KeywordExtractor.MAX_SIMILARITY_THRESHOLD, invalid);
+            assertFalse(invalid, iterator.validateOptions(options));
+        }
+    }
+
+    @Test
+    public void testSimilarityThresholdOptionPropagation() {
+        IteratorSetting setting = new IteratorSetting(60, "keyword-extractor", KeywordExtractingIterator.class);
+        KeywordExtractingIterator.setOptions(setting, 1, 3, 10, 0.6f, 32768, 0.75, List.of("CONTENT"), Map.of());
+
+        assertEquals("0.75", setting.getOptions().get(KeywordExtractor.MAX_SIMILARITY_THRESHOLD));
     }
 
     /**

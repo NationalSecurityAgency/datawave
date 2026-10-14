@@ -10,6 +10,7 @@ import java.util.TreeSet;
 import org.apache.accumulo.core.data.Range;
 
 import datawave.util.keyword.TagCloudUtils;
+import datawave.util.keyword.YakeKeywordExtractor;
 
 /** Captures the internal state of a single keyword query */
 public class KeywordQueryState {
@@ -49,6 +50,8 @@ public class KeywordQueryState {
      * The utilities class that will be used to partition tag clouds, scores keywords, merge visibilities, etc.
      */
     private TagCloudUtils utils;
+
+    private double maxSimilarityThreshold;
 
     /** the ranges to scan based on the query terms */
     private final Collection<Range> ranges = new TreeSet<>();
@@ -108,5 +111,14 @@ public class KeywordQueryState {
 
     public TagCloudUtils getTagCloudUtils() {
         return utils;
+    }
+
+    public double getMaxSimilarityThreshold() {
+        return maxSimilarityThreshold;
+    }
+
+    public void setMaxSimilarityThreshold(double maxSimilarityThreshold) {
+        YakeKeywordExtractor.validateMaxSimilarityThreshold(maxSimilarityThreshold);
+        this.maxSimilarityThreshold = maxSimilarityThreshold;
     }
 }

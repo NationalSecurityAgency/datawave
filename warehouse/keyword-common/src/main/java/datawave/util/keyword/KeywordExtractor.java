@@ -28,6 +28,7 @@ public class KeywordExtractor {
     public static final String MAX_SCORE = "max.score";
     public static final String MAX_CONTENT_CHARS = "max.content.chars";
     public static final String KEYWORD_TYPE = "keyword";
+    public static final String MAX_SIMILARITY_THRESHOLD = "max.sim";
 
     private final List<Map.Entry<String,VisibleContent>> orderedContent;
 
@@ -47,6 +48,9 @@ public class KeywordExtractor {
 
     /** the maximum number of characters to process as input for keyword extraction */
     private int maxContentLength = YakeKeywordExtractor.DEFAULT_MAX_CONTENT_LENGTH;
+
+    /** the max allowed similarity threshold for candidate characters, range [0,1] */
+    private double maxSimilarityThreshold = YakeKeywordExtractor.DEFAULT_MAX_SIMILARITY_THRESHOLD;
 
     /** the source to record for the extraction */
     private final String source;
@@ -91,6 +95,7 @@ public class KeywordExtractor {
                 .withKeywordCount(keywordCount)
                 .withMaxScoreThreshold(maxScoreThreshold)
                 .withMaxContentLength(maxContentLength)
+                .withMaxSimilarityThreshold(maxSimilarityThreshold)
                 .withLanguage(yakeLanguage)
                 .build();
         //@formatter:on
@@ -115,6 +120,11 @@ public class KeywordExtractor {
 
         if (iteratorOptions.containsKey(KeywordExtractor.MAX_CONTENT_CHARS)) {
             maxContentLength = Integer.parseInt(iteratorOptions.get(KeywordExtractor.MAX_CONTENT_CHARS));
+        }
+
+        if (iteratorOptions.containsKey(KeywordExtractor.MAX_SIMILARITY_THRESHOLD)) {
+            maxSimilarityThreshold = Double.parseDouble(iteratorOptions.get(KeywordExtractor.MAX_SIMILARITY_THRESHOLD));
+            YakeKeywordExtractor.validateMaxSimilarityThreshold(maxSimilarityThreshold);
         }
     }
 
