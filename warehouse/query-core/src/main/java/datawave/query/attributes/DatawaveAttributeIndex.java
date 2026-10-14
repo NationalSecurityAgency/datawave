@@ -17,12 +17,10 @@ public class DatawaveAttributeIndex {
 
     private static final Map<String,Integer> classNameIndex = new HashMap<>();
     static {
-        classNameIndex.put(AttributeBag.class.getTypeName(), 1);
         classNameIndex.put(Attributes.class.getTypeName(), 2);
         classNameIndex.put(Cardinality.class.getTypeName(), 3);
         classNameIndex.put(Content.class.getTypeName(), 4);
         classNameIndex.put(DiacriticContent.class.getTypeName(), 5);
-        // skip Document
         classNameIndex.put(DocumentKey.class.getTypeName(), 6);
         classNameIndex.put(GeoPoint.class.getTypeName(), 7);
         classNameIndex.put(Geometry.class.getTypeName(), 8);
@@ -30,7 +28,6 @@ public class DatawaveAttributeIndex {
         classNameIndex.put(IpAddress.class.getTypeName(), 10);
         classNameIndex.put(Latitude.class.getTypeName(), 11);
         classNameIndex.put(Longitude.class.getTypeName(), 12);
-        classNameIndex.put(Metadata.class.getTypeName(), 13);
         classNameIndex.put(Numeric.class.getTypeName(), 14);
         classNameIndex.put(PreNormalizedAttribute.class.getTypeName(), 15);
         classNameIndex.put(TimingMetadata.class.getTypeName(), 16);
