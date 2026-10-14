@@ -6,6 +6,7 @@ import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeQueryId
 import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeQueryLogic;
 import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeSystem;
 import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeUserDn;
+import static org.apache.commons.lang.StringUtils.trim;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -203,15 +204,9 @@ public class QueryLimiterImpl implements QueryLimiter {
                 checkNotNull(this.config.getZkClientBuilder(), "Zookeeper client builder cannot be null");
                 checkArgument(this.config.getZkClientConnectTimeout() > 0, "Zookeeper client connect timeout must be greater than 0");
                 checkNotNull(this.config.getZkClientConnectTimeoutUnit(), "Zookeeper client connect timeout unit cannot be null");
-
-                this.zkClient = this.config.getZkClientBuilder().duplicate().withNamespace(QueryLimiterUtils.ZOOKEEPER_NAMESPACE).build();
-                this.zkClient.start();
-                boolean connected = this.zkClient.blockUntilConnected(this.config.getZkClientConnectTimeout(), this.config.getZkClientConnectTimeoutUnit());
-                if (!connected) {
-                    // If we did not connect within the timeout, close the client and throw an exception.
-                    throw new IllegalStateException("Zookeeper client failed to connect within timeout of " + this.config.getZkClientConnectTimeout() + " "
-                                    + this.config.getZkClientConnectTimeoutUnit());
-                }
+                
+                this.zkClient = this.config.getZkClientBuilder().duplicate().setNamespace(QueryLimiterUtils.ZOOKEEPER_NAMESPACE)
+                                    .buildAndStart(this.config.getZkClientConnectTimeout(), this.config.getZkClientConnectTimeoutUnit());
             } else {
                 log.debug("Zookeeper client already exists, skipping initialization");
             }

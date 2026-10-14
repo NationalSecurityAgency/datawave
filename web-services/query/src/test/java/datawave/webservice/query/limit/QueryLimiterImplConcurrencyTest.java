@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import datawave.zookeeper.ZkClientBuilder;
+import datawave.core.common.zookeeper.ZkClientBuilder;
 
 class QueryLimiterImplConcurrencyTest {
 

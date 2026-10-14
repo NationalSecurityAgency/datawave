@@ -21,7 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import datawave.zookeeper.ZkClientBuilder;
+import datawave.core.common.zookeeper.ZkClientBuilder;
 
 /**
  * Integration tests for {@link QueryLimiterImpl} that tests checking query limits and tracking/untracking queries with a working Zookeeper instance.
@@ -224,7 +224,7 @@ class QueryLimiterImplIntegrationTest {
 
             QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
             config.setLimitConfiguration(limitConfig);
-            config.setZkClientBuilder(new ZkClientBuilder().withConnectString(server.getConnectString()));
+            config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
             config.setHeartbeatCleanupInterval(0);
 
             QueryLimiterImpl limiter = new QueryLimiterImpl();
@@ -252,7 +252,7 @@ class QueryLimiterImplIntegrationTest {
 
             QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
             config.setLimitConfiguration(limitConfig);
-            config.setZkClientBuilder(new ZkClientBuilder().withConnectString(server.getConnectString()));
+            config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
             config.setHeartbeatCleanupIntervalUnit(null);
 
             QueryLimiterImpl limiter = new QueryLimiterImpl();
@@ -1065,7 +1065,7 @@ class QueryLimiterImplIntegrationTest {
                 return systemToLimiter.get(system);
             } else {
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
-                config.setZkClientBuilder(new ZkClientBuilder().withConnectString(server.getConnectString()));
+                config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
                 config.setLimitConfiguration(limitConfig);
 
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
@@ -1119,7 +1119,7 @@ class QueryLimiterImplIntegrationTest {
 
         QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
         config.setLimitConfiguration(limitConfig);
-        config.setZkClientBuilder(new ZkClientBuilder().withConnectString(server.getConnectString()));
+        config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
 
         return config;
     }

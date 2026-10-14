@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 
-import datawave.zookeeper.ZkClientBuilder;
+import datawave.core.common.zookeeper.ZkClientBuilder;
 
 /**
  * Represents a configuration for a {@link QueryLimiterImpl}.
