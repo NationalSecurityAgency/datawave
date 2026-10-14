@@ -63,8 +63,8 @@ public class ProtobufEdgeDirectionTest {
         conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/edge-ingest-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/metadata-config.xml"));
-        conf.setBoolean(ProtobufEdgeDataTypeHandler.EVALUATE_PRECONDITIONS, true);
-        conf.set(ProtobufEdgeDataTypeHandler.EDGE_SPRING_CONFIG, "config/EdgeSpringConfigDirection.xml");
+        conf.setBoolean(EdgeIngestConfiguration.EVALUATE_PRECONDITIONS, true);
+        conf.set(EdgeIngestConfiguration.EDGE_SPRING_CONFIG, "config/EdgeSpringConfigDirection.xml");
         conf.set(KEY_VERSION_CACHE_DIR, ClassLoader.getSystemResource("config").getPath());
         conf.set(KEY_VERSION_DIST_CACHE_DIR, ClassLoader.getSystemResource("config").getPath());
 
