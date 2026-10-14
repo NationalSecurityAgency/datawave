@@ -57,6 +57,9 @@ public class FieldNameAliaserNormalizer {
     }
 
     public void setup(Type type, Configuration config) {
+        _canonicalFieldNameAliases = null;
+        _compiledFieldPatterns = null;
+
         // Process the field aliases
         _fieldNameAliases = new HashMap<>();
         String[] a = config.getStrings(type.typeName() + FIELD_ALIASES, (String[]) null);
