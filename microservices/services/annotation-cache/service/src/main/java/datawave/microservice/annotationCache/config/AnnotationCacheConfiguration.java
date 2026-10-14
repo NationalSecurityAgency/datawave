@@ -56,8 +56,16 @@ public class AnnotationCacheConfiguration {
             throw new IllegalStateException("annotation-cache.max-cache-age must be greater than or equal to annotation-cache.max-fetch-age");
         }
 
+        // Resolve Hazelcast built-in defaults so warning behavior follows the library defaults
+        MapConfig hazelcastDefaults = new MapConfig("default");
+        int defaultTimeToLiveSeconds = hazelcastDefaults.getTimeToLiveSeconds();
+        int defaultMaxIdleSeconds = hazelcastDefaults.getMaxIdleSeconds();
+        int defaultWriteDelaySeconds = hazelcastDefaults.getMapStoreConfig().getWriteDelaySeconds();
+
         // Configure only the two named maps. In particular, do not apply MapStore/listeners/indexes to Hazelcast's default map config.
         MapConfig annotationMapConfig = getOrCreateExactMapConfig(config, ANNOTATIONS_MAP);
+        warnIfOverridden(annotationMapConfig, "timeToLiveSeconds", annotationMapConfig.getTimeToLiveSeconds(), maxCacheAgeSeconds, defaultTimeToLiveSeconds);
+        warnIfOverridden(annotationMapConfig, "maxIdleSeconds", annotationMapConfig.getMaxIdleSeconds(), 0, defaultMaxIdleSeconds);
         annotationMapConfig.setTimeToLiveSeconds(maxCacheAgeSeconds);
         annotationMapConfig.setMaxIdleSeconds(0);
         addHashIndex(annotationMapConfig, ID_TYPE_KEY_ATTRIBUTE, DOCUMENT_ID_KEY_ATTRIBUTE);
@@ -65,8 +73,11 @@ public class AnnotationCacheConfiguration {
 
         // Use the MapStore to publish eligible local write-through annotations to RabbitMQ before accepting the write.
         MapStoreConfig storeConfig = annotationMapConfig.getMapStoreConfig();
+        warnIfOverridden(annotationMapConfig, "mapStore.writeDelaySeconds", storeConfig.getWriteDelaySeconds(), 0, defaultWriteDelaySeconds);
         storeConfig.setEnabled(true);
         storeConfig.setImplementation(annotationMapStore);
+        // RabbitMQ publication and its broker ACK must complete before the map write is accepted.
+        storeConfig.setWriteDelaySeconds(0);
 
         // Listen only for local events and omit values; keys identify the affected document.
         boolean listenerAlreadyConfigured = annotationMapConfig.getEntryListenerConfigs().stream()
@@ -77,6 +88,8 @@ public class AnnotationCacheConfiguration {
 
         // Fetch-marker TTL controls when Datawave is checked again; reads do not extend retention.
         MapConfig fetchMapConfig = getOrCreateExactMapConfig(config, FETCH_MAP);
+        warnIfOverridden(fetchMapConfig, "timeToLiveSeconds", fetchMapConfig.getTimeToLiveSeconds(), maxFetchAgeSeconds, defaultTimeToLiveSeconds);
+        warnIfOverridden(fetchMapConfig, "maxIdleSeconds", fetchMapConfig.getMaxIdleSeconds(), 0, defaultMaxIdleSeconds);
         fetchMapConfig.setTimeToLiveSeconds(maxFetchAgeSeconds);
         fetchMapConfig.setMaxIdleSeconds(0);
         addHashIndex(fetchMapConfig, ID_TYPE_KEY_ATTRIBUTE, DOCUMENT_ID_KEY_ATTRIBUTE);
@@ -102,6 +115,13 @@ public class AnnotationCacheConfiguration {
                         .anyMatch(index -> index.getType() == IndexType.HASH && index.getAttributes().equals(Arrays.asList(attributes)));
         if (!configured) {
             mapConfig.addIndexConfig(new IndexConfig(IndexType.HASH, attributes));
+        }
+    }
+
+    private void warnIfOverridden(MapConfig mapConfig, String property, int configuredValue, int enforcedValue, int defaultValue) {
+        if (configuredValue != enforcedValue && configuredValue != defaultValue) {
+            log.warn("Ignoring configured Hazelcast {}={} for map {}; enforcing service value {}", property, configuredValue, mapConfig.getName(),
+                            enforcedValue);
         }
     }
 

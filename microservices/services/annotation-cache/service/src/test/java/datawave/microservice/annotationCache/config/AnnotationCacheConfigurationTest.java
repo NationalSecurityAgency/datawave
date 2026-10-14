@@ -17,8 +17,16 @@ import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -59,6 +67,7 @@ class AnnotationCacheConfigurationTest {
         assertEquals(0, annotationConfig.getMaxIdleSeconds());
         assertTrue(annotationConfig.getMapStoreConfig().isEnabled());
         assertSame(mapStore, annotationConfig.getMapStoreConfig().getImplementation());
+        assertEquals(0, annotationConfig.getMapStoreConfig().getWriteDelaySeconds());
         assertEquals(1, annotationConfig.getEntryListenerConfigs().size());
         EntryListenerConfig listenerConfig = annotationConfig.getEntryListenerConfigs().iterator().next();
         assertSame(listener, listenerConfig.getImplementation());
@@ -73,6 +82,57 @@ class AnnotationCacheConfigurationTest {
         assertTrue(fetchConfig.getEntryListenerConfigs().isEmpty());
         assertIndexes(fetchConfig);
         assertFalse(config.getMapConfigs().containsKey(ANNOTATIONS_MAP + "*"));
+    }
+
+    /** Warns when non-default Hazelcast settings are overridden, but not for built-in defaults. */
+    @Test
+    void warnsWhenConfiguredHazelcastSettingsAreOverridden() {
+        Logger logger = (Logger) LogManager.getLogger(AnnotationCacheConfiguration.class);
+        List<String> warnings = new ArrayList<>();
+        AbstractAppender appender = new AbstractAppender("annotation-cache-config-test", null, null, false, Property.EMPTY_ARRAY) {
+            @Override
+            public void append(LogEvent event) {
+                if (event.getLevel() == Level.WARN) {
+                    warnings.add(event.getMessage().getFormattedMessage());
+                }
+            }
+        };
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            configure();
+            assertTrue(warnings.isEmpty(), "Hazelcast built-in defaults should not be reported as overridden");
+
+            warnings.clear();
+            config = new Config();
+            config.addMapConfig(new MapConfig(ANNOTATIONS_MAP).setTimeToLiveSeconds(120).setMaxIdleSeconds(10));
+            config.getMapConfigs().get(ANNOTATIONS_MAP).getMapStoreConfig().setWriteDelaySeconds(2);
+            config.addMapConfig(new MapConfig(FETCH_MAP).setTimeToLiveSeconds(60).setMaxIdleSeconds(5));
+
+            configure();
+
+            assertEquals(5, warnings.size());
+            assertTrue(warnings.stream().anyMatch(warning -> warning.contains("timeToLiveSeconds=120") && warning.contains("map annotations")));
+            assertTrue(warnings.stream().anyMatch(warning -> warning.contains("maxIdleSeconds=10") && warning.contains("map annotations")));
+            assertTrue(warnings.stream().anyMatch(warning -> warning.contains("mapStore.writeDelaySeconds=2") && warning.contains("map annotations")));
+            assertTrue(warnings.stream().anyMatch(warning -> warning.contains("timeToLiveSeconds=60") && warning.contains("map doc-fetch-record")));
+            assertTrue(warnings.stream().anyMatch(warning -> warning.contains("maxIdleSeconds=5") && warning.contains("map doc-fetch-record")));
+        } finally {
+            logger.removeAppender(appender);
+            appender.stop();
+        }
+    }
+
+    /** A configured MapStore write-behind delay must not defer annotation publication. */
+    @Test
+    void forcesWriteThroughWhenAnnotationMapHasConfiguredWriteDelay() {
+        MapConfig annotationConfig = new MapConfig(ANNOTATIONS_MAP);
+        annotationConfig.getMapStoreConfig().setWriteDelaySeconds(2);
+        config.addMapConfig(annotationConfig);
+
+        configure();
+
+        assertEquals(0, config.getMapConfigs().get(ANNOTATIONS_MAP).getMapStoreConfig().getWriteDelaySeconds());
     }
 
     /** Checks that configuring maps twice does not duplicate indexes or listeners. */
@@ -105,7 +165,7 @@ class AnnotationCacheConfigurationTest {
         MapConfig annotationPattern = mapWithPolicy(ANNOTATIONS_MAP + "*", 2, EvictionPolicy.LFU, 200).setTimeToLiveSeconds(111).setMaxIdleSeconds(11);
         MapConfig fetchPattern = mapWithPolicy(FETCH_MAP + "*", 2, EvictionPolicy.LFU, 300).setTimeToLiveSeconds(222).setMaxIdleSeconds(22);
         AnnotationMapStore wildcardStore = mock(AnnotationMapStore.class);
-        annotationPattern.getMapStoreConfig().setEnabled(true).setImplementation(wildcardStore);
+        annotationPattern.getMapStoreConfig().setEnabled(true).setImplementation(wildcardStore).setWriteDelaySeconds(2);
         config.addMapConfig(annotationPattern);
         config.addMapConfig(fetchPattern);
 
@@ -132,6 +192,7 @@ class AnnotationCacheConfigurationTest {
                         // Annotation persistence is wired to the service's MapStore, not the wildcard's implementation.
                         () -> assertTrue(annotationConfig.getMapStoreConfig().isEnabled()),
                         () -> assertSame(mapStore, annotationConfig.getMapStoreConfig().getImplementation()),
+                        () -> assertEquals(0, annotationConfig.getMapStoreConfig().getWriteDelaySeconds(), "write-through is forced"),
                         // Materializing exact configs must not rename or mutate the shared wildcard configs.
                         () -> assertSame(annotationPattern, config.getMapConfigs().get(ANNOTATIONS_MAP + "*")),
                         () -> assertSame(fetchPattern, config.getMapConfigs().get(FETCH_MAP + "*")),
