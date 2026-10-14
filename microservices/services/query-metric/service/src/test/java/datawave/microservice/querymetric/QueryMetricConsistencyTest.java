@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -139,10 +140,10 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         m.setLifecycle(BaseQueryMetric.Lifecycle.DEFINED);
         // @formatter:off
         client.submit(new QueryMetricClient.Request.Builder()
-                        .withMetric(m)
-                        .withMetricType(QueryMetricType.COMPLETE)
-                        .withUser(this.adminUser)
-                        .build());
+                .withMetric(m)
+                .withMetricType(QueryMetricType.COMPLETE)
+                .withUser(this.adminUser)
+                .build());
         // @formatter:on
         BaseQueryMetric returnedMetric = shardTableQueryMetricHandler.getQueryMetric(queryId);
         metricAssertEquals(m, returnedMetric);
@@ -151,10 +152,10 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         m.setLifecycle(BaseQueryMetric.Lifecycle.INITIALIZED);
         // @formatter:off
         client.submit(new QueryMetricClient.Request.Builder()
-                        .withMetric(m)
-                        .withMetricType(QueryMetricType.COMPLETE)
-                        .withUser(this.adminUser)
-                        .build());
+                .withMetric(m)
+                .withMetricType(QueryMetricType.COMPLETE)
+                .withUser(this.adminUser)
+                .build());
         // @formatter:on
         returnedMetric = shardTableQueryMetricHandler.getQueryMetric(queryId);
         metricAssertEquals(m, returnedMetric);
@@ -436,6 +437,72 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
         assertFalse(entries.isEmpty(), "There should be entries in Accumulo");
 
         assertNoDuplicateFields(queryId);
+    }
+
+    @Test
+    public void CombineSubPlanCompleteMetricsTest() throws Exception {
+        QueryMetric updatedQueryMetric = (QueryMetric) createMetric();
+        updatedQueryMetric.setSubPlans(new TreeMap<>());
+        RangeCounts updatedRangeCounts = new RangeCounts();
+        updatedRangeCounts.setDocumentRangeCount(2);
+        updatedRangeCounts.setShardRangeCount(1);
+        updatedQueryMetric.addSubPlan("F1 == value1 || F2 == value2", updatedRangeCounts);
+        updatedQueryMetric.addSubPlan("F2 == value2 || F3 == value3 || F4 == value4", updatedRangeCounts);
+
+        QueryMetric storedQueryMetric = (QueryMetric) createMetric();
+        storedQueryMetric.setSubPlans(new TreeMap<>());
+        RangeCounts storedRangeCounts = new RangeCounts();
+        storedRangeCounts.setDocumentRangeCount(1);
+        storedRangeCounts.setShardRangeCount(0);
+        storedQueryMetric.addSubPlan("F1 == value1 || F2 == value2", storedRangeCounts);
+
+        updatedQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
+
+        BaseQueryMetric storedQueryMetricCopy = storedQueryMetric.duplicate();
+        BaseQueryMetric updatedQueryMetricCopy = updatedQueryMetric.duplicate();
+        // Test the combineMetrics logic with QueryMetricType of COMPLETE
+        BaseQueryMetric combinedMetricComplete = this.shardTableQueryMetricHandler.combineMetrics(updatedQueryMetric, storedQueryMetric,
+                        QueryMetricType.COMPLETE);
+        metricAssertEquals("metric should not change", storedQueryMetricCopy, storedQueryMetric);
+        metricAssertEquals("metric should not change", updatedQueryMetricCopy, updatedQueryMetricCopy);
+        assertEquals(BaseQueryMetric.Lifecycle.CLOSED, combinedMetricComplete.getLifecycle());
+
+        assertEquals(2, combinedMetricComplete.getSubPlans().get("F1 == value1 || F2 == value2").getDocumentRangeCount());
+        assertEquals(1, combinedMetricComplete.getSubPlans().get("F1 == value1 || F2 == value2").getShardRangeCount());
+        assertEquals(2, combinedMetricComplete.getSubPlans().get("F2 == value2 || F3 == value3 || F4 == value4").getDocumentRangeCount());
+        assertEquals(1, combinedMetricComplete.getSubPlans().get("F2 == value2 || F3 == value3 || F4 == value4").getShardRangeCount());
+
+    }
+
+    @Test
+    public void CombineSubPlanDistributedMetricsTest() throws Exception {
+        QueryMetric updatedQueryMetric = (QueryMetric) createMetric();
+        updatedQueryMetric.setSubPlans(new TreeMap<>());
+        RangeCounts updatedRangeCounts = new RangeCounts();
+        updatedRangeCounts.setDocumentRangeCount(1);
+        updatedRangeCounts.setShardRangeCount(0);
+        updatedQueryMetric.addSubPlan("F1 == value1 || F2 == value2", updatedRangeCounts);
+
+        QueryMetric storedQueryMetric = (QueryMetric) createMetric();
+        storedQueryMetric.setSubPlans(new TreeMap<>());
+        RangeCounts storedRangeCounts = new RangeCounts();
+        storedRangeCounts.setDocumentRangeCount(2);
+        storedRangeCounts.setShardRangeCount(1);
+        storedQueryMetric.addSubPlan("F1 == value1 || F2 == value2", storedRangeCounts);
+        storedQueryMetric.addSubPlan("F2 == value2 || F3 == value3 || F4 == value4", storedRangeCounts);
+
+        updatedQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
+
+        BaseQueryMetric storedQueryMetricCopy = storedQueryMetric.duplicate();
+        BaseQueryMetric updatedQueryMetricCopy = updatedQueryMetric.duplicate();
+        BaseQueryMetric combinedMetric = this.shardTableQueryMetricHandler.combineMetrics(updatedQueryMetric, storedQueryMetric, QueryMetricType.DISTRIBUTED);
+        metricAssertEquals("metric should not change", storedQueryMetricCopy, storedQueryMetric);
+        metricAssertEquals("metric should not change", updatedQueryMetricCopy, updatedQueryMetricCopy);
+        assertEquals(BaseQueryMetric.Lifecycle.CLOSED, combinedMetric.getLifecycle());
+        assertEquals(3, combinedMetric.getSubPlans().get("F1 == value1 || F2 == value2").getDocumentRangeCount());
+        assertEquals(1, combinedMetric.getSubPlans().get("F1 == value1 || F2 == value2").getShardRangeCount());
+        assertEquals(2, combinedMetric.getSubPlans().get("F2 == value2 || F3 == value3 || F4 == value4").getDocumentRangeCount());
+        assertEquals(1, combinedMetric.getSubPlans().get("F2 == value2 || F3 == value3 || F4 == value4").getShardRangeCount());
     }
 
     private String fieldSplit(Map.Entry<Key,Value> entry, int part) {
