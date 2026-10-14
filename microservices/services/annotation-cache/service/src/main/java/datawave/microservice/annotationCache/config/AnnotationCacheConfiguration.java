@@ -57,7 +57,7 @@ public class AnnotationCacheConfiguration {
         }
 
         // Configure only the two named maps. In particular, do not apply MapStore/listeners/indexes to Hazelcast's default map config.
-        MapConfig annotationMapConfig = exactMapConfig(config, ANNOTATIONS_MAP);
+        MapConfig annotationMapConfig = getOrCreateExactMapConfig(config, ANNOTATIONS_MAP);
         annotationMapConfig.setTimeToLiveSeconds(maxCacheAgeSeconds);
         annotationMapConfig.setMaxIdleSeconds(0);
         addHashIndex(annotationMapConfig, ID_TYPE_KEY_ATTRIBUTE, DOCUMENT_ID_KEY_ATTRIBUTE);
@@ -76,19 +76,24 @@ public class AnnotationCacheConfiguration {
         }
 
         // Fetch-marker TTL controls when Datawave is checked again; reads do not extend retention.
-        MapConfig fetchMapConfig = exactMapConfig(config, FETCH_MAP);
+        MapConfig fetchMapConfig = getOrCreateExactMapConfig(config, FETCH_MAP);
         fetchMapConfig.setTimeToLiveSeconds(maxFetchAgeSeconds);
         fetchMapConfig.setMaxIdleSeconds(0);
         addHashIndex(fetchMapConfig, ID_TYPE_KEY_ATTRIBUTE, DOCUMENT_ID_KEY_ATTRIBUTE);
         addHashIndex(fetchMapConfig, DOCUMENT_ID_KEY_ATTRIBUTE);
     }
 
-    private MapConfig exactMapConfig(Config config, String mapName) {
+    /** Uses an exact map config if present; otherwise copies the matching wildcard config, or the default if none matches. */
+    private MapConfig getOrCreateExactMapConfig(Config config, String mapName) {
         MapConfig mapConfig = config.getMapConfigs().get(mapName);
-        if (mapConfig == null) {
-            mapConfig = new MapConfig(mapName);
-            config.addMapConfig(mapConfig);
+        if (mapConfig != null) {
+            return mapConfig;
         }
+
+        // Materialize Hazelcast's matching wildcard/default configuration without modifying the shared pattern config.
+        MapConfig inheritedConfig = config.findMapConfig(mapName);
+        mapConfig = inheritedConfig == null ? new MapConfig(mapName) : new MapConfig(inheritedConfig).setName(mapName);
+        config.addMapConfig(mapConfig);
         return mapConfig;
     }
 

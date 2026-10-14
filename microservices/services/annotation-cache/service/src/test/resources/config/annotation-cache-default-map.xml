@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hazelcast xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd">
+    <map name="default">
+        <backup-count>1</backup-count>
+        <eviction eviction-policy="LRU" max-size-policy="PER_NODE" size="100"/>
+    </map>
+</hazelcast>
