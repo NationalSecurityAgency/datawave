@@ -18,10 +18,16 @@ Information about active queries is tracked and managed in Zookeeper where the f
 
 ## Configuration
 
-The `QueryLimiter` bean requires the following beans to be configured. See [QueryLimiterFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/QueryLimiterFactory.xml) and [ZookeeperFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/ZookeeperFactory.xml) for example configurations.
-- A [ZkClientBuilder](../../../zookeeper/ZkClientBuilder.java) instance with the bean id `defaultZkClientBuilder`. This configures the Zookeeper client that will be used for Zookeeper operations.
+The `QueryLimiterImpl` bean requires the following beans to be configured. See [QueryLimiterFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/QueryLimiterFactory.xml) and [ZookeeperFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/ZookeeperFactory.xml) for example configurations.
+- A [ZkClientBuilder](../../../../../../../../../core/common-util/src/main/java/datawave/core/common/zookeeper/ZkClientBuilder.java) instance with the bean id `defaultZkClientBuilder`. This configures the Zookeeper client that will be used for Zookeeper operations.
 - A single [QueryLimitConfiguration](QueryLimitConfiguration.java) instance. This contains the configured limits used by the `QueryLimiter` instance.
 - A single [QueryHeartbeatCache](QueryHeartbeatCache.java) instance. This cache contains and maintains connections to Zookeeper for active queries. The implementing class is [QueryHeartbeatCacheImpl](QueryHeartbeatCacheImpl.java).
+
+### Enabling the Query Limiter
+
+By default, the query limiter will start in a disabled mode where limits are not enforced and active query information is not tracked in Zookeeper. This can be changed by setting the `mode` property of the configured `QueryLimiterImplConfiguration`. See [QueryLimiterMode](QueryLimiterMode.java) for all mode options.
+
+### Limit Configuration
 
 Limits may be defined and customized on a per-user and per-system basis. They also may be defined for groups of query logics. On a platform-wide basis, the following may be configured:
 - The default concurrent user query limit. This is the total concurrent queries a user may have running across all systems. May be overridden per user.
