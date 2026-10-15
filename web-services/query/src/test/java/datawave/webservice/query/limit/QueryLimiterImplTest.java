@@ -21,6 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import datawave.core.common.zookeeper.ZkClientBuilder;
 
@@ -632,23 +634,57 @@ class QueryLimiterImplTest {
     @Nested
     class CheckLimitsTests {
 
+        private static final String userA = "cn=testuserA, c=us";
+        private static final String userB = "cn=testuserB, c=us";
+        private static final String system1 = "SYSTEM-01";
+        private static final String system2 = "SYSTEM-02";
+        private static final String tldQueryLogic = "TLDQueryLogic";
+        private static final String eventQueryLogic = "EventQueryLogic";
+
+        private final Map<String,QueryLimiterImpl> systemToLimiter = new HashMap<>();
+        private QueryLimitConfiguration limitConfig;
+        private QueryLimiterMode mode;
+
+        @AfterEach
+        void tearDown() {
+            systemToLimiter.clear();
+            limitConfig = null;
+            mode = null;
+        }
+
+        @DisplayName("identifies a limit is not met")
+        @Nested
+        class LimitsNotMet {
+
+            @DisplayName("when query limits are not enforced with query limiter mode")
+            @ParameterizedTest(name = "{0}")
+            @EnumSource(value = QueryLimiterMode.class, mode = EnumSource.Mode.EXCLUDE, names = {"ENFORCE"})
+            void limitsNotEnforced(QueryLimiterMode mode) throws Exception {
+                QueryLimitConfiguration config = new QueryLimitConfiguration();
+                config.setDefaultSystemQueryLimit(100);
+                config.setDefaultUserQueryLimit(5);
+                givenConfig(config);
+                givenMode(mode);
+
+                // Start five queries that would normally meet the default user query limit.
+                startQueries(1, userA, system1, tldQueryLogic);
+                startQueries(1, userA, system1, eventQueryLogic);
+                startQueries(1, userA, system2, tldQueryLogic);
+                startQueries(1, userA, system2, eventQueryLogic);
+                startQueries(1, userA, system2, tldQueryLogic);
+
+                // Verify limits are not enforced, and we get a response indicating no limit met.
+                assertLimitNotMet(userA, system1, tldQueryLogic);
+            }
+        }
+
         @DisplayName("identifies when a limit is met for")
         @Nested
         class LimitsMet {
-            private static final String userA = "cn=testuserA, c=us";
-            private static final String userB = "cn=testuserB, c=us";
-            private static final String system1 = "SYSTEM-01";
-            private static final String system2 = "SYSTEM-02";
-            private static final String tldQueryLogic = "TLDQueryLogic";
-            private static final String eventQueryLogic = "EventQueryLogic";
 
-            private final Map<String,QueryLimiterImpl> systemToLimiter = new HashMap<>();
-            private QueryLimitConfiguration limitConfig;
-
-            @AfterEach
-            void tearDown() {
-                systemToLimiter.clear();
-                limitConfig = null;
+            @BeforeEach
+            void setUp() {
+                givenMode(QueryLimiterMode.ENFORCE);
             }
 
             @DisplayName("the default max user query limit")
@@ -1002,52 +1038,56 @@ class QueryLimiterImplTest {
 
                 assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries for query logic group 'TLD'");
             }
+        }
 
-            private QueryLimiterImpl getLimiter(String system) {
-                if (systemToLimiter.containsKey(system)) {
-                    return systemToLimiter.get(system);
-                } else {
-                    QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
-                    config.setMode(QueryLimiterMode.ENFORCE);
-                    config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
-                    config.setLimitConfiguration(limitConfig);
+        private QueryLimiterImpl getLimiter(String system) {
+            if (this.systemToLimiter.containsKey(system)) {
+                return this.systemToLimiter.get(system);
+            } else {
+                QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+                config.setMode(this.mode);
+                config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
+                config.setLimitConfiguration(this.limitConfig);
 
-                    QueryLimiterImpl limiter = new QueryLimiterImpl();
-                    limiter.setConfiguration(config);
-                    limiter.setup();
-                    systemToLimiter.put(system, limiter);
-                    return limiter;
-                }
+                QueryLimiterImpl limiter = new QueryLimiterImpl();
+                limiter.setConfiguration(config);
+                limiter.setup();
+                this.systemToLimiter.put(system, limiter);
+                return limiter;
             }
+        }
 
-            private List<String> startQueries(int numQueries, String userDn, String system, String queryLogic) throws Exception {
-                List<String> queryIds = new ArrayList<>(numQueries);
-                QueryLimiterImpl limiter = getLimiter(system);
-                for (int i = 0; i < numQueries; i++) {
-                    String queryId = UUID.randomUUID().toString();
-                    limiter.markActive(queryId, userDn, system, queryLogic);
-                    queryIds.add(queryId);
-                }
-                return queryIds;
+        private List<String> startQueries(int numQueries, String userDn, String system, String queryLogic) throws Exception {
+            List<String> queryIds = new ArrayList<>(numQueries);
+            QueryLimiterImpl limiter = getLimiter(system);
+            for (int i = 0; i < numQueries; i++) {
+                String queryId = UUID.randomUUID().toString();
+                limiter.markActive(queryId, userDn, system, queryLogic);
+                queryIds.add(queryId);
             }
+            return queryIds;
+        }
 
-            private void assertLimitNotMet(String userDn, String system, String queryLogic) throws Exception {
-                QueryLimiterImpl limiter = getLimiter(system);
-                QueryLimiterResponse response = limiter.checkLimits(userDn, system, queryLogic);
-                assertThat(response.getMessage()).isNull();
-                assertThat(response.metLimit()).isFalse();
-            }
+        private void assertLimitNotMet(String userDn, String system, String queryLogic) throws Exception {
+            QueryLimiterImpl limiter = getLimiter(system);
+            QueryLimiterResponse response = limiter.checkLimits(userDn, system, queryLogic);
+            assertThat(response.getMessage()).isNull();
+            assertThat(response.metLimit()).isFalse();
+        }
 
-            private void assertLimitMet(String userDn, String system, String queryLogic, String message) throws Exception {
-                QueryLimiterImpl limiter = getLimiter(system);
-                QueryLimiterResponse response = limiter.checkLimits(userDn, system, queryLogic);
-                assertThat(response.getMessage()).isEqualTo(message);
-                assertThat(response.metLimit()).isTrue();
-            }
+        private void assertLimitMet(String userDn, String system, String queryLogic, String message) throws Exception {
+            QueryLimiterImpl limiter = getLimiter(system);
+            QueryLimiterResponse response = limiter.checkLimits(userDn, system, queryLogic);
+            assertThat(response.getMessage()).isEqualTo(message);
+            assertThat(response.metLimit()).isTrue();
+        }
 
-            private void givenConfig(QueryLimitConfiguration config) {
-                this.limitConfig = config;
-            }
+        private void givenConfig(QueryLimitConfiguration config) {
+            this.limitConfig = config;
+        }
+
+        private void givenMode(QueryLimiterMode mode) {
+            this.mode = mode;
         }
     }
 
