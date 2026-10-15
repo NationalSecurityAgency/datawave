@@ -35,6 +35,10 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import datawave.core.common.zookeeper.ZkClientBuilder;
 
+/**
+ * Tests the use of {@link QueryLimiterImpl} in concurrent scenarios. These tests are sometimes flaky, so it is recommended to establish a number of retries in
+ * CI workflows.
+ */
 class QueryLimiterImplConcurrencyTest {
 
     private static final Logger log = Logger.getLogger(QueryLimiterImplConcurrencyTest.class);
@@ -589,6 +593,7 @@ class QueryLimiterImplConcurrencyTest {
             zkClientBuilder.setConnectString(server.getConnectString());
 
             QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+            config.setMode(QueryLimiterMode.ENFORCE);
             config.setZkClientBuilder(zkClientBuilder);
             config.setLimitConfiguration(this.limitConfig);
 

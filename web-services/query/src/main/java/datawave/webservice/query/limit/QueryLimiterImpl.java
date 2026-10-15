@@ -6,7 +6,6 @@ import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeQueryId
 import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeQueryLogic;
 import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeSystem;
 import static datawave.webservice.query.limit.QueryLimiterUtils.normalizeUserDn;
-import static org.apache.commons.lang.StringUtils.trim;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -45,7 +44,32 @@ import datawave.configuration.spring.SpringBean;
 public class QueryLimiterImpl implements QueryLimiter {
 
     private static final Logger log = LoggerFactory.getLogger(QueryLimiterImpl.class);
-
+    
+    /**
+     * Represents the state of a {@link QueryLimiterImpl}.
+     */
+    public enum State {
+        /**
+         * The query limiter is uninitialized. {@link #setup()} has not yet been called.
+         */
+        UNINITIALIZED,
+        
+        /**
+         * The query limiter is ready. {@link #setup()} has been called with success.
+         */
+        READY,
+        
+        /**
+         * The query limiter is in a failed state. {@link #setup()} was called, and an error occurred.
+         */
+        FAILED,
+        
+        /**
+         * The query limiter is in a closed state. {@link #close()} was called.
+         */
+        CLOSED
+    }
+    
     /**
      * The Zookeeper client.
      */
@@ -93,7 +117,8 @@ public class QueryLimiterImpl implements QueryLimiter {
     public void setConfiguration(QueryLimiterImplConfiguration config) {
         lock.writeLock().lock();
         try {
-            this.config = config == null ? null : config.deepCopy();
+            // Make a deep copy to be safe from external modifications.
+            this.config = config == null ? null : new QueryLimiterImplConfiguration(config);
         } finally {
             lock.writeLock().unlock();
         }
@@ -123,9 +148,6 @@ public class QueryLimiterImpl implements QueryLimiter {
             // Attempt to activate the limiter.
             activate();
         } finally {
-            if (log.isDebugEnabled()) {
-                log.debug("State after setup: {}, limiter enabled: {}", getState(), isEnabled());
-            }
             lock.writeLock().unlock();
         }
     }
@@ -146,12 +168,10 @@ public class QueryLimiterImpl implements QueryLimiter {
             initZkClient();
             initHeartbeatCache();
             initActiveQueryTracker();
-
-            // Mark the limiter as active.
-            setState(State.ACTIVE);
+            setState(State.READY);
         } catch (Exception e) {
             log.error("Failed to activate limiter", e);
-            deactivate(getState().getActivationFailureState());
+            deactivate(State.FAILED);
             throw new RuntimeException("Failed to activate limiter", e);
         } finally {
             lock.writeLock().unlock();
@@ -341,9 +361,8 @@ public class QueryLimiterImpl implements QueryLimiter {
     }
 
     /**
-     * Check if the user is allowed to create another query based on the given query logic on the current system. If this {@link QueryLimiterImpl} is disabled,
-     * a response indicating no limit met will be returned. In the case where the given system is null or blank, the system
-     * {@value QueryLimiterUtils#EMPTY_SYSTEM_FROM} will be used instead.
+     * Check if the user is allowed to create another query based on the given query logic on the current system. In the case where the given system is null
+     * or blank, the system {@value QueryLimiterUtils#EMPTY_SYSTEM_FROM} will be used instead.
      *
      * @param userDn
      *            the user DN
@@ -358,6 +377,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      *             if the limiter has never been initialized or has been closed
      * @throws IllegalArgumentException
      *             if the userDn or queryLogic are null or blank
+     * @throws QueryLimitException if an error occurs while checking limits
      */
     @Override
     public QueryLimiterResponse checkLimits(String userDn, String system, String queryLogic) throws Exception {
@@ -370,9 +390,12 @@ public class QueryLimiterImpl implements QueryLimiter {
             if (log.isTraceEnabled()) {
                 log.trace("Checking limits - userDn: {}, system: {}, queryLogic: {}", userDn, system, queryLogic);
             }
-
-            if (isEnabled()) {
-                // Check if the snapshot reveals that any limits have been met.
+            
+            // Verify the limiter is ready for use.
+            requireReadyState();
+            
+            // If limits are enforced, check if any limits have been met.
+            if (config.getMode() == QueryLimiterMode.ENFORCE) {
                 LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
                 checker.checkLimits();
                 if (checker.metLimit) {
@@ -381,16 +404,12 @@ public class QueryLimiterImpl implements QueryLimiter {
                     return QueryLimiterResponse.hasNotMetLimit();
                 }
             } else {
-                State state = getState();
-                if (state.interactionAllowed) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Query limiter is in state {}, returning no limit met by default", state);
-                    }
-                    return QueryLimiterResponse.hasNotMetLimit();
-                } else {
-                    throw new IllegalStateException("Checking limits not allowed while limiter is in state " + state);
-                }
+                // Otherwise always return no limit met.
+                return QueryLimiterResponse.hasNotMetLimit();
             }
+        } catch (Exception e) {
+            log.error("Error while checking limits for userDn: {}, system: {}, queryLogic:{}", userDn, system, queryLogic, e);
+            throw new QueryLimitException("Error while checking limits for userDn: " + userDn + ", system: " + system + ", queryLogic: " + queryLogic, e);
         } finally {
             lock.readLock().unlock();
         }
@@ -398,9 +417,8 @@ public class QueryLimiterImpl implements QueryLimiter {
     }
 
     /**
-     * Track the following information for the given query on Zookeeper for the current system, and count it towards any configured query limits. If this
-     * {@link QueryLimiterImpl} is disabled, the query will not be tracked as an active query. In the case where the given system is null or blank, the system
-     * {@value QueryLimiterUtils#EMPTY_SYSTEM_FROM} will be used instead.
+     * Track the following information for the given query on Zookeeper for the current system, and count it towards any configured query limits. In the case
+     * where the given system is null or blank, the system {@value QueryLimiterUtils#EMPTY_SYSTEM_FROM} will be used instead.
      *
      * @param queryId
      *            the query ID
@@ -416,6 +434,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      *             if the limiter has never been initialized or has been closed
      * @throws IllegalArgumentException
      *             if the queryId, userDn, or queryLogic are null or blank
+     * @throws QueryLimitException if an error occurs while marking the query active
      */
     @Override
     public void markActive(String queryId, String userDn, String system, String queryLogic) throws Exception {
@@ -426,25 +445,29 @@ public class QueryLimiterImpl implements QueryLimiter {
 
         lock.readLock().lock();
         try {
-            if (isEnabled()) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Marking query active: queryId={}, userDn={}, system={}, queryLogic={}", queryId, userDn, system, queryLogic);
-                }
+            if (log.isTraceEnabled()) {
+                log.trace("Marking query active: queryId={}, userDn={}, system={}, queryLogic={}", queryId, userDn, system, queryLogic);
+            }
+            
+            // Verify the limiter is ready for use.
+            requireReadyState();
+            
+            // Track the query information only if
+            QueryLimiterMode mode = config.getMode();
+            if (mode.isTrackingEnabled()) {
                 boolean systemCountsTowardsUserLimits = systemLimitProvider.countsAgainstUserLimit(system);
                 QueryHeartbeat heartbeat = activeQueryTracker.trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
                 // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the
                 // heartbeat.
                 heartbeatCache.put(heartbeat);
             } else {
-                State state = getState();
-                if (state.interactionAllowed) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Query limiter is in state {}, query {} will not be marked active.", state, queryId);
-                    }
-                } else {
-                    throw new IllegalStateException("Marking queries active not allowed while limiter is in state " + state);
+                if (log.isTraceEnabled()) {
+                    log.trace("Query tracking is not enabled for mode {}, query {} will not be marked active", mode, queryId);
                 }
             }
+        } catch (Exception e) {
+            log.error("Error while marking query {} active", queryId, e);
+            throw new QueryLimitException("Error while marking query " + queryId + " active", e);
         } finally {
             lock.readLock().unlock();
         }
@@ -457,19 +480,19 @@ public class QueryLimiterImpl implements QueryLimiter {
      * @return the set of IDs for active queries
      * @throws IllegalStateException
      *             if the limiter has never been initialized or has been closed
+     * @throws QueryLimitException if an error occurs while fetching active queries
      */
     @Override
     public Set<String> getActiveQueries() {
         lock.readLock().lock();
         try {
-            State state = getState();
-            // Even if the limiter is disabled, there may be active queries lingering from when the limiter was previously active. Allow callers to
-            // retrieve information about active queries.
-            if (isEnabled() || state.interactionAllowed) {
-                return heartbeatCache.getQueryIds();
-            } else {
-                throw new IllegalStateException("Fetching active queries not allowed while limiter is in state " + state);
-            }
+            // Verify the limiter is ready for use.
+            requireReadyState();
+            
+            return heartbeatCache.getQueryIds();
+        } catch (Exception e) {
+            log.error("Error while fetching active queries", e);
+            throw new QueryLimitException("Error while fetching active queries", e);
         } finally {
             lock.readLock().unlock();
         }
@@ -484,6 +507,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      *             if the limiter has never been initialized or has been closed
      * @throws IllegalArgumentException
      *             if the collection is null
+     * @throws QueryLimitException if an error occurs while marking queries inactive
      */
     @Override
     public void markInactive(Collection<String> queryIds) {
@@ -492,16 +516,14 @@ public class QueryLimiterImpl implements QueryLimiter {
         lock.readLock().lock();
         try {
             if (log.isTraceEnabled()) {
-                log.trace("Stopping counting queries towards limits: {}", normalizedQueryIds);
+                log.trace("Stop counting queries towards limits: {}", normalizedQueryIds);
             }
-            State state = getState();
-            // Even if the limiter is disabled, there may be active queries lingering from when the limiter was previously active. Allow callers to mark
-            // these queries as inactive.
-            if (isEnabled() || state.interactionAllowed) {
-                heartbeatCache.stopAndRemove(normalizedQueryIds);
-            } else {
-                throw new IllegalStateException("Marking queries inactive not allowed while limiter is in state " + state);
-            }
+            // Verify the limiter is ready for use.
+            requireReadyState();
+            heartbeatCache.stopAndRemove(normalizedQueryIds);
+        } catch (Exception e) {
+          log.error("Error while marking queries inactive: {}", normalizedQueryIds, e);
+          throw new QueryLimitException("Error while marking queries inactive: " + normalizedQueryIds, e);
         } finally {
             lock.readLock().unlock();
         }
@@ -514,6 +536,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      *            the query ID
      * @throws IllegalArgumentException
      *             if the queryId is null or blank
+     * @throws QueryLimitException if an error occurs while marking the query inactive
      */
     @Override
     public void markInactive(String queryId) {
@@ -523,33 +546,31 @@ public class QueryLimiterImpl implements QueryLimiter {
             if (log.isTraceEnabled()) {
                 log.trace("Stop counting query {} towards limits", queryId);
             }
-            State state = getState();
-            // Even if the limiter is disabled, the given query may be lingering from when the limiter was previously active. Allow callers to mark
-            // the query as inactive.
-            if (isEnabled() || state.interactionAllowed) {
-                heartbeatCache.stopAndRemove(queryId);
-            } else {
-                throw new IllegalStateException("Marking queries inactive not allowed while limiter is in state " + state);
+            // Verify the limiter is ready for use.
+            requireReadyState();
+            heartbeatCache.stopAndRemove(queryId);
+        } catch (Exception e) {
+            log.error("Error while marking query {} inactive", queryId);
+            throw new QueryLimitException("Error while marking query " + queryId + " inactive", e);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+    
+    /**
+     * Throws an {@link IllegalStateException} if the query limiter's state is not {@link State#READY}.
+     */
+    private void requireReadyState() {
+        lock.readLock().lock();
+        try {
+            if (getState() != State.READY) {
+                throw new IllegalStateException("Query limiter is not in a " + State.READY + " state");
             }
         } finally {
             lock.readLock().unlock();
         }
     }
-
-    /**
-     * Return whether this {@link QueryLimiterImpl} is considered enabled
-     *
-     * @return true if the limiter is enabled, or false otherwise
-     */
-    public boolean isEnabled() {
-        lock.readLock().lock();
-        try {
-            return getState() == State.ACTIVE;
-        } finally {
-            lock.readLock().unlock();
-        }
-    }
-
+    
     /**
      * Set the state for this {@link QueryLimiterImpl}.
      *
@@ -580,67 +601,6 @@ public class QueryLimiterImpl implements QueryLimiter {
         } finally {
             lock.readLock().unlock();
         }
-    }
-
-    /**
-     * Represents the state of a {@link QueryLimiterImpl}.
-     */
-    public enum State {
-        /**
-         * Represents an uninitialized state.
-         */
-        UNINITIALIZED(false) {
-            @Override
-            State getActivationFailureState() {
-                return UNINITIALIZED;
-            }
-        },
-
-        /**
-         * Represents an idle state where limits are not enforced, and active queries will not be tracked.
-         */
-        IDLE(true) {
-            @Override
-            State getActivationFailureState() {
-                return IDLE;
-            }
-        },
-
-        /**
-         * Represents an active state where query limits are enforced, and active queries are tracked.
-         */
-        ACTIVE(true) {
-            @Override
-            State getActivationFailureState() {
-                return IDLE;
-            }
-        },
-
-        /**
-         * Represents a closed state where the limiter has been shut down.
-         */
-        CLOSED(false) {
-            @Override
-            State getActivationFailureState() {
-                return CLOSED;
-            }
-        };
-
-        /**
-         * Whether interaction with the limiter is allowed when it is in the current state.
-         */
-        private final boolean interactionAllowed;
-
-        State(boolean interactionAllowed) {
-            this.interactionAllowed = interactionAllowed;
-        }
-
-        /**
-         * Return the {@link State} the limiter should transition to from this {@link State} if an error occurs during activation.
-         *
-         * @return the transition state
-         */
-        abstract State getActivationFailureState();
     }
 
     /**
