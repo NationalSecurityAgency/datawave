@@ -42,14 +42,14 @@ class QueryLimiterImplTest {
             server.close();
         }
     }
-    
+
     /**
      * Tests for {@link QueryLimiterImpl#setup()}.
      */
     @DisplayName("Method setup()")
     @Nested
     class SetupTests {
-        
+
         @DisplayName("throws an exception when")
         @Nested
         class ExpectedExceptions {
@@ -57,7 +57,7 @@ class QueryLimiterImplTest {
             @Test
             void nullLimiterConfiguration() {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
-                
+
                 // @formatter:off
                 assertThatThrownBy(limiter::setup)
                                 .isInstanceOf(RuntimeException.class)
@@ -67,15 +67,15 @@ class QueryLimiterImplTest {
                                 .hasMessage("Limiter configuration cannot be null");
                 // @formatter:on
             }
-            
+
             @DisplayName("the query limit configuration is null")
             @Test
             void nullQueryLimitConfiguration() {
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
-                
+
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(config);
-                
+
                 // @formatter:off
                 assertThatThrownBy(limiter::setup)
                                 .isInstanceOf(RuntimeException.class)
@@ -88,19 +88,19 @@ class QueryLimiterImplTest {
                                 .hasMessage("Query limit configuration cannot be null");
                 // @formatter:on
             }
-            
+
             @DisplayName("the default user limit is less than 1")
             @Test
             void defaultUserLimitLessThanOne() {
                 QueryLimitConfiguration limitConfig = new QueryLimitConfiguration();
                 limitConfig.setDefaultUserQueryLimit(0);
-                
+
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
                 config.setLimitConfiguration(limitConfig);
-                
+
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(config);
-                
+
                 // @formatter:off
                 assertThatThrownBy(limiter::setup)
                                 .isInstanceOf(RuntimeException.class)
@@ -113,20 +113,20 @@ class QueryLimiterImplTest {
                                 .hasMessage("Default user query limit must be greater than 0");
                 // @formatter:on
             }
-            
+
             @DisplayName("the internal max cache size is less than 1")
             @Test
             void internalMaxCacheSizeLessThanOne() {
                 QueryLimitConfiguration limitConfig = new QueryLimitConfiguration();
                 limitConfig.setDefaultUserQueryLimit(100);
                 limitConfig.setInternalCacheMaxSize(0);
-                
+
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
                 config.setLimitConfiguration(limitConfig);
-                
+
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(config);
-                
+
                 // @formatter:off
                 assertThatThrownBy(limiter::setup)
                                 .isInstanceOf(RuntimeException.class)
@@ -139,20 +139,20 @@ class QueryLimiterImplTest {
                                 .hasMessage("Internal max cache size must be greater than 0");
                 // @formatter:on
             }
-            
+
             @DisplayName("the zookeeper client builder is null")
             @Test
             void nullZkClientBuilder() {
                 QueryLimitConfiguration limitConfig = new QueryLimitConfiguration();
                 limitConfig.setDefaultUserQueryLimit(100);
                 limitConfig.setInternalCacheMaxSize(200);
-                
+
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
                 config.setLimitConfiguration(limitConfig);
-                
+
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(config);
-                
+
                 // @formatter:off
                 assertThatThrownBy(limiter::setup)
                                 .isInstanceOf(RuntimeException.class)
@@ -165,22 +165,22 @@ class QueryLimiterImplTest {
                                 .hasMessage("Zookeeper client builder cannot be null");
                 // @formatter:on
             }
-            
+
             @DisplayName("the zookeeper client connect timeout is less than 1")
             @Test
             void zkClientConnectTimeoutLessThanOne() {
                 QueryLimitConfiguration limitConfig = new QueryLimitConfiguration();
                 limitConfig.setDefaultUserQueryLimit(100);
                 limitConfig.setInternalCacheMaxSize(200);
-                
+
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
                 config.setLimitConfiguration(limitConfig);
                 config.setZkClientBuilder(new ZkClientBuilder());
                 config.setZkClientConnectTimeout(0);
-                
+
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(config);
-                
+
                 // @formatter:off
                 assertThatThrownBy(limiter::setup)
                                 .isInstanceOf(RuntimeException.class)
@@ -193,22 +193,22 @@ class QueryLimiterImplTest {
                                 .hasMessage("Zookeeper client connect timeout must be greater than 0");
                 // @formatter:on
             }
-            
+
             @DisplayName("the zookeeper client connect timeout unit is null")
             @Test
             void nullZkClientConnectTimeoutUnit() {
                 QueryLimitConfiguration limitConfig = new QueryLimitConfiguration();
                 limitConfig.setDefaultUserQueryLimit(100);
                 limitConfig.setInternalCacheMaxSize(200);
-                
+
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
                 config.setLimitConfiguration(limitConfig);
                 config.setZkClientBuilder(new ZkClientBuilder());
                 config.setZkClientConnectTimeoutUnit(null);
-                
+
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(config);
-                
+
                 // @formatter:off
                 assertThatThrownBy(limiter::setup)
                                 .isInstanceOf(RuntimeException.class)
@@ -221,22 +221,22 @@ class QueryLimiterImplTest {
                                 .hasMessage("Zookeeper client connect timeout unit cannot be null");
                 // @formatter:on
             }
-            
+
             @DisplayName("the heartbeat cleanup interval is less than 1")
             @Test
             void heartbeatCleanupIntervalLessThanOne() {
                 QueryLimitConfiguration limitConfig = new QueryLimitConfiguration();
                 limitConfig.setDefaultUserQueryLimit(100);
                 limitConfig.setInternalCacheMaxSize(200);
-                
+
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
                 config.setLimitConfiguration(limitConfig);
                 config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
                 config.setHeartbeatCleanupInterval(0);
-                
+
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(config);
-                
+
                 // @formatter:off
                 assertThatThrownBy(limiter::setup)
                                 .isInstanceOf(RuntimeException.class)
@@ -249,22 +249,22 @@ class QueryLimiterImplTest {
                                 .hasMessage("cleanup interval must be greater than 0");
                 // @formatter:on
             }
-            
+
             @DisplayName("the heartbeat cleanup interval unit is null")
             @Test
             void nullHeartbeatCleanupUnit() {
                 QueryLimitConfiguration limitConfig = new QueryLimitConfiguration();
                 limitConfig.setDefaultUserQueryLimit(100);
                 limitConfig.setInternalCacheMaxSize(200);
-                
+
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
                 config.setLimitConfiguration(limitConfig);
                 config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
                 config.setHeartbeatCleanupIntervalUnit(null);
-                
+
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(config);
-                
+
                 // @formatter:off
                 assertThatThrownBy(limiter::setup)
                                 .isInstanceOf(RuntimeException.class)
@@ -278,35 +278,35 @@ class QueryLimiterImplTest {
                 // @formatter:on
             }
         }
-        
+
         @DisplayName("transitions state from")
         @Nested
         class StateTransitions {
-            
+
             @DisplayName("UNINITIALIZED to FAILED after failure")
             @Test
             void failureWithUninitializedState() {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.UNINITIALIZED);
-                
+
                 limiter.setConfiguration(new QueryLimiterImplConfiguration());
                 assertThatThrownBy(limiter::setup).isInstanceOf(RuntimeException.class);
-                
+
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.FAILED);
             }
-            
+
             @DisplayName("UNINITIALIZED to READY after success")
             @Test
             void successWithUninitializedState() {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.UNINITIALIZED);
-                
+
                 limiter.setConfiguration(createConfig());
                 limiter.setup();
-                
+
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.READY);
             }
-            
+
             @DisplayName("READY to FAILED after failure")
             @Test
             void failureWithReadyState() {
@@ -314,17 +314,17 @@ class QueryLimiterImplTest {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(createConfig());
                 limiter.setup();
-                
+
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.READY);
-                
+
                 // Call setup with a bad configuration.
                 limiter.setConfiguration(new QueryLimiterImplConfiguration());
                 assertThatThrownBy(limiter::setup).isInstanceOf(RuntimeException.class);
-                
+
                 // Verify that the limiter is in state FAILED.
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.FAILED);
             }
-            
+
             @DisplayName("READY to READY after success")
             @Test
             void successWithReadyState() {
@@ -332,36 +332,36 @@ class QueryLimiterImplTest {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(createConfig());
                 limiter.setup();
-                
+
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.READY);
-                
+
                 // Set a different valid configuration, and call setup.
                 QueryLimiterImplConfiguration newConfig = createConfig();
                 newConfig.getLimitConfiguration().setDefaultUserQueryLimit(500);
                 limiter.setConfiguration(newConfig);
                 limiter.setup();
-                
+
                 // Verify that the limiter is in state READY, and is enabled.
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.READY);
             }
-            
+
             @DisplayName("CLOSED to FAILED after failure")
             @Test
             void failureWithClosedState() {
                 // Create and shutdown a limiter to put it in the CLOSED state.
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.close();
-                
+
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.CLOSED);
-                
+
                 // Call setup with a bad configuration.
                 limiter.setConfiguration(new QueryLimiterImplConfiguration());
                 assertThatThrownBy(limiter::setup).isInstanceOf(RuntimeException.class);
-                
+
                 // Verify that the limiter is in state FAILED.
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.FAILED);
             }
-            
+
             @DisplayName("CLOSED to READY after success")
             @Test
             void successWithClosedState() {
@@ -370,92 +370,92 @@ class QueryLimiterImplTest {
                 limiter.setConfiguration(createConfig());
                 limiter.setup();
                 limiter.close();
-                
+
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.CLOSED);
-                
+
                 // Call setup with a good configuration.
                 limiter.setConfiguration(createConfig());
                 limiter.setup();
-                
+
                 // Verify that the limiter is in state READY, and is enabled.
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.READY);
             }
         }
-        
+
         @DisplayName("correctly")
         @Nested
         class BasicFunctionality {
-            
+
             @DisplayName("recreates the limit providers after a second successful call")
             @Test
             void limitProvidersAreRecreatedAfterSuccess() throws NoSuchFieldException, IllegalAccessException {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(createConfig());
-                
+
                 // The providers should be null before setup() is called.
                 assertThat(getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider")).isNull();
                 assertThat(getField(limiter, UserLimitProvider.class, "userLimitProvider")).isNull();
                 assertThat(getField(limiter, SystemLimitProvider.class, "systemLimitProvider")).isNull();
-                
+
                 // Call setup to initialize the providers.
                 limiter.setup();
-                
+
                 QueryLogicGroupLimitProvider groupLimitProvider1 = getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider");
                 UserLimitProvider userLimitProvider1 = getField(limiter, UserLimitProvider.class, "userLimitProvider");
                 SystemLimitProvider systemLimitProvider1 = getField(limiter, SystemLimitProvider.class, "systemLimitProvider");
-                
+
                 // The providers should not null after setup() is called.
                 assertThat(groupLimitProvider1).isNotNull();
                 assertThat(userLimitProvider1).isNotNull();
                 assertThat(systemLimitProvider1).isNotNull();
-                
+
                 // Call setup again to reinitialize the providers.
                 limiter.setup();
-                
+
                 // Get the new limit providers.
                 QueryLogicGroupLimitProvider groupLimitProvider2 = getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider");
                 UserLimitProvider userLimitProvider2 = getField(limiter, UserLimitProvider.class, "userLimitProvider");
                 SystemLimitProvider systemLimitProvider2 = getField(limiter, SystemLimitProvider.class, "systemLimitProvider");
-                
+
                 // Verify they are not the same limit providers.
                 assertThat(groupLimitProvider2).isNotSameAs(groupLimitProvider1);
                 assertThat(userLimitProvider2).isNotSameAs(userLimitProvider1);
                 assertThat(systemLimitProvider2).isNotSameAs(systemLimitProvider1);
             }
-            
+
             @DisplayName("nullifies the limit providers after a second failing call")
             @Test
             void limitProvidersAreNullAfterFailure() throws NoSuchFieldException, IllegalAccessException {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(createConfig());
-                
+
                 // The providers should be null before setup() is called.
                 assertThat(getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider")).isNull();
                 assertThat(getField(limiter, UserLimitProvider.class, "userLimitProvider")).isNull();
                 assertThat(getField(limiter, SystemLimitProvider.class, "systemLimitProvider")).isNull();
-                
+
                 // Call setup to initialize the providers.
                 limiter.setup();
-                
+
                 // The providers should not be null after the first successful call to setup().
                 assertThat(getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider")).isNotNull();
                 assertThat(getField(limiter, UserLimitProvider.class, "userLimitProvider")).isNotNull();
                 assertThat(getField(limiter, SystemLimitProvider.class, "systemLimitProvider")).isNotNull();
-                
+
                 // Set the limiter with a bad configuration.
                 QueryLimiterImplConfiguration config = createConfig();
                 config.setLimitConfiguration(null);
                 limiter.setConfiguration(config);
-                
+
                 // Call setup() again to reinitialize the providers.
                 assertThatThrownBy(limiter::setup).isInstanceOf(RuntimeException.class);
-                
+
                 // The providers should be null after setup() was called with a bad configuration.
                 assertThat(getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider")).isNull();
                 assertThat(getField(limiter, UserLimitProvider.class, "userLimitProvider")).isNull();
                 assertThat(getField(limiter, SystemLimitProvider.class, "systemLimitProvider")).isNull();
             }
-            
+
             @DisplayName("nullifies the zookeeper client after the client connection times out")
             @Test
             void zookeeperClientIsNullAfterConnectionTimeout() throws NoSuchFieldException, IllegalAccessException, IOException {
@@ -463,13 +463,13 @@ class QueryLimiterImplTest {
                 QueryLimiterImplConfiguration config = createConfig();
                 config.setZkClientConnectTimeout(10);
                 config.setZkClientConnectTimeoutUnit(TimeUnit.MILLISECONDS);
-                
+
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(config);
-                
+
                 // Stop the Zookeeper server so a connection can't be established.
                 server.stop();
-                
+
                 // @formatter:off
                 assertThatThrownBy(limiter::setup)
                                 .isInstanceOf(RuntimeException.class)
@@ -481,47 +481,47 @@ class QueryLimiterImplTest {
                                 .isInstanceOf(TimeoutException.class)
                                 .hasMessage("Failed to connect to zookeeper within timeout of 10 MILLISECONDS");
                 // @formatter:on
-                
+
                 // Verify that the Zookeeper client was cleaned up and null
                 assertThat(getField(limiter, CuratorFramework.class, "zkClient")).isNull();
             }
-            
+
             @DisplayName("does not affect the zookeeper client after a second successful call")
             @Test
             void zookeeperClientIsSameAfterSuccess() throws NoSuchFieldException, IllegalAccessException {
                 assertFieldIsSameAfterSecondSuccessfulSetup(CuratorFramework.class, "zkClient");
             }
-            
+
             @DisplayName("does not affect the zookeeper client after a second failing call")
             @Test
             void zookeeperClientIsSameAfterFailure() throws NoSuchFieldException, IllegalAccessException {
                 assertFieldIsSameAfterSecondFailingSetup(CuratorFramework.class, "zkClient");
             }
-            
+
             @DisplayName("does not affect the heartbeat cache after a second successful call")
             @Test
             void heartbeatCacheIsSameAfterSuccess() throws NoSuchFieldException, IllegalAccessException {
                 assertFieldIsSameAfterSecondSuccessfulSetup(QueryHeartbeatCache.class, "heartbeatCache");
             }
-            
+
             @DisplayName("does not affect the heartbeat cache after a second failing call")
             @Test
             void heartbeatCacheIsSameAfterFailure() throws NoSuchFieldException, IllegalAccessException {
                 assertFieldIsSameAfterSecondFailingSetup(QueryHeartbeatCache.class, "heartbeatCache");
             }
-            
+
             @DisplayName("does not affect the active query tracker after a second successful call")
             @Test
             void activeQueryTrackerIsSameAfterSuccess() throws NoSuchFieldException, IllegalAccessException {
                 assertFieldIsSameAfterSecondSuccessfulSetup(ActiveQueryTracker.class, "activeQueryTracker");
             }
-            
+
             @DisplayName("does not affect the active query tracker after a second failing call")
             @Test
             void activeQueryTrackerIsSameAfterFailure() throws NoSuchFieldException, IllegalAccessException {
                 assertFieldIsSameAfterSecondFailingSetup(ActiveQueryTracker.class, "activeQueryTracker");
             }
-            
+
             private <T> void assertFieldIsSameAfterSecondSuccessfulSetup(Class<T> clazz, String fieldName) throws NoSuchFieldException, IllegalAccessException {
                 assertFieldIsSameBetweenCallsToSetup(clazz, fieldName, queryLimiter -> {
                     QueryLimiterImplConfiguration config = createConfig();
@@ -530,7 +530,7 @@ class QueryLimiterImplTest {
                     queryLimiter.setup();
                 });
             }
-            
+
             private <T> void assertFieldIsSameAfterSecondFailingSetup(Class<T> clazz, String fieldName) throws NoSuchFieldException, IllegalAccessException {
                 assertFieldIsSameBetweenCallsToSetup(clazz, fieldName, queryLimiter -> {
                     QueryLimiterImplConfiguration config = createConfig();
@@ -539,31 +539,31 @@ class QueryLimiterImplTest {
                     assertThatThrownBy(queryLimiter::setup).isInstanceOf(RuntimeException.class);
                 });
             }
-            
+
             private <T> void assertFieldIsSameBetweenCallsToSetup(Class<T> clazz, String fieldName, Consumer<QueryLimiterImpl> secondSetupCall)
                             throws NoSuchFieldException, IllegalAccessException {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 limiter.setConfiguration(createConfig());
-                
+
                 // The field should be null before setup() is called.
                 assertThat(getField(limiter, clazz, fieldName)).isNull();
-                
+
                 // The field should not be null after setup() is called for the first time.
                 limiter.setup();
                 T fieldAfterFirstSetup = getField(limiter, clazz, fieldName);
                 assertThat(fieldAfterFirstSetup).isNotNull();
-                
+
                 // Call setup() again.
                 secondSetupCall.accept(limiter);
-                
+
                 // The field should still be the same instance after setup() is called the second time.
                 T fieldAfterSecondSetup = getField(limiter, clazz, fieldName);
                 assertThat(fieldAfterSecondSetup).isSameAs(fieldAfterFirstSetup);
             }
-            
+
         }
     }
-    
+
     /**
      * Tests for {@link QueryLimiterImpl#close()}
      */
@@ -624,14 +624,14 @@ class QueryLimiterImplTest {
             limiter.close();
         }
     }
-    
+
     /**
      * Tests for {@link QueryLimiterImpl#checkLimits(String, String, String)}.
      */
     @DisplayName("Method checkLimits()")
     @Nested
     class CheckLimitsTests {
-        
+
         @DisplayName("identifies when a limit is met for")
         @Nested
         class LimitsMet {
@@ -641,16 +641,16 @@ class QueryLimiterImplTest {
             private static final String system2 = "SYSTEM-02";
             private static final String tldQueryLogic = "TLDQueryLogic";
             private static final String eventQueryLogic = "EventQueryLogic";
-            
+
             private final Map<String,QueryLimiterImpl> systemToLimiter = new HashMap<>();
             private QueryLimitConfiguration limitConfig;
-            
+
             @AfterEach
             void tearDown() {
                 systemToLimiter.clear();
                 limitConfig = null;
             }
-            
+
             @DisplayName("the default max user query limit")
             @Test
             void defaultUserQueryLimitMet() throws Exception {
@@ -658,21 +658,21 @@ class QueryLimiterImplTest {
                 config.setDefaultSystemQueryLimit(100);
                 config.setDefaultUserQueryLimit(5);
                 givenConfig(config);
-                
+
                 startQueries(1, userA, system1, tldQueryLogic);
                 startQueries(1, userA, system1, eventQueryLogic);
                 startQueries(1, userA, system2, tldQueryLogic);
                 startQueries(1, userA, system2, eventQueryLogic);
-                
+
                 // Verify that four active queries for the same user do not meet a limit.
                 assertLimitNotMet(userA, system1, tldQueryLogic);
-                
+
                 startQueries(1, userA, system2, tldQueryLogic);
-                
+
                 // Verify that after we've created five queries for the same user (across different servers and query logics), we have met a limit.
                 assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 5 running queries");
             }
-            
+
             @DisplayName("the default system query limit")
             @Test
             void defaultSystemQueryLimitMet() throws Exception {
@@ -680,27 +680,27 @@ class QueryLimiterImplTest {
                 config.setDefaultSystemQueryLimit(8);
                 config.setDefaultUserQueryLimit(5);
                 givenConfig(config);
-                
+
                 startQueries(2, userA, system1, tldQueryLogic);
                 startQueries(2, userA, system1, eventQueryLogic);
                 startQueries(3, userB, system1, tldQueryLogic);
-                
+
                 // Verify that seven active queries for the same system do not meet a limit.
                 assertLimitNotMet(userA, system1, tldQueryLogic);
-                
+
                 startQueries(1, userB, system1, tldQueryLogic);
-                
+
                 // Verify that after we've created seven queries for the same system (across different users and query logics), we have met a limit.
                 assertLimitMet(userA, system1, tldQueryLogic, "System 'SYSTEM-01' has reached limit of 8 running queries");
             }
-            
+
             @DisplayName("the default query logic group limit")
             @Test
             void defaultQueryLogicGroupLimit() throws Exception {
                 QueryLimitConfiguration config = new QueryLimitConfiguration();
                 config.setDefaultSystemQueryLimit(100);
                 config.setDefaultUserQueryLimit(10);
-                
+
                 // Set a default limit of 3 TLDQueryLogic queries per user.
                 QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
                 groupLimitConfig.setGroupName("TLD");
@@ -708,171 +708,172 @@ class QueryLimiterImplTest {
                 groupLimitConfig.setQueryLimit(3);
                 config.setQueryLogicGroupConfigs(List.of(groupLimitConfig));
                 givenConfig(config);
-                
+
                 startQueries(1, userA, system1, tldQueryLogic);
                 startQueries(1, userA, system2, tldQueryLogic);
-                
+
                 // Verify that two active TLDQueryLogics queries for userA do not meet a limit.
                 assertLimitNotMet(userA, system1, tldQueryLogic);
-                
+
                 startQueries(1, userA, system2, tldQueryLogic);
-                
+
                 // Verify that after we've created three queries for userA (across different servers), we have met a limit.
                 assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 3 running queries for query logic group 'TLD'");
-                
+
                 // Assert that the user could still create queries for the EventQueryLogic.
                 assertLimitNotMet(userA, system1, eventQueryLogic);
             }
-            
+
             @DisplayName("a custom user query limit")
             @Test
             void customUserQueryLimitMet() throws Exception {
                 QueryLimitConfiguration config = new QueryLimitConfiguration();
                 config.setDefaultSystemQueryLimit(100);
                 config.setDefaultUserQueryLimit(5);
-                
+
                 // Set a custom limit of 8 queries for userA.
                 UserLimitConfiguration userConfig = new UserLimitConfiguration();
                 userConfig.setUserDn(userA);
                 userConfig.setQueryLimit(8);
                 config.setUserConfigs(List.of(userConfig));
                 givenConfig(config);
-                
+
                 startQueries(3, userA, system1, tldQueryLogic);
                 startQueries(4, userA, system2, eventQueryLogic);
-                
+
                 // Verify that three active TLDQueryLogics queries for userA do not meet a limit.
                 assertLimitNotMet(userA, system1, tldQueryLogic);
-                
+
                 startQueries(1, userA, system2, tldQueryLogic);
-                
+
                 // Verify that after we've created four TLDQueryLogic queries for userA (across different servers), we have met a limit.
                 assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 8 running queries");
-                
+
                 startQueries(5, userB, system1, eventQueryLogic);
-                
+
                 // Verify that userB, who has no custom limit, may not have more than 5 queries.
                 assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 5 running queries");
             }
-            
+
             @DisplayName("a custom user query logic group limit")
             @Test
             void customUserQueryLogicGroupLimitMet() throws Exception {
                 QueryLimitConfiguration config = new QueryLimitConfiguration();
                 config.setDefaultSystemQueryLimit(100);
                 config.setDefaultUserQueryLimit(10);
-                
+
                 // Set a default limit of 5 TLDQueryLogic queries per user.
                 QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
                 groupLimitConfig.setGroupName("TLD");
                 groupLimitConfig.setQueryLogicPattern("TLDQueryLogic");
                 groupLimitConfig.setQueryLimit(5);
                 config.setQueryLogicGroupConfigs(List.of(groupLimitConfig));
-                
+
                 // Set a custom limit of 3 TLDQueryLogic queries for userA.
                 UserLimitConfiguration userConfig = new UserLimitConfiguration();
                 userConfig.setUserDn(userA);
                 userConfig.setQueryLogicGroupLimits(Map.of("TLD", 3));
                 config.setUserConfigs(List.of(userConfig));
                 givenConfig(config);
-                
+
                 startQueries(1, userA, system1, tldQueryLogic);
                 startQueries(1, userA, system2, tldQueryLogic);
-                
+
                 // Verify that two active TLDQueryLogic queries for userA do not meet a limit.
                 assertLimitNotMet(userA, system1, tldQueryLogic);
-                
+
                 startQueries(1, userA, system2, tldQueryLogic);
-                
+
                 // Verify that after we've created three TLDQueryLogic queries for userA (across different servers), we have met a limit.
                 assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 3 running queries for query logic group 'TLD'");
-                
+
                 // Verify that userB, who has no custom limit, may have up to 5 TLDQueryLogic queries.
                 startQueries(4, userB, system1, tldQueryLogic);
-                
+
                 assertLimitNotMet(userB, system1, tldQueryLogic);
-                
+
                 startQueries(1, userB, system1, tldQueryLogic);
-                
+
                 assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 5 running queries for query logic group 'TLD'");
             }
-            
+
             @DisplayName("a custom server query limit")
             @Test
             void customServerQueryLimit() throws Exception {
                 QueryLimitConfiguration config = new QueryLimitConfiguration();
                 config.setDefaultSystemQueryLimit(100);
                 config.setDefaultUserQueryLimit(25);
-                
+
                 // Set a limit of 10 queries for system2.
                 SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
                 systemConfig.setSystemPattern(system2);
                 systemConfig.setQueryLimit(10);
                 config.setSystemConfigs(List.of(systemConfig));
                 givenConfig(config);
-                
+
                 startQueries(4, userA, system2, tldQueryLogic);
                 startQueries(5, userB, system2, eventQueryLogic);
-                
+
                 // Verify that the nine active queries on system2 do not meet a limit.
                 assertLimitNotMet(userA, system2, tldQueryLogic);
-                
+
                 startQueries(1, userA, system2, eventQueryLogic);
-                
+
                 // Verify that after we've created ten queries for system2 (across different users), we have met a limit.
                 assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries");
-                
+
                 // Verify that system1 is not bound to the same limit as system2.
                 startQueries(15, userB, system1, eventQueryLogic);
                 assertLimitNotMet(userB, system1, tldQueryLogic);
             }
-            
+
             @DisplayName("a custom server query logic group limit")
             @Test
             void customServerQueryLogicGroupLimit() throws Exception {
                 QueryLimitConfiguration config = new QueryLimitConfiguration();
                 config.setDefaultSystemQueryLimit(100);
                 config.setDefaultUserQueryLimit(50);
-                
+
                 // Set a default limit of 20 TLDQueryLogic queries per user.
                 QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
                 groupLimitConfig.setGroupName("TLD");
                 groupLimitConfig.setQueryLogicPattern("TLDQueryLogic");
                 groupLimitConfig.setQueryLimit(20);
                 config.setQueryLogicGroupConfigs(List.of(groupLimitConfig));
-                
+
                 // Set a limit of 10 queries for system2.
                 SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
                 systemConfig.setSystemPattern(system2);
                 systemConfig.setQueryLogicGroupLimits(Map.of("TLD", 10));
                 config.setSystemConfigs(List.of(systemConfig));
                 givenConfig(config);
-                
+
                 startQueries(4, userA, system2, tldQueryLogic);
                 startQueries(5, userB, system2, tldQueryLogic);
-                
+
                 // Verify that nine active TLDQueryLogic queries for system2 do not meet a limit.
                 assertLimitNotMet(userA, system2, tldQueryLogic);
-                
+
                 startQueries(1, userA, system2, tldQueryLogic);
-                
+
                 // Verify that after we've created ten TLDQueryLogic queries on system2 (across different users), we have met a limit.
                 assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries for query logic group 'TLD'");
-                
+
                 // Verify that system1, which has no custom limit, will not enforce any system-wide limits for TLDQueryLogic queries. TLDQueryLogic query limits
                 // outside
                 // system2 only apply to individual users
-                
+
                 // Create enough queries for userA and userB to reach their individual limits for TLDQueryLogic queries.
                 startQueries(15, userA, system1, tldQueryLogic);
                 startQueries(15, userB, system1, tldQueryLogic);
-                
+
                 assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
                 assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
             }
-            
+
             /**
-             * Verify that even if a system does not count against the user query limit, the system meeting a custom query limit results in a met limit response.
+             * Verify that even if a system does not count against the user query limit, the system meeting a custom query limit results in a met limit
+             * response.
              */
             @DisplayName("a custom server (that does not count against user limits) query limit")
             @Test
@@ -880,7 +881,7 @@ class QueryLimiterImplTest {
                 QueryLimitConfiguration config = new QueryLimitConfiguration();
                 config.setDefaultSystemQueryLimit(100);
                 config.setDefaultUserQueryLimit(25);
-                
+
                 // Set a limit of 10 queries for system2.
                 SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
                 systemConfig.setSystemPattern(system2);
@@ -888,26 +889,26 @@ class QueryLimiterImplTest {
                 systemConfig.setCountsAgainstUserLimit(false);
                 config.setSystemConfigs(List.of(systemConfig));
                 givenConfig(config);
-                
+
                 startQueries(4, userA, system2, tldQueryLogic);
                 startQueries(5, userB, system2, eventQueryLogic);
-                
+
                 // Verify that the nine active queries on system2 do not meet a limit.
                 assertLimitNotMet(userA, system2, tldQueryLogic);
-                
+
                 startQueries(1, userA, system2, eventQueryLogic);
-                
+
                 // Verify that after we've created ten queries for system2 (across different users), we have met a limit.
                 assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries");
-                
+
                 // Verify that system1 is not bound to the same limit as system2.
                 startQueries(15, userB, system1, eventQueryLogic);
                 assertLimitNotMet(userB, system1, tldQueryLogic);
             }
-            
+
             /**
-             * Verify that even if a system does not count against the user query limit, the system meeting a custom query logic group limit results in a met limit
-             * response.
+             * Verify that even if a system does not count against the user query limit, the system meeting a custom query logic group limit results in a met
+             * limit response.
              */
             @DisplayName("a custom server (that does not count against user limits) query logic group limit")
             @Test
@@ -915,14 +916,14 @@ class QueryLimiterImplTest {
                 QueryLimitConfiguration config = new QueryLimitConfiguration();
                 config.setDefaultSystemQueryLimit(100);
                 config.setDefaultUserQueryLimit(50);
-                
+
                 // Set a default limit of 20 TLDQueryLogic queries per user.
                 QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
                 groupLimitConfig.setGroupName("TLD");
                 groupLimitConfig.setQueryLogicPattern("TLDQueryLogic");
                 groupLimitConfig.setQueryLimit(20);
                 config.setQueryLogicGroupConfigs(List.of(groupLimitConfig));
-                
+
                 // Set a limit of 10 TLDQueryLogic queries for system2.
                 SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
                 systemConfig.setSystemPattern(system2);
@@ -930,37 +931,37 @@ class QueryLimiterImplTest {
                 systemConfig.setQueryLogicGroupLimits(Map.of("TLD", 10));
                 config.setSystemConfigs(List.of(systemConfig));
                 givenConfig(config);
-                
+
                 startQueries(4, userA, system2, tldQueryLogic);
                 startQueries(5, userB, system2, tldQueryLogic);
-                
+
                 // Verify that nine active TLDQueryLogic queries for system2 do not meet a limit.
                 assertLimitNotMet(userA, system2, tldQueryLogic);
-                
+
                 startQueries(1, userA, system2, tldQueryLogic);
-                
+
                 // Verify that after we've created ten TLDQueryLogic queries on system2 (across different users), we have met a limit.
                 assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries for query logic group 'TLD'");
-                
+
                 // Verify that system1, which has no custom limit, will not enforce any system-wide limits for TLDQueryLogic queries. TLDQueryLogic query limits
                 // outside
                 // system2 only apply to individual users, and system2 queries do not count against the user limit.
-                
+
                 // Create 19 queries on system1. We should still be under the TLDQueryLogic limit since all previous queries do not count against the limit.
                 startQueries(19, userA, system1, tldQueryLogic);
                 startQueries(19, userB, system1, tldQueryLogic);
-                
+
                 assertLimitNotMet(userA, system1, tldQueryLogic);
                 assertLimitNotMet(userB, system1, tldQueryLogic);
-                
+
                 // Create the 20th TLDQueryLogic query for each user on system1. This should meet the limit.
                 startQueries(1, userA, system1, tldQueryLogic);
                 startQueries(1, userB, system1, tldQueryLogic);
-                
+
                 assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
                 assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
             }
-            
+
             /**
              * Verify that if a system does not count against the user query limit, that it does not count towards any limits other than:
              * <ul>
@@ -974,33 +975,34 @@ class QueryLimiterImplTest {
                 QueryLimitConfiguration config = new QueryLimitConfiguration();
                 config.setDefaultSystemQueryLimit(100);
                 config.setDefaultUserQueryLimit(20);
-                
+
                 // Set a default limit of 20 TLDQueryLogic queries per user.
                 QueryLogicGroupLimitConfiguration groupLimitConfig = new QueryLogicGroupLimitConfiguration();
                 groupLimitConfig.setGroupName("TLD");
                 groupLimitConfig.setQueryLogicPattern("TLDQueryLogic");
                 groupLimitConfig.setQueryLimit(10);
                 config.setQueryLogicGroupConfigs(List.of(groupLimitConfig));
-                
+
                 // Establish that system2 does not count against the user query limit.
                 SystemLimitConfiguration systemConfig = new SystemLimitConfiguration();
                 systemConfig.setSystemPattern(system2);
                 systemConfig.setCountsAgainstUserLimit(false);
                 config.setSystemConfigs(List.of(systemConfig));
                 givenConfig(config);
-                
-                // Verify that after creating 25 TLDQueryLogic queries on system2, that we do not meet any limits since system2 does not count towards user limits.
+
+                // Verify that after creating 25 TLDQueryLogic queries on system2, that we do not meet any limits since system2 does not count towards user
+                // limits.
                 startQueries(25, userA, system2, tldQueryLogic);
-                
+
                 assertLimitNotMet(userA, system1, tldQueryLogic);
                 assertLimitNotMet(userA, system2, tldQueryLogic);
-                
+
                 // Verify that after creating 10 TLDQueryLogic queries on system1 for userA, we meet the TLDQueryLogicLimit.
                 startQueries(10, userA, system1, tldQueryLogic);
-                
+
                 assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries for query logic group 'TLD'");
             }
-            
+
             private QueryLimiterImpl getLimiter(String system) {
                 if (systemToLimiter.containsKey(system)) {
                     return systemToLimiter.get(system);
@@ -1009,7 +1011,7 @@ class QueryLimiterImplTest {
                     config.setMode(QueryLimiterMode.ENFORCE);
                     config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
                     config.setLimitConfiguration(limitConfig);
-                    
+
                     QueryLimiterImpl limiter = new QueryLimiterImpl();
                     limiter.setConfiguration(config);
                     limiter.setup();
@@ -1017,7 +1019,7 @@ class QueryLimiterImplTest {
                     return limiter;
                 }
             }
-            
+
             private List<String> startQueries(int numQueries, String userDn, String system, String queryLogic) throws Exception {
                 List<String> queryIds = new ArrayList<>(numQueries);
                 QueryLimiterImpl limiter = getLimiter(system);
@@ -1028,27 +1030,27 @@ class QueryLimiterImplTest {
                 }
                 return queryIds;
             }
-            
+
             private void assertLimitNotMet(String userDn, String system, String queryLogic) throws Exception {
                 QueryLimiterImpl limiter = getLimiter(system);
                 QueryLimiterResponse response = limiter.checkLimits(userDn, system, queryLogic);
                 assertThat(response.getMessage()).isNull();
                 assertThat(response.metLimit()).isFalse();
             }
-            
+
             private void assertLimitMet(String userDn, String system, String queryLogic, String message) throws Exception {
                 QueryLimiterImpl limiter = getLimiter(system);
                 QueryLimiterResponse response = limiter.checkLimits(userDn, system, queryLogic);
                 assertThat(response.getMessage()).isEqualTo(message);
                 assertThat(response.metLimit()).isTrue();
             }
-            
+
             private void givenConfig(QueryLimitConfiguration config) {
                 this.limitConfig = config;
             }
         }
     }
-    
+
     private <T> T getField(Object source, Class<T> clazz, String fieldName) throws NoSuchFieldException, IllegalAccessException {
         Field field = source.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);

@@ -44,7 +44,7 @@ import datawave.configuration.spring.SpringBean;
 public class QueryLimiterImpl implements QueryLimiter {
 
     private static final Logger log = LoggerFactory.getLogger(QueryLimiterImpl.class);
-    
+
     /**
      * Represents the state of a {@link QueryLimiterImpl}.
      */
@@ -53,23 +53,23 @@ public class QueryLimiterImpl implements QueryLimiter {
          * The query limiter is uninitialized. {@link #setup()} has not yet been called.
          */
         UNINITIALIZED,
-        
+
         /**
          * The query limiter is ready. {@link #setup()} has been called with success.
          */
         READY,
-        
+
         /**
          * The query limiter is in a failed state. {@link #setup()} was called, and an error occurred.
          */
         FAILED,
-        
+
         /**
          * The query limiter is in a closed state. {@link #close()} was called.
          */
         CLOSED
     }
-    
+
     /**
      * The Zookeeper client.
      */
@@ -224,9 +224,9 @@ public class QueryLimiterImpl implements QueryLimiter {
                 checkNotNull(this.config.getZkClientBuilder(), "Zookeeper client builder cannot be null");
                 checkArgument(this.config.getZkClientConnectTimeout() > 0, "Zookeeper client connect timeout must be greater than 0");
                 checkNotNull(this.config.getZkClientConnectTimeoutUnit(), "Zookeeper client connect timeout unit cannot be null");
-                
+
                 this.zkClient = this.config.getZkClientBuilder().duplicate().setNamespace(QueryLimiterUtils.ZOOKEEPER_NAMESPACE)
-                                    .buildAndStart(this.config.getZkClientConnectTimeout(), this.config.getZkClientConnectTimeoutUnit());
+                                .buildAndStart(this.config.getZkClientConnectTimeout(), this.config.getZkClientConnectTimeoutUnit());
             } else {
                 log.debug("Zookeeper client already exists, skipping initialization");
             }
@@ -361,8 +361,8 @@ public class QueryLimiterImpl implements QueryLimiter {
     }
 
     /**
-     * Check if the user is allowed to create another query based on the given query logic on the current system. In the case where the given system is null
-     * or blank, the system {@value QueryLimiterUtils#EMPTY_SYSTEM_FROM} will be used instead.
+     * Check if the user is allowed to create another query based on the given query logic on the current system. In the case where the given system is null or
+     * blank, the system {@value QueryLimiterUtils#EMPTY_SYSTEM_FROM} will be used instead.
      *
      * @param userDn
      *            the user DN
@@ -377,7 +377,8 @@ public class QueryLimiterImpl implements QueryLimiter {
      *             if the limiter has never been initialized or has been closed
      * @throws IllegalArgumentException
      *             if the userDn or queryLogic are null or blank
-     * @throws QueryLimitException if an error occurs while checking limits
+     * @throws QueryLimitException
+     *             if an error occurs while checking limits
      */
     @Override
     public QueryLimiterResponse checkLimits(String userDn, String system, String queryLogic) throws Exception {
@@ -390,10 +391,10 @@ public class QueryLimiterImpl implements QueryLimiter {
             if (log.isTraceEnabled()) {
                 log.trace("Checking limits - userDn: {}, system: {}, queryLogic: {}", userDn, system, queryLogic);
             }
-            
+
             // Verify the limiter is ready for use.
             requireReadyState();
-            
+
             // If limits are enforced, check if any limits have been met.
             if (config.getMode() == QueryLimiterMode.ENFORCE) {
                 LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
@@ -434,7 +435,8 @@ public class QueryLimiterImpl implements QueryLimiter {
      *             if the limiter has never been initialized or has been closed
      * @throws IllegalArgumentException
      *             if the queryId, userDn, or queryLogic are null or blank
-     * @throws QueryLimitException if an error occurs while marking the query active
+     * @throws QueryLimitException
+     *             if an error occurs while marking the query active
      */
     @Override
     public void markActive(String queryId, String userDn, String system, String queryLogic) throws Exception {
@@ -448,10 +450,10 @@ public class QueryLimiterImpl implements QueryLimiter {
             if (log.isTraceEnabled()) {
                 log.trace("Marking query active: queryId={}, userDn={}, system={}, queryLogic={}", queryId, userDn, system, queryLogic);
             }
-            
+
             // Verify the limiter is ready for use.
             requireReadyState();
-            
+
             // Track the query information only if
             QueryLimiterMode mode = config.getMode();
             if (mode.isTrackingEnabled()) {
@@ -480,7 +482,8 @@ public class QueryLimiterImpl implements QueryLimiter {
      * @return the set of IDs for active queries
      * @throws IllegalStateException
      *             if the limiter has never been initialized or has been closed
-     * @throws QueryLimitException if an error occurs while fetching active queries
+     * @throws QueryLimitException
+     *             if an error occurs while fetching active queries
      */
     @Override
     public Set<String> getActiveQueries() {
@@ -488,7 +491,7 @@ public class QueryLimiterImpl implements QueryLimiter {
         try {
             // Verify the limiter is ready for use.
             requireReadyState();
-            
+
             return heartbeatCache.getQueryIds();
         } catch (Exception e) {
             log.error("Error while fetching active queries", e);
@@ -507,7 +510,8 @@ public class QueryLimiterImpl implements QueryLimiter {
      *             if the limiter has never been initialized or has been closed
      * @throws IllegalArgumentException
      *             if the collection is null
-     * @throws QueryLimitException if an error occurs while marking queries inactive
+     * @throws QueryLimitException
+     *             if an error occurs while marking queries inactive
      */
     @Override
     public void markInactive(Collection<String> queryIds) {
@@ -522,8 +526,8 @@ public class QueryLimiterImpl implements QueryLimiter {
             requireReadyState();
             heartbeatCache.stopAndRemove(normalizedQueryIds);
         } catch (Exception e) {
-          log.error("Error while marking queries inactive: {}", normalizedQueryIds, e);
-          throw new QueryLimitException("Error while marking queries inactive: " + normalizedQueryIds, e);
+            log.error("Error while marking queries inactive: {}", normalizedQueryIds, e);
+            throw new QueryLimitException("Error while marking queries inactive: " + normalizedQueryIds, e);
         } finally {
             lock.readLock().unlock();
         }
@@ -536,7 +540,8 @@ public class QueryLimiterImpl implements QueryLimiter {
      *            the query ID
      * @throws IllegalArgumentException
      *             if the queryId is null or blank
-     * @throws QueryLimitException if an error occurs while marking the query inactive
+     * @throws QueryLimitException
+     *             if an error occurs while marking the query inactive
      */
     @Override
     public void markInactive(String queryId) {
@@ -556,7 +561,7 @@ public class QueryLimiterImpl implements QueryLimiter {
             lock.readLock().unlock();
         }
     }
-    
+
     /**
      * Throws an {@link IllegalStateException} if the query limiter's state is not {@link State#READY}.
      */
@@ -570,7 +575,7 @@ public class QueryLimiterImpl implements QueryLimiter {
             lock.readLock().unlock();
         }
     }
-    
+
     /**
      * Set the state for this {@link QueryLimiterImpl}.
      *
