@@ -576,6 +576,8 @@ public class ScanServerTabletAvailabilityIT extends AbstractQueryTest {
             TableOperations tops = client.tableOperations();
             for (String table : DATA_TABLES) {
                 tops.flush(table, null, null, true);
+                // UnhostedOnlyAvailabilityTests leaves the data tables UNHOSTED, so do not rely on the default availability
+                tops.setTabletAvailability(table, RowRange.all(), TabletAvailability.ONDEMAND);
             }
         }
 
