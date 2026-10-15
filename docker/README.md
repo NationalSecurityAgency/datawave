@@ -215,6 +215,16 @@ Note that the microservice-docker property is set.  This property is a shortcut 
 
 This command can be combined with the DataWave ingest and webservice image build as shown above.
 
+#### Running Alongside Another Checkout
+
+Docker Compose names the project after the directory it runs from, so every DataWave checkout's `docker` directory shares the project `docker` and its volumes. If you also run the stack from an `integration` checkout, give this one its own project name before bootstrapping:
+
+```
+export COMPOSE_PROJECT_NAME=dwa4
+```
+
+Without it, this branch reuses the HDFS volumes formatted by the other checkout's Hadoop version and the namenode fails to start. To start over, run `docker compose down -v` with the same project name.
+
 ### Bootstrap
 
 The audit, dictionary, query executor, and query metric services all need to connect to Zookeeper, Hadoop and/or Accumulo.  In order to make that work, there are some environment variables which need to be configured.  
