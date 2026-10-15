@@ -17,7 +17,7 @@ spring:
         bindings:
           annotationSource-out-0:
             producer:
-              # Note: This must match ANNOTATION_ACK_CHANNEL in AnnotationController.java or producer confirms will not work.
+              # Note: This must match ANNOTATION_ACK_CHANNEL in AnnotationControllerV1 or producer confirms will not work.
               confirmAckChannel: 'annotationAckChannel'
 management:
   health:
@@ -25,14 +25,6 @@ management:
       order: DOWN, OUT_OF_SERVICE, UNKNOWN, RABBITMQ_UNHEALTHY, UP
       http-mapping:
         RABBITMQ_UNHEALTHY: 200
-
-annotation:
-  writers:
-    accumulo:
-      # Bind the health checker's concurrency source to the actual accumuloAnnotationSink-in-0 consumer concurrency (see annotation.yml)
-      # so the "percent hung" calculation always reflects the real number of concurrent writer consumers, rather than drifting out of
-      # sync with a separately-configured value.
-      concurrency: "${spring.cloud.stream.bindings.accumuloAnnotationSink-in-0.consumer.concurrency:1}"
 
 annotation:
   system-from: "datawave-annotation-service"
@@ -67,7 +59,10 @@ annotation:
 
   writers:
     accumulo:
-      concurrency: "${spring.cloud.stream.bindings.accumuloAnnotationWriterSink.consumer.concurrency:1}"
+      # Bind the health checker's concurrency source to the actual accumuloAnnotationSink-in-0 consumer concurrency (see annotation.yml)
+      # so the "percent hung" calculation always reflects the real number of concurrent writer consumers, rather than drifting out of
+      # sync with a separately-configured value.
+      concurrency: "${spring.cloud.stream.bindings.accumuloAnnotationSink-in-0.consumer.concurrency:1}"
 
 datawave:
   table:
