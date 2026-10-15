@@ -5,6 +5,8 @@
 package datawave.ingest.mapreduce.partition;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -22,11 +24,12 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.table.constants.TableName;
 
@@ -44,15 +47,15 @@ public class MultiTableRRRangePartitionerTest {
     Configuration configuration;
     Job mockJob;
 
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         mockJob = Job.getInstance();
         configuration = mockJob.getConfiguration();
         configuration.set("job.output.table.names", TableName.SHARD);
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
 
-        TableSplitsCache.getCurrentCache(configuration).clear();
-
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
     }
 
     @Test
@@ -72,27 +75,27 @@ public class MultiTableRRRangePartitionerTest {
         int resultFour = instance.calculateIndex(indexFour, numPartitions, tableName, cutPointArrayLength);
         assertEquals(result, resultTwo);
         assertEquals(result, expectedResult);
-        Assert.assertEquals(4, resultThree);
-        Assert.assertEquals(0, resultFour);
+        assertEquals(4, resultThree);
+        assertEquals(0, resultFour);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testEmptySplitsThrowsException() throws IOException, URISyntaxException {
         String filename = "full_empty_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
-        getPartition("23432");
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
+        assertThrows(RuntimeException.class, () -> getPartition("23432"));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testProblemGettingLocalCacheFiles() throws IOException, URISyntaxException {
         String filename = "full_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
 
         MultiTableRangePartitioner.setContext(new MapContextImpl<Key,Value,Text,Mutation>(configuration, new TaskAttemptID(), null, null, null, null, null) {
             @Override
@@ -101,7 +104,7 @@ public class MultiTableRRRangePartitionerTest {
             }
         });
 
-        getPartition("23432");
+        assertThrows(RuntimeException.class, () -> getPartition("23432"));
     }
 
     private URL createUrl(String fileName) {
@@ -128,8 +131,8 @@ public class MultiTableRRRangePartitionerTest {
         String filename = "full_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         int numPartitions = 581;
 
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
@@ -143,8 +146,8 @@ public class MultiTableRRRangePartitionerTest {
             String rowStr = Character.toString((char) ("a".codePointAt(0) + i));
             int resultRow = partitioner.getPartition(getBulkIngestKey(rowStr), new Value(), numPartitions);
 
-            Assert.assertEquals("These should have matched: resultRow: " + resultRow + " , resultForPrecedingRow: " + resultForPrecedingRow, resultRow,
-                            resultForPrecedingRow);
+            assertTrue(resultRow == resultForPrecedingRow,
+                            "These should have matched: resultRow: " + resultRow + " , resultForPrecedingRow: " + resultForPrecedingRow);
         }
     }
 
@@ -156,8 +159,8 @@ public class MultiTableRRRangePartitionerTest {
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
         for (int i = -1 * cutPointArrayLength - 1; i < cutPointArrayLength; i++) {
             int result = partitioner.calculateIndex(i, numPartitions, "someTableName", cutPointArrayLength);
-            Assert.assertTrue("i: " + i + " result: " + result, 0 <= result);
-            Assert.assertTrue("i: " + i + " result: " + result, result < numPartitions);
+            assertTrue(0 <= result, "i: " + i + " result: " + result);
+            assertTrue(result < numPartitions, "i: " + i + " result: " + result);
         }
     }
 
@@ -166,8 +169,8 @@ public class MultiTableRRRangePartitionerTest {
         String filename = "full_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         int numPartitions = 581;
 
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
@@ -178,15 +181,15 @@ public class MultiTableRRRangePartitionerTest {
         for (int i = 0; i < numSplits; i++) {
             String rowStr = Character.toString((char) ("a".codePointAt(0) + i));
             int result = partitioner.getPartition(getBulkIngestKey(rowStr), new Value(), numPartitions);
-            Assert.assertTrue("rowStr: " + rowStr + " partition: " + result, numPartitions - numSplits - 1 <= result);
-            Assert.assertTrue("rowStr: " + rowStr + " partition: " + result, result < numPartitions);
+            assertTrue(numPartitions - numSplits - 1 <= result, "rowStr: " + rowStr + " partition: " + result);
+            assertTrue(result < numPartitions, "rowStr: " + rowStr + " partition: " + result);
         }
 
         // test rows before and after each split
         for (int i = -1; i < numSplits + 1; i++) {
             int result = partitioner.getPartition(getBulkIngestKey(Character.toString((char) ("a".codePointAt(0) + i)) + "_"), new Value(), numPartitions);
-            Assert.assertTrue("i: " + i + " partition: " + result, numPartitions - numSplits - 1 <= result);
-            Assert.assertTrue("i: " + i + " partition: " + result, result < numPartitions);
+            assertTrue(numPartitions - numSplits - 1 <= result, "i: " + i + " partition: " + result);
+            assertTrue(result < numPartitions, "i: " + i + " partition: " + result);
         }
     }
 
@@ -199,12 +202,11 @@ public class MultiTableRRRangePartitionerTest {
         // first split is a, last is z
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
 
-        Assert.assertEquals(
-                        "Should have seen a total of 27 different partitions.  There is a split for each letter of the alphabet and the null split which is not in the file",
-                        27, numberTimesPartitionSeen.size());
+        assertTrue(27 == numberTimesPartitionSeen.size(),
+                        "Should have seen a total of 27 different partitions.  There is a split for each letter of the alphabet and the null split which is not in the file");
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
-            Assert.assertEquals("We haven't used the partition space so they should all be even, but partition " + partitionAndNumSeen.getKey().intValue()
-                            + " did not see 2.", 2, partitionAndNumSeen.getValue().intValue());
+            assertTrue(2 == partitionAndNumSeen.getValue().intValue(), "We haven't used the partition space so they should all be even, but partition "
+                            + partitionAndNumSeen.getKey().intValue() + " did not see 2.");
         }
     }
 
@@ -217,15 +219,15 @@ public class MultiTableRRRangePartitionerTest {
         // first split is a, last is z
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
 
-        Assert.assertEquals("Should have seen a total of 10 different partitions given the small reducer space", 10, numberTimesPartitionSeen.size());
+        assertTrue(numberTimesPartitionSeen.size() == 10, "Should have seen a total of 10 different partitions given the small reducer space");
         System.out.println(numberTimesPartitionSeen);
         // we partitioned 27 splits
         // over a space of 10 partitioners
         // so each partitioners should have 2 splits or 3 splits assigned to it
         // we partitioned two rows per split, so each partition should have seen 4 or 6 rows
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
-            Assert.assertTrue(partitionAndNumSeen.toString(), 4 <= partitionAndNumSeen.getValue().intValue());
-            Assert.assertTrue(partitionAndNumSeen.toString(), partitionAndNumSeen.getValue().intValue() <= 6);
+            assertTrue(4 <= partitionAndNumSeen.getValue().intValue(), partitionAndNumSeen.toString());
+            assertTrue(partitionAndNumSeen.getValue().intValue() <= 6, partitionAndNumSeen.toString());
         }
     }
 
@@ -240,7 +242,7 @@ public class MultiTableRRRangePartitionerTest {
             String row = Character.toString((char) ("a".codePointAt(0) + i));
             partitionsFound.add(partitioner.getPartition(getBulkIngestKey(row), new Value(), numPartitions));
         }
-        Assert.assertEquals(10, partitionsFound.size());
+        assertEquals(10, partitionsFound.size());
 
         // k - t go to different partitions
         partitionsFound.clear();
@@ -248,7 +250,7 @@ public class MultiTableRRRangePartitionerTest {
             String row = Character.toString((char) ("a".codePointAt(0) + i));
             partitionsFound.add(partitioner.getPartition(getBulkIngestKey(row), new Value(), numPartitions));
         }
-        Assert.assertEquals(10, partitionsFound.size());
+        assertEquals(10, partitionsFound.size());
     }
 
     @Test
@@ -263,7 +265,7 @@ public class MultiTableRRRangePartitionerTest {
         int previousCount = 0;
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
             int currentCount = partitionAndNumSeen.getValue().intValue();
-            Assert.assertTrue(partitionAndNumSeen.toString(), previousCount <= currentCount);
+            assertTrue(previousCount <= currentCount, partitionAndNumSeen.toString());
             previousCount = currentCount;
         }
     }
@@ -272,8 +274,8 @@ public class MultiTableRRRangePartitionerTest {
         String filename = "full_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
         partitioner.setConf(configuration);
         return partitioner;

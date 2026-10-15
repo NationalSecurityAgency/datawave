@@ -18,6 +18,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.table.constants.TableName;
@@ -32,8 +34,9 @@ public class MultiTableRangePartitionerTest {
         mockJob = Job.getInstance();
         configuration = mockJob.getConfiguration();
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
-        TableSplitsCache.getCurrentCache(configuration).clear();
         configuration.set(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES, TableName.SHARD);
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
     }
 
     @Test
@@ -41,8 +44,8 @@ public class MultiTableRangePartitionerTest {
         String filename = "trimmed_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         Assert.assertEquals(5, getPartition());
     }
 
@@ -51,8 +54,8 @@ public class MultiTableRangePartitionerTest {
         String filename = "trimmed_empty_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         getPartition();
     }
 

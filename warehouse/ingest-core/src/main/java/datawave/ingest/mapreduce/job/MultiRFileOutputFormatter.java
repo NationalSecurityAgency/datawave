@@ -91,6 +91,11 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected static final String MAX_RFILE_UNDEDUPPED_ENTRIES = PREFIX + ".maxRFileUndeduppedEntries";
     protected static final String GENERATE_MAP_FILE_ROW_KEYS = PREFIX + ".generateMapFileRowKeys";
     protected static final String GENERATE_MAP_FILE_PER_SHARD_LOCATION = PREFIX + ".generateMapFilePerShardLocation";
+    // Allows tests to override the fallback shard location for a specific row key via a property named
+    // SHARD_FALLBACK_NAME_PREFIX + <rowKey>. Resolved once per job (see getShardFallbackNamesByRowKey) rather
+    // than via a per-record Configuration.get, since Configuration.get performs variable substitution and is
+    // not a cheap lookup, and a key built from the row would essentially never match a configured property anyway.
+    protected static final String SHARD_FALLBACK_NAME_PREFIX = "shard.fallback.name.";
 
     protected static final String BASE = "bulk.output.partition.count.";
     public static final String CONFIGURE_LOCALITY_GROUPS = PREFIX + ".tables";
@@ -112,10 +117,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected Configuration conf;
     protected Map<String,ConfigurationCopy> tableConfigs;
     protected Set<String> tableIds = null;
+    protected SplitsCache splitsCache;
     protected long maxRFileSize = 0;
     protected int maxRFileEntries = 0;
     protected boolean generateMapFileRowKeys = false;
     protected boolean generateMapFilePerShardLocation = false;
+    protected Map<String,String> shardFallbackNamesByRowKey = Collections.emptyMap();
     private long startWriteTime = 0L;
 
     protected Map<String,Map<Text,String>> columnFamilyToLocalityGroup;
@@ -130,6 +137,17 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
     public static void setGenerateMapFilePerShardLocation(Configuration conf, boolean generateMapFilePerShardLocation) {
         conf.setBoolean(GENERATE_MAP_FILE_PER_SHARD_LOCATION, generateMapFilePerShardLocation);
+    }
+
+    protected static Map<String,String> getShardFallbackNamesByRowKey(Configuration conf) {
+        Map<String,String> fallbackNamesByRowKey = new HashMap<>();
+        for (Map.Entry<String,String> entry : conf) {
+            if (entry.getKey().startsWith(SHARD_FALLBACK_NAME_PREFIX)) {
+                String rowKey = entry.getKey().substring(SHARD_FALLBACK_NAME_PREFIX.length());
+                fallbackNamesByRowKey.put(rowKey, conf.get(entry.getKey()));
+            }
+        }
+        return fallbackNamesByRowKey;
     }
 
     public static void setCompressionType(Configuration conf, String compressionType) {
@@ -274,9 +292,10 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
         var builder = org.apache.accumulo.core.client.rfile.RFile.newWriter().to(filename).withFileSystem(fs).withTableProperties(tableConf);
         if(this.loadPlanningEnabled) {
-            var splits = SplitsFile.getSplits(conf, table);
-            if(splits != null && !splits.isEmpty()) {
-                LoadPlan.SplitResolver splitResolver = row->findContainingSplits(row, splits);
+            SplitsCache splits = SplitsCache.getInstance(conf);
+            List<Text> splitsFile = splits.getSplits(table);
+            if(splitsFile != null && !splitsFile.isEmpty()) {
+                LoadPlan.SplitResolver splitResolver = row->SplitsFile.findContainingSplits(row, splitsFile);
                 builder = builder.withSplitResolver(splitResolver);
             }
         }
@@ -361,27 +380,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             }
         });
         log.debug("Finished writing bulk load plans to disk");
-    }
-
-    /**
-     * Finds two contiguous table splits that contain the specified row should reside
-     *
-     * @param lookupRow
-     *            Row value to be mapped
-     * @param tableSplits
-     *            Splits for the table in question
-     * @return KeyExtent mapping for the given row
-     */
-    static LoadPlan.TableSplits findContainingSplits(Text lookupRow, List<Text> tableSplits) {
-        int position = Collections.binarySearch(tableSplits, lookupRow);
-        if (position < 0) {
-            position = -1 * (position + 1);
-        }
-
-        Text prevRow = position == 0 ? null : tableSplits.get(position - 1);
-        Text endRow = position == tableSplits.size() ? null : tableSplits.get(position);
-
-        return new LoadPlan.TableSplits(prevRow, endRow);
     }
 
     public static class SizeTrackingWriter {
@@ -550,6 +548,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         FileOutputCommitter committer = (FileOutputCommitter) getOutputCommitter(context);
         workDir = committer.getWorkPath();
         conf = context.getConfiguration();
+        splitsCache = SplitsCache.getInstance(conf);
 
         setTableIdsAndConfigs();
 
@@ -594,6 +593,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
         generateMapFileRowKeys = conf.getBoolean(GENERATE_MAP_FILE_ROW_KEYS, generateMapFileRowKeys);
         generateMapFilePerShardLocation = conf.getBoolean(GENERATE_MAP_FILE_PER_SHARD_LOCATION, generateMapFilePerShardLocation);
+        if (generateMapFilePerShardLocation) {
+            shardFallbackNamesByRowKey = getShardFallbackNamesByRowKey(conf);
+        }
 
         // Only do this once.
         if (null == writers) {
@@ -743,15 +745,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     if (generateMapFilePerShardLocation) {
                         // Look up the shard location (tablet server serving shard ID rowKey)
                         // If we don't have a location, then just use the rowKey itself.
-                        Map<Text,String> shardLocs = getShardLocations(tableName);
-                        shardLocation = shardLocs.containsKey(rowKey) ? shardLocs.get(rowKey) : null;
-                        if (shardLocation == null) {
-                            // in this case we have a shard id that has no split. Lets put this in one "extra" file
-                            shardLocation = "extra";
-                        } else {
-                            // Ensure there's no colon
-                            shardLocation = shardLocation.replace(":", "_");
-                        }
+                        shardLocation = splitsCache.getExactLocation(tableName, rowKey,
+                                        () -> shardFallbackNamesByRowKey.getOrDefault(rowKey.toString(), "extra"));
+                        shardLocation = shardLocation.replace(":", "_");
                     }
                     // Combine table name with shard location so that we end up
                     // with all of the shard map files under directories that can be
@@ -776,28 +772,5 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 return writer;
             }
         };
-    }
-
-    /**
-     * Read in the sequence file (that was created at job startup) for the given table that contains a list of shard IDs and the corresponding tablet server to
-     * which that shard is assigned.
-     *
-     * @param tableName
-     *            the table name
-     * @return a mapping of the shard ids and tablet server
-     * @throws IOException
-     *             if there is an issue with read or write
-     */
-    protected Map<Text,String> getShardLocations(String tableName) throws IOException {
-        // Create the Map of sharded table name to [shardId -> server]
-        if (this.tableShardLocations == null) {
-            this.tableShardLocations = new HashMap<>();
-        }
-
-        if (null == this.tableShardLocations.get(tableName)) {
-            this.tableShardLocations.put(tableName, SplitsFile.getSplitsAndLocations(conf, tableName));
-        }
-
-        return tableShardLocations.get(tableName);
     }
 }
