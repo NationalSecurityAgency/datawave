@@ -62,7 +62,7 @@
              own properties to reuse forks and skip the per-class JVM startup. Verify the module's tests
              still pass before enabling: shared static caches and registries are the usual blocker. -->
         <surefire.reuseForks>false</surefire.reuseForks>
-        <version.accumulo>2.1.5</version.accumulo>
+        <version.accumulo>2.1.6</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-embedded>2.1.0.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
