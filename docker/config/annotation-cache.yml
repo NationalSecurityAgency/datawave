@@ -1,0 +1,74 @@
+# Annotation Cache service configuration, aligned with the annotation-cache Helm chart.
+region:
+  name: local
+
+spring:
+  security:
+    datawave:
+      jwt:
+        enabled: false
+  rabbitmq:
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+  cloud:
+    function:
+      definition: loadCache;busConsumer
+    stream:
+      binding-retry-state-by-binder: true
+      rabbit:
+        bindings:
+          persisted-out-0:
+            producer:
+              declareExchange: true
+              durable: true
+              error-channel-enabled: false
+              confirm-ack-channel-enabled: true
+              use-confirm-header: true
+      bindings:
+        persisted-out-0:
+          destination: annotation
+          content-type: application/x-protobuf
+          producer:
+            required-groups:
+              - cache
+        loadCache-in-0:
+          destination: annotation
+          group: cache
+          content-type: application/x-protobuf
+
+annotation-cache:
+  max-cache-age: 1h
+  max-fetch-age: 5m
+  federation-lock-wait: 5s
+  topology-monitoring-enabled: true
+  topology-settle-delay: 15s
+  topology-poll-interval-ms: 5000
+
+hazelcast:
+  # Must match spring.application.name so Hazelcast discovery queries the right Consul service.
+  clusterName: annotation-cache
+  client:
+    enabled: false
+  server:
+    enabled: true
+    initialMergeDelaySeconds: 50
+    xml-config: |
+      <hazelcast xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.hazelcast.com/schema/config http://www.hazelcast.com/schema/config/hazelcast-config-5.1.xsd"
+                  xmlns="http://www.hazelcast.com/schema/config">
+        <map name="annotations">
+          <backup-count>2</backup-count>
+          <time-to-live-seconds>86400</time-to-live-seconds>
+          <eviction eviction-policy="LFU" max-size-policy="USED_HEAP_SIZE" size="2048"/>
+        </map>
+        <map name="doc-fetch-record">
+          <backup-count>2</backup-count>
+          <time-to-live-seconds>300</time-to-live-seconds>
+          <eviction eviction-policy="LFU" max-size-policy="USED_HEAP_SIZE" size="2048"/>
+        </map>
+        <split-brain-protection name="splitBrainDefault" enabled="false">
+          <minimum-cluster-size>2</minimum-cluster-size>
+        </split-brain-protection>
+      </hazelcast>

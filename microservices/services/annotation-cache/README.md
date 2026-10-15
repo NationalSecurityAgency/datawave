@@ -43,7 +43,10 @@ Members and clients must use compatible Hazelcast and Java serialization setting
 
 See [AnnotationCacheProperties][properties] for retention and recovery settings, and [AnnotationCacheConfiguration][configuration] for map configuration and validation. Configure `region.name`, Hazelcast connectivity, and RabbitMQ bindings externally. Publisher confirms and returns are required for the write-through acceptance guarantee.
 
-Deployment configuration is maintained in `configuration/configMapFiles/annotation-cache.yml` in the `datawave-helm-charts` repository.
+## Example deployments
+
+- **Docker Compose:** The optional `annotation-cache` profile in `docker/docker-compose.yml` runs two replicas by default (three replicas were verified) with `consul,compose` profiles. Service settings are in `docker/config/annotation-cache.yml`; shared Consul settings are in `docker/config/application-consul.yml`.
+- **Kubernetes / Helm:** The `datawave-helm-charts/annotation-cache` chart uses the `default,k8s` profiles and Kubernetes DNS for Hazelcast discovery. Key files are `annotation-cache/values.yaml` (replicas and runtime args), `configuration/configMapFiles/annotation-cache.yml` (service and member discovery settings), and `configuration/configMapFiles/application-k8s.yml` (shared Kubernetes discovery settings), all in the `datawave-helm-charts` repository.
 
 After API, JDK, Hazelcast, or serialization changes, run the [member/client compatibility check](verify-supported-hazelcast-pairing.sh) against the actual application dependencies, supplying `SONICWEB_ROOT` for your checkout. It supplements, rather than replaces, both applications' test suites. See the [scaling guide](service/scaling-harness.md) for opt-in measurements.
 
