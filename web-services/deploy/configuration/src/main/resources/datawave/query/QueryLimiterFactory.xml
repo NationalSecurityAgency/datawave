@@ -151,7 +151,7 @@
         - zkClientConnectTimeoutUnit: The time unit for zkClientConnectTimeout. Defaults to MINUTES.
     -->
     <bean id="queryLimiterConfig" class="datawave.webservice.query.limit.QueryLimiterImplConfiguration" primary="true">
-        <property name="mode" value="ENFORCED"/>
+        <property name="mode" value="ENFORCE"/>
         <property name="zkClientBuilder" ref="defaultZkClientBuilder"/>
         <property name="limitConfiguration" ref="queryLimitConfig"/>
     </bean>
