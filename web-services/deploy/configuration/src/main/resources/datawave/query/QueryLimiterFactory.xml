@@ -140,6 +140,7 @@
 
     <!-- Sample configuration for a QueryLimiterImpl.
 
+        - mode: The mode to start the query limiter in. Defaults to DISABLED.
         - zkClientBuilder: The Zookeeper client builder to use.
         - limitConfiguration: The query limits to enforce.
         - heartbeatCleanupInterval: The interval at which to clean up stopped heartbeats in the heartbeat cache.
@@ -150,6 +151,7 @@
         - zkClientConnectTimeoutUnit: The time unit for zkClientConnectTimeout. Defaults to MINUTES.
     -->
     <bean id="queryLimiterConfig" class="datawave.webservice.query.limit.QueryLimiterImplConfiguration" primary="true">
+        <property name="mode" value="ENFORCED"/>
         <property name="zkClientBuilder" ref="defaultZkClientBuilder"/>
         <property name="limitConfiguration" ref="queryLimitConfig"/>
     </bean>
