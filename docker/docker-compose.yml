@@ -211,6 +211,25 @@ services:
       accumulo-manager:
         condition: service_healthy
 
+  accumulo-compactor:
+    profiles: [datawave-stack]
+    image: *stack-image
+    # Accumulo 4 runs major compactions only in compactor processes, so without one they are queued and never run
+    command: ["proc", "compactor"]
+    environment:
+      - HADOOP_CONF_DIR=/stack
+      - ACCUMULO_LIB_EXT=/opt/accumulo/lib/ext
+    volumes:
+      - ./stack:/stack:ro
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
+      - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
+    networks: [demo]
+    depends_on:
+      accumulo-manager:
+        condition: service_healthy
+
   accumulo-monitor:
     profiles: [datawave-stack]
     image: *stack-image
