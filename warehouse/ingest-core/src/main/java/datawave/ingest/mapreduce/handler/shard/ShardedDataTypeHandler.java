@@ -181,6 +181,60 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     protected static final byte[] FI_COLF_PREFIX = {'f', 'i'};
 
+    /**
+     * Key components that are constant across all fields of a single event, encoded at most once per event rather than once per field. Each part is built
+     * lazily on first use so that a caller only pays for (and only requires the event to carry) the parts it actually needs.
+     */
+    protected static final class EventKeyParts {
+        private final RawRecordContainer event;
+        private final byte[] shardId;
+        private byte[] dataType;
+        private byte[] dataTypeUid;
+        private byte[] shardDataType;
+
+        EventKeyParts(RawRecordContainer event, byte[] shardId) {
+            this.event = event;
+            this.shardId = shardId;
+        }
+
+        /**
+         * @return {@code datatype}
+         */
+        byte[] dataType() {
+            if (dataType == null) {
+                dataType = ShardUtil.utf8(event.getDataType().outputName());
+            }
+            return dataType;
+        }
+
+        /**
+         * @return {@code datatype\0uid}: the event column family and the field index column qualifier suffix
+         */
+        byte[] dataTypeUid() {
+            if (dataTypeUid == null) {
+                dataTypeUid = ShardUtil.joinWithNulls(dataType(), ShardUtil.utf8(event.getId().toString()));
+            }
+            return dataTypeUid;
+        }
+
+        /**
+         * @return {@code shardId\0datatype}: the global index column qualifier
+         */
+        byte[] shardDataType() {
+            if (shardDataType == null) {
+                shardDataType = ShardUtil.joinWithNulls(shardId, dataType());
+            }
+            return shardDataType;
+        }
+    }
+
+    // single-entry cache of the key parts for the event currently being processed
+    private RawRecordContainer keyPartsEvent;
+    private Object keyPartsId;
+    private Object keyPartsDataType;
+    private byte[] keyPartsShardId;
+    private EventKeyParts keyParts;
+
     private Text shardTableName = null;
     private Text shardIndexTableName = null;
     private Text shardBitsetIndexTableName = null;
@@ -212,6 +266,29 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     protected boolean produceStats = false;
 
     boolean isReindexEnabled;
+
+    /**
+     * Returns the {@link EventKeyParts} for the given event and shard id, building them only when the event, its id, its data type, or the shard id differs
+     * from the previous call. The id and data type are compared by reference so that a reused, mutated event container is not served stale bytes.
+     *
+     * @param event
+     *            the event
+     * @param shardId
+     *            the shard id bytes
+     * @return the key parts for the event
+     */
+    protected EventKeyParts getKeyParts(RawRecordContainer event, byte[] shardId) {
+        if (keyParts == null || keyPartsEvent != event || keyPartsId != event.getId() || keyPartsDataType != event.getDataType()
+                        || !Arrays.equals(keyPartsShardId, shardId)) {
+            keyParts = new EventKeyParts(event, shardId == null ? null : shardId.clone());
+            keyPartsEvent = event;
+            keyPartsId = event.getId();
+            keyPartsDataType = event.getDataType();
+            keyPartsShardId = keyParts.shardId;
+        }
+        return keyParts;
+    }
+
     private Collection<String> requestedFieldsForReindex;
 
     @Override
@@ -497,7 +574,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // Colf: DataType : UID
             // Colq: FieldName : FieldValue
             // Value: NULL
-            byte[] colf = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName()), ShardUtil.utf8(event.getId().toString()));
+            byte[] colf = getKeyParts(event, shardId).dataTypeUid();
 
             Value indexedValue = createUidArray(event.getId().toString(), helper.getDeleteMode());
 
@@ -721,7 +798,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // It was observed that the normalized mask values aren't coming back reversed, so account for that before creating the row.
             String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
 
-            byte[] colq = ShardUtil.joinWithNulls(shardId, ShardUtil.utf8(event.getDataType().outputName()));
+            byte[] colq = getKeyParts(event, shardId).shardDataType();
 
             // if this method was called with the intention to create reverse index keys, ensure the masked values are reversed.
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
@@ -744,7 +821,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             }
         } else if (!StringUtils.isEmpty(fieldValue)) {
             // This field is not masked. Add a key with the original field value and masked visibility
-            byte[] colq = ShardUtil.joinWithNulls(shardId, ShardUtil.utf8(event.getDataType().outputName()));
+            byte[] colq = getKeyParts(event, shardId).shardDataType();
 
             /*
              * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
@@ -793,7 +870,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         if (shardId != null && value != null && field != null && visibility != null) {
             String fullShard = new String(shardId, StandardCharsets.UTF_8);
             byte[] cf = ShardUtil.utf8(field);
-            byte[] cq = ShardUtil.shardPrefixedBytes(shardId, 8, ShardUtil.utf8(event.getDataType().outputName()));
+            byte[] cq = ShardUtil.shardPrefixedBytes(shardId, 8, getKeyParts(event, shardId).dataType());
             long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
 
             Key key = ShardUtil.buildKey(ShardUtil.utf8(value), cf, cf.length, cq, cq.length, visibility, ts, false);
@@ -843,7 +920,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         if (shardId != null && value != null && field != null && visibility != null) {
             String fullShard = new String(shardId, StandardCharsets.UTF_8);
             byte[] cf = ShardUtil.utf8(field);
-            byte[] cq = ShardUtil.utf8(event.getDataType().outputName());
+            byte[] cq = getKeyParts(event, shardId).dataType();
             byte[] row = ShardUtil.shardPrefixedBytes(shardId, 8, ShardUtil.utf8(value));
             long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
 
@@ -910,7 +987,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         if (shardId != null && value != null && field != null && visibility != null) {
             String fullShard = new String(shardId, StandardCharsets.UTF_8);
             byte[] cf = ShardUtil.utf8(field);
-            byte[] cq = ShardUtil.utf8(event.getDataType().outputName());
+            byte[] cq = getKeyParts(event, shardId).dataType();
             // you are insane if the data is from the year 999 or 10,000
             byte[] row = ShardUtil.shardPrefixedBytes(shardId, 4, ShardUtil.utf8(value));
             long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
@@ -1102,7 +1179,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         if (!StringUtils.isEmpty(fieldValue)) {
             byte[] colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName));
-            byte[] idSuffix = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName()), ShardUtil.utf8(event.getId().toString()));
+            byte[] idSuffix = getKeyParts(event, shardId).dataTypeUid();
             byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue), idSuffix);
 
             if (value == null) {
@@ -1175,7 +1252,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
         if (!StringUtils.isEmpty(fieldValue)) {
             byte[] colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName));
-            byte[] idSuffix = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName()), ShardUtil.utf8(event.getId().toString()));
+            byte[] idSuffix = getKeyParts(event, shardId).dataTypeUid();
             byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue), idSuffix);
 
             if (value == null) {
