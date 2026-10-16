@@ -9,9 +9,6 @@ spring:
         enabled: false
   rabbitmq:
     publisher-confirm-type: correlated
-    publisher-returns: true
-    template:
-      mandatory: true
   cloud:
     function:
       definition: loadCache;busConsumer
@@ -23,8 +20,7 @@ spring:
             producer:
               declareExchange: true
               durable: true
-              error-channel-enabled: false
-              confirm-ack-channel-enabled: true
+              delivery-mode: PERSISTENT
               use-confirm-header: true
       bindings:
         persisted-out-0:
