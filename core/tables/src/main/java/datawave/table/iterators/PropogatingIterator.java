@@ -1,4 +1,4 @@
-package datawave.iterators;
+package datawave.table.iterators;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -23,8 +23,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-
-import datawave.ingest.table.aggregator.PropogatingCombiner;
 
 /**
  * Purpose: Handle arbitrary propogating aggregations.

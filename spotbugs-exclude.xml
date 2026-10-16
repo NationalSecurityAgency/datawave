@@ -34,11 +34,23 @@
     </Match>
 
     <Match>
+        <Class name="~datawave\.table\.protobuf\.EdgeData.*" />
+    </Match>
+
+    <Match>
         <Class name="~datawave\.ingest\.protobuf\.TermWeight.*" />
     </Match>
 
     <Match>
+        <Class name="~datawave\.table\.protobuf\.TermWeight.*" />
+    </Match>
+
+    <Match>
         <Class name="~datawave\.ingest\.protobuf\.Uid.*" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.table\.protobuf\.Uid.*" />
     </Match>
 
     <Match>
