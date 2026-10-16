@@ -41,11 +41,17 @@ Members and clients must use compatible Hazelcast and Java serialization setting
 
 ## Configuration and verification
 
-See [AnnotationCacheProperties][properties] for retention and recovery settings, and [AnnotationCacheConfiguration][configuration] for map configuration and validation. Configure `region.name`, Hazelcast connectivity, and RabbitMQ bindings externally. Publisher confirms and returns are required for the write-through acceptance guarantee.
+See [AnnotationCacheProperties][properties] for retention and recovery settings, and [AnnotationCacheConfiguration][configuration] for map configuration. The service defaults are in `service/src/main/resources/config/bootstrap.yml`; [AnnotationMessagingConfigurationValidator][messaging-validation] checks required messaging settings at startup. Set `region.name`, Hazelcast connectivity, and RabbitMQ connection details for your environment.
 
-### External RabbitMQ verification
+### RabbitMQ integration tests
 
-These opt-in integration tests verify broker/binder confirm and return behavior required for write-through acceptance, which unit tests cannot establish. They require an externally running, reachable RabbitMQ broker. Run them with `ANNOTATION_CACHE_RABBITMQ_IT=true mvn -pl service '-Dtest=Rabbit*IntegrationTest' test`; set `ANNOTATION_CACHE_RABBITMQ_HOST/PORT/USERNAME/PASSWORD` for its connection (defaults: `localhost:5672`, `guest`/`guest`).
+These tests protect the RabbitMQ confirm and return behavior the cache relies on—behavior that mocks cannot verify. They use a real RabbitMQ broker started by Testcontainers, so Docker is required; the tests are skipped automatically when Docker is unavailable.
+
+From `microservices/services/annotation-cache`, run:
+
+```sh
+mvn -f service/pom.xml -DskipUTs -Dit.test=RabbitPublisherReturnsIT,RabbitPublisherReturnsDisabledIT,RabbitCorrelatedPublisherConfirmIT verify
+```
 
 ## Example deployments
 
@@ -62,6 +68,7 @@ After API, JDK, Hazelcast, or serialization changes, run the [member/client comp
 [sync]: service/src/main/java/datawave/microservice/annotationCache/AnnotationSyncListener.java
 [topology]: service/src/main/java/datawave/microservice/annotationCache/AnnotationCacheTopologyListener.java
 [rabbit]: service/src/main/java/datawave/microservice/annotationCache/config/RabbitTopologyConfig.java
+[messaging-validation]: service/src/main/java/datawave/microservice/annotationCache/config/AnnotationMessagingConfigurationValidator.java
 [annotation-key]: api/src/main/java/datawave/microservice/annotationCache/api/AnnotationKey.java
 [fetch-key]: api/src/main/java/datawave/microservice/annotationCache/api/FetchKey.java
 [encoding]: api/src/main/java/datawave/microservice/annotationCache/api/KeyTupleEncoding.java

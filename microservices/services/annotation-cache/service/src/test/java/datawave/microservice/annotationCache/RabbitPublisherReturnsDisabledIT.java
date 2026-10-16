@@ -10,7 +10,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,20 +26,25 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * With publisher confirms enabled but publisher returns disabled, verifies whether the Rabbit binder still returns an unroutable mandatory publication through
- * confirm-header correlation. Enable with ANNOTATION_CACHE_RABBITMQ_IT=true and provide optional ANNOTATION_CACHE_RABBITMQ_HOST/PORT/USERNAME/PASSWORD
- * variables.
+ * confirm-header correlation. A RabbitMQ Testcontainer starts for this test; the test is skipped when Docker is unavailable.
  */
-@EnabledIfEnvironmentVariable(named = "ANNOTATION_CACHE_RABBITMQ_IT", matches = "true")
-@SpringBootTest(classes = RabbitPublisherReturnsDisabledIntegrationTest.TestApplication.class,
+@Testcontainers(disabledWithoutDocker = true)
+@SpringBootTest(classes = RabbitPublisherReturnsDisabledIT.TestApplication.class,
                 properties = {"spring.cloud.config.enabled=false", "spring.cloud.bus.enabled=false", "spring.cloud.function.definition=",
                         "spring.cloud.stream.defaultBinder=rabbit", "spring.rabbitmq.publisher-confirm-type=correlated",
                         "spring.rabbitmq.publisher-returns=false"})
-class RabbitPublisherReturnsDisabledIntegrationTest {
+class RabbitPublisherReturnsDisabledIT {
     private static final String BINDING = "mandatory-without-returns-out-0";
     private static final String EXCHANGE = "annotation-cache-it-no-returns-" + UUID.randomUUID();
+
+    @Container
+    static final RabbitMQContainer rabbit = RabbitMqIntegrationTestSupport.newRabbitContainer();
 
     @Autowired
     private StreamBridge streamBridge;
@@ -53,10 +57,7 @@ class RabbitPublisherReturnsDisabledIntegrationTest {
 
     @DynamicPropertySource
     static void rabbitAndBindingProperties(DynamicPropertyRegistry properties) {
-        properties.add("spring.rabbitmq.host", () -> env("ANNOTATION_CACHE_RABBITMQ_HOST", "localhost"));
-        properties.add("spring.rabbitmq.port", () -> Integer.parseInt(env("ANNOTATION_CACHE_RABBITMQ_PORT", "5672")));
-        properties.add("spring.rabbitmq.username", () -> env("ANNOTATION_CACHE_RABBITMQ_USERNAME", "guest"));
-        properties.add("spring.rabbitmq.password", () -> env("ANNOTATION_CACHE_RABBITMQ_PASSWORD", "guest"));
+        RabbitMqIntegrationTestSupport.registerRabbitProperties(rabbit, properties);
         properties.add("spring.cloud.stream.bindings." + BINDING + ".destination", () -> EXCHANGE);
         properties.add("spring.cloud.stream.bindings." + BINDING + ".content-type", () -> "text/plain");
         properties.add("spring.cloud.stream.rabbit.bindings." + BINDING + ".producer.use-confirm-header", () -> true);
@@ -79,11 +80,6 @@ class RabbitPublisherReturnsDisabledIntegrationTest {
 
         assertTrue(confirm.isAck(), "RabbitMQ ACKs the mandatory publish at the exchange");
         assertNotNull(correlationData.getReturned(), "the Rabbit binder reports the mandatory return through confirm-header correlation");
-    }
-
-    private static String env(String name, String defaultValue) {
-        String value = System.getenv(name);
-        return value == null || value.isBlank() ? defaultValue : value;
     }
 
     @SpringBootConfiguration

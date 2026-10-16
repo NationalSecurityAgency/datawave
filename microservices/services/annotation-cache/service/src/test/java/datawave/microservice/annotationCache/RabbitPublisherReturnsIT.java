@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,17 +31,20 @@ import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Exercises Rabbit binder mandatory publishing against a real broker. Enable with ANNOTATION_CACHE_RABBITMQ_IT=true and provide optional
- * ANNOTATION_CACHE_RABBITMQ_HOST/PORT/USERNAME/PASSWORD environment variables. The tests publish to exchanges with no queue bound.
+ * Exercises Rabbit binder mandatory publishing against a real broker managed by Testcontainers. Tests skip when Docker is unavailable. The tests publish to
+ * exchanges with no queue bound.
  */
-@EnabledIfEnvironmentVariable(named = "ANNOTATION_CACHE_RABBITMQ_IT", matches = "true")
-@SpringBootTest(classes = RabbitPublisherReturnsIntegrationTest.TestApplication.class,
+@Testcontainers(disabledWithoutDocker = true)
+@SpringBootTest(classes = RabbitPublisherReturnsIT.TestApplication.class,
                 properties = {"spring.cloud.config.enabled=false", "spring.cloud.bus.enabled=false", "spring.cloud.function.definition=",
                         "spring.cloud.stream.defaultBinder=rabbit", "spring.rabbitmq.publisher-confirm-type=correlated",
                         "spring.rabbitmq.publisher-returns=true"})
-class RabbitPublisherReturnsIntegrationTest {
+class RabbitPublisherReturnsIT {
     private static final String ERROR_CHANNEL_BINDING = "returns-enabled-out-0";
     private static final String NO_ERROR_CHANNEL_BINDING = "returns-disabled-out-0";
     private static final String CONFIRM_HEADER_BINDING = "confirm-header-out-0";
@@ -51,6 +53,9 @@ class RabbitPublisherReturnsIntegrationTest {
     private static final String NO_ERROR_CHANNEL_EXCHANGE = "annotation-cache-it-return-disabled";
     private static final String CONFIRM_HEADER_EXCHANGE = "annotation-cache-it-confirm-header";
     private static final String STORE_EXCHANGE = "annotation-cache-it-store-correlation";
+
+    @Container
+    static final RabbitMQContainer rabbit = RabbitMqIntegrationTestSupport.newRabbitContainer();
 
     @Autowired
     private StreamBridge streamBridge;
@@ -84,11 +89,7 @@ class RabbitPublisherReturnsIntegrationTest {
 
     @DynamicPropertySource
     static void rabbitAndBindingProperties(DynamicPropertyRegistry properties) {
-        properties.add("spring.rabbitmq.host", () -> env("ANNOTATION_CACHE_RABBITMQ_HOST", "localhost"));
-        properties.add("spring.rabbitmq.port", () -> Integer.parseInt(env("ANNOTATION_CACHE_RABBITMQ_PORT", "5672")));
-        properties.add("spring.rabbitmq.username", () -> env("ANNOTATION_CACHE_RABBITMQ_USERNAME", "guest"));
-        properties.add("spring.rabbitmq.password", () -> env("ANNOTATION_CACHE_RABBITMQ_PASSWORD", "guest"));
-
+        RabbitMqIntegrationTestSupport.registerRabbitProperties(rabbit, properties);
         addOutputBinding(properties, ERROR_CHANNEL_BINDING, ERROR_CHANNEL_EXCHANGE, true, false);
         addOutputBinding(properties, NO_ERROR_CHANNEL_BINDING, NO_ERROR_CHANNEL_EXCHANGE, false, false);
         addOutputBinding(properties, CONFIRM_HEADER_BINDING, CONFIRM_HEADER_EXCHANGE, false, true);
@@ -167,11 +168,6 @@ class RabbitPublisherReturnsIntegrationTest {
         properties.add("spring.cloud.stream.bindings." + binding + ".content-type", () -> "text/plain");
         properties.add("spring.cloud.stream.bindings." + binding + ".producer.error-channel-enabled", () -> errorChannelEnabled);
         properties.add("spring.cloud.stream.rabbit.bindings." + binding + ".producer.use-confirm-header", () -> useConfirmHeader);
-    }
-
-    private static String env(String name, String defaultValue) {
-        String value = System.getenv(name);
-        return value == null || value.isBlank() ? defaultValue : value;
     }
 
     @SpringBootConfiguration

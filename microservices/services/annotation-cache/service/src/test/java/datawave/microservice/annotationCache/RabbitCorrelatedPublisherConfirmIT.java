@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,18 +26,24 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Verifies that simple publisher confirms do not complete the per-message CorrelationData future required by AnnotationMapStore. Enable with
- * ANNOTATION_CACHE_RABBITMQ_IT=true and provide optional ANNOTATION_CACHE_RABBITMQ_HOST/PORT/USERNAME/PASSWORD environment variables.
+ * Verifies that simple publisher confirms do not complete the per-message CorrelationData future required by AnnotationMapStore. A RabbitMQ Testcontainer
+ * starts for this test; the test is skipped when Docker is unavailable.
  */
-@EnabledIfEnvironmentVariable(named = "ANNOTATION_CACHE_RABBITMQ_IT", matches = "true")
-@SpringBootTest(classes = RabbitCorrelatedPublisherConfirmIntegrationTest.TestApplication.class,
+@Testcontainers(disabledWithoutDocker = true)
+@SpringBootTest(classes = RabbitCorrelatedPublisherConfirmIT.TestApplication.class,
                 properties = {"spring.cloud.config.enabled=false", "spring.cloud.bus.enabled=false", "spring.cloud.function.definition=",
                         "spring.cloud.stream.defaultBinder=rabbit", "spring.rabbitmq.publisher-confirm-type=simple", "spring.rabbitmq.publisher-returns=false"})
-class RabbitCorrelatedPublisherConfirmIntegrationTest {
+class RabbitCorrelatedPublisherConfirmIT {
     private static final String BINDING = "simple-confirms-out-0";
     private static final String EXCHANGE = "annotation-cache-it-simple-confirm-" + UUID.randomUUID();
+
+    @Container
+    static final RabbitMQContainer rabbit = RabbitMqIntegrationTestSupport.newRabbitContainer();
 
     @Autowired
     private StreamBridge streamBridge;
@@ -51,10 +56,7 @@ class RabbitCorrelatedPublisherConfirmIntegrationTest {
 
     @DynamicPropertySource
     static void rabbitAndBindingProperties(DynamicPropertyRegistry properties) {
-        properties.add("spring.rabbitmq.host", () -> env("ANNOTATION_CACHE_RABBITMQ_HOST", "localhost"));
-        properties.add("spring.rabbitmq.port", () -> Integer.parseInt(env("ANNOTATION_CACHE_RABBITMQ_PORT", "5672")));
-        properties.add("spring.rabbitmq.username", () -> env("ANNOTATION_CACHE_RABBITMQ_USERNAME", "guest"));
-        properties.add("spring.rabbitmq.password", () -> env("ANNOTATION_CACHE_RABBITMQ_PASSWORD", "guest"));
+        RabbitMqIntegrationTestSupport.registerRabbitProperties(rabbit, properties);
         properties.add("spring.cloud.stream.bindings." + BINDING + ".destination", () -> EXCHANGE);
         properties.add("spring.cloud.stream.bindings." + BINDING + ".content-type", () -> "text/plain");
         properties.add("spring.cloud.stream.rabbit.bindings." + BINDING + ".producer.use-confirm-header", () -> true);
@@ -74,11 +76,6 @@ class RabbitCorrelatedPublisherConfirmIntegrationTest {
         assertTrue(streamBridge.send(BINDING, message));
         assertThrows(TimeoutException.class, () -> correlationData.getFuture().get(2, TimeUnit.SECONDS),
                         "simple confirms do not correlate the broker ACK with AnnotationMapStore's CorrelationData");
-    }
-
-    private static String env(String name, String defaultValue) {
-        String value = System.getenv(name);
-        return value == null || value.isBlank() ? defaultValue : value;
     }
 
     @SpringBootConfiguration
