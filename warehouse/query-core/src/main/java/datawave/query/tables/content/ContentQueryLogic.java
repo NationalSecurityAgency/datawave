@@ -215,7 +215,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             // Ignore empty terms
             if (!term.isEmpty()) {
                 if (++recordIds > maxIds) {
-                    throw new IllegalArgumentException("Content query exceeds " + MAX_IDS + " of " + maxIds + " record IDs");
+                    throw new IllegalArgumentException("Query has requested greater than " + MAX_IDS + " of " + maxIds + " record IDs");
                 }
                 // Get the next value
                 int fieldSeparation = term.indexOf(':');
