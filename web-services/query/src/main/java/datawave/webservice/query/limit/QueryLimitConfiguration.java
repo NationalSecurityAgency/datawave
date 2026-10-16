@@ -1,8 +1,10 @@
 package datawave.webservice.query.limit;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.function.Function;
 
 /**
  * Configuration for query limits.
@@ -39,6 +41,36 @@ public class QueryLimitConfiguration {
      * The custom query logic group configurations.
      */
     private List<QueryLogicGroupLimitConfiguration> queryLogicGroupConfigs;
+
+    public QueryLimitConfiguration() {}
+
+    /**
+     * Copy constructor
+     *
+     * @param other
+     *            the instance to copy
+     */
+    public QueryLimitConfiguration(QueryLimitConfiguration other) {
+        this.defaultUserQueryLimit = other.defaultUserQueryLimit;
+        this.defaultSystemQueryLimit = other.defaultSystemQueryLimit;
+        this.internalCacheMaxSize = other.internalCacheMaxSize;
+        this.userConfigs = deepCopy(other.userConfigs, UserLimitConfiguration::deepCopy);
+        this.systemConfigs = deepCopy(other.systemConfigs, SystemLimitConfiguration::deepCopy);
+        this.queryLogicGroupConfigs = deepCopy(other.queryLogicGroupConfigs, QueryLogicGroupLimitConfiguration::deepCopy);
+    }
+
+    private <T> List<T> deepCopy(List<T> list, Function<T,T> copyFunction) {
+        if (list == null) {
+            return List.of();
+        }
+        List<T> copy = new ArrayList<>();
+        for (T original : list) {
+            if (original != null) {
+                copy.add(copyFunction.apply(original));
+            }
+        }
+        return List.copyOf(copy);
+    }
 
     public int getDefaultUserQueryLimit() {
         return defaultUserQueryLimit;
@@ -86,6 +118,15 @@ public class QueryLimitConfiguration {
 
     public void setQueryLogicGroupConfigs(List<QueryLogicGroupLimitConfiguration> queryLogicGroupConfigs) {
         this.queryLogicGroupConfigs = queryLogicGroupConfigs;
+    }
+
+    /**
+     * Return a deep copy of this {@link QueryLimitConfiguration}.
+     *
+     * @return the deep copy
+     */
+    public QueryLimitConfiguration deepCopy() {
+        return new QueryLimitConfiguration(this);
     }
 
     @Override

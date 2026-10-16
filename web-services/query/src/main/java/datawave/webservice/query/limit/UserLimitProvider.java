@@ -10,14 +10,15 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is responsible for identifying and providing limits that should be enforced for users.
  */
 public class UserLimitProvider {
 
-    private static final Logger log = Logger.getLogger(UserLimitProvider.class);
+    private static final Logger log = LoggerFactory.getLogger(UserLimitProvider.class);
 
     private final int defaultUserQueryLimit;
 
@@ -72,7 +73,7 @@ public class UserLimitProvider {
                     if (StringUtils.isBlank(groupPattern)) {
                         throw new IllegalArgumentException("User group query limit configuration given with blank group pattern for user '" + userDn + "'");
                     }
-                    if (!groupPattern.equals(QueryLimitConstants.ASTERISK)) {
+                    if (!groupPattern.equals(QueryLimiterUtils.ASTERISK)) {
                         try {
                             Pattern.compile(groupPattern);
                         } catch (PatternSyntaxException e) {
@@ -104,7 +105,7 @@ public class UserLimitProvider {
 
             if (customQueryLimit == null && (customGroupLimits == null || customGroupLimits.isEmpty())) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Custom limits provided for user '" + userDn + "' do not override any defaults, skipping.");
+                    log.debug("Custom limits provided for user '{}' do not override any defaults, skipping.", userDn);
                 }
                 continue;
             }
@@ -112,7 +113,7 @@ public class UserLimitProvider {
             // If the custom query limit is null or less than zero, use the default query limit.
             if (customQueryLimit == null || customQueryLimit < 0) {
                 if (log.isDebugEnabled()) {
-                    log.trace("Using default user query limit of " + defaultUserQueryLimit + " for user '" + userDn + "'");
+                    log.trace("Using default user query limit of {} for user '{}'", defaultUserQueryLimit, userDn);
                 }
                 customQueryLimit = defaultUserQueryLimit;
             }
