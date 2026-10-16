@@ -43,6 +43,10 @@ Members and clients must use compatible Hazelcast and Java serialization setting
 
 See [AnnotationCacheProperties][properties] for retention and recovery settings, and [AnnotationCacheConfiguration][configuration] for map configuration and validation. Configure `region.name`, Hazelcast connectivity, and RabbitMQ bindings externally. Publisher confirms and returns are required for the write-through acceptance guarantee.
 
+### External RabbitMQ verification
+
+These opt-in integration tests verify broker/binder confirm and return behavior required for write-through acceptance, which unit tests cannot establish. They require an externally running, reachable RabbitMQ broker. Run them with `ANNOTATION_CACHE_RABBITMQ_IT=true mvn -pl service '-Dtest=Rabbit*IntegrationTest' test`; set `ANNOTATION_CACHE_RABBITMQ_HOST/PORT/USERNAME/PASSWORD` for its connection (defaults: `localhost:5672`, `guest`/`guest`).
+
 ## Example deployments
 
 - **Docker Compose:** The optional `annotation-cache` profile in `docker/docker-compose.yml` runs two replicas by default (three replicas were verified) with `consul,compose` profiles. Service settings are in `docker/config/annotation-cache.yml`; shared Consul settings are in `docker/config/application-consul.yml`.
