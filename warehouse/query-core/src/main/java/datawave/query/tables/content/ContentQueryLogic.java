@@ -52,18 +52,18 @@ import datawave.webservice.query.exception.QueryException;
  *
  * The optional parameter content.view.name can be used to retrieve an alternate view of the document, assuming one is stored with that name. The optional
  * parameter content.view.all can be used to retrieve all documents for the parent and children Both optional parameters can be used together. Content queries
- * accept up to 25 record IDs by default; the server-side max.ids setting controls this limit.
+ * accept up to 100 record IDs by default; the server-side content.query.max.ids setting controls this limit.
  */
 public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
 
     private static final Logger log = Logger.getLogger(ContentQueryLogic.class);
 
-    public static final String MAX_IDS = "max.ids";
+    public static final String MAX_IDS = "content.query.max.ids";
     private static final String PARENT_ONLY = "\1";
     private static final String ALL = "\u10FFFF";
 
     private int queryThreads = 100;
-    private int maxIds = 25;
+    private int maxIds = 100;
     ScannerFactory scannerFactory;
     String viewName = null;
     private boolean decodeView = false;

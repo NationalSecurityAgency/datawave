@@ -109,10 +109,19 @@ public class ContentQueryLogicFunctionalTest {
 
     @Test
     public void acceptsBatchAtLimit() throws Exception {
-        addExpectedCaponeContent();
-        addExpectedResult("20130101_0:test:" + WiseGuysIngest.corleoneUID + ":CONTENT:Im gonna make him an offer he cant refuse");
+        addExpectedKnownContent();
 
         runTestQuery(recordIds(logic.getMaxIds()));
+    }
+
+    @Test
+    public void acceptsDefaultMaxIds() throws Exception {
+        int defaultMaxIds = new ContentQueryLogic().getMaxIds();
+        assertEquals(100, defaultMaxIds);
+        logic.setMaxIds(defaultMaxIds);
+        addExpectedKnownContent();
+
+        runTestQuery(recordIds(defaultMaxIds));
     }
 
     @Test
@@ -123,7 +132,7 @@ public class ContentQueryLogicFunctionalTest {
     @Test
     public void rejectsMoreThanDefaultBatchSize() {
         int defaultMaxIds = new ContentQueryLogic().getMaxIds();
-        assertEquals(25, defaultMaxIds);
+        assertEquals(100, defaultMaxIds);
         logic.setMaxIds(defaultMaxIds);
 
         assertLimitExceeded(recordIds(defaultMaxIds + 1));
@@ -144,8 +153,7 @@ public class ContentQueryLogicFunctionalTest {
     @Test
     public void queryParameterCannotLowerConfiguredLimit() throws Exception {
         extraParameters.put(ContentQueryLogic.MAX_IDS, "1");
-        addExpectedCaponeContent();
-        addExpectedResult("20130101_0:test:" + WiseGuysIngest.corleoneUID + ":CONTENT:Im gonna make him an offer he cant refuse");
+        addExpectedKnownContent();
 
         runTestQuery(recordIds(logic.getMaxIds()));
     }
@@ -162,6 +170,11 @@ public class ContentQueryLogicFunctionalTest {
         addExpectedResult("20130101_0:test:" + WiseGuysIngest.caponeUID + ":CONTENT2:A lawyer and his briefcase can steal more than ten men with guns.");
     }
 
+    private void addExpectedKnownContent() {
+        addExpectedCaponeContent();
+        addExpectedResult("20130101_0:test:" + WiseGuysIngest.corleoneUID + ":CONTENT:Im gonna make him an offer he cant refuse");
+    }
+
     private String recordIds(int count) {
         return IntStream.range(0, count).mapToObj(index -> {
             if (index == 0) {
@@ -176,7 +189,7 @@ public class ContentQueryLogicFunctionalTest {
 
     private void assertLimitExceeded(String queryString) {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> logic.initialize(connector, createQuery(queryString), authSet));
-        assertEquals("Query has requested greater than max.ids of " + logic.getMaxIds() + " record IDs", exception.getMessage());
+        assertEquals("Query has requested greater than " + ContentQueryLogic.MAX_IDS + " of " + logic.getMaxIds() + " record IDs", exception.getMessage());
     }
 
     protected void addExpectedResult(String result) {
