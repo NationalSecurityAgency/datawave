@@ -21,6 +21,34 @@ spring:
         max-attempts: 60
       uri: '${CONFIG_SERVER_URL:http://configuration:8888/configserver}'
       allow-override: true
+    function:
+      # Activates the annotation cache consumer and Spring Cloud Bus consumer.
+      definition: "loadCache;busConsumer"
+    stream:
+      bindings:
+        persisted-out-0:
+          # Publish local write-through annotations to the exchange declared by RabbitTopologyConfig.
+          destination: annotation
+          # Required for protobuf serialization of outbound AnnotationMessage payloads.
+          content-type: application/x-protobuf
+        loadCache-in-0:
+          # Consume federated annotation messages from the annotation exchange.
+          destination: annotation
+          # Uses the durable annotation.cache queue declared by RabbitTopologyConfig.
+          group: cache
+          # Required to deserialize inbound AnnotationMessage payloads.
+          content-type: application/x-protobuf
+      rabbit:
+        bindings:
+          persisted-out-0:
+            producer:
+              # Preserve published messages across broker restarts when routed to durable queues.
+              delivery-mode: PERSISTENT
+              # Uses AnnotationMapStore's confirm-correlation header; enables mandatory publishing and returns on CorrelationData without an error channel.
+              use-confirm-header: true
+  rabbitmq:
+    # Correlated confirms complete the CorrelationData future awaited by AnnotationMapStore.
+    publisher-confirm-type: correlated
 
 ---
 
