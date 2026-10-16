@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -18,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.Striped;
 
 /**
  * This class provides methods for leveraging Zookeeper to track queries and their active status.
@@ -31,10 +31,16 @@ public class ActiveQueryTracker {
     private static final String DISTINCT_QUERY_LOGICS_CONTAINER_PATH = "/distinctQueryLogics";
     private static final String SYSTEMS_CONTAINER_PATH = "/systems";
     private static final String USERS_CONTAINER_PATH = "/users";
-
-    private final Lock clientLock = new ReentrantLock();
-
+    private static final int LOCK_POOL_SIZE = 64;
+    /**
+     * The Zookeeper client.
+     */
     private final CuratorFramework client;
+
+    /**
+     * Create a pool of 64 locks distributed by the key's hash.
+     */
+    private final Striped<Lock> stripedLocks = Striped.lock(LOCK_POOL_SIZE);
 
     /**
      * Create and return a new {@link ActiveQueryTracker} instance
@@ -66,8 +72,11 @@ public class ActiveQueryTracker {
      * /systems/&lt;systemName&gt;/&lt;queryLogic&gt;/&lt;queryId&gt;
      * </pre>
      *
+     * Concurrent access to this method is locked based on the query ID. Up to {@value #LOCK_POOL_SIZE} threads may concurrently track new queries with
+     * different query IDs. Calls to this method with the same queryId will contend for the same lock.
+     *
      * @param queryId
-     *            the query's ID
+     *            the query's ID, a UUID
      * @param userDn
      *            the DN of the user who submitted the query
      * @param system
@@ -77,6 +86,8 @@ public class ActiveQueryTracker {
      * @param systemCountsAgainstUserLimit
      *            whether queries on the system count towards the user limit
      * @return a new query heartbeat that can close the ephemeral nodes associated with the query
+     * @throws QueryAlreadyTrackedException
+     *             if the query ID is already being tracked in Zookeeper
      */
     public QueryHeartbeat trackQuery(String queryId, String userDn, String system, String queryLogic, boolean systemCountsAgainstUserLimit) throws Exception {
         // Normalize the userDN, system, and queryLogic.
@@ -90,7 +101,11 @@ public class ActiveQueryTracker {
             log.trace("Tracking query: queryId={}, user='{}', system='{}', queryLogic='{}'", queryId, userDn, system, queryLogic);
         }
 
-        clientLock.lock();
+        // Get a lock mapped to the query ID. This will prevent write clashes across same EJB Container ecosystem, but not across distributed systems. Due to
+        // the nature of UUID, the chances for UUID collisions after generating a new id is vanishingly small. However, if a situation arises where it is
+        // necessary to lock access to the same query ID across all distributed systems, a different approach will be needed.
+        Lock lock = stripedLocks.get(queryId);
+        lock.lock();
         try {
             try {
                 // Verify we are not already tracking the query.
@@ -144,7 +159,7 @@ public class ActiveQueryTracker {
             }
 
         } finally {
-            clientLock.unlock();
+            lock.unlock();
         }
 
         return heartbeat;
@@ -205,14 +220,11 @@ public class ActiveQueryTracker {
      *             if an error occurs while scanning nodes
      */
     private int getTotalChildrenWithLock(String path) throws Exception {
-        clientLock.lock();
         try {
             return getTotalChildren(path);
         } catch (Exception e) {
             log.error("Failed to get total children for path {}", path, e);
             throw e;
-        } finally {
-            clientLock.unlock();
         }
     }
 
@@ -291,33 +303,28 @@ public class ActiveQueryTracker {
      */
     private boolean totalQueriesMeetsLimit(String owner, int limit, Set<String> queryLogicsAlreadyCounted, int initialTotal,
                     Function<String,String> ownerPathFunction, BiFunction<String,String,String> queryLogicPathFunction) throws Exception {
-        clientLock.lock();
         try {
-            try {
-                int total = initialTotal;
-                // Get the set of query logic nodes underneath the owner node.
-                List<String> queryLogics = client.getChildren().forPath(ownerPathFunction.apply(owner));
-                for (String queryLogic : queryLogics) {
-                    // If we have not already previously counted the total queries underneath the current query logic, increment the total by the number of
-                    // queries for the current query logic.
-                    if (!queryLogicsAlreadyCounted.contains(queryLogic)) {
-                        String queryLogicPath = queryLogicPathFunction.apply(owner, queryLogic);
-                        total += getTotalChildren(queryLogicPath);
-                        // If the total is equal to or greater than the limit, return true.
-                        if (total >= limit) {
-                            return true;
-                        }
+            int total = initialTotal;
+            // Get the set of query logic nodes underneath the owner node.
+            List<String> queryLogics = client.getChildren().forPath(ownerPathFunction.apply(owner));
+            for (String queryLogic : queryLogics) {
+                // If we have not already previously counted the total queries underneath the current query logic, increment the total by the number of
+                // queries for the current query logic.
+                if (!queryLogicsAlreadyCounted.contains(queryLogic)) {
+                    String queryLogicPath = queryLogicPathFunction.apply(owner, queryLogic);
+                    total += getTotalChildren(queryLogicPath);
+                    // If the total is equal to or greater than the limit, return true.
+                    if (total >= limit) {
+                        return true;
                     }
                 }
-            } catch (KeeperException.NoNodeException e) {
-                // If this exception occurs, the owner node does not exist. There are no active queries for the owner. Simply return false.
-                return false;
-            } catch (Exception e) {
-                log.error("Failed to count total queries for owner='{}'", owner, e);
-                throw e;
             }
-        } finally {
-            clientLock.unlock();
+        } catch (KeeperException.NoNodeException e) {
+            // If this exception occurs, the owner node does not exist. There are no active queries for the owner. Simply return false.
+            return false;
+        } catch (Exception e) {
+            log.error("Failed to count total queries for owner='{}'", owner, e);
+            throw e;
         }
 
         return false;
@@ -355,7 +362,6 @@ public class ActiveQueryTracker {
         if (log.isTraceEnabled()) {
             log.trace("Fetching distinct query logics");
         }
-        clientLock.lock();
         try {
             // If any query logics were tracked, return them.
             Stat stat = client.checkExists().forPath(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
@@ -368,8 +374,6 @@ public class ActiveQueryTracker {
         } catch (Exception e) {
             log.error("Failed to fetch distinct query logics", e);
             throw new ActiveQueryException(e);
-        } finally {
-            clientLock.unlock();
         }
     }
 
