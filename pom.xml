@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>8.1.0-SNAPSHOT</version>
+    <version>8.4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -40,14 +40,14 @@
         <!-- build.env and env should get overridden if any other read-properties profile is specified (e.g. comnpose)compose -->
         <build.env>dev</build.env>
         <container.registry>ghcr.io</container.registry>
+        <datawave.build.jdk.version.range>[11,12)</datawave.build.jdk.version.range>
         <env>dev</env>
         <!-- Integration-test fork settings. Default to the surefire values so a module only has to set
              the surefire property to move both plugins; override these to split unit and integration tests. -->
         <failsafe.maxMemory>${surefire.maxMemory}</failsafe.maxMemory>
         <failsafe.reuseForks>${surefire.reuseForks}</failsafe.reuseForks>
         <image.prefix>datawave/</image.prefix>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.release>11</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
         <skipITs>${skipTests}</skipITs>
@@ -63,11 +63,12 @@
              own properties to reuse forks and skip the per-class JVM startup. Verify the module's tests
              still pass before enabling: shared static caches and registries are the usual blocker. -->
         <surefire.reuseForks>false</surefire.reuseForks>
-        <version.accumulo>2.1.5</version.accumulo>
+        <version.accumulo>2.1.6</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-embedded>2.1.0.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.11.4</version.avro>
+        <version.awaitility>4.3.0</version.awaitility>
         <version.byte-buddy>1.14.11</version.byte-buddy>
         <version.caffeine>3.1.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
@@ -1458,6 +1459,13 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${version.awaitility}</version>
+                <!-- Not recommended for production code. -->
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.easymock</groupId>
                 <artifactId>easymock</artifactId>
                 <version>${version.easymock}</version>
@@ -1755,9 +1763,9 @@
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
                         <removeTrailingWhitespace>true</removeTrailingWhitespace>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
-                        <compilerCompliance>${maven.compiler.source}</compilerCompliance>
-                        <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
+                        <compilerSource>${maven.compiler.release}</compilerSource>
+                        <compilerCompliance>${maven.compiler.release}</compilerCompliance>
+                        <compilerTargetPlatform>${maven.compiler.release}</compilerTargetPlatform>
                     </configuration>
                     <dependencies>
                         <dependency>
@@ -1834,8 +1842,7 @@
                         <encoding>UTF-8</encoding>
                         <showDeprecation>true</showDeprecation>
                         <showWarnings>true</showWarnings>
-                        <source>${maven.compiler.source}</source>
-                        <target>${maven.compiler.target}</target>
+                        <release>${maven.compiler.release}</release>
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                             <arg>-Xlint:-processing</arg>
@@ -1876,6 +1883,9 @@
                                     <requireMavenVersion>
                                         <version>3.6.3</version>
                                     </requireMavenVersion>
+                                    <requireJavaVersion>
+                                        <version>${datawave.build.jdk.version.range}</version>
+                                    </requireJavaVersion>
                                 </rules>
                                 <fail>true</fail>
                             </configuration>
@@ -1946,7 +1956,7 @@
                         <threadCountClasses>1</threadCountClasses>
                         <threadCountMethods>0</threadCountMethods>
                         <threadCountSuites>0</threadCountSuites>
-                        <groups>datawave.common.test.integration.IntegrationTest</groups>
+                        <groups>datawave.common.test.integration.IntegrationTest,IntegrationTest</groups>
                     </configuration>
                     <executions>
                         <execution>
@@ -2106,9 +2116,19 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
         </plugins>
     </build>
     <profiles>
+        <profile>
+            <id>java17</id>
+            <properties>
+                <datawave.build.jdk.version.range>[17,18)</datawave.build.jdk.version.range>
+            </properties>
+        </profile>
         <profile>
             <id>coverage</id>
             <modules>
