@@ -41,7 +41,6 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.FirstEntryInRowIterator;
 import org.apache.accumulo.core.iterators.ValueFormatException;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -1785,7 +1784,6 @@ public class MetadataHelper {
                 settings.add(regexFilter);
             }
 
-            settings.add(new IteratorSetting(51, "firstEntryInRow", FirstEntryInRowIterator.class));
             bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_F);
             bs.setRanges(ranges);
 
