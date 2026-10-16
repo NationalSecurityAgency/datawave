@@ -182,10 +182,14 @@ public class QueryLimiterImpl implements QueryLimiter {
 
             checkNotNull(this.config, "Limiter configuration cannot be null");
 
-            initLimitProviders();
-            initZkClient();
-            initHeartbeatCache();
-            initActiveQueryTracker();
+            // Do nothing if the query limiter mode is DISABLED. All methods will effectively become no-ops.
+            if (config.getMode() != QueryLimiterMode.DISABLED) {
+                initLimitProviders();
+                initZkClient();
+                initHeartbeatCache();
+                initActiveQueryTracker();
+            }
+
             setState(State.READY);
         } catch (Exception e) {
             log.error("Failed to activate limiter", e);
@@ -519,8 +523,11 @@ public class QueryLimiterImpl implements QueryLimiter {
         try {
             // Verify the limiter is ready for use.
             requireReadyState();
-
-            return heartbeatCache.getQueryIds();
+            if (config.getMode() != QueryLimiterMode.DISABLED) {
+                return heartbeatCache.getQueryIds();
+            } else {
+                return Set.of();
+            }
         } catch (Exception e) {
             log.error("Error while fetching active queries", e);
             throw new QueryLimitException("Error while fetching active queries", e);
@@ -552,7 +559,13 @@ public class QueryLimiterImpl implements QueryLimiter {
             }
             // Verify the limiter is ready for use.
             requireReadyState();
-            heartbeatCache.stopAndRemove(normalizedQueryIds);
+            if (config.getMode() != QueryLimiterMode.DISABLED) {
+                heartbeatCache.stopAndRemove(normalizedQueryIds);
+            } else {
+                if (log.isTraceEnabled()) {
+                    log.trace("Query limiter is {}, nothing to do", QueryLimiterMode.DISABLED);
+                }
+            }
         } catch (Exception e) {
             log.error("Error while marking queries inactive: {}", normalizedQueryIds, e);
             throw new QueryLimitException("Error while marking queries inactive: " + normalizedQueryIds, e);
@@ -581,7 +594,13 @@ public class QueryLimiterImpl implements QueryLimiter {
             }
             // Verify the limiter is ready for use.
             requireReadyState();
-            heartbeatCache.stopAndRemove(queryId);
+            if (config.getMode() != QueryLimiterMode.DISABLED) {
+                heartbeatCache.stopAndRemove(queryId);
+            } else {
+                if (log.isTraceEnabled()) {
+                    log.trace("Query limiter is {}, nothing to do", QueryLimiterMode.DISABLED);
+                }
+            }
         } catch (Exception e) {
             log.error("Error while marking query {} inactive", queryId);
             throw new QueryLimitException("Error while marking query " + queryId + " inactive", e);

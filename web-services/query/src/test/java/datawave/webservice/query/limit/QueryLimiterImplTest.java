@@ -2,6 +2,7 @@ package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -76,6 +77,7 @@ class QueryLimiterImplTest {
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
 
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
+                config.setMode(QueryLimiterMode.ENFORCE);
                 limiter.setConfiguration(config);
 
                 // @formatter:off
@@ -98,6 +100,7 @@ class QueryLimiterImplTest {
                 limitConfig.setDefaultUserQueryLimit(0);
 
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+                config.setMode(QueryLimiterMode.ENFORCE);
                 config.setLimitConfiguration(limitConfig);
 
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
@@ -124,6 +127,7 @@ class QueryLimiterImplTest {
                 limitConfig.setInternalCacheMaxSize(0);
 
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+                config.setMode(QueryLimiterMode.ENFORCE);
                 config.setLimitConfiguration(limitConfig);
 
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
@@ -150,6 +154,7 @@ class QueryLimiterImplTest {
                 limitConfig.setInternalCacheMaxSize(200);
 
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+                config.setMode(QueryLimiterMode.ENFORCE);
                 config.setLimitConfiguration(limitConfig);
 
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
@@ -176,6 +181,7 @@ class QueryLimiterImplTest {
                 limitConfig.setInternalCacheMaxSize(200);
 
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+                config.setMode(QueryLimiterMode.ENFORCE);
                 config.setLimitConfiguration(limitConfig);
                 config.setZkClientBuilder(new ZkClientBuilder());
                 config.setZkClientConnectTimeout(0);
@@ -204,6 +210,7 @@ class QueryLimiterImplTest {
                 limitConfig.setInternalCacheMaxSize(200);
 
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+                config.setMode(QueryLimiterMode.ENFORCE);
                 config.setLimitConfiguration(limitConfig);
                 config.setZkClientBuilder(new ZkClientBuilder());
                 config.setZkClientConnectTimeoutUnit(null);
@@ -232,6 +239,7 @@ class QueryLimiterImplTest {
                 limitConfig.setInternalCacheMaxSize(200);
 
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+                config.setMode(QueryLimiterMode.ENFORCE);
                 config.setLimitConfiguration(limitConfig);
                 config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
                 config.setHeartbeatCleanupInterval(0);
@@ -260,6 +268,7 @@ class QueryLimiterImplTest {
                 limitConfig.setInternalCacheMaxSize(200);
 
                 QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+                config.setMode(QueryLimiterMode.ENFORCE);
                 config.setLimitConfiguration(limitConfig);
                 config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
                 config.setHeartbeatCleanupIntervalUnit(null);
@@ -291,7 +300,9 @@ class QueryLimiterImplTest {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.UNINITIALIZED);
 
-                limiter.setConfiguration(new QueryLimiterImplConfiguration());
+                QueryLimiterImplConfiguration badConfig = new QueryLimiterImplConfiguration();
+                badConfig.setMode(QueryLimiterMode.ENFORCE);
+                limiter.setConfiguration(badConfig);
                 assertThatThrownBy(limiter::setup).isInstanceOf(RuntimeException.class);
 
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.FAILED);
@@ -303,7 +314,7 @@ class QueryLimiterImplTest {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.UNINITIALIZED);
 
-                limiter.setConfiguration(createConfig());
+                limiter.setConfiguration(createConfig(QueryLimiterMode.ENFORCE));
                 limiter.setup();
 
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.READY);
@@ -314,13 +325,15 @@ class QueryLimiterImplTest {
             void failureWithReadyState() {
                 // Create a query limiter in state READY.
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
-                limiter.setConfiguration(createConfig());
+                limiter.setConfiguration(createConfig(QueryLimiterMode.ENFORCE));
                 limiter.setup();
 
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.READY);
 
                 // Call setup with a bad configuration.
-                limiter.setConfiguration(new QueryLimiterImplConfiguration());
+                QueryLimiterImplConfiguration badConfig = new QueryLimiterImplConfiguration();
+                badConfig.setMode(QueryLimiterMode.ENFORCE);
+                limiter.setConfiguration(badConfig);
                 assertThatThrownBy(limiter::setup).isInstanceOf(RuntimeException.class);
 
                 // Verify that the limiter is in state FAILED.
@@ -332,13 +345,13 @@ class QueryLimiterImplTest {
             void successWithReadyState() {
                 // Create a query limiter in state READY.
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
-                limiter.setConfiguration(createConfig());
+                limiter.setConfiguration(createConfig(QueryLimiterMode.ENFORCE));
                 limiter.setup();
 
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.READY);
 
                 // Set a different valid configuration, and call setup.
-                QueryLimiterImplConfiguration newConfig = createConfig();
+                QueryLimiterImplConfiguration newConfig = createConfig(QueryLimiterMode.ENFORCE);
                 newConfig.getLimitConfiguration().setDefaultUserQueryLimit(500);
                 limiter.setConfiguration(newConfig);
                 limiter.setup();
@@ -357,7 +370,9 @@ class QueryLimiterImplTest {
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.CLOSED);
 
                 // Call setup with a bad configuration.
-                limiter.setConfiguration(new QueryLimiterImplConfiguration());
+                QueryLimiterImplConfiguration badConfig = new QueryLimiterImplConfiguration();
+                badConfig.setMode(QueryLimiterMode.ENFORCE);
+                limiter.setConfiguration(badConfig);
                 assertThatThrownBy(limiter::setup).isInstanceOf(RuntimeException.class);
 
                 // Verify that the limiter is in state FAILED.
@@ -369,14 +384,14 @@ class QueryLimiterImplTest {
             void successWithClosedState() {
                 // Create a limiter with a good configuration, put it in an active state, and then close it.
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
-                limiter.setConfiguration(createConfig());
+                limiter.setConfiguration(createConfig(QueryLimiterMode.ENFORCE));
                 limiter.setup();
                 limiter.close();
 
                 assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.CLOSED);
 
                 // Call setup with a good configuration.
-                limiter.setConfiguration(createConfig());
+                limiter.setConfiguration(createConfig(QueryLimiterMode.ENFORCE));
                 limiter.setup();
 
                 // Verify that the limiter is in state READY, and is enabled.
@@ -388,11 +403,41 @@ class QueryLimiterImplTest {
         @Nested
         class BasicFunctionality {
 
+            @DisplayName("Does not initialize resources when the mode is DISABLED")
+            @Test
+            void disabledMode() throws NoSuchFieldException, IllegalAccessException {
+                QueryLimiterImpl limiter = new QueryLimiterImpl();
+                limiter.setConfiguration(createConfig(QueryLimiterMode.DISABLED));
+
+                // The providers should be null before setup() is called.
+                assertThat(getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider")).isNull();
+                assertThat(getField(limiter, UserLimitProvider.class, "userLimitProvider")).isNull();
+                assertThat(getField(limiter, SystemLimitProvider.class, "systemLimitProvider")).isNull();
+
+                // The zookeeper client, heartbeat cache, and active query tracker should be null before setup is called.
+                assertThat(getField(limiter, CuratorFramework.class, "zkClient")).isNull();
+                assertThat(getField(limiter, QueryHeartbeatCache.class, "heartbeatCache")).isNull();
+                assertThat(getField(limiter, ActiveQueryTracker.class, "activeQueryTracker")).isNull();
+
+                // Call setup() to initialize the limiter.
+                limiter.setup();
+
+                // The providers should be null after setup() is called.
+                assertThat(getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider")).isNull();
+                assertThat(getField(limiter, UserLimitProvider.class, "userLimitProvider")).isNull();
+                assertThat(getField(limiter, SystemLimitProvider.class, "systemLimitProvider")).isNull();
+
+                // The zookeeper client, heartbeat cache, and active query tracker should be null after setup is called.
+                assertThat(getField(limiter, CuratorFramework.class, "zkClient")).isNull();
+                assertThat(getField(limiter, QueryHeartbeatCache.class, "heartbeatCache")).isNull();
+                assertThat(getField(limiter, ActiveQueryTracker.class, "activeQueryTracker")).isNull();
+            }
+
             @DisplayName("recreates the limit providers after a second successful call")
             @Test
             void limitProvidersAreRecreatedAfterSuccess() throws NoSuchFieldException, IllegalAccessException {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
-                limiter.setConfiguration(createConfig());
+                limiter.setConfiguration(createConfig(QueryLimiterMode.ENFORCE));
 
                 // The providers should be null before setup() is called.
                 assertThat(getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider")).isNull();
@@ -429,7 +474,7 @@ class QueryLimiterImplTest {
             @Test
             void limitProvidersAreNullAfterFailure() throws NoSuchFieldException, IllegalAccessException {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
-                limiter.setConfiguration(createConfig());
+                limiter.setConfiguration(createConfig(QueryLimiterMode.ENFORCE));
 
                 // The providers should be null before setup() is called.
                 assertThat(getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider")).isNull();
@@ -445,7 +490,7 @@ class QueryLimiterImplTest {
                 assertThat(getField(limiter, SystemLimitProvider.class, "systemLimitProvider")).isNotNull();
 
                 // Set the limiter with a bad configuration.
-                QueryLimiterImplConfiguration config = createConfig();
+                QueryLimiterImplConfiguration config = createConfig(QueryLimiterMode.ENFORCE);
                 config.setLimitConfiguration(null);
                 limiter.setConfiguration(config);
 
@@ -462,7 +507,7 @@ class QueryLimiterImplTest {
             @Test
             void zookeeperClientIsNullAfterConnectionTimeout() throws NoSuchFieldException, IllegalAccessException, IOException {
                 // Create the query limiter with a valid configuration with a small timeout for the zookeeper client connection.
-                QueryLimiterImplConfiguration config = createConfig();
+                QueryLimiterImplConfiguration config = createConfig(QueryLimiterMode.ENFORCE);
                 config.setZkClientConnectTimeout(10);
                 config.setZkClientConnectTimeoutUnit(TimeUnit.MILLISECONDS);
 
@@ -526,7 +571,7 @@ class QueryLimiterImplTest {
 
             private <T> void assertFieldIsSameAfterSecondSuccessfulSetup(Class<T> clazz, String fieldName) throws NoSuchFieldException, IllegalAccessException {
                 assertFieldIsSameBetweenCallsToSetup(clazz, fieldName, queryLimiter -> {
-                    QueryLimiterImplConfiguration config = createConfig();
+                    QueryLimiterImplConfiguration config = createConfig(QueryLimiterMode.ENFORCE);
                     config.getLimitConfiguration().setDefaultUserQueryLimit(500);
                     queryLimiter.setConfiguration(config);
                     queryLimiter.setup();
@@ -535,7 +580,7 @@ class QueryLimiterImplTest {
 
             private <T> void assertFieldIsSameAfterSecondFailingSetup(Class<T> clazz, String fieldName) throws NoSuchFieldException, IllegalAccessException {
                 assertFieldIsSameBetweenCallsToSetup(clazz, fieldName, queryLimiter -> {
-                    QueryLimiterImplConfiguration config = createConfig();
+                    QueryLimiterImplConfiguration config = createConfig(QueryLimiterMode.ENFORCE);
                     config.setLimitConfiguration(null);
                     queryLimiter.setConfiguration(config);
                     assertThatThrownBy(queryLimiter::setup).isInstanceOf(RuntimeException.class);
@@ -545,7 +590,7 @@ class QueryLimiterImplTest {
             private <T> void assertFieldIsSameBetweenCallsToSetup(Class<T> clazz, String fieldName, Consumer<QueryLimiterImpl> secondSetupCall)
                             throws NoSuchFieldException, IllegalAccessException {
                 QueryLimiterImpl limiter = new QueryLimiterImpl();
-                limiter.setConfiguration(createConfig());
+                limiter.setConfiguration(createConfig(QueryLimiterMode.ENFORCE));
 
                 // The field should be null before setup() is called.
                 assertThat(getField(limiter, clazz, fieldName)).isNull();
@@ -573,12 +618,17 @@ class QueryLimiterImplTest {
     @Nested
     class CloseTests {
 
-        @DisplayName("nullifies all internal resources")
-        @Test
-        void nullifiesAllProperties() throws NoSuchFieldException, IllegalAccessException {
+        @DisplayName("nullifies all internal resources when the query limiter mode is")
+        @ParameterizedTest(name = "{0}")
+        @EnumSource(value = QueryLimiterMode.class, mode = EnumSource.Mode.EXCLUDE, names = {"DISABLED"})
+        void nullifiesInitializedProperties(QueryLimiterMode mode) throws NoSuchFieldException, IllegalAccessException {
             // Create a working limiter.
             QueryLimiterImpl limiter = new QueryLimiterImpl();
-            limiter.setConfiguration(createConfig());
+            QueryLimiterImplConfiguration config = createConfig(QueryLimiterMode.ENFORCE);
+
+            // Use a mode that will result in the internal resources being initialized.
+            config.setMode(mode);
+            limiter.setConfiguration(config);
             limiter.setup();
 
             // All internal resources should be initialized.
@@ -601,12 +651,40 @@ class QueryLimiterImplTest {
             assertThat(getField(limiter, ActiveQueryTracker.class, "activeQueryTracker")).isNull();
         }
 
+        @DisplayName("will not throw an error when the mode is DISABLED")
+        @Test
+        void nullifiesNonInitializedProperties() throws NoSuchFieldException, IllegalAccessException {
+            // Create a working limiter.
+            QueryLimiterImpl limiter = new QueryLimiterImpl();
+            limiter.setConfiguration(createConfig(QueryLimiterMode.DISABLED));
+            limiter.setup();
+
+            // All internal resources should not be initialized.
+            assertThat(getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider")).isNull();
+            assertThat(getField(limiter, UserLimitProvider.class, "userLimitProvider")).isNull();
+            assertThat(getField(limiter, SystemLimitProvider.class, "systemLimitProvider")).isNull();
+            assertThat(getField(limiter, CuratorFramework.class, "zkClient")).isNull();
+            assertThat(getField(limiter, QueryHeartbeatCache.class, "heartbeatCache")).isNull();
+            assertThat(getField(limiter, ActiveQueryTracker.class, "activeQueryTracker")).isNull();
+
+            // Shutdown the limiter. This should not result in an exception
+            assertDoesNotThrow(() -> limiter.close());
+
+            // All internal resources should be null.
+            assertThat(getField(limiter, QueryLogicGroupLimitProvider.class, "queryLogicGroupLimitProvider")).isNull();
+            assertThat(getField(limiter, UserLimitProvider.class, "userLimitProvider")).isNull();
+            assertThat(getField(limiter, SystemLimitProvider.class, "systemLimitProvider")).isNull();
+            assertThat(getField(limiter, CuratorFramework.class, "zkClient")).isNull();
+            assertThat(getField(limiter, QueryHeartbeatCache.class, "heartbeatCache")).isNull();
+            assertThat(getField(limiter, ActiveQueryTracker.class, "activeQueryTracker")).isNull();
+        }
+
         @DisplayName("transitions to a CLOSED state")
         @Test
         void resultsInClosedState() {
             // Create a working limiter.
             QueryLimiterImpl limiter = new QueryLimiterImpl();
-            limiter.setConfiguration(createConfig());
+            limiter.setConfiguration(createConfig(QueryLimiterMode.ENFORCE));
             limiter.setup();
 
             limiter.close();
@@ -619,7 +697,7 @@ class QueryLimiterImplTest {
         void callBeCalledMultipleTimes() {
             // Create a working limiter.
             QueryLimiterImpl limiter = new QueryLimiterImpl();
-            limiter.setConfiguration(createConfig());
+            limiter.setConfiguration(createConfig(QueryLimiterMode.ENFORCE));
             limiter.setup();
 
             limiter.close();
@@ -1097,12 +1175,13 @@ class QueryLimiterImplTest {
         return clazz.cast(field.get(source));
     }
 
-    private QueryLimiterImplConfiguration createConfig() {
+    private QueryLimiterImplConfiguration createConfig(QueryLimiterMode mode) {
         QueryLimitConfiguration limitConfig = new QueryLimitConfiguration();
         limitConfig.setDefaultUserQueryLimit(100);
         limitConfig.setInternalCacheMaxSize(200);
 
         QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+        config.setMode(mode);
         config.setLimitConfiguration(limitConfig);
         config.setZkClientBuilder(new ZkClientBuilder().setConnectString(server.getConnectString()));
 

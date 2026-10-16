@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -288,6 +287,15 @@ class QueryLimiterImplMockTest {
                 limiter.getActiveQueries();
                 verify(heartbeatCache).getQueryIds();
             }
+
+            @DisplayName("Returns an empty set when the mode is DISABLED")
+            @Test
+            void disabledMode() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+                setLimiterState(QueryLimiterImpl.State.READY);
+                when(limiterConfig.getMode()).thenReturn(QueryLimiterMode.DISABLED);
+                assertThat(limiter.getActiveQueries()).isEmpty();
+                verifyNoInteractions(heartbeatCache);
+            }
         }
     }
 
@@ -364,17 +372,29 @@ class QueryLimiterImplMockTest {
                 verify(heartbeatCache).stopAndRemove(eq(queryIds));
             }
 
-            @DisplayName("does not care when the query limiter mode is")
+            @DisplayName("marks queries inactive when the query limiter mode is")
             @ParameterizedTest(name = "{0}")
-            @EnumSource(value = QueryLimiterMode.class, mode = EnumSource.Mode.MATCH_ALL)
-            void modeAgnostic(QueryLimiterMode mode) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+            @EnumSource(value = QueryLimiterMode.class, mode = EnumSource.Mode.EXCLUDE, names = {"DISABLED"})
+            void nonDisabledMode(QueryLimiterMode mode) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
                 setLimiterState(QueryLimiterImpl.State.READY);
-                lenient().when(limiterConfig.getMode()).thenReturn(mode);
+                when(limiterConfig.getMode()).thenReturn(mode);
 
                 Set<String> queryIds = Set.of("queryId1");
                 limiter.markInactive(queryIds);
 
                 verify(heartbeatCache).stopAndRemove(eq(queryIds));
+            }
+
+            @DisplayName("does nothing when the mode is DISABLED")
+            @Test
+            void disabledMode() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+                setLimiterState(QueryLimiterImpl.State.READY);
+                when(limiterConfig.getMode()).thenReturn(QueryLimiterMode.DISABLED);
+
+                Set<String> queryIds = Set.of("queryId1");
+                limiter.markInactive(queryIds);
+
+                verifyNoInteractions(heartbeatCache);
             }
         }
     }
@@ -430,16 +450,27 @@ class QueryLimiterImplMockTest {
                 verify(heartbeatCache).stopAndRemove(eq("1234"));
             }
 
-            @DisplayName("does not care when the query limiter mode is")
+            @DisplayName("marks the query inactive when the query limiter mode is")
             @ParameterizedTest(name = "{0}")
-            @EnumSource(value = QueryLimiterMode.class, mode = EnumSource.Mode.MATCH_ALL)
-            void modeAgnostic(QueryLimiterMode mode) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+            @EnumSource(value = QueryLimiterMode.class, mode = EnumSource.Mode.EXCLUDE, names = {"DISABLED"})
+            void nonDisabledMode(QueryLimiterMode mode) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
                 setLimiterState(QueryLimiterImpl.State.READY);
-                lenient().when(limiterConfig.getMode()).thenReturn(mode);
+                when(limiterConfig.getMode()).thenReturn(mode);
 
                 limiter.markInactive("1234");
 
                 verify(heartbeatCache).stopAndRemove(eq("1234"));
+            }
+
+            @DisplayName("does nothing when the mode is DISABLED")
+            @Test
+            void disabledMode() throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+                setLimiterState(QueryLimiterImpl.State.READY);
+                when(limiterConfig.getMode()).thenReturn(QueryLimiterMode.DISABLED);
+
+                limiter.markInactive("1234");
+
+                verifyNoInteractions(heartbeatCache);
             }
         }
     }
