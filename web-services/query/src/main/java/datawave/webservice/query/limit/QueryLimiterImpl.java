@@ -294,7 +294,7 @@ public class QueryLimiterImpl implements QueryLimiter {
         try {
             if (activeQueryTracker == null) {
                 log.debug("Creating active query tracker");
-                this.activeQueryTracker = new ActiveQueryTracker(this.zkClient);
+                this.activeQueryTracker = new ActiveQueryTracker(this.zkClient, config.getNodeCreationTimeout(), config.getNodeCreationTimeoutUnit());
             } else {
                 log.debug("Active query tracker already exists, skipping initialization");
             }

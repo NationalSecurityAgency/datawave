@@ -149,6 +149,8 @@
         - zkClientConnectTimeout: The timeout for waiting for the Zookeeper client to connect to Zookeeper once started.
             Defaults to 3.
         - zkClientConnectTimeoutUnit: The time unit for zkClientConnectTimeout. Defaults to MINUTES.
+        - nodeCreationTimeout: The timeout for waiting for new nodes to be created in Zookeeper when tracking a new active query. Defaults to 1.
+        - nodeCreationTimeoutUnit: The time unit for nodeCreationTimeout. Defaults to SECOND.
     -->
     <bean id="queryLimiterConfig" class="datawave.webservice.query.limit.QueryLimiterImplConfiguration" primary="true">
         <property name="mode" value="ENFORCE"/>

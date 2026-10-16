@@ -35,12 +35,20 @@ public class ActiveQueryTracker {
      */
     private final CuratorFramework client;
 
+    private final int nodeCreationTimeout;
+
+    private final TimeUnit nodeCreationTimeoutUnit;
+
     /**
      * Create and return a new {@link ActiveQueryTracker} instance
      */
-    public ActiveQueryTracker(CuratorFramework client) {
+    public ActiveQueryTracker(CuratorFramework client, int nodeCreationTimeout, TimeUnit nodeCreationTimeoutUnit) {
         Preconditions.checkNotNull(client, "zookeeper client cannot be null");
+        Preconditions.checkArgument(nodeCreationTimeout > 0, "nodeCreationTimeout must be greater than 0");
+        Preconditions.checkNotNull(nodeCreationTimeoutUnit, "nodeCreationTimeoutUnit must not be null");
         this.client = client;
+        this.nodeCreationTimeout = nodeCreationTimeout;
+        this.nodeCreationTimeoutUnit = nodeCreationTimeoutUnit;
     }
 
     /**
@@ -76,8 +84,8 @@ public class ActiveQueryTracker {
      * @param systemCountsAgainstUserLimit
      *            whether queries on the system count towards the user limit
      * @return a new query heartbeat that can close the ephemeral nodes associated with the query
-     * @throws QueryAlreadyTrackedException
-     *             if the query ID is already being tracked in Zookeeper
+     * @throws ActiveQueryException
+     *             if an error occurs
      */
     public QueryHeartbeat trackQuery(String queryId, String userDn, String system, String queryLogic, boolean systemCountsAgainstUserLimit) throws Exception {
         // Normalize the userDN, system, and queryLogic.
@@ -128,21 +136,66 @@ public class ActiveQueryTracker {
                 nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, userQueryIdPath, EMPTY_DATA, false));
             }
 
-            // Persist each node to Zookeeper.
-            for (PersistentNode node : nodes) {
-                node.start();
-                node.waitForInitialCreate(1, TimeUnit.SECONDS);
-            }
+            // Start the nodes so that they are created in Zookeeper.
+            startNodes(nodes);
 
             // Initialize the heartbeat.
             heartbeat = new QueryHeartbeat(queryId, nodes);
 
         } catch (Exception e) {
             log.error("Failed to track query {}", queryId, e);
-            throw e;
+            throw new ActiveQueryException("Failed to track query " + queryId, e);
         }
 
         return heartbeat;
+    }
+
+    /**
+     * Start the given nodes.
+     *
+     * @param nodes
+     *            the nodes to start
+     * @throws NodeCreationTimeoutException
+     *             if the nodes are not created within the configured timeout
+     * @throws InterruptedException
+     *             if the thread is interrupted
+     */
+    private void startNodes(List<PersistentNode> nodes) throws InterruptedException, NodeCreationTimeoutException {
+        boolean timedOut = false;
+        // Attempt to start the nodes, waiting for them to be created.
+        try {
+            for (PersistentNode node : nodes) {
+                node.start();
+                boolean started = node.waitForInitialCreate(nodeCreationTimeout, nodeCreationTimeoutUnit);
+                if (!started) {
+                    timedOut = true;
+                    break;
+                }
+            }
+        } catch (InterruptedException e) {
+            // If the thread is interrupted, close all nodes and rethrow the exception.
+            for (PersistentNode node : nodes) {
+                try {
+                    node.close();
+                } catch (Exception e1) {
+                    log.error("Error closing PersistentNode", e);
+                }
+            }
+            throw e;
+        }
+
+        // If any of the nodes were not created within the timeout, close all of them and throw an exception.
+        if (timedOut) {
+            for (PersistentNode node : nodes) {
+                try {
+                    node.close();
+                } catch (Exception e) {
+                    log.error("Error closing PersistentNode", e);
+                }
+            }
+            throw new NodeCreationTimeoutException(
+                            "Failed to create nodes in Zookeeper within timeout of " + nodeCreationTimeout + " " + nodeCreationTimeoutUnit);
+        }
     }
 
     /**
@@ -445,4 +498,6 @@ public class ActiveQueryTracker {
     private String getSystemQueryIdPath(String system, String queryLogic, String queryId) {
         return getSystemQueryLogicPath(system, queryLogic) + "/" + queryId;
     }
+
+    public void TR() {}
 }

@@ -1,12 +1,13 @@
 package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -22,7 +23,6 @@ class ActiveQueryTrackerTest {
 
     TestingServer server;
     CuratorFramework client;
-    ActiveQueryTracker tracker;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -37,7 +37,6 @@ class ActiveQueryTrackerTest {
                 .build();
         // @formatter:on
         client.start();
-        tracker = new ActiveQueryTracker(client);
     }
 
     @AfterEach
@@ -60,6 +59,8 @@ class ActiveQueryTrackerTest {
         String system = "SERVER-01";
         String queryLogic = "ShardQueryLogic";
 
+        ActiveQueryTracker tracker = createTracker(1, TimeUnit.SECONDS);
+
         tracker.trackQuery(queryId, user, system, queryLogic, true);
 
         // Verify that the nodes were created as expected in Zookeeper.
@@ -77,6 +78,8 @@ class ActiveQueryTrackerTest {
         String user = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
         String system = "SERVER-01";
         String queryLogic = "ShardQueryLogic";
+
+        ActiveQueryTracker tracker = createTracker(1, TimeUnit.SECONDS);
 
         tracker.trackQuery(queryId, user, system, queryLogic, false);
 
@@ -98,9 +101,16 @@ class ActiveQueryTrackerTest {
         String system = "SERVER-01";
         String queryLogic = "ShardQueryLogic";
 
+        ActiveQueryTracker tracker = createTracker(1, TimeUnit.SECONDS);
+
         tracker.trackQuery(queryId, user, system, queryLogic, true);
 
-        assertThatExceptionOfType(QueryAlreadyTrackedException.class).isThrownBy(() -> tracker.trackQuery(queryId, user, system, queryLogic, true));
+        // @formatter:off
+        assertThatThrownBy(() -> tracker.trackQuery(queryId, user, system, queryLogic, true)).isInstanceOf(ActiveQueryException.class)
+                        .hasMessage("Failed to track query " + queryId)
+                        .hasRootCauseInstanceOf(QueryAlreadyTrackedException.class)
+                        .hasRootCauseMessage("Query " + queryId + " is already being tracked");
+        // @formatter:on
     }
 
     /**
@@ -112,6 +122,8 @@ class ActiveQueryTrackerTest {
         String user = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
         String system = "SERVER-01";
         String queryLogic = "ShardQueryLogic";
+
+        ActiveQueryTracker tracker = createTracker(1, TimeUnit.SECONDS);
 
         QueryHeartbeat heartbeat = tracker.trackQuery(queryId, user, system, queryLogic, true);
 
@@ -134,6 +146,8 @@ class ActiveQueryTrackerTest {
      */
     @Test
     void testGetDistinctQueryLogics() throws Exception {
+        ActiveQueryTracker tracker = createTracker(1, TimeUnit.SECONDS);
+
         // Assert that initially, there are no distinct query logics.
         assertThat(tracker.getDistinctQueryLogics()).isEmpty();
 
@@ -158,6 +172,8 @@ class ActiveQueryTrackerTest {
      */
     @Test
     void testGetTotalUserQueriesForQueryLogic() throws Exception {
+        ActiveQueryTracker tracker = createTracker(1, TimeUnit.SECONDS);
+
         String userA = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
         String userB = "CN=Test B. User, ou=Example Developers, O=Example Corp, c=US";
 
@@ -197,6 +213,8 @@ class ActiveQueryTrackerTest {
      */
     @Test
     void testGetTotalSystemQueriesForQueryLogic() throws Exception {
+        ActiveQueryTracker tracker = createTracker(1, TimeUnit.SECONDS);
+
         String userA = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
         String userB = "CN=Test B. User, ou=Example Developers, O=Example Corp, c=US";
 
@@ -234,6 +252,8 @@ class ActiveQueryTrackerTest {
      */
     @Test
     void testTotalUserQueriesMeetsLimit() throws Exception {
+        ActiveQueryTracker tracker = createTracker(1, TimeUnit.SECONDS);
+
         String user = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
 
         // Assert that if no queries are tracked for the user, we do not meet the limit.
@@ -279,6 +299,8 @@ class ActiveQueryTrackerTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testTotalSystemQueriesMeetsLimit(boolean systemCountsAgainstUserLimits) throws Exception {
+        ActiveQueryTracker tracker = createTracker(1, TimeUnit.SECONDS);
+
         // Assert that if no queries are tracked for the system, we do not meet the limit.
         assertThat(tracker.totalSystemQueriesMeetsLimit("SYSTEM-01", 10, Set.of(), 0)).isFalse();
 
@@ -302,5 +324,31 @@ class ActiveQueryTrackerTest {
 
         // If we pass in arguments that indicate we already counted the EventQueryLogic queries, assert that a limit of 10 will not be met.
         assertThat(tracker.totalSystemQueriesMeetsLimit("SYSTEM-01", 10, Set.of("EventQueryLogic"), 4)).isFalse();
+    }
+
+    /**
+     * Verify that when the creation of a node times out, an exception is thrown.
+     */
+    @Test
+    void testNodeCreationTimeout() {
+        String queryId = UUID.randomUUID().toString();
+        String user = "CN=Test A. User, ou=Example Developers, O=Example Corp, c=US";
+        String system = "SERVER-01";
+        String queryLogic = "ShardQueryLogic";
+
+        // Create a very small timeout.
+        ActiveQueryTracker tracker = createTracker(1, TimeUnit.NANOSECONDS);
+
+        // @formatter:off
+        assertThatThrownBy(() -> tracker.trackQuery(queryId, user, system, queryLogic, true))
+                        .isInstanceOf(ActiveQueryException.class)
+                        .hasMessage("Failed to track query " + queryId)
+                        .hasRootCauseInstanceOf(NodeCreationTimeoutException.class)
+                        .hasRootCauseMessage("Failed to create nodes in Zookeeper within timeout of 1 NANOSECONDS");
+        // @formatter:on
+    }
+
+    private ActiveQueryTracker createTracker(int nodeCreationTimeout, TimeUnit nodeCreationTimeoutUnit) {
+        return new ActiveQueryTracker(client, nodeCreationTimeout, nodeCreationTimeoutUnit);
     }
 }
