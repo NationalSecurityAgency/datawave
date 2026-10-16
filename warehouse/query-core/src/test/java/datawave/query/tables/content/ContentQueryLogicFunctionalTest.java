@@ -176,7 +176,7 @@ public class ContentQueryLogicFunctionalTest {
 
     private void assertLimitExceeded(String queryString) {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> logic.initialize(connector, createQuery(queryString), authSet));
-        assertEquals("Content query exceeds max.ids of " + logic.getMaxIds() + " record IDs", exception.getMessage());
+        assertEquals("Query has requested greater than max.ids of " + logic.getMaxIds() + " record IDs", exception.getMessage());
     }
 
     protected void addExpectedResult(String result) {
