@@ -173,7 +173,6 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <version>${version.springframework}</version>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
