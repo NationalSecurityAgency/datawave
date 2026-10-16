@@ -1344,6 +1344,30 @@ public class QueryIteratorIT extends EasyMockSupport {
         event_test(seekRange, query, false, hitOverride, otherData, Collections.EMPTY_LIST, additionalOptions);
     }
 
+    /**
+     * A teardown rebuilds the iterator and seeks it again just after the last key it returned. The most recent unique transform reloads the documents it
+     * persisted before the teardown, and must not hand back the ones that precede the new seek range.
+     */
+    @Test
+    public void most_recent_unique_after_teardown() throws IOException {
+        List<Map.Entry<Key,Value>> listSource = configureTestData(11);
+        listSource.addAll(addEvent("123.345.457", 12));
+        listSource.addAll(addEvent("123.345.458", 13));
+        baseIterator = new SortedListKeyValueIterator(listSource);
+
+        configureIterator();
+        options.put(QUERY, "EVENT_FIELD1 == 'a' && EVENT_FIELD4 == 'd' && EVENT_FIELD6 == 'f' && f:most_recent_unique('EVENT_FIELD2')");
+        options.put(INDEX_ONLY_FIELDS, "");
+        options.put(UNIQUE_FIELDS, "EVENT_FIELD2[ALL]");
+        options.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
+
+        replayAll();
+        List<Map.Entry<Key,Document>> results = lookupTask.lookupWithTeardown(baseIterator, options, iterEnv, getShardRange());
+        verifyAll();
+
+        eval(results, Collections.singletonList(getBaseExpectedEvent("123.345.458")));
+    }
+
     protected void configureIterator() {
         lookupTask.setTypeMetadata(typeMetadata);
     }
