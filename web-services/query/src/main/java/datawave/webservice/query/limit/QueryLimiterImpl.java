@@ -23,6 +23,8 @@ import javax.annotation.PreDestroy;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
+import javax.ejb.ConcurrencyManagement;
+import javax.ejb.ConcurrencyManagementType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
@@ -41,6 +43,8 @@ import datawave.configuration.spring.SpringBean;
 @DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
 @Singleton
 @Startup
+// Concurrent access is managed directly in the methods via the ReadWriteLock.
+@ConcurrencyManagement(ConcurrencyManagementType.BEAN)
 public class QueryLimiterImpl implements QueryLimiter {
 
     private static final Logger log = LoggerFactory.getLogger(QueryLimiterImpl.class);
