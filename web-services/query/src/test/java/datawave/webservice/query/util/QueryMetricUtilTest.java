@@ -1,12 +1,13 @@
 package datawave.webservice.query.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.UUID;
 
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.QueryMetric;
@@ -22,7 +23,7 @@ public class QueryMetricUtilTest {
     private PageMetric page1 = new PageMetric("localhost", 50, 150, 0, 0, -1, -1, -1, -1);
     private PageMetric page2 = new PageMetric("localhost", 25, 75, 0, 0, -1, -1, -1, -1);
 
-    @Before
+    @BeforeEach
     public void setup() {
         metric = new QueryMetric();
         metric.setQueryId(queryId);
@@ -37,7 +38,7 @@ public class QueryMetricUtilTest {
     public void testSerialization() throws Exception {
         Mutation m = QueryMetricUtil.toMutation(metric);
         QueryMetric metric2 = (QueryMetric) QueryMetricUtil.toMetric(new Value(m.getUpdates().get(0).getValue()));
-        Assert.assertEquals(metric, metric2);
+        assertEquals(metric, metric2);
     }
 
 }
