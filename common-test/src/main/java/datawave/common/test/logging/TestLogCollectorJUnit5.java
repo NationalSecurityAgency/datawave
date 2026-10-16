@@ -34,7 +34,7 @@ public class TestLogCollectorJUnit5 implements BeforeEachCallback, AfterEachCall
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        StringLayout layout = PatternLayout.newBuilder().withPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
+        StringLayout layout = PatternLayout.newBuilder().setPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
         Appender appender = WriterAppender.newBuilder().setName(TestLogCollectorJUnit5.class.getSimpleName()).setFilter(FilterAdapter.adapt(new Filter() {
             @Override
             public int decide(LoggingEvent event) {
