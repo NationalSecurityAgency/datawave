@@ -25,7 +25,14 @@ The `QueryLimiterImpl` bean requires the following beans to be configured. See [
 
 ### Enabling the Query Limiter
 
-By default, the query limiter will start in a disabled mode where limits are not enforced and active query information is not tracked in Zookeeper. This can be changed by setting the `mode` property of the configured `QueryLimiterImplConfiguration`. See [QueryLimiterMode](QueryLimiterMode.java) for all mode options.
+By default, the query limiter will start the mode `DISABLED`. In this mode:
+* A connection to Zookeeper will not be established. 
+
+* Limits are not enforced. 
+* Query information is not tracked in Zookeeper. 
+
+This can be changed by setting the `mode` property of the configured `QueryLimiterImplConfiguration`. See [QueryLimiterMode](QueryLimiterMode.java) for all options.
+
 
 ### Limit Configuration
 

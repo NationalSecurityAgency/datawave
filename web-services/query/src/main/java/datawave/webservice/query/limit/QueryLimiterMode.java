@@ -6,12 +6,13 @@ package datawave.webservice.query.limit;
 public enum QueryLimiterMode {
 
     /**
-     * The query limiter feature is fully disabled. Query information will not be tracked in Zookeeper, and query limits will not be enforced.
+     * The query limiter feature is fully disabled. Query information will not be tracked in Zookeeper, and query limits will not be enforced. Additionally, the
+     * Zookeeper connection will not be created.
      */
     DISABLED(false),
 
     /**
-     * Query information will be tracked in Zookeeper, but limits will not be enforced.
+     * Query information will be tracked in Zookeeper (including new queries), but limits will not be enforced.
      */
     TRACK_ONLY(true),
 
