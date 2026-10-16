@@ -13,12 +13,12 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
 
 import datawave.data.type.LcType;
+import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.TypeMetadata;
@@ -607,9 +607,8 @@ public class IngestTypePruningVisitorTest {
         test(query, query, metadata);
     }
 
-    @Ignore
     @Test
-    public void testFilterFunctionExcludeExpandedIntoMutuallyExclusiveFields() {
+    public void testFilterFunctionExcludeExpandedIntoMutuallyExclusiveFields() throws InvalidQueryTreeException {
         // there might be an exclude like #EXCLUDE(MODEL_FIELD, '.*.*')
         // which is expanded like so #EXCLUDE((F1||F2||F3), '.*.*')
         // and is then rewritten as a filter function like so !((F1 == null && F2 == null && F3 == null))
@@ -619,11 +618,13 @@ public class IngestTypePruningVisitorTest {
         metadata.put("C", "type2", LcType.class.getTypeName());
         metadata.put("D", "type3", LcType.class.getTypeName());
 
-        // pushdown negations visitor would rewrite this
-        // into A == '1' && !(B == null) && !...
         String query = "A == '1' && !((B == null || C == null || D == null))";
-        String expected = "A == '1' && !((B == null))";
-        test(query, expected, metadata);
+        ASTJexlScript script = parseQuery(query);
+        script = (ASTJexlScript) PushdownNegationVisitor.pushdownNegations(script);
+        assertTrue(validator.isValid(script, "Pushed Down Exclude Function"));
+
+        ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata);
+        assertEquals("Mutually exclusive not-null fields make the intersection unsatisfiable", 0, pruned.jjtGetNumChildren());
     }
 
     @Test

@@ -5,9 +5,8 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +30,10 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.util.ShardLocationTrieMap;
-import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TableSplitsCacheTest {
 
@@ -216,6 +213,7 @@ public class TableSplitsCacheTest {
         JobConf mocked = EasyMock.createMock(JobConf.class);
 
         EasyMock.expect(mocked.getTrimmed("fs.defaultFS", "file:///")).andReturn("file:///").anyTimes();
+        EasyMock.expect(mocked.iterator()).andReturn(Collections.emptyIterator()).anyTimes();
 
         mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
@@ -377,18 +375,19 @@ public class TableSplitsCacheTest {
         }
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testUpdateNoFile() throws IOException {
         logger.info("testUpdateNoFile called...");
         setupConfiguration();
-        setSplitsCacheDir(String.format("/random/dir%s/must/not/exist", (int) (Math.random() * 100) + 1));
+        File nonDirectory = File.createTempFile("splits-cache", ".tmp");
         try {
+            setSplitsCacheDir(new Path(nonDirectory.toURI()).toString());
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
-            uut.update();
             Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
-            Assert.assertNull("TableSplitsCache should have no splits", uut.getSplits());
+            uut.update();
+            Assert.assertThrows(IOException.class, uut::getSplits);
         } finally {
-
+            Assert.assertTrue("Failed to remove temporary file", nonDirectory.delete());
             logger.info("testUpdateNoFile completed.");
         }
 
@@ -573,48 +572,20 @@ public class TableSplitsCacheTest {
 
     }
 
-    @Ignore
     @Test
-    public void testTrieSize() {
-        Map<Text,String> map = new HashMap<>();
-        fillMap(map);
-        System.out.println("Hashmap size: " + ObjectSizeOf.Sizer.getObjectSize(map));
-        map = new ShardLocationTrieMap<>();
-        fillMap(map);
-        System.out.println("Triemap size: " + ObjectSizeOf.Sizer.getObjectSize(map));
-    }
+    public void testTrieContentsMatchHashMap() {
+        Map<Text,String> expected = new HashMap<>();
+        expected.put(new Text("20240101_0"), "r200n0:1000");
+        expected.put(new Text("20240101_1"), "r200n1:1001");
+        expected.put(new Text("20240102_0"), "r201n0:1000");
+        expected.put(new Text("20241231_999"), "r249n39:1004");
 
-    private void fillMap(Map<Text,String> map) {
-        List<String> tservers = getTservers();
-        Calendar c = Calendar.getInstance();
-        c.set(Calendar.YEAR, 1980);
-        c.set(Calendar.MONTH, 0);
-        c.set(Calendar.DATE, 1);
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
-        String date = format.format(c.getTime());
-        int tserver = 0;
-        while (date.compareTo("2025") < 0) {
-            for (int shard = 0; shard < 1000; shard++) {
-                String row = date + '_' + shard;
-                String location = tservers.get(tserver);
-                tserver = (tserver + 1) % tservers.size();
-                map.put(new Text(row), location);
-            }
-            c.add(Calendar.DATE, 1);
-            date = format.format(c.getTime());
-        }
-    }
+        Map<Text,String> actual = new ShardLocationTrieMap<>();
+        actual.putAll(expected);
 
-    private List<String> getTservers() {
-        List<String> tservers = new ArrayList<>();
-        for (int row = 200; row < 250; row++) {
-            for (int node = 0; node < 40; node++) {
-                for (int port = 1000; port < 1005; port++) {
-                    tservers.add("r" + row + "n" + node + ":" + port);
-                }
-            }
-        }
-        return tservers;
+        Assert.assertEquals(expected.size(), actual.size());
+        Assert.assertEquals(expected.entrySet(), actual.entrySet());
+        expected.forEach((split, location) -> Assert.assertEquals(location, actual.get(split)));
     }
 
 }

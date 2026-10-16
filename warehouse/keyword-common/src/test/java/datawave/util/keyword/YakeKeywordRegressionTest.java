@@ -29,8 +29,8 @@ public class YakeKeywordRegressionTest {
         File inputFile = getInputFileForTest(testName, YakeKeywordRegressionTest.class);
         File expectedFile = getExpectedFileForTest(testName, YakeKeywordRegressionTest.class);
 
-        String input = IOUtils.toString(inputFile.toURI(), StandardCharsets.UTF_8);
-        String expectedRaw = IOUtils.toString(expectedFile.toURI(), StandardCharsets.UTF_8);
+        String input = IOUtils.toString(inputFile.toURI(), StandardCharsets.UTF_8).replace("\r\n", "\n");
+        String expectedRaw = IOUtils.toString(expectedFile.toURI(), StandardCharsets.UTF_8).replace("\r\n", "\n");
         String languageCode = getLanguageCodeFromFilename(inputFile.getName());
 
         String output = runYakeKeywordExtractor(input, languageCode);

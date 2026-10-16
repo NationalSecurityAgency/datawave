@@ -17,7 +17,6 @@ import java.util.UUID;
 import org.apache.accumulo.core.data.Key;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
@@ -80,28 +79,26 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
         }
     }
 
-    /**
-     * The base class asserts that a unique document comes back from apply() as a real result. On the mostRecent path every document is accumulated into the
-     * backing map instead, and real results are produced only by {@link UniqueTransform#flush()}, so that assertion cannot hold here. Pacing itself now applies
-     * to this path and is covered by {@link #testIntermediateResultsArePacedOnMostRecentPath()}.
-     */
+    // Pace duplicate documents without losing the most recent document buffered for flush().
     @Override
     @Test
-    @Ignore
     public void testIntermediateResultsArePaced_afterPageTimerReset() {
-        // see testIntermediateResultsArePacedOnMostRecentPath
-    }
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+        for (int i = 1; i <= 3; i++) {
+            givenInputDocument(i).withKeyValue("ATTR0", randomValues.get(0));
+        }
+        UniqueTransform uniqueTransform = givenPageTimedMostRecentTransform();
 
-    /**
-     * Ignored for the same reason as {@link #testIntermediateResultsArePaced_afterPageTimerReset()}: the base class interleaves real results with intermediate
-     * ones, and apply() never returns a real result on the mostRecent path. The resumption half of the behaviour — a further intermediate result once the
-     * timeout elapses again — is covered by {@link #testIntermediateResultsArePacedOnMostRecentPath()}.
-     */
-    @Override
-    @Test
-    @Ignore
-    public void testRealAndIntermediateResultsResumeAfterPageTimerReset() {
-        // see testIntermediateResultsArePacedOnMostRecentPath
+        Map.Entry<Key,Document> result = uniqueTransform.apply(entryFor(inputDocuments.get(0)));
+        assertNotNull(result);
+        assertTrue(result.getValue().isIntermediateResult());
+        assertNull(uniqueTransform.apply(entryFor(inputDocuments.get(1))));
+        assertNull(uniqueTransform.apply(entryFor(inputDocuments.get(2))));
+
+        result = uniqueTransform.flush();
+        assertNotNull(result);
+        assertEquals(inputDocuments.get(2).getMetadata(), result.getKey());
+        assertNull(uniqueTransform.flush());
     }
 
     /**
@@ -129,8 +126,9 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
      * accumulating into the backing map. Emitting one resets the page timer, so intermediate results are paced at one per timeout window, and the documents
      * accumulated alongside them are still returned in full by {@link UniqueTransform#flush()}.
      */
+    @Override
     @Test
-    public void testIntermediateResultsArePacedOnMostRecentPath() {
+    public void testRealAndIntermediateResultsResumeAfterPageTimerReset() {
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(1)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(2)).isExpectedToBeUnique();

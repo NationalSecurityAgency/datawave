@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.log4j.Logger;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import datawave.data.type.util.IpV4Address;
@@ -65,34 +64,21 @@ public class IpAddressTypeTest {
         assertEquals("*.013.004", norm.normalize("*.13.4"));
     }
 
-    // TEST IS TURNED OFF
     @Test
-    @Disabled
     public void testIpNormalizer05() {
-        log.debug("testIpNormalizer05");
         IpV4Address ip = IpV4Address.parse("*.2.13.4");
-        if (log.isDebugEnabled()) {
-            log.debug(ip.toString());
-            log.debug(ip.toZeroPaddedString());
-            log.debug(ip.toReverseString());
-            log.debug(ip.toReverseZeroPaddedString());
-        }
+        assertEquals("*.2.13.4", ip.toString());
+        assertEquals("*.002.013.004", ip.toZeroPaddedString());
+        assertEquals("4.13.2.*", ip.toReverseString());
+        assertEquals("004.013.002.*", ip.toReverseZeroPaddedString());
     }
 
-    /*
-     * NOTE: call toReverseString() on a wildcarded ip doesn't work right although this is not much of an issue.
-     */
-    // TEST IS TURNED OFF
     @Test
-    @Disabled
     public void testIpNormalizer06() {
-        log.debug("testIpNormalizer06");
         IpV4Address ip = IpV4Address.parse("1.2.*");
-        if (log.isDebugEnabled()) {
-            log.debug(ip.toString());
-            log.debug(ip.toZeroPaddedString());
-            log.debug(ip.toReverseString());
-            log.debug(ip.toReverseZeroPaddedString());
-        }
+        assertEquals("1.2.*", ip.toString());
+        assertEquals("001.002.*", ip.toZeroPaddedString());
+        assertEquals("*.2.1", ip.toReverseString());
+        assertEquals("*.002.001", ip.toReverseZeroPaddedString());
     }
 }
