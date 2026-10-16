@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -17,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.Striped;
 
 /**
  * This class provides methods for leveraging Zookeeper to track queries and their active status.
@@ -31,16 +29,11 @@ public class ActiveQueryTracker {
     private static final String DISTINCT_QUERY_LOGICS_CONTAINER_PATH = "/distinctQueryLogics";
     private static final String SYSTEMS_CONTAINER_PATH = "/systems";
     private static final String USERS_CONTAINER_PATH = "/users";
-    private static final int LOCK_POOL_SIZE = 64;
+
     /**
      * The Zookeeper client.
      */
     private final CuratorFramework client;
-
-    /**
-     * Create a pool of 64 locks distributed by the key's hash.
-     */
-    private final Striped<Lock> stripedLocks = Striped.lock(LOCK_POOL_SIZE);
 
     /**
      * Create and return a new {@link ActiveQueryTracker} instance
@@ -72,9 +65,6 @@ public class ActiveQueryTracker {
      * /systems/&lt;systemName&gt;/&lt;queryLogic&gt;/&lt;queryId&gt;
      * </pre>
      *
-     * Concurrent access to this method is locked based on the query ID. Up to {@value #LOCK_POOL_SIZE} threads may concurrently track new queries with
-     * different query IDs. Calls to this method with the same queryId will contend for the same lock.
-     *
      * @param queryId
      *            the query's ID, a UUID
      * @param userDn
@@ -101,65 +91,55 @@ public class ActiveQueryTracker {
             log.trace("Tracking query: queryId={}, user='{}', system='{}', queryLogic='{}'", queryId, userDn, system, queryLogic);
         }
 
-        // Get a lock mapped to the query ID. This will prevent write clashes across same EJB Container ecosystem, but not across distributed systems. Due to
-        // the nature of UUID, the chances for UUID collisions after generating a new id is vanishingly small. However, if a situation arises where it is
-        // necessary to lock access to the same query ID across all distributed systems, a different approach will be needed.
-        Lock lock = stripedLocks.get(queryId);
-        lock.lock();
         try {
-            try {
-                // Verify we are not already tracking the query.
-                String systemQueryIdPath = getSystemQueryIdPath(system, queryLogic, queryId);
-                Stat stat = client.checkExists().forPath(systemQueryIdPath);
-                if (stat != null) {
-                    throw new QueryAlreadyTrackedException(queryId);
-                }
-
-                // Ensure we create the following container nodes.
-                client.createContainers(getSystemQueryLogicPath(system, queryLogic));
-                client.createContainers(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
-                // Create the user DN containers only if the system counts against the user limit.
-                if (systemCountsAgainstUserLimit) {
-                    client.createContainers(getUserQueryLogicPath(userDn, queryLogic));
-                }
-
-                // Track the query logic as a distinct query logic if it isn't already.
-                try {
-                    String distinctQueryLogicPath = getDistinctQueryLogicPath(queryLogic);
-                    Stat distinctQueryLogicStat = client.checkExists().forPath(distinctQueryLogicPath);
-                    if (distinctQueryLogicStat == null) {
-                        client.create().forPath(distinctQueryLogicPath);
-                    }
-                } catch (KeeperException.NodeExistsException e) {
-                    // Do nothing, the queryLogic was tracked on another thread.
-                }
-
-                // Create ephemeral nodes for the query ID. These nodes will not persist beyond the lifetime of the tracker's client.
-                // NOTE: If the application-level ActiveQueryTracker or its zookeeper client is closed, all ephemeral nodes created via the ActiveQueryTracker
-                // will be deleted.
-                List<PersistentNode> nodes = new ArrayList<>();
-                nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, systemQueryIdPath, EMPTY_DATA, false));
-                if (systemCountsAgainstUserLimit) {
-                    String userQueryIdPath = getUserQueryIdPath(userDn, queryLogic, queryId);
-                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, userQueryIdPath, EMPTY_DATA, false));
-                }
-
-                // Persist each node to Zookeeper.
-                for (PersistentNode node : nodes) {
-                    node.start();
-                    node.waitForInitialCreate(1, TimeUnit.SECONDS);
-                }
-
-                // Initialize the heartbeat.
-                heartbeat = new QueryHeartbeat(queryId, nodes);
-
-            } catch (Exception e) {
-                log.error("Failed to track query {}", queryId, e);
-                throw e;
+            // Verify we are not already tracking the query.
+            String systemQueryIdPath = getSystemQueryIdPath(system, queryLogic, queryId);
+            Stat stat = client.checkExists().forPath(systemQueryIdPath);
+            if (stat != null) {
+                throw new QueryAlreadyTrackedException(queryId);
             }
 
-        } finally {
-            lock.unlock();
+            // Ensure we create the following container nodes.
+            client.createContainers(getSystemQueryLogicPath(system, queryLogic));
+            client.createContainers(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
+            // Create the user DN containers only if the system counts against the user limit.
+            if (systemCountsAgainstUserLimit) {
+                client.createContainers(getUserQueryLogicPath(userDn, queryLogic));
+            }
+
+            // Track the query logic as a distinct query logic if it isn't already.
+            try {
+                String distinctQueryLogicPath = getDistinctQueryLogicPath(queryLogic);
+                Stat distinctQueryLogicStat = client.checkExists().forPath(distinctQueryLogicPath);
+                if (distinctQueryLogicStat == null) {
+                    client.create().forPath(distinctQueryLogicPath);
+                }
+            } catch (KeeperException.NodeExistsException e) {
+                // Do nothing, the queryLogic was tracked on another thread.
+            }
+
+            // Create ephemeral nodes for the query ID. These nodes will not persist beyond the lifetime of the tracker's client.
+            // NOTE: If the application-level ActiveQueryTracker or its zookeeper client is closed, all ephemeral nodes created via the ActiveQueryTracker
+            // will be deleted.
+            List<PersistentNode> nodes = new ArrayList<>();
+            nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, systemQueryIdPath, EMPTY_DATA, false));
+            if (systemCountsAgainstUserLimit) {
+                String userQueryIdPath = getUserQueryIdPath(userDn, queryLogic, queryId);
+                nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, userQueryIdPath, EMPTY_DATA, false));
+            }
+
+            // Persist each node to Zookeeper.
+            for (PersistentNode node : nodes) {
+                node.start();
+                node.waitForInitialCreate(1, TimeUnit.SECONDS);
+            }
+
+            // Initialize the heartbeat.
+            heartbeat = new QueryHeartbeat(queryId, nodes);
+
+        } catch (Exception e) {
+            log.error("Failed to track query {}", queryId, e);
+            throw e;
         }
 
         return heartbeat;

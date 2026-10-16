@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -32,6 +33,8 @@ import javax.inject.Inject;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.util.concurrent.Striped;
 
 import datawave.configuration.spring.SpringBean;
 
@@ -73,6 +76,17 @@ public class QueryLimiterImpl implements QueryLimiter {
          */
         CLOSED
     }
+
+    /**
+     * The pool size for {@link #stripedLocks}.
+     */
+    private static final int LOCK_POOL_SIZE = 64;
+
+    /**
+     * Create a pool of 64 locks distributed by the key's hash. This will be used to obtain locks for individual query IDs when tracking new queries via
+     * {@link #markActive(String, String, String, String)} in order to prevent concurrent writes to Zookeeper for the same query ID.
+     */
+    private final Striped<Lock> stripedLocks = Striped.lock(LOCK_POOL_SIZE);
 
     /**
      * The Zookeeper client.
@@ -462,7 +476,17 @@ public class QueryLimiterImpl implements QueryLimiter {
             QueryLimiterMode mode = config.getMode();
             if (mode.isTrackingEnabled()) {
                 boolean systemCountsTowardsUserLimits = systemLimitProvider.countsAgainstUserLimit(system);
-                QueryHeartbeat heartbeat = activeQueryTracker.trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
+                QueryHeartbeat heartbeat;
+                // Get a lock mapped to the query ID. This will prevent write clashes across same EJB Container ecosystem, but not across distributed systems.
+                // Due to the nature of UUID, the chances for UUID collisions after generating a new id is vanishingly small. However, if a situation arises
+                // where it is necessary to lock access to the same query ID across all distributed systems, a different approach will be needed.
+                Lock queryIdLock = stripedLocks.get(queryId);
+                queryIdLock.lock();
+                try {
+                    heartbeat = activeQueryTracker.trackQuery(queryId, userDn, system, queryLogic, systemCountsTowardsUserLimits);
+                } finally {
+                    queryIdLock.unlock();
+                }
                 // Store the heartbeat into the cache. This acts as a means to keep the connection to Zookeeper alive for the ephemeral nodes stored in the
                 // heartbeat.
                 heartbeatCache.put(heartbeat);
