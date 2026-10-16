@@ -26,21 +26,32 @@ jobs:
   configure-runner:
     runs-on: ubuntu-latest
     steps:
-      - id: set_output_step # at least one step is required in a job
+      - name: Checkout runner configuration
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+      - name: Resolve runner
+        id: resolve_runner
+        env:
+          RUNNER_TYPE: ${{ vars.RUNNER_TYPE }}
+          SUPPORTED_RUNNER_TYPES: ${{ vars.SUPPORTED_RUNNER_TYPES }}
+        run: .github/scripts/resolve-runner.sh
+      - name: Configure runner-specific cache settings
+        id: configure_cache
+        env:
+          IS_SELF_HOSTED: ${{ steps.resolve_runner.outputs.is_self_hosted }}
         run: |
-          echo "Determining runner to be ${{vars.RUNNER_TYPE}}"
-          echo "runner=${{vars.RUNNER_TYPE}}" >> $GITHUB_OUTPUT
-          if [[ "${{ vars.RUNNER_TYPE }}" == "self-hosted" ]]; then
-            echo "runner is self-hosted"
+          if [[ "$IS_SELF_HOSTED" == "true" ]]; then
             echo "cache_settings=-Dmaven.build.cache.remote.save.enabled=false -Dmaven.build.cache.enabled=false -Dmaven.build.cache.remote.enabled=false -Dmaven.build.cache.remote.url=http://localhost:12345" >> $GITHUB_OUTPUT
           else
-            echo "runner is not self-hosted"
             echo cache_settings="" >> $GITHUB_OUTPUT
           fi
-          echo $GITHUB_OUTPUT
     outputs:
-      runner:  ${{ steps.set_output_step.outputs.runner }}
-      cache_settings:  ${{ steps.set_output_step.outputs.cache_settings }}
+      runner: ${{ steps.resolve_runner.outputs.runner }}
+      selection_source: ${{ steps.resolve_runner.outputs.selection_source }}
+      fallback_reason: ${{ steps.resolve_runner.outputs.fallback_reason }}
+      is_self_hosted: ${{ steps.resolve_runner.outputs.is_self_hosted }}
+      cache_settings: ${{ steps.configure_cache.outputs.cache_settings }}
   build-and-test-main:
     needs: configure-runner
     runs-on: ${{ needs.configure-runner.outputs.runner }}
@@ -48,7 +59,7 @@ jobs:
     - name: Set owner of working dir and m2 dir recursively
       #Needed because compose can leave around files owned by root.
       run: |
-        if [[ "${{ needs.configure-runner.outputs.runner }}" == "self-hosted" ]]; then
+        if [[ "${{ needs.configure-runner.outputs.is_self_hosted }}" == "true" ]]; then
           sudo chown -R $(whoami) . ~/.m2 || true
         fi
     - name: Checkout Code
@@ -60,7 +71,7 @@ jobs:
         # Self-hosted runners are persistent, so `docker image prune --all` deletes
         # the layer cache every build depends on and can remove images a co-tenant
         # job is still using. Hosted runners are disposable, so let it run there.
-        docker-images: ${{ needs.configure-runner.outputs.runner != 'self-hosted' }}
+        docker-images: ${{ needs.configure-runner.outputs.is_self_hosted != 'true' }}
     - name: Configure Maven Settings
       run: |
         mkdir -p ~/.m2
@@ -120,7 +131,6 @@ jobs:
         python3 .github/scripts/junit_flaky_report.py \
           --title 'Main Repo Test Report' \
           '**/target/*-reports/TEST-*.xml'
-
 
 
 
