@@ -14,7 +14,9 @@ import datawave.iterators.ValueCombiner;
  *
  * Aids in determining if a value and the corresponding keys should propogate
  *
+ * @deprecated in favor of {@link PropagatingCombiner} for the correct spelling of propagate
  */
+@Deprecated
 public abstract class PropogatingCombiner extends Combiner {
 
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
