@@ -5,13 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -22,9 +22,11 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -49,16 +51,24 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
     public static final Text shardReverseIndexTableName = new Text(TableName.SHARD_RINDEX);
     public static final Text shardDayIndexTableName = new Text(TableName.SHARD_DAY_INDEX);
     public static final Text edgeTableName = new Text("edge");
-    public static final String NB = "\u0000";
+    public static final String NULL_BYTE = "\u0000";
 
-    private static Logger log = Logger.getLogger(ColumnBasedHandlerTestUtilJUnit5.class);
+    // Shard rows contain an eight-digit date followed by an underscore and a shard number.
+    private static final Pattern SHARD_ROW_PATTERN = Pattern.compile("\\d{8}_\\d+");
+    private static final String ESCAPED_NULL_BYTE = "%00;";
+    private static final String SHARD = "shard";
+    private static final String SHARD_INDEX = "shardIndex";
+    private static final String REVERSE_SHARD_INDEX = "reverseShardIndex";
+    private static final String EDGE = "edge";
+    private static final Joiner KEY_ELEMENT_JOINER = Joiner.on(" ::: ");
+    private static final Logger log = Logger.getLogger(ColumnBasedHandlerTestUtilJUnit5.class);
 
     public static boolean isDocumentKey(Key k) {
         return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT);
     }
 
     public static boolean isShardKey(Key k) {
-        return k.getRow().toString().matches("\\d{8}_\\d+");
+        return SHARD_ROW_PATTERN.matcher(k.getRow().toString()).matches();
     }
 
     public static InputSplit getSplit(String file) throws URISyntaxException {
@@ -82,15 +92,7 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
         Set<Key> shardKeys = new HashSet<>();
         Set<Key> shardIndexKeys = new HashSet<>();
         Set<Key> shardReverseIndexKeys = new HashSet<>();
-        Map<Text,Integer> countMap = Maps.newHashMap();
-        for (BulkIngestKey k : results.keySet()) {
-            Text tableName = k.getTableName();
-            if (countMap.containsKey(tableName)) {
-                countMap.put(tableName, countMap.get(tableName) + 1);
-            } else {
-                countMap.put(tableName, 1);
-            }
-        }
+        Map<Text,Integer> countMap = countByTable(results);
 
         for (Map.Entry<BulkIngestKey,Value> e : results.entries()) {
 
@@ -112,65 +114,12 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
 
         }
 
-        Set<Key> keys = new HashSet<>();
         Set<String> errors = new TreeSet<>();
 
-        /**
-         * The following only prints out the missing/extra keys, no test is actually performed until the end. This is done so all errors are known before
-         * failing.
-         */
-
-        // check shard keys
-        keys.clear();
-        keys.addAll(expectedShardKeys);
-        keys.removeAll(shardKeys);
-        // check shard keys
-        keys.clear();
-        keys.addAll(expectedShardKeys);
-        keys.removeAll(shardKeys);
-        for (Key k : keys) {
-            errors.add("missed shard key: " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
-        }
-
-        keys.addAll(shardKeys);
-        keys.removeAll(expectedShardKeys);
-        for (Key k : keys) {
-            errors.add("extra shard key:  " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
-        }
-
-        // check index keys
-        keys.clear();
-        keys.addAll(expectedShardIndexKeys);
-        keys.removeAll(shardIndexKeys);
-        for (Key k : keys) {
-            errors.add("missed shardIndex key: " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
-        }
-        keys.clear();
-        keys.addAll(shardIndexKeys);
-        keys.removeAll(expectedShardIndexKeys);
-        for (Key k : keys) {
-            errors.add("extra shardIndex key:  " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
-        }
-
-        // check reverse index keys
-        keys.clear();
-        keys.addAll(expectedShardReverseIndexKeys);
-        keys.removeAll(shardReverseIndexKeys);
-        for (Key k : keys) {
-            errors.add("missed reverseShardIndex key: " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
-        }
-        keys.clear();
-        keys.addAll(shardReverseIndexKeys);
-        keys.removeAll(expectedShardReverseIndexKeys);
-        for (Key k : keys) {
-            errors.add("extra reverseShardIndex key:  " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
-        }
+        // Collect all missing and extra keys before failing so the assertion reports every mismatch.
+        checkForErrors(expectedShardKeys, shardKeys, SHARD, errors);
+        checkForErrors(expectedShardIndexKeys, shardIndexKeys, SHARD_INDEX, errors);
+        checkForErrors(expectedShardReverseIndexKeys, shardReverseIndexKeys, REVERSE_SHARD_INDEX, errors);
 
         for (String error : errors) {
             log.error(error.trim());
@@ -194,16 +143,7 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
         Set<Key> shardReverseIndexKeys = new HashSet<>();
         Set<Key> shardDayIndexKeys = new HashSet<>();
         Set<Key> edgeKeys = new HashSet<>();
-        Map<Text,Integer> countMap = Maps.newHashMap();
-
-        for (BulkIngestKey k : results.keySet()) {
-            Text tableName = k.getTableName();
-            if (countMap.containsKey(tableName)) {
-                countMap.put(tableName, countMap.get(tableName) + 1);
-            } else {
-                countMap.put(tableName, 1);
-            }
-        }
+        Map<Text,Integer> countMap = countByTable(results);
 
         for (Map.Entry<BulkIngestKey,Value> e : results.entries()) {
 
@@ -242,11 +182,7 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
                     if (entry.getKey().getTableName().equals(edgeTableName)) {
                         edgeKeys.add(entry.getKey().getKey());
                     }
-                    if (countMap.containsKey(entry.getKey().getTableName())) {
-                        countMap.put(entry.getKey().getTableName(), countMap.get(entry.getKey().getTableName()) + 1);
-                    } else {
-                        countMap.put(entry.getKey().getTableName(), 1);
-                    }
+                    incrementTableCount(countMap, entry.getKey().getTableName());
                 }
             } catch (Throwable t) {
                 log.error("Error during edge processing", t);
@@ -257,26 +193,22 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
         Set<String> keyPrint = new TreeSet<>();
 
         for (Key k : shardKeys) {
-            keyPrint.add("shard key: " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
+            keyPrint.add(formatKey(k, SHARD));
         }
 
         // check index keys
         for (Key k : shardIndexKeys) {
-            keyPrint.add("shardIndex key: " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
+            keyPrint.add(formatKey(k, SHARD_INDEX));
         }
 
         // check reverse index keys
         for (Key k : shardReverseIndexKeys) {
-            keyPrint.add("reverseShardIndex key: " + k.getRow() + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
+            keyPrint.add(formatKey(k, REVERSE_SHARD_INDEX));
         }
 
         // check edge keys
         for (Key k : edgeKeys) {
-            keyPrint.add("edge key: " + k.getRow().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
-                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp() + "\n");
+            keyPrint.add(formatKey(k, EDGE));
         }
 
         try {
@@ -299,12 +231,37 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
         }
     }
 
+    static Map<Text,Integer> countByTable(Multimap<BulkIngestKey,Value> results) {
+        Map<Text,Integer> countMap = Maps.newHashMap();
+        for (BulkIngestKey key : results.keySet()) {
+            incrementTableCount(countMap, key.getTableName());
+        }
+        return countMap;
+    }
+
+    private static void incrementTableCount(Map<Text,Integer> countMap, Text tableName) {
+        countMap.put(tableName, countMap.getOrDefault(tableName, 0) + 1);
+    }
+
+    static void checkForErrors(Set<Key> expected, Set<Key> actual, String descriptor, Set<String> errors) {
+        Sets.difference(expected, actual).forEach(key -> errors.add(formatKey(key, "missed " + descriptor)));
+        Sets.difference(actual, expected).forEach(key -> errors.add(formatKey(key, "extra " + descriptor)));
+    }
+
+    private static String formatKey(Key key, String descriptor) {
+        return descriptor + " key: " + KEY_ELEMENT_JOINER.join(replaceNullByte(key.getRow()), replaceNullByte(key.getColumnFamily()),
+                        replaceNullByte(key.getColumnQualifier()), key.getColumnVisibility(), key.getTimestamp()) + "\n";
+    }
+
+    private static String replaceNullByte(Text text) {
+        return text.toString().replace(NULL_BYTE, ESCAPED_NULL_BYTE);
+    }
+
     private static class MyCachingContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
         private Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
 
         @Override
-        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
-                        throws IOException, InterruptedException {
+        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) {
             for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
                 cache.put(entry.getKey(), entry.getValue());
             }
