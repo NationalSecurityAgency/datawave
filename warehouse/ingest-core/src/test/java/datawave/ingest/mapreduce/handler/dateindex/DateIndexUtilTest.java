@@ -139,7 +139,7 @@ public class DateIndexUtilTest {
         @Test
         void validDate() throws ParseException {
             Date date = create(2026, Calendar.AUGUST, 13, 23, 59, 59, 999);
-            assertEquals(date, DateIndexUtil.getBeginDate("20260813"));
+            assertEquals(date, DateIndexUtil.getEndDate("20260813"));
         }
 
         @DisplayName("Throws an exception given a null argument")
