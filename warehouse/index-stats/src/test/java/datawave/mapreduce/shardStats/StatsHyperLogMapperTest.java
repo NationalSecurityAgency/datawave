@@ -2,6 +2,8 @@ package datawave.mapreduce.shardStats;
 
 import static datawave.mapreduce.shardStats.StatsInit.EMPTY_VALUE;
 import static datawave.mapreduce.shardStats.StatsInit.TEST_TABLE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.net.URI;
@@ -19,8 +21,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
@@ -121,7 +122,7 @@ public class StatsHyperLogMapperTest {
 
         // run test
         List<MRPair<BulkIngestKey,Value>> results = driver.run();
-        Assert.assertEquals("results size does not match expected", output.size(), results.size());
+        assertEquals(output.size(), results.size(), "results size does not match expected");
 
         for (MRPair<BulkIngestKey,Value> entry : results) {
             BulkIngestKey rKey = entry.key;
@@ -138,14 +139,14 @@ public class StatsHyperLogMapperTest {
                     break;
                 }
             }
-            Assert.assertNotNull(oKey);
+            assertNotNull(oKey);
             Value rVal = entry.value;
             StatsHyperLogSummary stats = new StatsHyperLogSummary(rVal);
             log.debug("key(" + oKey.getKey() + ") value(" + stats + ")");
-            Assert.assertEquals("key(" + oKey.getKey() + ")", summary.get(oKey), stats);
+            assertEquals(summary.get(oKey), stats, "key(" + oKey.getKey() + ")");
 
             // for small sample size cardinality should math real value
-            Assert.assertEquals(stats.getUniqueCount(), stats.getHyperLogPlus().cardinality());
+            assertEquals(stats.getUniqueCount(), stats.getHyperLogPlus().cardinality());
         }
     }
 }
