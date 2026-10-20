@@ -24,11 +24,21 @@ spring:
               # Complete the CorrelationData future supplied by AnnotationPublisher.
               useConfirmHeader: true
 management:
-  health:
-    status:
-      order: DOWN, OUT_OF_SERVICE, UNKNOWN, RABBITMQ_UNHEALTHY, UP
-      http-mapping:
-        RABBITMQ_UNHEALTHY: 200
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          # Include required Rabbit topology and any enabled backend health indicators.
+          include: "*"
+      status:
+        # Preserve Boot's UP-before-UNKNOWN order while making required Rabbit failures decisive.
+        order: DOWN, OUT_OF_SERVICE, RABBITMQ_UNHEALTHY, UP, UNKNOWN
+        http-mapping:
+          DOWN: 503
+          OUT_OF_SERVICE: 503
+          RABBITMQ_UNHEALTHY: 503
 
 annotation:
   system-from: "datawave-annotation-service"

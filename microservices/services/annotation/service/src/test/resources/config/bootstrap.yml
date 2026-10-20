@@ -12,8 +12,16 @@ spring:
     banner-mode: "OFF"
 
 management:
-  health:
-    status:
-      order: DOWN, OUT_OF_SERVICE, UNKNOWN, RABBITMQ_UNHEALTHY, UP
-      http-mapping:
-        RABBITMQ_UNHEALTHY: 200
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: "*"
+      status:
+        order: DOWN, OUT_OF_SERVICE, RABBITMQ_UNHEALTHY, UP, UNKNOWN
+        http-mapping:
+          DOWN: 503
+          OUT_OF_SERVICE: 503
+          RABBITMQ_UNHEALTHY: 503
