@@ -35,7 +35,7 @@ import lombok.Getter;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = LogAnnotationWriterProperties.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"LogAnnotationWriterTest", "log-enabled"})
+@ActiveProfiles({"annotation-combined", "LogAnnotationWriterTest", "log-enabled"})
 public class LogAnnotationWriterTest {
 
     @Autowired

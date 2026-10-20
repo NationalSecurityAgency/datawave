@@ -55,6 +55,8 @@ import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.annotation.util.v1.AnnotationValidators;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.runner.AccumuloConnectionRequestMap;
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.service.config.AnnotationProperties;
 import datawave.microservice.annotation.util.Metadata;
 import datawave.microservice.annotation.util.lookup.service.LookupService;
@@ -72,6 +74,7 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Annotation Controller /v1", description = "Operations related to annotations")
 @Slf4j
 @RestController
+@ConditionalOnAnnotationRole({AnnotationRole.API, AnnotationRole.COMBINED})
 @Secured({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
 @RequestMapping(path = "/v1", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class AnnotationControllerV1 {

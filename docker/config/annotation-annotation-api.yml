@@ -1,0 +1,11 @@
+# Application annotation + profile annotation-api. Keep shared destinations and tables in annotation.yml.
+annotation:
+  deployment:
+    overlays:
+      annotation-api: true
+  annotation-ack-enabled: true
+  writers:
+    file:
+      # Split API deployments require broker-confirmed acceptance by default.
+      # Enable fallback only with persistent per-replica storage and a replay procedure.
+      enabled: false

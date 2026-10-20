@@ -1,0 +1,8 @@
+# Config Server loads this file for application "annotation" when the
+# annotation-combined profile is active. A combined instance serves REST
+# requests and runs the enabled queue consumers. Shared settings remain
+# in annotation.yml.
+annotation:
+  deployment:
+    overlays:
+      annotation-combined: true

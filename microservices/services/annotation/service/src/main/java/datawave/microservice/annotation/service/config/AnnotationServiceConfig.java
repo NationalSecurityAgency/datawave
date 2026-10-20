@@ -12,11 +12,14 @@ import org.springframework.security.web.firewall.StrictHttpFirewall;
 
 import datawave.microservice.annotation.common.AnnotationSupplier;
 import datawave.microservice.annotation.common.config.AnnotationJsonConfiguration;
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.health.HealthChecker;
 import datawave.microservice.annotation.service.AnnotationPublisher;
 
 @Configuration
 @EnableConfigurationProperties
+@ConditionalOnAnnotationRole({AnnotationRole.API, AnnotationRole.COMBINED})
 @Import({AnnotationJsonConfiguration.class, AnnotationProperties.class})
 public class AnnotationServiceConfig {
     /**

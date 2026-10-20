@@ -12,6 +12,8 @@ import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.annotation.common.AnnotationConsumer;
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.writers.AnnotationWriter;
 import datawave.microservice.annotation.writers.accumulo.AccumuloAnnotationWriter;
 import datawave.microservice.annotation.writers.accumulo.health.AccumuloHealthChecker;
@@ -24,6 +26,7 @@ import datawave.microservice.annotation.writers.accumulo.health.AccumuloHealthCh
 @Configuration
 @EnableConfigurationProperties(AccumuloAnnotationWriterProperties.class)
 @ConditionalOnProperty(name = "annotation.writers.accumulo.enabled", havingValue = "true")
+@ConditionalOnAnnotationRole({AnnotationRole.WRITER, AnnotationRole.COMBINED})
 public class AccumuloAnnotationWriterConfig {
 
     @Bean("accumuloAnnotationWriterProperties")

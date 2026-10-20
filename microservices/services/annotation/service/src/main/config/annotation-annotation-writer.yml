@@ -1,0 +1,8 @@
+# Config Server loads this file for application "annotation" when the
+# annotation-writer profile is active. A writer instance runs the enabled
+# queue consumers without serving REST requests. Backend selection and
+# tuning settings remain in annotation.yml.
+annotation:
+  deployment:
+    overlays:
+      annotation-writer: true

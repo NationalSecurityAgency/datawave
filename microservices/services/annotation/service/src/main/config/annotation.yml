@@ -39,13 +39,13 @@ spring:
           group: 'dump'
           consumer:
             concurrency: 5
-    function:
-      definition: annotationSource;logAnnotationSink;accumuloAnnotationSink;dumpAnnotationSink;busConsumer
   jackson:
     default-property-inclusion: non-null
     deserialization:
       fail-on-unknown-properties: false
 annotation:
+  # Activate exactly one of annotation-api, annotation-writer, or annotation-combined.
+  # The matching Config Server overlay is required.
   system-from: "datawave-annotation-service"
 
   health:

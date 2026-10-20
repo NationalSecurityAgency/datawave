@@ -1,0 +1,65 @@
+# Use with the base file instead of its combined "annotation" profile:
+# docker compose -f docker-compose.yml -f docker-compose-annotation-split.yml \
+#   --profile datawave-stack --profile annotation-split up -d --scale annotation-api=3 --scale annotation-writer=1
+# Both roles keep spring.application.name=annotation to share Config Server defaults and queue destinations.
+# Consul REST discovery uses annotation-api; worker management discovery uses annotation-writer.
+# Each Spring role profile loads its matching Config Server overlay.
+services:
+  annotation-api:
+    image: nationalsecurityagency/datawave/annotation-service:1.0.0-SNAPSHOT
+    entrypoint: [ "java", "-jar", "app.jar" ]
+    profiles:
+      - annotation-split
+    command:
+      - --spring.profiles.active=annotation-api,consul,compose,remoteauth,log-disabled
+      - --spring.output.ansi.enabled=NEVER
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.service-name=annotation-api
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      ZOOKEEPER_HOST: ${DW_ZOOKEEPER_HOST}
+      BACKEND: ${BACKEND:-rabbitmq}
+    # Dynamic host ports allow multiple replicas. Place a load balancer in front of HTTPS.
+    ports:
+      - "8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/annotation/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      configuration:
+        condition: service_healthy
+
+  annotation-writer:
+    image: nationalsecurityagency/datawave/annotation-service:1.0.0-SNAPSHOT
+    entrypoint: [ "java", "-jar", "app.jar" ]
+    profiles:
+      - annotation-split
+    command:
+      - --spring.profiles.active=annotation-writer,consul,compose,remoteauth,log-disabled
+      - --spring.output.ansi.enabled=NEVER
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.service-name=annotation-writer
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      ZOOKEEPER_HOST: ${DW_ZOOKEEPER_HOST}
+      BACKEND: ${BACKEND:-rabbitmq}
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/annotation/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      configuration:
+        condition: service_healthy

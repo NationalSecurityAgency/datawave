@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import datawave.microservice.annotation.common.AnnotationConsumer;
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.writers.AnnotationWriter;
 import datawave.microservice.annotation.writers.log.LogAnnotationWriter;
 
@@ -16,6 +18,7 @@ import datawave.microservice.annotation.writers.log.LogAnnotationWriter;
  */
 @Configuration
 @ConditionalOnProperty(name = "annotation.writers.log.enabled", havingValue = "true")
+@ConditionalOnAnnotationRole({AnnotationRole.WRITER, AnnotationRole.COMBINED})
 public class LogAnnotationWriterProperties {
     @Bean
     public AnnotationConsumer logAnnotationSink(@Qualifier("logAnnotationWriter") AnnotationWriter annotationWriter) {

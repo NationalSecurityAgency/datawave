@@ -10,6 +10,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.writers.AnnotationWriter;
 import datawave.microservice.annotation.writers.file.FileAnnotationWriter;
 
@@ -21,6 +23,7 @@ import datawave.microservice.annotation.writers.file.FileAnnotationWriter;
 @Configuration
 @EnableConfigurationProperties(FileAnnotationWriterProperties.class)
 @ConditionalOnProperty(name = "annotation.writers.file.enabled", havingValue = "true")
+@ConditionalOnAnnotationRole({AnnotationRole.API, AnnotationRole.COMBINED})
 public class FileAnnotationWriterConfig {
 
     @Bean("fileAnnotationWriterProperties")

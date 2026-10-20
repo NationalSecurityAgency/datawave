@@ -40,7 +40,10 @@ public class TestAnnotationConfigParity {
         PropertySource<?> serviceConfig = loadYaml("service-config", projectDirectory().resolve("src/main/config/annotation.yml")).get(0);
         PropertySource<?> dockerConfig = loadYaml("docker-config", projectDirectory().resolve("../../../../docker/config/annotation.yml")).get(0);
 
-        assertEquals(serviceConfig.getProperty("spring.cloud.function.definition"), dockerConfig.getProperty("spring.cloud.function.definition"));
+        for (PropertySource<?> config : List.of(serviceConfig, dockerConfig)) {
+            assertNull(config.getProperty("spring.cloud.function.definition"), "the role and backend flags select functions automatically");
+            assertNull(config.getProperty("spring.cloud.stream.function.definition"), "explicit function lists are unsupported");
+        }
         for (PropertySource<?> config : List.of(serviceConfig, dockerConfig)) {
             assertEquals("correlated", config.getProperty("spring.rabbitmq.publisher-confirm-type"));
             assertEquals(true, config.getProperty("spring.rabbitmq.publisher-returns"));

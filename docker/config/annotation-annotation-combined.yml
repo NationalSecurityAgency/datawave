@@ -1,0 +1,5 @@
+# Application annotation + profile annotation-combined. Shared settings retain both responsibilities.
+annotation:
+  deployment:
+    overlays:
+      annotation-combined: true

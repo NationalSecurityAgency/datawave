@@ -18,7 +18,7 @@ import datawave.microservice.annotation.writers.accumulo.config.AccumuloAnnotati
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {AccumuloAnnotationWriterConfig.class, AccumuloConfiguration.class, AnnotationSerializerConfiguration.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"AccumuloAnnotationWriterConfigDisabledTest", "accumulo-disabled"})
+@ActiveProfiles({"annotation-combined", "AccumuloAnnotationWriterConfigDisabledTest", "accumulo-disabled"})
 public class AccumuloAnnotationWriterConfigDisabledTest {
 
     @Autowired
