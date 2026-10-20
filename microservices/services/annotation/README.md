@@ -11,6 +11,45 @@ ack/retry write pipeline with optional file-backup fallback.
 
 ---
 
+### Deployment quick start
+
+Use the same jar or image for all three roles:
+
+| Profile | Responsibilities |
+|:--------|:-----------------|
+| `annotation-api` | REST reads and writes; publishes updates; no queue consumers. |
+| `annotation-writer` | All enabled queue consumers; no REST API or direct API file fallback. |
+| `annotation-combined` | API and all enabled queue consumers in one instance. |
+
+Before starting a role, publish shared `annotation.yml` and its matching
+`annotation-annotation-<role>.yml` overlay to Config Server. The files are supplied
+in `service/src/main/config` and `docker/config`. Exactly one role profile and its
+matching overlay marker are required. Keep `spring.application.name=annotation`.
+
+```bash
+java -jar service/target/annotation-service*-exec.jar \
+  --spring.profiles.active=annotation-api,dev,remoteauth
+
+java -jar service/target/annotation-service*-exec.jar \
+  --spring.profiles.active=annotation-writer,dev,remoteauth
+```
+
+For a single instance, select `annotation-combined` explicitly. Put the role first
+and environment/backend profiles afterward so deployment tuning can override its
+defaults. The role and backend flags select messaging functions automatically;
+remove explicit `spring.cloud.function.definition` and
+`spring.cloud.stream.function.definition` settings from external configuration.
+
+API instances need RabbitMQ routes, Accumulo for reads, and the identifier lookup
+service. Writers need the configured output backend. All roles use local caches,
+retain secured management endpoints, and can queue updates while writers are
+stopped if the required durable routes exist.
+
+For independent Compose pools, use the
+[Docker split setup](../../../docker/README.md). The
+[deployment reference](docs/deployment.md) covers backend flags, required routes,
+health, discovery, scaling, file storage, and cutover.
+
 ### User API
 
 | Method   | Operation                                                | Description                                                                  | Path Params                                        | Request Body     |
@@ -64,13 +103,17 @@ with configurable retry (`maxAttempts`, `failTimeoutMillis`,
 `backoffIntervalMillis`) and optional file-backup fallback
 (`fileAnnotationWriter`, injected as `@Autowired(required = false)`).
 
-#### Ack / Retry Protocol
+#### Write acceptance
 
-The `AnnotationAckTracker` singleton bean (replacing the static
-`correlationLatchMap`) tracks in-flight writes by correlation ID. The
-`processConfirmAck` handler counts down latches when acks arrive from the
-message broker. This protocol is microservice-only; the legacy
-`AnnotationManagerBean` has no write path.
+`AnnotationPublisher` reports broker-confirmed acceptance only when RabbitMQ
+acknowledges the message and has not returned it as unroutable. The writer saves
+queued annotations asynchronously. Concurrent identical requests share a send;
+retries use separate confirmations. Publication failures feed the existing retry
+and optional file-fallback policy.
+
+Annotation bindings use `application/x-protobuf`. See the
+[deployment reference](docs/deployment.md#write-acceptance-and-fallback) for
+confirmation, retry, and storage requirements.
 
 ### Test Data
 
@@ -99,53 +142,3 @@ Query operations (`GET`) are available to any authenticated user.
 Configuration is managed via `AnnotationProperties` (Spring `@ConfigurationProperties`
 with prefix `annotation`). See [AnnotationProperties] for the full set of options,
 including retry settings and ack timeout configuration.
-
-### Docker
-
-For local containerized integration testing, refer to the
-[DATAWAVE Docker Compose README][docker-compose] for instructions on building
-and running DATAWAVE microservices. The annotation service is opt-in through
-the Compose `annotation` profile; these repository assets do not enable a
-production deployment.
-
-[docker-compose]:../../../docker/README.md
-
----
-
-### Getting Started
-
-1. Prepare the supporting services required by the selected configuration.
-   A typical development environment includes Config Server, authorization,
-   RabbitMQ, Accumulo, Hazelcast, and the DATAWAVE web service used for internal
-   identifier lookups. The [Docker Compose guide][docker-compose] is the
-   authoritative in-repository setup for the complete local environment.
-
-2. Make the annotation configuration available to Config Server. The checked-in
-   examples are `service/src/main/config/annotation.yml` and
-   `docker/config/annotation.yml`; select and adapt the one appropriate for the
-   development environment.
-
-3. Launch this service with the `remoteauth` profile to enable client-certificate
-   authentication:
-
-   ```
-   java -jar service/target/annotation-service*-exec.jar --spring.profiles.active=dev,remoteauth
-   ```
-
-4. Ensure that the repository's [testUser.p12][testUser] (password: *ChangeIt*) cert is
-   imported into your browser, and then visit any of the following:
-
-   * https://localhost:8643/annotation/v1/source/testAnalyticHash
-   * https://localhost:8643/annotation/v1/DOCUMENT/20250704_249:testDataType:abcde.fghij.klmno
-   * https://localhost:8643/annotation/v1/DOCUMENT/20250704_249:testDataType:abcde.fghij.klmno/annotation/testAnnotationId
-
-[AnnotationControllerV1]:service/src/main/java/datawave/microservice/annotation/service/AnnotationControllerV1.java
-[AnnotationProperties]:service/src/main/java/datawave/microservice/annotation/service/config/AnnotationProperties.java
-[testUser]:../../starters/datawave/src/main/resources/testUser.p12
-[analyticHash]:service/src/main/java/datawave/microservice/annotation/service/AnnotationControllerV1.java
-[idType]:service/src/main/java/datawave/microservice/annotation/service/AnnotationControllerV1.java
-[id]:service/src/main/java/datawave/microservice/annotation/service/AnnotationControllerV1.java
-[annotationId]:service/src/main/java/datawave/microservice/annotation/service/AnnotationControllerV1.java
-[segmentHash]:service/src/main/java/datawave/microservice/annotation/service/AnnotationControllerV1.java
-[annotationType]:service/src/main/java/datawave/microservice/annotation/service/AnnotationControllerV1.java
-[annotation]:service/src/main/java/datawave/microservice/annotation/service/AnnotationControllerV1.java
