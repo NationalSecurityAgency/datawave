@@ -91,6 +91,7 @@ import datawave.query.iterator.builder.OrIteratorBuilder;
 import datawave.query.iterator.builder.TermFrequencyIndexBuilder;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.NullFieldIndexAggregator;
 import datawave.query.iterator.logic.OrIterator;
 import datawave.query.iterator.logic.RangeFilterIterator;
 import datawave.query.iterator.logic.RegexFilterIterator;
@@ -625,14 +626,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // the evaluation can handle a term in the form 'FIELD == null', however no IndexIterator should be built
         if (builder.getValue() == null) {
             if (this.indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
-                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
-                throw new DatawaveFatalQueryException(qe);
+                builder.setKeyTransform(new NullFieldIndexAggregator());
+                builder.setValue("");
+            } else {
+                checkForSatisfactionError();
+                return null;
             }
-
-            // FIELD != null should have set satisfied to false
-            checkForSatisfactionError();
-            return null;
         }
 
         AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
@@ -649,7 +648,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTypeMetadata(typeMetadata);
             builder.setTimeFilter(timeFilter);
             builder.setDatatypeFilter(getDatatypeFilter());
-            builder.setKeyTransform(getFiAggregator());
+
+            // ONLY set default aggregator if a custom aggregator wasn't set above!
+            if (builder.getValue() != null || !this.indexOnlyFields.contains(builder.getField())) {
+                builder.setKeyTransform(getFiAggregator());
+                builder.setValue("");
+            }
+
             builder.setEnv(env);
             builder.setNode(node);
 
@@ -671,6 +676,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTEQNode node, Object data) {
         // visit children first to populate the field and value
+        SortedKeyValueIterator<Key,Value> kvIter = null;
         IndexIteratorBuilder builder = getIteratorBuilder();
         node.childrenAccept(this, builder);
 
@@ -683,11 +689,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // the evaluation can handle a term in the form 'FIELD == null', however no IndexIterator should be built
         if (builder.getValue() == null) {
             if (indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
-                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
-                throw new DatawaveFatalQueryException(qe);
+                builder.setKeyTransform(new NullFieldIndexAggregator());
+                builder.setValue("");
+            } else {
+                return null;
             }
-            return null;
+
         }
 
         // check to see if there is a mismatch between included and exclude references.
