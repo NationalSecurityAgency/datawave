@@ -25,6 +25,7 @@ import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Assert;
@@ -41,6 +42,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableNestedIterator;
 import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.query.iterator.builder.IvaratorBuilder;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
@@ -115,6 +117,67 @@ public class IteratorBuildingVisitorTest {
         config = dirs.get(0);
         // make sure we now have the document in the path
         Assert.assertEquals(expected + "_doc_" + dt + '_' + uid, config.getPathURI().toString());
+    }
+
+    /**
+     * The ivarator cache directory path embeds a one-up term number (see {@link IteratorBuildingVisitor#getIvaratorCacheDirs(int, Range, String, String)}).
+     * When a query is rebuilt - for example when an ivarator resumes after a yield - each ivarator must be assigned the same term number so that it locates the
+     * directory holding its previously persisted HdfsBackedSortedSet. This verifies that two independent builds of the same query create ivarator cache
+     * directories in an identical, deterministic order.
+     */
+    @Test
+    public void ivaratorCreationOrderIsDeterministicTest() throws Exception {
+        String query = "((_Value_ = true) && (FOO =~ 'a.*')) && ((_Value_ = true) && (BAR =~ 'b.*')) && ((_Value_ = true) && (BAZ =~ 'c.*'))";
+        // use a single cache dir config for both builds so the resulting paths are directly comparable
+        String folder = temporaryFolder.newFolder().toURI().toString();
+
+        List<String> firstBuild = collectIvaratorCacheDirs(query, folder);
+        List<String> secondBuild = collectIvaratorCacheDirs(query, folder);
+
+        // the query contains three ivarated terms
+        Assert.assertEquals(3, firstBuild.size());
+
+        // rebuilding the same query must yield the same directories in the same order
+        Assert.assertEquals(firstBuild, secondBuild);
+
+        // term numbers are assigned in creation order, starting at one
+        for (int i = 0; i < firstBuild.size(); i++) {
+            Assert.assertTrue("expected term number " + (i + 1) + " in " + firstBuild.get(i), firstBuild.get(i).contains("_term_" + (i + 1) + "_"));
+        }
+
+        // each distinct ivarator keeps its term number, tying a stable term number to a stable field across rebuilds
+        Assert.assertTrue(firstBuild.get(0).contains("_term_1_field_FOO_"));
+        Assert.assertTrue(firstBuild.get(1).contains("_term_2_field_BAR_"));
+        Assert.assertTrue(firstBuild.get(2).contains("_term_3_field_BAZ_"));
+    }
+
+    private List<String> collectIvaratorCacheDirs(String query, String folder) throws Exception {
+        RecordingIvaratorVisitor visitor = new RecordingIvaratorVisitor();
+        visitor.setSource(new SourceFactory(Collections.emptyIterator()), new TestIteratorEnvironment());
+        visitor.setTypeMetadata(new TypeMetadata());
+        visitor.setTimeFilter(TimeFilter.alwaysTrue());
+        visitor.setIvaratorCacheDirConfigs(Collections.singletonList(new IvaratorCacheDirConfig(folder)));
+        visitor.setQueryId("QID_1");
+        visitor.setHdfsFileSystem(new FileSystemCache(null));
+
+        JexlASTHelper.parseJexlQuery(query).jjtAccept(visitor, null);
+        return visitor.cacheDirs;
+    }
+
+    /**
+     * Captures the cache directory assigned to each ivarator as the query is traversed. It exercises the real
+     * {@link IteratorBuildingVisitor#getIvaratorCacheDirs(int, Range, String, String)} naming logic - including the one-up term number - while stopping short
+     * of building the (HDFS-backed) ivarators themselves.
+     */
+    private static class RecordingIvaratorVisitor extends IteratorBuildingVisitor {
+        private final List<String> cacheDirs = new ArrayList<>();
+
+        @Override
+        public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
+            ivaratorCount++;
+            List<IvaratorCacheDir> dirs = getIvaratorCacheDirs(ivaratorCount, null, builder.getField(), builder.getValue());
+            cacheDirs.add(dirs.get(0).getPathURI().toString());
+        }
     }
 
     /**
