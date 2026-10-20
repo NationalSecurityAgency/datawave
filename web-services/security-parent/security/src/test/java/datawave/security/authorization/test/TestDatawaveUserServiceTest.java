@@ -1,8 +1,5 @@
 package datawave.security.authorization.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,20 +9,11 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Priority;
 import javax.enterprise.inject.Alternative;
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.security.Authorizations;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -39,97 +27,7 @@ import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
 
-@RunWith(Enclosed.class)
 public class TestDatawaveUserServiceTest {
-
-    @RunWith(Arquillian.class)
-    public static class TestDatawaveUserServiceDisabled {
-        @Inject
-        private DatawaveUserService userService;
-
-        @Deployment
-        public static JavaArchive createDeployment() throws Exception {
-            System.setProperty("cdi.bean.context", "testAuthServiceBeanRefContext.xml");
-            System.setProperty("dw.security.use.testuserservice", "false");
-            return ShrinkWrap.create(JavaArchive.class).addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi")
-                            .addClasses(TestDatawaveUserService.class, DatawaveUserService1.class, AltDatawaveUserService1.class, AltDatawaveUserService2.class)
-                            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-        }
-
-        @Test
-        public void testCorrectAlternative() throws Exception {
-            // Alternate 2 is the highest priority alternate class that we added to our deployment, so it should be selected
-            assertEquals(AltDatawaveUserService2.class, userService.getClass());
-            DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair.of("subject1", "issuer1"))).iterator().next();
-            assertEquals("Alternative2", user.getRoles().iterator().next());
-        }
-
-    }
-
-    @RunWith(Arquillian.class)
-    public static class TestWithOnlyNonCachedAlternatives {
-        @Inject
-        private DatawaveUserService userService;
-
-        @Deployment
-        public static JavaArchive createDeployment() throws Exception {
-            System.setProperty("cdi.bean.context", "testAuthServiceBeanRefContext.xml");
-            System.setProperty("dw.security.use.testuserservice", "true");
-            return ShrinkWrap.create(JavaArchive.class).addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi")
-                            .addClasses(TestDatawaveUserService.class, DatawaveUserService1.class, AltDatawaveUserService1.class, AltDatawaveUserService2.class,
-                                            MockAccumuloConnectionFactory.class)
-                            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-        }
-
-        @Test
-        public void testCorrectAlternative() throws Exception {
-            DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair.of("subject1", "issuer1"))).iterator().next();
-            assertTrue(user.getRoles().contains("Alternative2"));
-        }
-
-        @Test
-        public void testCannedUser() throws Exception {
-            DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair
-                            .of("cn=server1, ou=my department, o=my company, st=some-state, c=us", "cn=my company ca, o=my company, st=some-state, c=us")))
-                            .iterator().next();
-            assertTrue(user.getAuths().contains("PUB"));
-            assertTrue(user.getAuths().contains("PVT"));
-        }
-
-    }
-
-    @RunWith(Arquillian.class)
-    public static class TestWithOnlCachedAlternatives {
-        @Inject
-        private DatawaveUserService userService;
-
-        @Deployment
-        public static JavaArchive createDeployment() throws Exception {
-            System.setProperty("cdi.bean.context", "testAuthServiceBeanRefContext.xml");
-            System.setProperty("dw.security.use.testuserservice", "true");
-            return ShrinkWrap.create(JavaArchive.class).addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi")
-                            .addClasses(TestDatawaveUserService.class, DatawaveUserService1.class, AltDatawaveUserService1.class, AltDatawaveUserService2.class,
-                                            AltDatawaveUserService3.class, AltDatawaveUserService4.class, AltDatawaveUserService5.class,
-                                            MockAccumuloConnectionFactory.class)
-                            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-        }
-
-        @Test
-        public void testCorrectAlternative() throws Exception {
-            DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair.of("subject1", "issuer1"))).iterator().next();
-            assertTrue(user.getRoles().contains("Alternative4"));
-        }
-
-        @Test
-        public void testCannedUser() throws Exception {
-            DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair
-                            .of("cn=server1, ou=my department, o=my company, st=some-state, c=us", "cn=my company ca, o=my company, st=some-state, c=us")))
-                            .iterator().next();
-            assertTrue(user.getAuths().contains("PUB"));
-            assertTrue(user.getAuths().contains("PVT"));
-        }
-
-    }
 
     protected static class DatawaveUserService1 extends DefaultDatawaveUserService {
         @Override
@@ -231,7 +129,7 @@ public class TestDatawaveUserServiceTest {
         }
     }
 
-    private static class MockAccumuloConnectionFactory implements AccumuloConnectionFactory {
+    protected static class MockAccumuloConnectionFactory implements AccumuloConnectionFactory {
         private InMemoryInstance inMemoryInstance = new InMemoryInstance();
 
         public MockAccumuloConnectionFactory() {
