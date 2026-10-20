@@ -78,6 +78,8 @@ run_ingest "${FIXTURES}/json/tvmaze-api.json" "${HDFS_INGEST_DIR}/tvmaze-api.jso
     datawave.ingest.json.mr.input.JsonInputFormat myjson
 run_ingest "${FIXTURES}/csv/my.csv" "${HDFS_INGEST_DIR}/my.csv" \
     datawave.ingest.csv.mr.input.CSVFileInputFormat mycsv
+run_ingest "${FIXTURES}/csv/proxied-auth.csv" "${HDFS_INGEST_DIR}/proxied-auth.csv" \
+    datawave.ingest.csv.mr.input.CSVFileInputFormat mycsv
 
 touch /tmp/datawave-ready
 exec tail -f /dev/null

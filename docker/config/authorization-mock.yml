@@ -60,3 +60,36 @@ mock:
           RoleG: G
           RoleH: H
           RoleI: I
+
+      # Proxied authorization checks in docker/scripts/proxiedEntities.sh.
+      "[cn=proxy user one, ou=example developers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>]":
+        roles-to-auths:
+          AuthorizedUser: DW_USER
+          RoleA: A
+          RoleB: B
+          RoleC: C
+          RoleD: D
+
+      "[cn=proxy user two, ou=example developers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>]":
+        roles-to-auths:
+          AuthorizedUser: DW_USER
+          RoleA: A
+          RoleB: B
+          RoleE: E
+          RoleF: F
+
+      "[cn=proxy server one, ou=servers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>]":
+        roles-to-auths:
+          AuthorizedServer: DW_SERV
+          RoleA: A
+          RoleB: B
+          RoleC: C
+          RoleE: E
+          RoleG: G
+
+      "[cn=proxy server two, ou=servers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>]":
+        roles-to-auths:
+          AuthorizedServer: DW_SERV
+          RoleA: A
+          RoleB: B
+          RoleH: H

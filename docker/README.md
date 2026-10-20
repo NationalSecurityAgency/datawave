@@ -176,6 +176,8 @@ $> docker compose version
 Docker Compose version v2.21.0
 ```
 
+The `scripts/testAll.sh` checks require Python 3 to inspect streamed query responses. Its proxied-entity checks use the records in `warehouse/ingest-csv/src/test/resources/input/proxied-auth.csv` and verify the exact records visible to each user and NPE chain.
+
 #### DataWave Stack Setup
 
 The default Compose profile starts Hadoop, ZooKeeper, and Accumulo from the published `datawave-stack-accumulo` image. It also starts the DataWave ingest and webservice images and loads the sample Wikipedia, annotation, JSON, and CSV data used by the existing test suites.

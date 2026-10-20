@@ -120,6 +120,13 @@ public abstract class AbstractQueryTest {
      */
     public abstract Authorizations getAuths();
 
+    /**
+     * Authorizations supplied to query execution. Override for queries made through proxy chains.
+     */
+    protected Set<Authorizations> getQueryAuths() throws Exception {
+        return Collections.singleton(getAuths());
+    }
+
     @AfterEach
     public void afterEach() {
         // reset initial state
@@ -424,7 +431,7 @@ public abstract class AbstractQueryTest {
             logic.setMaxEvaluationPipelines(1);
             logic.setHitList(true); // always ask for HIT_TERMs
 
-            GenericQueryConfiguration config = logic.initialize(clientForTest, settings, Collections.singleton(getAuths()));
+            GenericQueryConfiguration config = logic.initialize(clientForTest, settings, getQueryAuths());
             logic.setupQuery(config);
         } catch (Exception e) {
             log.info("exception while planning query", e);

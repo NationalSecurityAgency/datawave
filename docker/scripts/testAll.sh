@@ -92,6 +92,40 @@ runTest () {
     done
 }
 
+# Tests that validate their own response content and HTTP status.
+runCheckedTest () {
+    local script="$1"
+    local attempt=1
+    local output
+    local exit_code
+    local test_start_time=$(date +%s%N)
+    TEST_COUNTER=$((TEST_COUNTER + 1))
+
+    while [ ${attempt} -le 3 ]; do
+        echo
+        echo "Running test (Attempt ${attempt}/3): ${script}"
+        local attempt_start_time=$(date +%s%N)
+        output="$(timeout ${QUERY_TIMEOUT} "${SCRIPT_DIR}/${script}" 2>&1)"
+        exit_code=$?
+        echo "${output}"
+        if [ ${exit_code} -eq 0 ]; then
+            TESTS_PASSED="${TESTS_PASSED} ${script}"
+            printTestStatus "${attempt_start_time}" "$(date +%s%N)" "${LABEL_PASS}"
+            printLine
+            return 0
+        fi
+        if [ ${attempt} -lt 3 ]; then
+            sleep ${TIMEOUT}
+        fi
+        attempt=$((attempt + 1))
+    done
+
+    TEST_FAILURES="${TEST_FAILURES},${script}: failed after 3 attempts"
+    printTestStatus "${test_start_time}" "$(date +%s%N)" "${LABEL_FAIL}"
+    printLine
+    return 1
+}
+
 printTestSummary() {
     echo " Overall Summary"
     printLine
@@ -187,6 +221,10 @@ runTest lookup.sh 1
 runTest lookupContent.sh 2
 # runTest metrics.sh 0 0
 runTest query.sh 12 2
+if [ "$WEBSERVICE" != true ]; then
+    # Fail CI if the proxied-entity checks still fail after retries.
+    runCheckedTest proxiedEntities.sh || exit 1
+fi
 #runTest mapReduceQuery.sh 12 2
 #runTest oozieQuery.sh 0 0
 
