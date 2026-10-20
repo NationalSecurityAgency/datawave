@@ -37,6 +37,18 @@ public interface NestedIterator<T> extends Iterator<T> {
     T move(T minimum);
 
     /**
+     * Evaluates this iterator for a parent-supplied context. Most iterators can use the normal forward-only move. Context-sensitive iterators may override this
+     * method when a later sourced result is not a safe lower bound for matches at intervening contexts.
+     *
+     * @param context
+     *            the context to evaluate
+     * @return a key usable for context evaluation, or null if no match is known; context-sensitive overrides may require an exact match
+     */
+    default T moveContext(T context) {
+        return move(context);
+    }
+
+    /**
      * Hook to allow issuing a seek to the underlying source iterator(s)
      *
      * @param range

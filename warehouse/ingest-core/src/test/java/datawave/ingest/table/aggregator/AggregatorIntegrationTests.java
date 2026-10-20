@@ -18,6 +18,7 @@ import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -70,6 +71,7 @@ public class AggregatorIntegrationTests {
     public static void setup() throws Exception {
         MiniAccumuloConfig config = new MiniAccumuloConfig(temporaryFolder.toFile(), PASSWORD);
         config.setNumTservers(1);
+        config.setSiteConfig(Map.of(Property.INSTANCE_VOLUMES.getKey(), temporaryFolder.resolve("accumulo").toUri().toString()));
 
         mac = new MiniAccumuloCluster(config);
         mac.start();
@@ -81,7 +83,12 @@ public class AggregatorIntegrationTests {
 
     @AfterAll
     public static void tearDown() throws Exception {
-        mac.stop();
+        if (client != null) {
+            client.close();
+        }
+        if (mac != null) {
+            mac.stop();
+        }
     }
 
     private static void configureTables() throws Exception {

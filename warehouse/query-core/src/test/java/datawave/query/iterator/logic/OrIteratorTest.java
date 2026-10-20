@@ -109,6 +109,69 @@ public class OrIteratorTest {
     }
 
     @Test
+    public void testDeferredExcludePrecedesCachedInclude() {
+        Set<NestedIterator<String>> includes = new HashSet<>();
+        includes.add(getItr(Lists.newArrayList("b", "f"), false));
+
+        Set<NestedIterator<String>> excludes = new HashSet<>();
+        excludes.add(getItr(Lists.newArrayList("a", "e"), true));
+
+        OrIterator<String> iterator = new OrIterator<>(includes, excludes);
+        iterator.setContext("a");
+        iterator.initialize();
+
+        // The first context is excluded, so the positive include is the next possible match.
+        Assert.assertEquals("b", iterator.move("a"));
+
+        // The include at "f" is cached, but the negated branch matches each earlier context.
+        iterator.setContext("c");
+        Assert.assertEquals("c", iterator.move("c"));
+        iterator.setContext("d");
+        Assert.assertEquals("d", iterator.move("d"));
+
+        // The excluded context still advances to the cached positive include.
+        iterator.setContext("e");
+        Assert.assertEquals("f", iterator.move("e"));
+        Assert.assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testContextIncludeCanMatchBeforeCachedInclude() {
+        NestedIterator<String> negated = new OrIterator<>(Collections.emptyList(), List.of(getItr(List.of("a"), false)));
+        OrIterator<String> iterator = new OrIterator<>(List.of(getItr(List.of("f"), false), negated));
+        iterator.setContext("a");
+        iterator.initialize();
+
+        Assert.assertNull(iterator.moveContext("a"));
+        Assert.assertEquals("c", iterator.moveContext("c"));
+        Assert.assertEquals("f", iterator.moveContext("f"));
+    }
+
+    @Test
+    public void testExhaustedNonEventIncludeIsRetiredBeforeSiblingFailure() {
+        NestedIterator<String> nonEvent = new FailingItr(List.of("a"), true, -1, 2);
+        NestedIterator<String> failingEvent = new FailingItr(List.of("a", "b"), false, 1, 1);
+        OrIterator<String> iterator = new OrIterator<>(List.of(nonEvent, failingEvent));
+
+        Assert.assertThrows(IllegalStateException.class, iterator::initialize);
+
+        Assert.assertFalse(iterator.isNonEventField());
+    }
+
+    @Test
+    public void testPendingNonEventResultSurvivesLaterEventCandidateFailure() {
+        NestedIterator<String> nonEvent = new FailingItr(List.of("a"), true, -1, 3);
+        NestedIterator<String> failingEvent = new FailingItr(List.of("b", "c"), false, 1, 2);
+        NestedIterator<String> remainingEvent = new FailingItr(List.of("c"), false, -1, 1);
+        OrIterator<String> iterator = new OrIterator<>(List.of(nonEvent, failingEvent, remainingEvent));
+        iterator.initialize();
+
+        Assert.assertThrows(IllegalStateException.class, iterator::next);
+
+        Assert.assertTrue(iterator.isNonEventField());
+    }
+
+    @Test
     public void testMultipleDeferredExcludeMove() {
         Set<NestedIterator<String>> excludes = new HashSet<>();
         excludes.add(getItr(Lists.newArrayList("b", "d"), true));
@@ -357,5 +420,37 @@ public class OrIteratorTest {
 
     private NegationFilterTest.Itr<String> getItr(List<String> source, boolean contextRequired) {
         return new NegationFilterTest.Itr<>(source, contextRequired);
+    }
+
+    private static class FailingItr extends NegationFilterTest.Itr<String> {
+        private final boolean nonEventField;
+        private final int failAt;
+        private final int hashCode;
+        private int nextCalls;
+
+        private FailingItr(List<String> values, boolean nonEventField, int failAt, int hashCode) {
+            super(values);
+            this.nonEventField = nonEventField;
+            this.failAt = failAt;
+            this.hashCode = hashCode;
+        }
+
+        @Override
+        public String next() {
+            if (nextCalls++ == failAt) {
+                throw new IllegalStateException("simulated event-field lookup failure");
+            }
+            return super.next();
+        }
+
+        @Override
+        public boolean isNonEventField() {
+            return nonEventField;
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
+        }
     }
 }

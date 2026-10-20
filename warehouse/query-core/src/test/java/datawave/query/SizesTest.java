@@ -5,7 +5,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -160,14 +159,12 @@ public class SizesTest extends AbstractQueryTest {
         planAndExecuteQuery();
     }
 
-    @Disabled
     @Test
     public void testRandomQuery() throws Exception {
-        // there exist edge cases where no document satisfies this query due to random event generation.
-        // when event metadata is generated a random query can be constructed from the metadata
+        // Match a known fixture event plus any random events with the same values.
         givenQuery("SIZE == 'small' && COLOR == 'green' && SHAPE == 'triangle'");
         expectPlan("SIZE == 'small' && COLOR == 'green' && SHAPE == 'triangle'");
-        expectResultCount(0);
+        expectResultCount(ingest.getEventCount("small", "green", "triangle"));
         planAndExecuteQuery();
     }
 }

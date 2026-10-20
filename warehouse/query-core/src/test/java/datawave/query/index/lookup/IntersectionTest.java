@@ -18,7 +18,6 @@ import java.util.TreeSet;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.Iterators;
@@ -392,8 +391,7 @@ public class IntersectionTest {
         assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
 
-    // keep this test around until it can be rewritten for an all-uids case
-    @Ignore
+    // Reduce nested terms when every stream supplies its matching UIDs.
     @Test
     public void testIntersection_nestedOrReduction() throws ParseException {
         // (A || B) && C
@@ -406,7 +404,7 @@ public class IntersectionTest {
         ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", Arrays.asList("x.y.z", "x.y.z.1"));
 
         // C - uids
-        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", null);
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", Arrays.asList("a.b.c", "a.b.z", "x.y.z", "x.y.z.1"));
 
         List<? extends IndexStream> toUnion = Arrays.asList(s1, s2);
         Union union = new Union(toUnion);
@@ -459,8 +457,7 @@ public class IntersectionTest {
         assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
 
-    // keep this test around until it can be rewritten for an all-uids case
-    @Ignore
+    // Reduce nested intersections using complete UID lists.
     @Test
     public void testIntersection_nestedAndReduction() throws ParseException {
         // (A AND B) AND (C AND D) AND E
@@ -469,17 +466,17 @@ public class IntersectionTest {
         // A uid
         ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c", "a.b.z"));
 
-        // B infinite
-        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", null);
+        // B uids
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", Arrays.asList("a.b.c", "a.b.z", "x.y.z.1"));
 
         // C uid
         ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", Arrays.asList("a.b.c", "x.y.z.1"));
 
-        // D infinite
-        ScannerStream s4 = buildScannerStream("20090101_1", "D", "4", null);
+        // D uids
+        ScannerStream s4 = buildScannerStream("20090101_1", "D", "4", Arrays.asList("a.b.c", "a.b.z", "x.y.z.1"));
 
-        // E infinite
-        ScannerStream s5 = buildScannerStream("20090101_1", "E", "5", null);
+        // E uids
+        ScannerStream s5 = buildScannerStream("20090101_1", "E", "5", Arrays.asList("a.b.c", "a.b.z", "x.y.z.1"));
 
         List<? extends IndexStream> toIntersection1 = Arrays.asList(s1, s2);
         Intersection intersection1 = new Intersection(toIntersection1, new IndexInfo());
@@ -513,8 +510,7 @@ public class IntersectionTest {
         assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
 
-    // keep this test around until it can be rewritten for an all-uids case
-    @Ignore
+    // Reduce nested unions using complete UID lists.
     @Test
     public void testIntersection_doubleNestedOrReduction() throws ParseException {
         // (((A OR B) AND C) OR ((D OR E) AND F)) AND G
@@ -525,8 +521,8 @@ public class IntersectionTest {
         // B - uids
         ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", Arrays.asList("x.y.z", "x.y.z.1"));
 
-        // C - infinite
-        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", null);
+        // C - uids
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", Arrays.asList("a.b.c", "a.b.z", "x.y.z", "x.y.z.1"));
 
         // D - uids
         ScannerStream s4 = buildScannerStream("20090101_1", "D", "4", Arrays.asList("a.a.a", "b.b.b"));
@@ -575,13 +571,12 @@ public class IntersectionTest {
         assertEquals(m.type, IndexMatchType.AND);
         assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode())));
 
-        assertTrue(TreeEqualityVisitor.isEqual(
-                        JexlASTHelper.parseJexlQuery("G =='7' && ((A == '1' && C == '3') || (B == '2' && C == '3') || (D == '4' && F == '6'))"),
+        // The aggregate keeps the factored union; only each UID's node is reduced to its matching terms.
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("G =='7' && (((A == '1' || B == '2') && C == '3') || (D == '4' && F == '6'))"),
                         JexlNodeFactory.createScript(i.currentNode())));
     }
 
-    // keep this test around until it can be rewritten for an all-uids case
-    @Ignore
+    // Preserve both matching UID branches when reducing nested unions.
     @Test
     public void testIntersection_doubleNestedOrReductionMultipleBackPropagation() throws ParseException {
         // (((A OR B) AND C) OR ((D OR E) AND F)) AND G
@@ -592,8 +587,8 @@ public class IntersectionTest {
         // B - uids
         ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", Arrays.asList("x.y.z", "x.y.z.1"));
 
-        // C - infinite
-        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", null);
+        // C - uids
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", Arrays.asList("a.b.c", "a.b.z", "x.y.z", "x.y.z.1"));
 
         // D - uids
         ScannerStream s4 = buildScannerStream("20090101_1", "D", "4", Arrays.asList("a.a.a", "b.b.b"));
@@ -649,8 +644,8 @@ public class IntersectionTest {
         assertEquals(m.type, IndexMatchType.AND);
         assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode())));
 
-        assertTrue(TreeEqualityVisitor.isEqual(
-                        JexlASTHelper.parseJexlQuery("G =='7' && ((A == '1' && C == '3') || (B == '2' && C == '3') || (D == '4' && F == '6'))"),
+        // The aggregate keeps both union branches, even when a UID matches only one.
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("G =='7' && (((A == '1' || B == '2') && C == '3') || (D == '4' && F == '6'))"),
                         JexlNodeFactory.createScript(i.currentNode())));
     }
 

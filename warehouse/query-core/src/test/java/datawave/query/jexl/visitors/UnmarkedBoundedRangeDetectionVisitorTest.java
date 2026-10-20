@@ -48,6 +48,30 @@ public class UnmarkedBoundedRangeDetectionVisitorTest {
         test(false, query);
     }
 
+    @Test
+    public void testEvaluationOnlyRange() {
+        String query = "((_Eval_ = true) && (FIELD >= '2' && FIELD <= '3'))";
+        test(false, query);
+    }
+
+    @Test
+    public void testDelayedRange() {
+        String query = "((_Delayed_ = true) && (FIELD >= '2' && FIELD <= '3'))";
+        test(false, query);
+    }
+
+    @Test
+    public void testUnmarkedRangeOutsideEvaluationOnlyMarker() {
+        String query = "((_Eval_ = true) && (FIELD >= '2' && FIELD <= '3')) || (OTHER >= '4' && OTHER <= '5')";
+        test(true, query);
+    }
+
+    @Test
+    public void testUnmarkedRangeInsideLenientMarker() {
+        String query = "((_Lenient_ = true) && (FIELD >= '2' && FIELD <= '3'))";
+        test(true, query);
+    }
+
     private void test(boolean containsUnmarked, String query) {
         ASTJexlScript script = parse(query);
         boolean result = UnmarkedBoundedRangeDetectionVisitor.findUnmarkedBoundedRanges(script);

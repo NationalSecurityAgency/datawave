@@ -13,7 +13,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -161,8 +160,6 @@ public class SummaryTest extends AbstractQueryTest {
         planAndExecuteQuery();
     }
 
-    // TODO: remove @Disabled after we can except no argument in function
-    @Disabled
     @Test
     public void testWithNoArg() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();

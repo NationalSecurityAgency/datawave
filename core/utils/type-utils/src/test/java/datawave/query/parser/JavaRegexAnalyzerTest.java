@@ -19,10 +19,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
@@ -1040,23 +1038,20 @@ public class JavaRegexAnalyzerTest {
         }
     }
 
-    // This will take at least 5 minutes to enumerate, not really something we want to run as unit test
+    // Cover every octet value at each independent position; testDigitRegexs covers boundary combinations.
     @Test
-    @Disabled
-    public void extensiveIpAddressRegexs() throws JavaRegexParseException {
-        Stopwatch sw = Stopwatch.createUnstarted();
-        sw.start();
-        for (int i = 1; i < 256; i++) {
-            for (int j = 1; j < 256; j++) {
-                for (int k = 1; k < 256; k++) {
-                    String expected = String.format("%03d\\.%03d\\.%03d\\.%s", i, j, k, ".*?");
-                    String origIp = String.format("%d\\.%d\\.%d\\.%s", i, j, k, ".*?");
-                    String paddedIp = new JavaRegexAnalyzer(origIp).getZeroPadIpRegex();
-                    assertEquals(expected, paddedIp);
-                }
+    public void allIpAddressOctetValues() throws JavaRegexParseException {
+        int[] octets = {1, 10, 100};
+        for (int position = 0; position < octets.length; position++) {
+            int original = octets[position];
+            for (int value = 0; value < 256; value++) {
+                octets[position] = value;
+                String expected = String.format("%03d\\.%03d\\.%03d\\.0{0,3}.*?", octets[0], octets[1], octets[2]);
+                String origIp = String.format("%d\\.%d\\.%d\\..*?", octets[0], octets[1], octets[2]);
+                assertEquals(expected, new JavaRegexAnalyzer(origIp).getZeroPadIpRegex(), origIp);
             }
+            octets[position] = original;
         }
-        sw.stop();
     }
 
     @Test
