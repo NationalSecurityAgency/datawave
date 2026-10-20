@@ -14,18 +14,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.dataImpl.KeyExtent;
-import org.apache.accumulo.core.metadata.MetadataServicer;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -38,6 +32,7 @@ import org.apache.log4j.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 
+import datawave.core.common.connection.AccumuloTableUtils;
 import datawave.ingest.config.BaseHdfsFileCacheUtil;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.mapreduce.partition.DelegatePartitioner;
@@ -81,14 +76,12 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     private PartitionerCache partitionerCache;
 
-    private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        SortedMap<KeyExtent,String> tabletLocations = new TreeMap<>();
-
+    private Map<Text,String> getSplitsWithLocation(String table) throws AccumuloException, TableNotFoundException {
         AccumuloClient client = accumuloHelper.newClient();
-        MetadataServicer.forTableName((ClientContext) client, table).getTabletLocations(tabletLocations);
-
-        return tabletLocations.entrySet().stream().filter(k -> k.getKey().endRow() != null).collect(
-                        Collectors.toMap(e -> e.getKey().endRow(), e -> e.getValue() == null ? NO_LOCATION : e.getValue(), (o1, o2) -> o1, TreeMap::new));
+        Map<Text,String> locations = AccumuloTableUtils.getSplitsWithLocations(client, table);
+        // Replace empty-string locations with NO_LOCATION sentinel
+        locations.replaceAll((k, v) -> v.isEmpty() ? NO_LOCATION : v);
+        return locations;
     }
 
     /**
@@ -256,7 +249,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                 // if the file exists and the new file would exceed the deviation threshold, don't replace it
                 throw new IOException("Splits file will not be replaced");
             }
-        } catch (IOException | AccumuloSecurityException | AccumuloException | TableNotFoundException ex) {
+        } catch (IOException | AccumuloException | TableNotFoundException ex) {
             log.error("Unable to write new splits file", ex);
             throw new IOException(ex);
         }
