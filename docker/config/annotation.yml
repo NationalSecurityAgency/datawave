@@ -1,4 +1,8 @@
 spring:
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=5m
   rabbitmq:
     publisher-confirm-type: correlated
     publisher-returns: true
@@ -43,6 +47,11 @@ spring:
     default-property-inclusion: non-null
     deserialization:
       fail-on-unknown-properties: false
+hazelcast:
+  client:
+    # Annotation has no distributed cache state; all roles use local caches.
+    enabled: false
+
 annotation:
   # Activate exactly one of annotation-api, annotation-writer, or annotation-combined.
   # The matching Config Server overlay is required.
