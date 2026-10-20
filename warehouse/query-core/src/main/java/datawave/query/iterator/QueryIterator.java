@@ -372,6 +372,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+
+        // if the waitwindow observer had p
+        boolean freshRebuild = (this.waitWindowObserver.getSeekRange() != null);
         // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
         this.originalRange = range;
@@ -1657,6 +1660,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                                     this.yieldCallback);
                 }
             }
+        }
+        if (groupingIterator != null) {
+            // update the yield callback in case it changed since the last yield
+            groupingIterator.setYieldCallback(this.yieldCallback);
         }
         return groupingIterator;
     }

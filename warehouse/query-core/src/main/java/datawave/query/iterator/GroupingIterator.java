@@ -55,7 +55,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
 
     private final int groupFieldsBatchSize;
 
-    private final YieldCallback<Key> yieldCallback;
+    private YieldCallback<Key> yieldCallback;
 
     private final Iterator<Map.Entry<Key,Document>> previousIterators;
 
@@ -69,6 +69,10 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         this.groupFieldsBatchSize = groupFieldsBatchSize;
         this.yieldCallback = yieldCallback;
         this.groups = new Groups();
+    }
+
+    public void setYieldCallback(YieldCallback<Key> yieldCallback) {
+        this.yieldCallback = yieldCallback;
     }
 
     @Override
