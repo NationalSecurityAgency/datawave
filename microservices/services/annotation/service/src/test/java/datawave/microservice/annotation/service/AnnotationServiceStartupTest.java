@@ -7,18 +7,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.IntegrationMessageHeaderAccessor;
-import org.springframework.integration.support.MessageBuilder;
-import org.springframework.messaging.Message;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -36,22 +36,22 @@ import datawave.microservice.annotation.util.lookup.service.LookupService;
 import datawave.microservice.annotation.writers.accumulo.config.AccumuloAnnotationWriterConfig;
 import datawave.microservice.annotation.writers.accumulo.config.AccumuloAnnotationWriterProperties;
 import datawave.microservice.annotation.writers.file.config.FileAnnotationWriterConfig;
+import reactor.core.Disposable;
 
 /**
- * Boots the annotation service using the same writer topology shipped in {@code annotation.yml} for deployment (Accumulo and file writers enabled, log and dump
- * writers disabled), with only external network dependencies (Accumulo, remote lookup) replaced by lightweight in-memory/mocked implementations. This proves
- * that the production-shape configuration and writer topology assembled across T05-T09 actually resolves into a working Spring context - all expected
- * writer/sink beans are present with no ambiguous or missing bindings - and that one authorized write reaches its defined acceptance boundary (Q01: Rabbit
- * producer-confirmed ingress, not committed Accumulo persistence). The producer-confirm acknowledgement is simulated by subscribing directly to the real,
- * fully-wired {@link AnnotationSupplier} bean's outbound {@code Flux} and immediately acking each message, exactly mirroring what the real Rabbit binder/broker
- * does via the {@code annotationAckChannel} in production, without requiring a live broker in this test.
+ * Starts a Spring context for the combined role with Accumulo writing and file fallback enabled, and log and dump writers disabled.
+ * Checks that the expected controller, publisher, writer, and consumer beans are present.
+ *
+ * Uses in-memory Accumulo and a mocked lookup service. Calls the controller directly to submit an annotation, then simulates
+ * RabbitMQ accepting the publication by completing its confirmation future. Checks that the write succeeds after that confirmation.
+ *
+ * This test does not use a live RabbitMQ broker or verify that a queue consumer saves the annotation to Accumulo.
  */
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {AnnotationServiceConfig.class, AnnotationSerializerConfiguration.class, AccumuloAnnotationWriterConfig.class,
-        FileAnnotationWriterConfig.class, AnnotationAckTracker.class, AnnotationControllerV1.class,
-        AnnotationServiceStartupTest.AnnotationServiceStartupTestConfiguration.class})
+        FileAnnotationWriterConfig.class, AnnotationControllerV1.class, AnnotationServiceStartupTest.AnnotationServiceStartupTestConfiguration.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"AnnotationServiceStartupTest", "accumulo-enabled", "file-enabled"})
+@ActiveProfiles({"annotation-combined", "AnnotationServiceStartupTest", "accumulo-enabled", "file-enabled"})
 public class AnnotationServiceStartupTest {
 
     @Autowired
@@ -63,15 +63,17 @@ public class AnnotationServiceStartupTest {
     @Autowired
     private AnnotationSupplier annotationSource;
 
+    private Disposable brokerSubscription;
+
     @BeforeEach
     void simulateHealthyBrokerProducerConfirms() {
-        // Every message the controller hands to the real annotationSource bean is immediately "confirmed", just as a
-        // healthy Rabbit broker would confirm receipt via the annotationAckChannel in production.
-        annotationSource.get().subscribe(sent -> {
-            Object correlationId = sent.getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
-            Message<String> ack = MessageBuilder.withPayload("ack").setCorrelationId(correlationId).build();
-            annotationController.processConfirmAck(ack);
-        });
+        brokerSubscription = annotationSource.get().subscribe(sent -> sent.getHeaders().get(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, CorrelationData.class)
+                        .getFuture().set(new CorrelationData.Confirm(true, null)));
+    }
+
+    @AfterEach
+    void disconnectBroker() {
+        brokerSubscription.dispose();
     }
 
     @Test

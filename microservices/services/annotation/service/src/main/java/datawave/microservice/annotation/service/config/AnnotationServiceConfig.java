@@ -3,28 +3,35 @@ package datawave.microservice.annotation.service.config;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-
-import datawave.annotation.protobuf.v1.Annotation;
-import datawave.annotation.protobuf.v1.Segment;
-import datawave.annotation.util.v1.JacksonAnnotationDeserializer;
-import datawave.annotation.util.v1.JacksonAnnotationSerializer;
-import datawave.annotation.util.v1.JacksonSegmentDeserializer;
-import datawave.annotation.util.v1.JacksonSegmentSerializer;
 import datawave.microservice.annotation.common.AnnotationSupplier;
+import datawave.microservice.annotation.common.config.AnnotationJsonConfiguration;
+import datawave.microservice.annotation.health.HealthChecker;
+import datawave.microservice.annotation.service.AnnotationPublisher;
 
 @Configuration
-@EnableConfigurationProperties(AnnotationProperties.class)
+@EnableConfigurationProperties
+@Import({AnnotationJsonConfiguration.class, AnnotationProperties.class})
 public class AnnotationServiceConfig {
+    /**
+     * The message source where REST updates enter the stream. Its standalone function name selects the configured {@code annotationSource-out-0} producer
+     * binding.
+     */
     @Bean
     public AnnotationSupplier annotationSource() {
         return new AnnotationSupplier();
+    }
+
+    @Bean
+    public AnnotationPublisher annotationPublisher(AnnotationSupplier annotationSource, AnnotationProperties properties,
+                    ObjectProvider<HealthChecker> healthChecker) {
+        return new AnnotationPublisher(annotationSource, properties, healthChecker.getIfAvailable());
     }
 
     @Bean
@@ -40,20 +47,7 @@ public class AnnotationServiceConfig {
         return firewall;
     }
 
-    @Bean
-    public Module jacksonAnnotationModule() {
-        final SimpleModule simpleModule = new SimpleModule();
-
-        // Added for Annotation and Segment serialization and deserialization.
-        simpleModule.addDeserializer(Annotation.class, new JacksonAnnotationDeserializer());
-        simpleModule.addSerializer(Annotation.class, new JacksonAnnotationSerializer());
-        simpleModule.addDeserializer(Segment.class, new JacksonSegmentDeserializer());
-        simpleModule.addSerializer(Segment.class, new JacksonSegmentSerializer());
-
-        return simpleModule;
-    }
-
-    @Bean
+    @Bean(destroyMethod = "shutdown")
     public ExecutorService federatedReadExecutorService() {
         return Executors.newCachedThreadPool();
     }

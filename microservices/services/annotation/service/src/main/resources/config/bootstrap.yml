@@ -1,6 +1,10 @@
 spring:
   application:
     name: annotation
+  rabbitmq:
+    # Required by annotationSource's confirmation future and the REST acceptance boundary.
+    publisher-confirm-type: correlated
+    publisher-returns: true
   cloud:
     config:
       # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.
@@ -17,8 +21,8 @@ spring:
         bindings:
           annotationSource-out-0:
             producer:
-              # Note: This must match ANNOTATION_ACK_CHANNEL in AnnotationControllerV1 or producer confirms will not work.
-              confirmAckChannel: 'annotationAckChannel'
+              # Complete the CorrelationData future supplied by AnnotationPublisher.
+              useConfirmHeader: true
 management:
   health:
     status:
