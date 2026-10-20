@@ -1,6 +1,7 @@
 package datawave.ingest.json.mr.handler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.table.constants.TableName;
@@ -51,5 +53,25 @@ class ColumnBasedHandlerTestUtilJUnit5Test {
 
         assertEquals(2, counts.get(new Text(TableName.SHARD)));
         assertEquals(1, counts.get(new Text(TableName.SHARD_INDEX)));
+    }
+
+    @Test
+    void mapsAllowedTablesAndRetainsDayIndexKeys() {
+        Text shardTable = ColumnBasedHandlerTestUtilJUnit5.shardTableName;
+        Text dayIndexTable = ColumnBasedHandlerTestUtilJUnit5.shardDayIndexTableName;
+        Key shardKey = new Key("20261020_0", "event");
+        Key dayIndexKey = new Key("20261020", "field", "value");
+        Multimap<BulkIngestKey,Value> results = HashMultimap.create();
+        results.put(new BulkIngestKey(shardTable, shardKey), new Value("shard".getBytes(StandardCharsets.UTF_8)));
+        results.put(new BulkIngestKey(dayIndexTable, dayIndexKey), new Value("first".getBytes(StandardCharsets.UTF_8)));
+        results.put(new BulkIngestKey(dayIndexTable, dayIndexKey), new Value("second".getBytes(StandardCharsets.UTF_8)));
+
+        SetMultimap<Text,Key> tableToKeys = ColumnBasedHandlerTestUtilJUnit5.mapKeysByTable(results, Set.of(shardTable, dayIndexTable));
+
+        assertEquals(Set.of(shardKey), tableToKeys.get(shardTable));
+        assertEquals(Set.of(dayIndexKey), tableToKeys.get(dayIndexTable));
+
+        AssertionError error = assertThrows(AssertionError.class, () -> ColumnBasedHandlerTestUtilJUnit5.mapKeysByTable(results, Set.of(shardTable)));
+        assertTrue(error.getMessage().contains("unknown table: " + dayIndexTable));
     }
 }

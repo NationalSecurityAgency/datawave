@@ -26,6 +26,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -59,6 +60,7 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
     private static final String SHARD = "shard";
     private static final String SHARD_INDEX = "shardIndex";
     private static final String REVERSE_SHARD_INDEX = "reverseShardIndex";
+    private static final String SHARD_DAY_INDEX = "shardDayIndex";
     private static final String EDGE = "edge";
     private static final Joiner KEY_ELEMENT_JOINER = Joiner.on(" ::: ");
     private static final Logger log = Logger.getLogger(ColumnBasedHandlerTestUtilJUnit5.class);
@@ -89,37 +91,14 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
             eventFields.put(v.getKey(), v.getValue());
         }
         Multimap<BulkIngestKey,Value> results = handler.processBulk(new Text(), event, eventFields, new MockStatusReporter());
-        Set<Key> shardKeys = new HashSet<>();
-        Set<Key> shardIndexKeys = new HashSet<>();
-        Set<Key> shardReverseIndexKeys = new HashSet<>();
-        Map<Text,Integer> countMap = countByTable(results);
-
-        for (Map.Entry<BulkIngestKey,Value> e : results.entries()) {
-
-            BulkIngestKey bik = e.getKey();
-            if (log.isDebugEnabled() && isDocumentKey(bik.getKey())) {
-                log.debug("Found Document Key: " + bik.getKey());
-                log.debug("value:\n" + e.getValue());
-            }
-
-            if (bik.getTableName().equals(shardTableName)) {
-                shardKeys.add(bik.getKey());
-            } else if (bik.getTableName().equals(shardIndexTableName)) {
-                shardIndexKeys.add(bik.getKey());
-            } else if (bik.getTableName().equals(shardReverseIndexTableName)) {
-                shardReverseIndexKeys.add(bik.getKey());
-            } else {
-                fail("unknown table: " + bik.getTableName() + " key: " + bik.getKey());
-            }
-
-        }
+        SetMultimap<Text,Key> tableToKeys = mapKeysByTable(results, Set.of(shardTableName, shardIndexTableName, shardReverseIndexTableName));
 
         Set<String> errors = new TreeSet<>();
 
         // Collect all missing and extra keys before failing so the assertion reports every mismatch.
-        checkForErrors(expectedShardKeys, shardKeys, SHARD, errors);
-        checkForErrors(expectedShardIndexKeys, shardIndexKeys, SHARD_INDEX, errors);
-        checkForErrors(expectedShardReverseIndexKeys, shardReverseIndexKeys, REVERSE_SHARD_INDEX, errors);
+        checkForErrors(expectedShardKeys, tableToKeys.get(shardTableName), SHARD, errors);
+        checkForErrors(expectedShardIndexKeys, tableToKeys.get(shardIndexTableName), SHARD_INDEX, errors);
+        checkForErrors(expectedShardReverseIndexKeys, tableToKeys.get(shardReverseIndexTableName), REVERSE_SHARD_INDEX, errors);
 
         for (String error : errors) {
             log.error(error.trim());
@@ -138,34 +117,10 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
             eventFields.put(v.getKey(), v.getValue());
         }
         Multimap<BulkIngestKey,Value> results = handler.processBulk(new Text(), event, eventFields, new MockStatusReporter());
-        Set<Key> shardKeys = new HashSet<>();
-        Set<Key> shardIndexKeys = new HashSet<>();
-        Set<Key> shardReverseIndexKeys = new HashSet<>();
-        Set<Key> shardDayIndexKeys = new HashSet<>();
+        SetMultimap<Text,Key> tableToKeys = mapKeysByTable(results,
+                        Set.of(shardTableName, shardIndexTableName, shardReverseIndexTableName, shardDayIndexTableName));
         Set<Key> edgeKeys = new HashSet<>();
         Map<Text,Integer> countMap = countByTable(results);
-
-        for (Map.Entry<BulkIngestKey,Value> e : results.entries()) {
-
-            BulkIngestKey bik = e.getKey();
-            if (log.isDebugEnabled() && isDocumentKey(bik.getKey())) {
-                log.debug("Found Document Key: " + bik.getKey());
-                log.debug("value:\n" + e.getValue());
-            }
-
-            if (bik.getTableName().equals(shardTableName)) {
-                shardKeys.add(bik.getKey());
-            } else if (bik.getTableName().equals(shardIndexTableName)) {
-                shardIndexKeys.add(bik.getKey());
-            } else if (bik.getTableName().equals(shardReverseIndexTableName)) {
-                shardReverseIndexKeys.add(bik.getKey());
-            } else if (bik.getTableName().equals(shardDayIndexTableName)) {
-                shardDayIndexKeys.add(bik.getKey());
-            } else {
-                fail("unknown table: " + bik.getTableName() + " key: " + bik.getKey());
-            }
-
-        }
 
         // Process edges
         countMap.put(edgeTableName, 0);
@@ -192,18 +147,23 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
 
         Set<String> keyPrint = new TreeSet<>();
 
-        for (Key k : shardKeys) {
+        for (Key k : tableToKeys.get(shardTableName)) {
             keyPrint.add(formatKey(k, SHARD));
         }
 
         // check index keys
-        for (Key k : shardIndexKeys) {
+        for (Key k : tableToKeys.get(shardIndexTableName)) {
             keyPrint.add(formatKey(k, SHARD_INDEX));
         }
 
         // check reverse index keys
-        for (Key k : shardReverseIndexKeys) {
+        for (Key k : tableToKeys.get(shardReverseIndexTableName)) {
             keyPrint.add(formatKey(k, REVERSE_SHARD_INDEX));
+        }
+
+        // This overload does not assert a day-index count, but reports its keys when diagnostics are printed.
+        for (Key k : tableToKeys.get(shardDayIndexTableName)) {
+            keyPrint.add(formatKey(k, SHARD_DAY_INDEX));
         }
 
         // check edge keys
@@ -229,6 +189,23 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
                             expectedShardIndexKeys, expectedShardReverseIndexKeys, expectedEdgeKeys, countMap.get(shardTableName),
                             countMap.get(shardIndexTableName), countMap.get(shardReverseIndexTableName), countMap.get(edgeTableName)));
         }
+    }
+
+    static SetMultimap<Text,Key> mapKeysByTable(Multimap<BulkIngestKey,Value> results, Set<Text> validTables) {
+        SetMultimap<Text,Key> tableToKeys = HashMultimap.create();
+        for (Map.Entry<BulkIngestKey,Value> entry : results.entries()) {
+            BulkIngestKey bik = entry.getKey();
+            if (log.isDebugEnabled() && isDocumentKey(bik.getKey())) {
+                log.debug("Found Document Key: " + bik.getKey());
+                log.debug("value:\n" + entry.getValue());
+            }
+            Text tableName = bik.getTableName();
+            if (!validTables.contains(tableName)) {
+                fail("unknown table: " + tableName + " key: " + bik.getKey());
+            }
+            tableToKeys.put(tableName, bik.getKey());
+        }
+        return tableToKeys;
     }
 
     static Map<Text,Integer> countByTable(Multimap<BulkIngestKey,Value> results) {
@@ -258,7 +235,7 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
     }
 
     private static class MyCachingContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
-        private Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
+        private final Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
 
         @Override
         protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) {
