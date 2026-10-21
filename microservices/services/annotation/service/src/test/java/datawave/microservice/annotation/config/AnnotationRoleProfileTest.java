@@ -24,7 +24,7 @@ import datawave.microservice.annotation.service.config.AnnotationProperties;
 class AnnotationRoleProfileTest {
     @Test
     void apiProfileLoadsPublisherSettingsWithoutConsumers() throws IOException {
-        StandardEnvironment environment = configuration("annotation-api");
+        StandardEnvironment environment = configuration("api");
         AnnotationRoleConfiguration.configureFunctions(environment);
 
         assertThat(AnnotationRole.from(environment)).isEqualTo(AnnotationRole.API);
@@ -35,7 +35,7 @@ class AnnotationRoleProfileTest {
 
     @Test
     void writerProfileLoadsConsumerSettingsWithoutPublisher() throws IOException {
-        StandardEnvironment environment = configuration("annotation-writer");
+        StandardEnvironment environment = configuration("writer");
         AnnotationRoleConfiguration.configureFunctions(environment);
 
         assertThat(AnnotationRole.from(environment)).isEqualTo(AnnotationRole.WRITER);
@@ -45,7 +45,7 @@ class AnnotationRoleProfileTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"annotation-api", "annotation-writer", "annotation-combined"})
+    @ValueSource(strings = {"api", "writer", "combined"})
     void roleProfilesPreserveSharedTuningAndBackendSelection(String profile) throws IOException {
         StandardEnvironment environment = configuration(Map.of("annotation.annotation-ack-timeout-millis", 2500, "annotation.retry.max-attempts", 3,
                         "annotation.retry.backoff-interval-millis", 1700, "annotation.retry.fail-timeout-millis", 19000, "annotation.writers.accumulo.enabled",
@@ -63,26 +63,26 @@ class AnnotationRoleProfileTest {
         assertThat(environment.getProperty("annotation.writers.dump.enabled", Boolean.class)).isTrue();
         assertThat(environment.getProperty("spring.cloud.stream.bindings.accumuloAnnotationSink-in-0.consumer.concurrency", Integer.class)).isEqualTo(8);
         assertThat(environment.getProperty("annotation.writers.accumulo.concurrency", Integer.class)).isEqualTo(8);
-        String expected = "annotation-api".equals(profile) ? "annotationSource;busConsumer"
-                        : "annotation-writer".equals(profile) ? "logAnnotationSink;dumpAnnotationSink;busConsumer"
+        String expected = "api".equals(profile) ? "annotationSource;busConsumer"
+                        : "writer".equals(profile) ? "logAnnotationSink;dumpAnnotationSink;busConsumer"
                                         : "annotationSource;logAnnotationSink;dumpAnnotationSink;busConsumer";
         assertThat(environment.getProperty("spring.cloud.function.definition")).isEqualTo(expected);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"annotation-api", "annotation-writer", "annotation-combined"})
+    @ValueSource(strings = {"api", "writer", "combined"})
     void onlyTheApiOverlayChangesAcceptancePolicyDefaults(String profile) throws IOException {
         StandardEnvironment environment = configuration(Map.of("annotation.annotation-ack-enabled", false, "annotation.writers.file.enabled", true), profile);
 
         AnnotationProperties properties = Binder.get(environment).bind("annotation", AnnotationProperties.class).get();
-        boolean api = "annotation-api".equals(profile);
+        boolean api = "api".equals(profile);
         assertThat(properties.isAnnotationAckEnabled()).isEqualTo(api);
         assertThat(environment.getProperty("annotation.writers.file.enabled", Boolean.class)).isEqualTo(!api);
     }
 
     @Test
     void laterDeploymentProfileCanEnableApiFileFallback() throws IOException {
-        StandardEnvironment environment = configuration("annotation-api", "deployment-fallback");
+        StandardEnvironment environment = configuration("api", "deployment-fallback");
         environment.getPropertySources().addFirst(new MapPropertySource("deployment-fallback", Map.of("annotation.writers.file.enabled", true)));
         AnnotationRoleConfiguration.configureFunctions(environment);
 
@@ -93,7 +93,7 @@ class AnnotationRoleProfileTest {
 
     @Test
     void laterDeploymentProfileCanSelectAFileOnlyWriter() throws IOException {
-        StandardEnvironment environment = configuration("annotation-writer", "deployment-files");
+        StandardEnvironment environment = configuration("writer", "deployment-files");
         environment.getPropertySources().addFirst(new MapPropertySource("deployment-files", Map.of("annotation.writers.accumulo.enabled", false,
                         "annotation.writers.dump.enabled", true, "spring.cloud.stream.bindings.dumpAnnotationSink-in-0.consumer.concurrency", 3)));
         AnnotationRoleConfiguration.configureFunctions(environment);
@@ -103,15 +103,14 @@ class AnnotationRoleProfileTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"annotation-api,annotation-writer", "annotation-api,annotation-combined", "annotation-writer,annotation-combined",
-            "annotation-api,annotation-writer,annotation-combined"})
+    @ValueSource(strings = {"api,writer", "api,combined", "writer,combined", "api,writer,combined"})
     void multipleRoleProfilesFail(String profiles) throws IOException {
         StandardEnvironment environment = configuration(profiles.split(","));
         assertThatThrownBy(() -> AnnotationRole.from(environment)).isInstanceOf(IllegalStateException.class).hasMessageContaining("Activate exactly one");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"annotation-api", "annotation-writer", "annotation-combined"})
+    @ValueSource(strings = {"api", "writer", "combined"})
     void missingRoleOverlayFailsBeforeFunctionsAreConfigured(String profile) {
         StandardEnvironment environment = new StandardEnvironment();
         environment.setActiveProfiles(profile);
@@ -122,7 +121,7 @@ class AnnotationRoleProfileTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "k8s,remoteauth", "annotation-write"})
+    @ValueSource(strings = {"", "k8s,remoteauth", "annotation-write", "annotation-api", "annotation-writer", "annotation-combined"})
     void missingRoleProfileFailsEvenWithEnvironmentProfiles(String profiles) {
         StandardEnvironment environment = new StandardEnvironment();
         environment.setActiveProfiles(profiles.isEmpty() ? new String[0] : profiles.split(","));
@@ -132,24 +131,36 @@ class AnnotationRoleProfileTest {
 
     @Test
     void anotherRolesOverlayCannotSatisfyTheSelectedRole() throws IOException {
-        StandardEnvironment environment = configuration("annotation-api");
-        environment.setActiveProfiles("annotation-writer");
+        StandardEnvironment environment = configuration("api");
+        environment.setActiveProfiles("writer");
 
         assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment)).isInstanceOf(IllegalStateException.class)
-                        .hasMessageContaining("annotation-annotation-writer.yml");
+                        .hasMessageContaining("annotation-writer.yml");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"api", "writer", "combined"})
+    void oldOverlayMarkersCannotSatisfyTheRenamedRole(String profile) {
+        StandardEnvironment environment = new StandardEnvironment();
+        environment.setActiveProfiles(profile);
+        environment.getPropertySources().addFirst(new MapPropertySource("old-overlay", Map.of("annotation.deployment.overlays.annotation-" + profile, true)));
+
+        assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment)).isInstanceOf(IllegalStateException.class)
+                        .hasMessageContaining("missing annotation.deployment.overlays." + profile);
+        assertThat(environment.getPropertySources().contains("annotationRoleFunctions")).isFalse();
     }
 
     @Test
     void defaultProfilesCannotSupplyAnImplicitRole() {
         StandardEnvironment environment = new StandardEnvironment();
-        environment.setDefaultProfiles("annotation-combined");
+        environment.setDefaultProfiles("combined");
 
         assertThatThrownBy(() -> AnnotationRole.from(environment)).isInstanceOf(IllegalStateException.class).hasMessageContaining("Activate exactly one");
     }
 
     @Test
     void combinedProfileRetainsSharedSettingsAndBothResponsibilities() throws IOException {
-        StandardEnvironment environment = configuration("annotation-combined", "dev");
+        StandardEnvironment environment = configuration("combined", "dev");
         AnnotationRoleConfiguration.configureFunctions(environment);
 
         assertThat(AnnotationRole.from(environment)).isEqualTo(AnnotationRole.COMBINED);
@@ -168,7 +179,7 @@ class AnnotationRoleProfileTest {
     }
 
     private static Stream<Arguments> functionOverrides() {
-        return Stream.of("annotation-api", "annotation-writer", "annotation-combined")
+        return Stream.of("api", "writer", "combined")
                         .flatMap(profile -> Stream.of("spring.cloud.function.definition", "spring.cloud.stream.function.definition")
                                         .flatMap(property -> Stream.of("", "annotationSource", "identity|logAnnotationSink", "custom;other")
                                                         .map(definition -> Arguments.of(profile, property, definition))));
@@ -178,7 +189,7 @@ class AnnotationRoleProfileTest {
     void serviceAndDockerRoleOverlaysHaveIdenticalSettings() throws IOException {
         Path service = Path.of(System.getProperty("basedir")).toAbsolutePath();
         YamlPropertySourceLoader loader = new YamlPropertySourceLoader();
-        for (String profile : new String[] {"annotation-api", "annotation-writer", "annotation-combined"}) {
+        for (String profile : new String[] {"api", "writer", "combined"}) {
             String filename = "annotation-" + profile + ".yml";
             assertThat(loader.load(profile, new FileSystemResource(service.resolve("src/main/config").resolve(filename))).get(0).getSource()).isEqualTo(
                             loader.load(profile, new FileSystemResource(service.resolve("../../../../docker/config").resolve(filename))).get(0).getSource());

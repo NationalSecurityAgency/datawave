@@ -17,24 +17,24 @@ Use the same jar or image for all three roles:
 
 | Profile | Responsibilities |
 |:--------|:-----------------|
-| `annotation-api` | REST reads and writes; publishes updates; no queue consumers. |
-| `annotation-writer` | All enabled queue consumers; no REST API or direct API file fallback. |
-| `annotation-combined` | API and all enabled queue consumers in one instance. |
+| `api` | REST reads and writes; publishes updates; no queue consumers. |
+| `writer` | All enabled queue consumers; no REST API or direct API file fallback. |
+| `combined` | API and all enabled queue consumers in one instance. |
 
 Before starting a role, publish shared `annotation.yml` and its matching
-`annotation-annotation-<role>.yml` overlay to Config Server. The files are supplied
+`annotation-<role>.yml` overlay to Config Server. The files are supplied
 in `service/src/main/config` and `docker/config`. Exactly one role profile and its
 matching overlay marker are required. Keep `spring.application.name=annotation`.
 
 ```bash
 java -jar service/target/annotation-service*-exec.jar \
-  --spring.profiles.active=annotation-api,dev,remoteauth
+  --spring.profiles.active=api,dev,remoteauth
 
 java -jar service/target/annotation-service*-exec.jar \
-  --spring.profiles.active=annotation-writer,dev,remoteauth
+  --spring.profiles.active=writer,dev,remoteauth
 ```
 
-For a single instance, select `annotation-combined` explicitly. Put the role first
+For a single instance, select `combined` explicitly. Put the role first
 and environment/backend profiles afterward so deployment tuning can override its
 defaults. The role and backend flags select messaging functions automatically;
 remove explicit `spring.cloud.function.definition` and

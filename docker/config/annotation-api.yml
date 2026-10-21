@@ -1,8 +1,8 @@
-# Application annotation + profile annotation-api. Keep shared destinations and tables in annotation.yml.
+# Application annotation + profile api. Keep shared destinations and tables in annotation.yml.
 annotation:
   deployment:
     overlays:
-      annotation-api: true
+      api: true
   annotation-ack-enabled: true
   writers:
     file:

@@ -5,18 +5,23 @@ The same executable supports API, writer, and combined roles.
 
 ## Role and configuration selection
 
-Activate exactly one of `annotation-api`, `annotation-writer`, or
-`annotation-combined`. Missing, conflicting, or default-only role selection fails
-startup. Changing roles requires a restart.
+Activate exactly one of `api`, `writer`, or `combined`. Missing, conflicting, or
+default-only role selection fails startup. Changing roles requires a restart.
+
+These profiles replace `annotation-api`, `annotation-writer`, and
+`annotation-combined`; the old names are not role aliases. Before deploying,
+publish the renamed files below with their updated overlay markers and update
+the active role profile in launch settings. Keep `spring.application.name=annotation`.
+Consul and Compose service names remain `annotation-api` and `annotation-writer`.
 
 Config Server combines application name `annotation` with the active profiles:
 
 | File | Purpose |
 |:-----|:--------|
 | `annotation.yml` | Shared destinations, tables, TLS, authorization, backend flags, and tuning. |
-| `annotation-annotation-api.yml` | Required API marker; broker acknowledgement enabled; direct fallback disabled by default. |
-| `annotation-annotation-writer.yml` | Required writer marker; shared tuning remains inherited. |
-| `annotation-annotation-combined.yml` | Required combined marker; shared tuning remains inherited. |
+| `annotation-api.yml` | Required API marker; broker acknowledgement enabled; direct fallback disabled by default. |
+| `annotation-writer.yml` | Required writer marker; shared tuning remains inherited. |
+| `annotation-combined.yml` | Required combined marker; shared tuning remains inherited. |
 
 Each overlay declares `annotation.deployment.overlays.<profile>: true`. Keep the
 marker in the matching Config Server overlay; putting it in packaged or shared

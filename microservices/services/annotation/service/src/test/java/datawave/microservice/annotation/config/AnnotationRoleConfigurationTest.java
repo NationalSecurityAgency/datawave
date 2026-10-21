@@ -46,8 +46,8 @@ class AnnotationRoleConfigurationTest {
 
     @Test
     void apiBootsWithComponentScannedProperties() {
-        roles.withUserConfiguration(ApiDependencies.class, AnnotationProperties.class).withPropertyValues("spring.profiles.active=annotation-api",
-                        "annotation.deployment.overlays.annotation-api=true", "annotation.annotation-ack-timeout-millis=1234").run(context -> {
+        roles.withUserConfiguration(ApiDependencies.class, AnnotationProperties.class).withPropertyValues("spring.profiles.active=api",
+                        "annotation.deployment.overlays.api=true", "annotation.annotation-ack-timeout-millis=1234").run(context -> {
                             assertThat(context).hasNotFailed().hasSingleBean(AnnotationProperties.class).hasSingleBean(AnnotationPublisher.class)
                                             .hasSingleBean(AnnotationControllerV1.class);
                             assertThat(context.getBean(AnnotationProperties.class).getAnnotationAckTimeoutMillis()).isEqualTo(1234);
@@ -57,9 +57,8 @@ class AnnotationRoleConfigurationTest {
     @Test
     void apiRoleDoesNotInitializeAnyQueueWriterEvenWhenSharedConfigEnablesThem() {
         roles.withUserConfiguration(ApiDependencies.class)
-                        .withPropertyValues("spring.profiles.active=annotation-api", "annotation.deployment.overlays.annotation-api=true",
-                                        "annotation.writers.accumulo.enabled=true", "annotation.writers.log.enabled=true",
-                                        "annotation.writers.dump.enabled=true", "annotation.writers.file.enabled=false")
+                        .withPropertyValues("spring.profiles.active=api", "annotation.deployment.overlays.api=true", "annotation.writers.accumulo.enabled=true",
+                                        "annotation.writers.log.enabled=true", "annotation.writers.dump.enabled=true", "annotation.writers.file.enabled=false")
                         .run(context -> {
                             assertThat(context).hasNotFailed().hasSingleBean(AnnotationControllerV1.class).hasSingleBean(AnnotationPublisher.class)
                                             .hasSingleBean(LookupService.class).hasSingleBean(ExecutorService.class).hasBean("annotationSource")
@@ -75,7 +74,7 @@ class AnnotationRoleConfigurationTest {
     @Test
     void writerRoleStartsWithoutApiDependenciesOrDirectFileFallback() {
         roles.withUserConfiguration(AccumuloConfiguration.class)
-                        .withPropertyValues("spring.profiles.active=annotation-writer", "annotation.deployment.overlays.annotation-writer=true",
+                        .withPropertyValues("spring.profiles.active=writer", "annotation.deployment.overlays.writer=true",
                                         "annotation.writers.log.enabled=true", "annotation.writers.file.enabled=true",
                                         "annotation.writers.file.pathUri=invalid://must-not-be-created")
                         .run(context -> {
@@ -92,10 +91,8 @@ class AnnotationRoleConfigurationTest {
 
     @Test
     void explicitCombinedRoleRetainsApiAndConfiguredConsumersAndFileFallback() {
-        roles.withUserConfiguration(ApiDependencies.class)
-                        .withPropertyValues("spring.profiles.active=annotation-combined", "annotation.deployment.overlays.annotation-combined=true",
-                                        "annotation.writers.log.enabled=true", "annotation.writers.file.enabled=true",
-                                        "annotation.writers.file.pathUri=" + files.toUri())
+        roles.withUserConfiguration(ApiDependencies.class).withPropertyValues("spring.profiles.active=combined", "annotation.deployment.overlays.combined=true",
+                        "annotation.writers.log.enabled=true", "annotation.writers.file.enabled=true", "annotation.writers.file.pathUri=" + files.toUri())
                         .run(context -> {
                             assertThat(context).hasNotFailed().hasSingleBean(AnnotationControllerV1.class).hasBean("annotationSource")
                                             .hasBean("logAnnotationSink").hasBean("fileAnnotationWriter");
@@ -107,7 +104,7 @@ class AnnotationRoleConfigurationTest {
     @Test
     void dumpConsumerProvidesQueueDrivenFileOutputInWriterRole() {
         roles.withUserConfiguration(AccumuloConfiguration.class)
-                        .withPropertyValues("spring.profiles.active=annotation-writer", "annotation.deployment.overlays.annotation-writer=true",
+                        .withPropertyValues("spring.profiles.active=writer", "annotation.deployment.overlays.writer=true",
                                         "annotation.writers.accumulo.enabled=false", "annotation.writers.dump.enabled=true",
                                         "annotation.writers.dump.pathUri=" + files.toUri(), "spring.cloud.bus.enabled=false")
                         .run(context -> {
@@ -120,11 +117,10 @@ class AnnotationRoleConfigurationTest {
 
     @Test
     void writerWithoutEnabledQueueConsumerFailsClearly() {
-        roles.withPropertyValues("spring.profiles.active=annotation-writer", "annotation.deployment.overlays.annotation-writer=true",
-                        "annotation.writers.file.enabled=true").run(context -> {
+        roles.withPropertyValues("spring.profiles.active=writer", "annotation.deployment.overlays.writer=true", "annotation.writers.file.enabled=true")
+                        .run(context -> {
                             assertThat(context).hasFailed();
-                            assertThat(context.getStartupFailure())
-                                            .hasMessage("Profile annotation-writer requires an enabled log, accumulo, or dump queue consumer");
+                            assertThat(context.getStartupFailure()).hasMessage("Profile writer requires an enabled log, accumulo, or dump queue consumer");
                         });
     }
 
@@ -139,7 +135,7 @@ class AnnotationRoleConfigurationTest {
         flags.put(property, value);
         for (String role : new String[] {"api", "writer", "combined"}) {
             roles.withUserConfiguration(ApiDependencies.class, AccumuloConfiguration.class)
-                            .withPropertyValues("spring.profiles.active=annotation-" + role, "annotation.deployment.overlays.annotation-" + role + "=true",
+                            .withPropertyValues("spring.profiles.active=" + role, "annotation.deployment.overlays." + role + "=true",
                                             "annotation.writers.dump.pathUri=" + files.toUri())
                             .withInitializer(context -> context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("backend-flags", flags)))
                             .run(context -> {
@@ -156,8 +152,7 @@ class AnnotationRoleConfigurationTest {
 
     @Test
     void missingQueueWriterFlagsRemainDisabledInCombinedRole() {
-        roles.withUserConfiguration(ApiDependencies.class)
-                        .withPropertyValues("spring.profiles.active=annotation-combined", "annotation.deployment.overlays.annotation-combined=true")
+        roles.withUserConfiguration(ApiDependencies.class).withPropertyValues("spring.profiles.active=combined", "annotation.deployment.overlays.combined=true")
                         .run(context -> {
                             assertThat(context).hasNotFailed().hasBean("annotationSource").doesNotHaveBean("logAnnotationSink")
                                             .doesNotHaveBean("accumuloAnnotationSink").doesNotHaveBean("dumpAnnotationSink");

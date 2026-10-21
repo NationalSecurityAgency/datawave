@@ -37,7 +37,7 @@ class AnnotationRabbitTopologyTest {
     private MockRestServiceServer server;
 
     @ParameterizedTest
-    @ValueSource(strings = {"annotation-api", "annotation-writer", "combined"})
+    @ValueSource(strings = {"api", "writer", "combined"})
     void logQueueAloneDoesNotSatisfyTheRequiredPersistenceRoute(String profile) throws IOException {
         StandardEnvironment environment = configuration(profile);
         assertThat(environment.getProperty("annotation.writers.accumulo.enabled", Boolean.class)).isTrue();
@@ -52,7 +52,7 @@ class AnnotationRabbitTopologyTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"annotation-api", "annotation-writer", "combined"})
+    @ValueSource(strings = {"api", "writer", "combined"})
     void requiredDurableRouteIsHealthyWithZeroConsumers(String profile) throws IOException {
         initialize(configuration(profile));
         expectTopology("accumulo", true);
@@ -64,7 +64,7 @@ class AnnotationRabbitTopologyTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"annotation-api", "annotation-writer", "combined"})
+    @ValueSource(strings = {"api", "writer", "combined"})
     void recoveryProvisionsThePersistenceRouteWithoutCreatingLogQueues(String profile) throws IOException {
         initialize(configuration(profile));
         expectTopology(null, false);
@@ -95,7 +95,7 @@ class AnnotationRabbitTopologyTest {
 
     @Test
     void queueWithoutItsPersistenceBindingIsUnhealthy() throws IOException {
-        initialize(configuration("annotation-api"));
+        initialize(configuration("api"));
         expectTopology("accumulo", false);
 
         checker.runHealthCheck();
@@ -107,7 +107,7 @@ class AnnotationRabbitTopologyTest {
     @ParameterizedTest
     @ValueSource(strings = {"log", "dump"})
     void deploymentTopologyOverrideChecksTheSelectedBackend(String backend) throws IOException {
-        StandardEnvironment environment = configuration("annotation-writer");
+        StandardEnvironment environment = configuration("writer");
         // A deployment profile supplies complete lists, including its own DLQ route.
         Map<String,Object> deployment = Map.of("annotation",
                         Map.of("writers", Map.of("accumulo", Map.of("enabled", false), backend, Map.of("enabled", true)), "health",
@@ -179,10 +179,8 @@ class AnnotationRabbitTopologyTest {
         Path config = Path.of(System.getProperty("basedir"), "src/main/config");
         YamlPropertySourceLoader loader = new YamlPropertySourceLoader();
         environment.getPropertySources().addFirst(loader.load("shared", new FileSystemResource(config.resolve("annotation.yml"))).get(0));
-        if (!profile.equals("combined")) {
-            environment.setActiveProfiles(profile);
-            environment.getPropertySources().addFirst(loader.load(profile, new FileSystemResource(config.resolve("annotation-" + profile + ".yml"))).get(0));
-        }
+        environment.setActiveProfiles(profile);
+        environment.getPropertySources().addFirst(loader.load(profile, new FileSystemResource(config.resolve("annotation-" + profile + ".yml"))).get(0));
         return environment;
     }
 }

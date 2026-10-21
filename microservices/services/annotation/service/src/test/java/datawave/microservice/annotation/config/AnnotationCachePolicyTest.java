@@ -44,13 +44,13 @@ class AnnotationCachePolicyTest {
                                         CacheAutoConfiguration.class))
                         .withUserConfiguration(MarkingConfig.class, FederatedAuthorizationServiceRegistrarConfiguration.class, HealthComponents.class)
                         .withInitializer(context -> {
-                            context.getEnvironment().setActiveProfiles("annotation-" + role, discovery);
+                            context.getEnvironment().setActiveProfiles(role, discovery);
                             YamlPropertySourceLoader loader = new YamlPropertySourceLoader();
                             try {
                                 context.getEnvironment().getPropertySources()
                                                 .addFirst(loader.load("shared", new FileSystemResource(config.resolve("annotation.yml"))).get(0));
-                                context.getEnvironment().getPropertySources().addFirst(
-                                                loader.load("role", new FileSystemResource(config.resolve("annotation-annotation-" + role + ".yml"))).get(0));
+                                context.getEnvironment().getPropertySources()
+                                                .addFirst(loader.load("role", new FileSystemResource(config.resolve("annotation-" + role + ".yml"))).get(0));
                             } catch (IOException e) {
                                 throw new IllegalStateException("Cannot load ordinary annotation configuration", e);
                             }

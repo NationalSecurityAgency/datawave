@@ -53,15 +53,15 @@ class AnnotationSplitDeliveryTest {
         ApplicationContextRunner writer = new ApplicationContextRunner()
                         .withUserConfiguration(AnnotationRoleConfiguration.class, AnnotationSerializerConfiguration.class, AccumuloAnnotationWriterConfig.class,
                                         AnnotationServiceConfig.class, AnnotationControllerV1.class)
-                        .withBean(AccumuloConnectionFactory.class, () -> writerFactory).withPropertyValues("spring.profiles.active=annotation-writer",
-                                        "annotation.deployment.overlays.annotation-writer=true", "annotation.writers.accumulo.enabled=true",
+                        .withBean(AccumuloConnectionFactory.class, () -> writerFactory).withPropertyValues("spring.profiles.active=writer",
+                                        "annotation.deployment.overlays.writer=true", "annotation.writers.accumulo.enabled=true",
                                         "annotation.writers.accumulo.health.enabled=true", "spring.cloud.bus.enabled=false");
         ApplicationContextRunner api = new ApplicationContextRunner()
                         .withUserConfiguration(AnnotationRoleConfiguration.class, AnnotationSerializerConfiguration.class, AnnotationServiceConfig.class,
                                         AnnotationControllerV1.class, AccumuloAnnotationWriterConfig.class)
                         .withBean(AccumuloConnectionFactory.class, () -> Mockito.mock(AccumuloConnectionFactory.class))
-                        .withBean(LookupService.class, () -> Mockito.mock(LookupService.class)).withPropertyValues("spring.profiles.active=annotation-api",
-                                        "annotation.deployment.overlays.annotation-api=true", "annotation.writers.accumulo.enabled=true",
+                        .withBean(LookupService.class, () -> Mockito.mock(LookupService.class)).withPropertyValues("spring.profiles.active=api",
+                                        "annotation.deployment.overlays.api=true", "annotation.writers.accumulo.enabled=true",
                                         "annotation.annotation-ack-timeout-millis=2000", "annotation.retry.max-attempts=1", "spring.cloud.bus.enabled=false");
 
         try {

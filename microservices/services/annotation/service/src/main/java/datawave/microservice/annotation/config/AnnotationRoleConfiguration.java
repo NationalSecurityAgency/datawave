@@ -50,7 +50,7 @@ public class AnnotationRoleConfiguration {
         List<String> functions = annotationFunctions.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey)
                         .collect(Collectors.toCollection(ArrayList::new));
         if (role == AnnotationRole.WRITER && functions.isEmpty()) {
-            throw new IllegalStateException("Profile annotation-writer requires an enabled log, accumulo, or dump queue consumer");
+            throw new IllegalStateException("Profile writer requires an enabled log, accumulo, or dump queue consumer");
         }
         if (environment.getProperty("spring.cloud.bus.enabled", Boolean.class, true)) {
             functions.add("busConsumer");

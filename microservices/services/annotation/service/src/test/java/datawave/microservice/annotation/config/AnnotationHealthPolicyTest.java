@@ -44,7 +44,7 @@ class AnnotationHealthPolicyTest {
                                         AvailabilityProbesAutoConfiguration.class))
                         .withBean("healthChecker", HealthIndicator.class, () -> () -> Health.status(route.get()).build())
                         .withBean("backend", HealthIndicator.class, () -> () -> Health.status(backend.get()).build()).withPropertyValues(productionProperties())
-                        .withPropertyValues("spring.profiles.active=annotation-" + role).run(context -> {
+                        .withPropertyValues("spring.profiles.active=" + role).run(context -> {
                             assertThat(context).hasNotFailed();
                             assertThat(context.getEnvironment().getProperty("management.endpoint.health.probes.enabled", Boolean.class)).isTrue();
                             assertThat(context).hasBean("livenessStateHealthIndicator").hasBean("readinessStateHealthIndicator");

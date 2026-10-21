@@ -75,22 +75,21 @@ class AnnotationStreamRoleTest {
     @CsvSource({"api,1,0", "writer,0,1", "combined,1,1"})
     void roleSelectsOnlyItsMessagingResponsibilities(String role, int producers, int consumers) {
         RecordingBinder binder = new RecordingBinder();
-        streams(binder).withPropertyValues("spring.profiles.active=annotation-" + role, "annotation.deployment.overlays.annotation-" + role + "=true")
-                        .run(context -> {
-                            assertThat(context).hasNotFailed();
-                            assertThat(binder.producers).isEqualTo(producers);
-                            assertThat(binder.consumers).isEqualTo(consumers);
-                            assertThat(context.containsBean("annotationSource-out-0")).isEqualTo(producers == 1);
-                            assertThat(context.containsBean("logAnnotationSink-in-0")).isEqualTo(consumers == 1);
-                        });
+        streams(binder).withPropertyValues("spring.profiles.active=" + role, "annotation.deployment.overlays." + role + "=true").run(context -> {
+            assertThat(context).hasNotFailed();
+            assertThat(binder.producers).isEqualTo(producers);
+            assertThat(binder.consumers).isEqualTo(consumers);
+            assertThat(context.containsBean("annotationSource-out-0")).isEqualTo(producers == 1);
+            assertThat(context.containsBean("logAnnotationSink-in-0")).isEqualTo(consumers == 1);
+        });
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"spring.cloud.function.definition", "spring.cloud.stream.function.definition"})
     void functionOverridesFailBeforeBindingsInitialize(String property) {
         RecordingBinder binder = new RecordingBinder();
-        streams(binder).withPropertyValues("spring.profiles.active=annotation-api", "annotation.deployment.overlays.annotation-api=true",
-                        property + "=annotationSource").run(context -> {
+        streams(binder).withPropertyValues("spring.profiles.active=api", "annotation.deployment.overlays.api=true", property + "=annotationSource")
+                        .run(context -> {
                             assertThat(context).hasFailed();
                             assertThat(context.getStartupFailure()).hasMessageContaining(property + " is managed by the annotation service");
                             assertThat(binder.producers).isZero();
@@ -103,8 +102,8 @@ class AnnotationStreamRoleTest {
     void aliasesForFixedAnnotationBindingsFailBeforeBindingsInitialize(String role, String binding, boolean brackets) {
         RecordingBinder binder = new RecordingBinder();
         String property = "spring.cloud.stream.function.bindings." + (brackets ? "[" + binding + "]" : binding);
-        streams(binder).withPropertyValues("spring.profiles.active=annotation-" + role, "annotation.deployment.overlays.annotation-" + role + "=true",
-                        property + "=renamed").run(context -> {
+        streams(binder).withPropertyValues("spring.profiles.active=" + role, "annotation.deployment.overlays." + role + "=true", property + "=renamed")
+                        .run(context -> {
                             assertThat(context).hasFailed();
                             assertThat(context.getStartupFailure()).hasMessageContaining("must not rename the fixed annotation binding")
                                             .hasMessageContaining(binding);
@@ -122,7 +121,7 @@ class AnnotationStreamRoleTest {
     @Test
     void identityAliasesPreserveBindingsAndConfirmationConversion() {
         RecordingBinder binder = new RecordingBinder();
-        streams(binder).withPropertyValues("spring.profiles.active=annotation-combined", "annotation.deployment.overlays.annotation-combined=true",
+        streams(binder).withPropertyValues("spring.profiles.active=combined", "annotation.deployment.overlays.combined=true",
                         "spring.cloud.stream.function.bindings.annotationSource-out-0=annotationSource-out-0",
                         "spring.cloud.stream.function.bindings.logAnnotationSink-in-0=logAnnotationSink-in-0").run(context -> {
                             assertThat(context).hasNotFailed();
@@ -144,7 +143,7 @@ class AnnotationStreamRoleTest {
     @ValueSource(strings = {"yes"})
     void noncanonicalTrueFlagFailsBeforeBindingsInitialize(String value) {
         RecordingBinder binder = new RecordingBinder();
-        streams(binder).withPropertyValues("spring.profiles.active=annotation-writer", "annotation.deployment.overlays.annotation-writer=true",
+        streams(binder).withPropertyValues("spring.profiles.active=writer", "annotation.deployment.overlays.writer=true",
                         "annotation.writers.log.enabled=" + value).run(context -> {
                             assertThat(context).hasFailed();
                             assertThat(context.getStartupFailure())
@@ -158,7 +157,7 @@ class AnnotationStreamRoleTest {
     @CsvSource({"true,1", "TRUE,1", "TrUe,1", "false,0", "FALSE,0", "FaLsE,0"})
     void canonicalFlagsAgreeWithActualConsumerBeansAndBindings(String value, int expectedConsumers) {
         RecordingBinder binder = new RecordingBinder();
-        streams(binder).withPropertyValues("spring.profiles.active=annotation-combined", "annotation.deployment.overlays.annotation-combined=true",
+        streams(binder).withPropertyValues("spring.profiles.active=combined", "annotation.deployment.overlays.combined=true",
                         "annotation.writers.log.enabled=" + value).run(context -> {
                             assertThat(context).hasNotFailed();
                             assertThat(binder.producers).isEqualTo(1);
@@ -172,7 +171,7 @@ class AnnotationStreamRoleTest {
     @Test
     void confirmationHeaderSurvivesOutboundProtobufConversion() {
         RecordingBinder binder = new RecordingBinder();
-        streams(binder).withPropertyValues("spring.profiles.active=annotation-api", "annotation.deployment.overlays.annotation-api=true",
+        streams(binder).withPropertyValues("spring.profiles.active=api", "annotation.deployment.overlays.api=true",
                         "annotation.annotation-ack-timeout-millis=5000").run(context -> {
                             assertThat(context).hasNotFailed();
                             context.publishEvent(new BindingCreatedEvent(binder.producerBinding));
@@ -198,24 +197,22 @@ class AnnotationStreamRoleTest {
     @Test
     void streamBindingsSerializeAndConsumeProtobufBytes() {
         RecordingBinder binder = new RecordingBinder();
-        streams(binder).withPropertyValues("spring.profiles.active=annotation-combined", "annotation.deployment.overlays.annotation-combined=true")
-                        .run(context -> {
-                            assertThat(context).hasNotFailed().hasBean("annotationProtobufMessageConverter");
-                            AnnotationMessage expected = AnnotationMessage.newBuilder().setSource("annotation-role-conversion-test")
-                                            .addAnnotations(AnnotationTestDataUtil.generateTestAnnotation()).build();
-                            // Rabbit's binder publishes this event to start the reactive supplier.
-                            context.publishEvent(new BindingCreatedEvent(binder.producerBinding));
-                            assertThat(context.getBean(AnnotationSupplier.class).send(new GenericMessage<>(expected))).isTrue();
+        streams(binder).withPropertyValues("spring.profiles.active=combined", "annotation.deployment.overlays.combined=true").run(context -> {
+            assertThat(context).hasNotFailed().hasBean("annotationProtobufMessageConverter");
+            AnnotationMessage expected = AnnotationMessage.newBuilder().setSource("annotation-role-conversion-test")
+                            .addAnnotations(AnnotationTestDataUtil.generateTestAnnotation()).build();
+            // Rabbit's binder publishes this event to start the reactive supplier.
+            context.publishEvent(new BindingCreatedEvent(binder.producerBinding));
+            assertThat(context.getBean(AnnotationSupplier.class).send(new GenericMessage<>(expected))).isTrue();
 
-                            Message<?> wire = binder.messages.poll(3, TimeUnit.SECONDS);
-                            assertThat(wire).isNotNull();
-                            assertThat(wire.getPayload()).isInstanceOf(byte[].class);
-                            assertThat(AnnotationMessage.parseFrom((byte[]) wire.getPayload())).isEqualTo(expected);
-                            // Deliver broker-shaped bytes through the real inbound conversion and function invocation chain.
-                            assertThat(binder.consumerChannel
-                                            .send(new GenericMessage<>(wire.getPayload(), Map.of(MessageHeaders.CONTENT_TYPE, "application/x-protobuf"))))
-                                            .isTrue();
-                        });
+            Message<?> wire = binder.messages.poll(3, TimeUnit.SECONDS);
+            assertThat(wire).isNotNull();
+            assertThat(wire.getPayload()).isInstanceOf(byte[].class);
+            assertThat(AnnotationMessage.parseFrom((byte[]) wire.getPayload())).isEqualTo(expected);
+            // Deliver broker-shaped bytes through the real inbound conversion and function invocation chain.
+            assertThat(binder.consumerChannel.send(new GenericMessage<>(wire.getPayload(), Map.of(MessageHeaders.CONTENT_TYPE, "application/x-protobuf"))))
+                            .isTrue();
+        });
     }
 
     static class RecordingBinder implements Binder<MessageChannel,ConsumerProperties,ProducerProperties> {

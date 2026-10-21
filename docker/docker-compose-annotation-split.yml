@@ -11,7 +11,7 @@ services:
     profiles:
       - annotation-split
     command:
-      - --spring.profiles.active=annotation-api,consul,compose,remoteauth,log-disabled
+      - --spring.profiles.active=api,consul,compose,remoteauth,log-disabled
       - --spring.output.ansi.enabled=NEVER
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.service-name=annotation-api
@@ -42,7 +42,7 @@ services:
     profiles:
       - annotation-split
     command:
-      - --spring.profiles.active=annotation-writer,consul,compose,remoteauth,log-disabled
+      - --spring.profiles.active=writer,consul,compose,remoteauth,log-disabled
       - --spring.output.ansi.enabled=NEVER
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.service-name=annotation-writer

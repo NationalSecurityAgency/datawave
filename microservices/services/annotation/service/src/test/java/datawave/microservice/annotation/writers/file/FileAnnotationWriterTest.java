@@ -32,7 +32,7 @@ import datawave.microservice.annotation.writers.file.config.FileAnnotationWriter
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = FileAnnotationWriterConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"annotation-combined", "FileAnnotationWriterTest", "file-enabled"})
+@ActiveProfiles({"combined", "FileAnnotationWriterTest", "file-enabled"})
 public class FileAnnotationWriterTest {
 
     @Autowired

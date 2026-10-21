@@ -30,7 +30,7 @@ class AnnotationPublisherSecurityTest {
         new ApplicationContextRunner()
                         .withUserConfiguration(MethodSecurity.class, AnnotationControllerV1.class, AnnotationServiceConfig.class,
                                         AnnotationSerializerConfiguration.class)
-                        .withPropertyValues("spring.profiles.active=annotation-combined", "annotation.annotation-ack-timeout-millis=5000")
+                        .withPropertyValues("spring.profiles.active=combined", "annotation.annotation-ack-timeout-millis=5000")
                         .withBean(AccumuloConnectionFactory.class, () -> mock(AccumuloConnectionFactory.class))
                         .withBean(LookupService.class, () -> mock(LookupService.class)).run(context -> {
                             assertThat(context).hasNotFailed();

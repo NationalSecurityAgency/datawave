@@ -24,7 +24,7 @@ import datawave.microservice.annotation.writers.file.config.DumpAnnotationWriter
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = DumpAnnotationWriterConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"annotation-combined", "DumpAnnotationWriterTest", "dump-enabled"})
+@ActiveProfiles({"combined", "DumpAnnotationWriterTest", "dump-enabled"})
 public class DumpAnnotationWriterTest {
 
     @Autowired

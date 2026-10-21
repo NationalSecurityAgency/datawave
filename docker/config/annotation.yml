@@ -53,7 +53,7 @@ hazelcast:
     enabled: false
 
 annotation:
-  # Activate exactly one of annotation-api, annotation-writer, or annotation-combined.
+  # Activate exactly one of api, writer, or combined.
   # The matching Config Server overlay is required.
   system-from: "datawave-annotation-service"
 

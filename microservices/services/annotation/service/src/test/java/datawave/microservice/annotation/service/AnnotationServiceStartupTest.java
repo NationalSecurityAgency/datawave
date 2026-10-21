@@ -39,11 +39,11 @@ import datawave.microservice.annotation.writers.file.config.FileAnnotationWriter
 import reactor.core.Disposable;
 
 /**
- * Starts a Spring context for the combined role with Accumulo writing and file fallback enabled, and log and dump writers disabled.
- * Checks that the expected controller, publisher, writer, and consumer beans are present.
+ * Starts a Spring context for the combined role with Accumulo writing and file fallback enabled, and log and dump writers disabled. Checks that the expected
+ * controller, publisher, writer, and consumer beans are present.
  *
- * Uses in-memory Accumulo and a mocked lookup service. Calls the controller directly to submit an annotation, then simulates
- * RabbitMQ accepting the publication by completing its confirmation future. Checks that the write succeeds after that confirmation.
+ * Uses in-memory Accumulo and a mocked lookup service. Calls the controller directly to submit an annotation, then simulates RabbitMQ accepting the publication
+ * by completing its confirmation future. Checks that the write succeeds after that confirmation.
  *
  * This test does not use a live RabbitMQ broker or verify that a queue consumer saves the annotation to Accumulo.
  */
@@ -51,7 +51,7 @@ import reactor.core.Disposable;
 @ContextConfiguration(classes = {AnnotationServiceConfig.class, AnnotationSerializerConfiguration.class, AccumuloAnnotationWriterConfig.class,
         FileAnnotationWriterConfig.class, AnnotationControllerV1.class, AnnotationServiceStartupTest.AnnotationServiceStartupTestConfiguration.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"annotation-combined", "AnnotationServiceStartupTest", "accumulo-enabled", "file-enabled"})
+@ActiveProfiles({"combined", "AnnotationServiceStartupTest", "accumulo-enabled", "file-enabled"})
 public class AnnotationServiceStartupTest {
 
     @Autowired

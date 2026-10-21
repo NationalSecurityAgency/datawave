@@ -43,7 +43,7 @@ import datawave.microservice.annotation.health.rabbit.config.RabbitHealthPropert
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ContextConfiguration(classes = RabbitHealthCheckerTest.RabbitHealthCheckerTestConfiguration.class)
-@ActiveProfiles({"annotation-combined", "RabbitHealthTest", "rabbit-config"})
+@ActiveProfiles({"combined", "RabbitHealthTest", "rabbit-config"})
 public class RabbitHealthCheckerTest {
 
     private static final String NODES_URL = "http://localhost:15672/api/nodes/";
