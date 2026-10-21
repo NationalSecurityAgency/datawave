@@ -13,8 +13,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.boot.env.YamlPropertySourceLoader;
+import org.springframework.cloud.bus.BusEnvironmentPostProcessor;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.io.FileSystemResource;
@@ -172,6 +175,8 @@ class AnnotationRoleProfileTest {
     void explicitFunctionListsAreRejected(String profile, String property, String definition) throws IOException {
         StandardEnvironment environment = configuration(profile);
         environment.getPropertySources().addFirst(new MapPropertySource("unsupported-functions", Map.of(property, definition)));
+        ConfigurationPropertySources.attach(environment);
+        new BusEnvironmentPostProcessor().postProcessEnvironment(environment, new SpringApplication(AnnotationRoleConfiguration.class));
 
         assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment)).isInstanceOf(IllegalStateException.class)
                         .hasMessageContaining(property + " is managed by the annotation service").hasMessageContaining("remove the override");
@@ -179,10 +184,11 @@ class AnnotationRoleProfileTest {
     }
 
     private static Stream<Arguments> functionOverrides() {
-        return Stream.of("api", "writer", "combined")
-                        .flatMap(profile -> Stream.of("spring.cloud.function.definition", "spring.cloud.stream.function.definition")
-                                        .flatMap(property -> Stream.of("", "annotationSource", "identity|logAnnotationSink", "custom;other")
-                                                        .map(definition -> Arguments.of(profile, property, definition))));
+        return Stream.of("api", "writer", "combined").flatMap(profile -> Stream
+                        .of("spring.cloud.function.definition", "spring.cloud.stream.function.definition")
+                        .flatMap(property -> Stream
+                                        .of("", "annotationSource", "identity|logAnnotationSink", "custom;other", "busConsumer", "annotationSource;busConsumer")
+                                        .map(definition -> Arguments.of(profile, property, definition))));
     }
 
     @Test

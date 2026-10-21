@@ -9,10 +9,12 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.PropertySource;
 
 /**
  * Selects stream functions after external/bootstrap configuration is available and before any stream properties or bindings are instantiated.
@@ -32,9 +34,20 @@ public class AnnotationRoleConfiguration {
                             + ".yml; missing " + overlayMarker);
         }
         for (String property : List.of("spring.cloud.function.definition", "spring.cloud.stream.function.definition")) {
-            if (environment.containsProperty(property)) {
-                throw new IllegalStateException(property + " is managed by the annotation service; remove the override and select consumers with "
-                                + "annotation.writers.log.enabled, annotation.writers.accumulo.enabled, and annotation.writers.dump.enabled");
+            for (PropertySource<?> source : environment.getPropertySources()) {
+                // Boot's attached source combines the other sources. Inspect the originals so Bus cannot hide a user override.
+                if (ConfigurationPropertySources.isAttachedConfigurationPropertySource(source)) {
+                    continue;
+                }
+                // Bus adds its own consumer before startup. The service includes that consumer in the selected role's function list below.
+                if ("springCloudBusOverridesProperties".equals(source.getName()) && "spring.cloud.function.definition".equals(property)
+                                && "busConsumer".equals(source.getProperty(property))) {
+                    continue;
+                }
+                if (source.containsProperty(property)) {
+                    throw new IllegalStateException(property + " is managed by the annotation service; remove the override and select consumers with "
+                                    + "annotation.writers.log.enabled, annotation.writers.accumulo.enabled, and annotation.writers.dump.enabled");
+                }
             }
         }
         // Use the same flag semantics as the backend bean conditions.

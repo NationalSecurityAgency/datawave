@@ -15,7 +15,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.cloud.bus.BusEnvironmentPostProcessor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -42,7 +45,10 @@ class AnnotationRoleConfigurationTest {
     @TempDir
     java.nio.file.Path files;
 
-    private final ApplicationContextRunner roles = new ApplicationContextRunner().withUserConfiguration(RoleComponents.class);
+    private final ApplicationContextRunner roles = new ApplicationContextRunner().withUserConfiguration(RoleComponents.class).withInitializer(context -> {
+        ConfigurationPropertySources.attach(context.getEnvironment());
+        new BusEnvironmentPostProcessor().postProcessEnvironment(context.getEnvironment(), new SpringApplication(RoleComponents.class));
+    });
 
     @Test
     void apiBootsWithComponentScannedProperties() {
