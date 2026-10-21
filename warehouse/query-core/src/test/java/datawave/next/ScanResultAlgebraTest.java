@@ -183,6 +183,42 @@ public class ScanResultAlgebraTest {
         assertNotNull(result);
         assertTrue(result.isTimeout());
         assertFalse(result.isExact());
+        assertExclude(ScanResult.negate(result), 1, 2, 3, 4);
+        assertExclude(ScanResult.negate(ScanResult.or(include(3, 4), partial(1, 2))), 1, 2, 3, 4);
+    }
+
+    /**
+     * An unresolved conjunct makes uid 2 only a possible match. Unioning that bound with a partial scan must not turn uid 2 into a confirmed match that
+     * negation can subtract.
+     */
+    @Test
+    public void testNegatedPartialUnionPreservesUnconfirmedMatchesInEitherOrder() {
+        ScanResult inexact = ScanResult.and(include(2), null);
+        ScanResult partial = partial(1);
+
+        assertInclude(ScanResult.and(include(2), ScanResult.negate(ScanResult.or(inexact, partial))), 2);
+        assertInclude(ScanResult.and(include(2), ScanResult.negate(ScanResult.or(partial, inexact))), 2);
+    }
+
+    /**
+     * An intersection that keeps its whole operand after another scan times out is also an upper bound, even though no term was unresolvable.
+     */
+    @Test
+    public void testNegatedPartialUnionPreservesUnconfirmedIntersectionMatches() {
+        ScanResult inexact = ScanResult.and(include(2), partial(3));
+        ScanResult partial = partial(1);
+
+        assertInclude(ScanResult.and(include(2), ScanResult.negate(ScanResult.or(inexact, partial))), 2);
+        assertInclude(ScanResult.and(include(2), ScanResult.negate(ScanResult.or(partial, inexact))), 2);
+    }
+
+    /**
+     * Both partial scans contain confirmed matches, so their union can still be subtracted.
+     */
+    @Test
+    public void testNegatedUnionOfPartialScansRemovesKnownMatches() {
+        assertInclude(ScanResult.and(include(1, 2, 3), ScanResult.negate(ScanResult.or(partial(1), partial(2)))), 3);
+        assertInclude(ScanResult.and(include(1, 2, 3), ScanResult.negate(ScanResult.or(partial(2), partial(1)))), 3);
     }
 
     /**

@@ -1,19 +1,63 @@
 package datawave.next;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.LongCombiner;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.query.configuration.QueryData;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.ingest.protobuf.Uid;
+import datawave.query.QueryTestTableHelper;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.util.AbstractQueryTest;
+import datawave.table.constants.MetadataColumnFamilyConstants;
+import datawave.table.constants.TableName;
+import datawave.util.time.DateHelper;
 
 public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
 
@@ -678,6 +722,208 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         withQuery("FIELD_A == 'value-a' && !(((_Lenient_ = true) && (NON_INDEXED == 'value-b')))");
         drive();
         assertResultSize(10);
+    }
+
+    /**
+     * Exercises the query and ranges emitted by the full default planner. Executability checking pushes negations down on a copy, so an already executable
+     * query can still reach this visitor with a compound negation.
+     */
+    @Nested
+    @ExtendWith(SpringExtension.class)
+    @ContextConfiguration(locations = {"classpath:datawave/query/QueryLogicFactory.xml", "classpath:MarkingFunctionsContext.xml",
+            "classpath:MetadataHelperContext.xml", "classpath:CacheContext.xml"})
+    class PlannedNegatedUnions extends AbstractQueryTest {
+        private static final String DAY = "20250101";
+        private static final String ROW = DAY + "_0";
+        private static final String DATATYPE = "negationtest";
+        private static final String QUERY = "A == 'a' && !((B == 'b' && NON_INDEXED == 'u') || C == 'c')";
+        private static final String PLANNED_QUERY = "A == 'a' && !(C == 'c' || (B == 'b' && NON_INDEXED == 'u'))";
+
+        private final Authorizations auths = new Authorizations("ALL");
+        private final ColumnVisibility visibility = new ColumnVisibility("ALL");
+        private final Value empty = new Value();
+        private final long timestamp = DateHelper.parse(DAY).getTime();
+        private AccumuloClient client;
+
+        @Autowired
+        @Qualifier("EventQuery")
+        private ShardQueryLogic logic;
+
+        @BeforeEach
+        void setupFixture() throws Exception {
+            client = new InMemoryAccumuloClient("root", new InMemoryInstance(getClass().getName()));
+            new QueryTestTableHelper(client, Logger.getLogger(getClass()));
+            client.securityOperations().changeUserAuthorizations("root", auths);
+            writeFixture();
+            setClientForTest(client);
+            givenDate(DAY);
+            givenQuery(QUERY);
+            assertEquals(DefaultQueryPlanner.class, logic.getQueryPlanner().getClass());
+            logic.setSendTimingToStatsd(false);
+            logic.getConfig().getDocumentScannerConfig().setUseQueryIterator(true);
+        }
+
+        @AfterEach
+        void closeClient() {
+            client.close();
+        }
+
+        @Test
+        void testStandardEvaluationReturnsAllMatches() throws Exception {
+            expectPlan(PLANNED_QUERY);
+            expectResultCount(80);
+            Set<String> expectedUids = new TreeSet<>();
+            for (int id = 521; id <= 600; id++) {
+                expectedUids.add(uid(id));
+            }
+            expectUUIDs(expectedUids);
+            planAndExecuteQuery();
+        }
+
+        @ParameterizedTest(name = "maxScanTimeMillis={0}, timedOut={1}")
+        @CsvSource({"0, true", "1, true", "15000, false"})
+        void testPlannedNegatedUnionRetainsMatches(long maxScanTimeMillis, boolean timedOut) throws Exception {
+            ShardQueryConfiguration config = (ShardQueryConfiguration) logic.initialize(client, getSettings(), Set.of(auths));
+            try {
+                ASTJexlScript expectedPlan = JexlASTHelper.parseAndFlattenJexlQuery(PLANNED_QUERY);
+                assertTrue(TreeEqualityVisitor.isEqual(expectedPlan, config.getQueryTree()));
+
+                try (Scanner scanner = client.createScanner(TableName.SHARD, auths)) {
+                    scanner.setRange(new Range(ROW));
+                    scanner.forEach(entry -> data.put(entry.getKey(), entry.getValue()));
+                }
+
+                Set<Key> candidates = new TreeSet<>();
+                List<ScanResult> cScans = new ArrayList<>();
+                Iterator<QueryData> plans = config.getQueriesIter();
+                assertTrue(plans.hasNext(), "The full planner must produce query ranges");
+                while (plans.hasNext()) {
+                    QueryData plan = plans.next();
+                    ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(plan.getQuery());
+                    assertTrue(TreeEqualityVisitor.isEqual(expectedPlan, script), "Check the emitted scan query, including its compound negation");
+                    for (Range range : plan.getRanges()) {
+                        DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(createSource(), range, config.getDatatypeFilter(),
+                                        new LongRange(config.getBeginDate().getTime(), config.getEndDate().getTime()),
+                                        ((DefaultQueryPlanner) logic.getQueryPlanner()).getIndexedFields()) {
+                            @Override
+                            protected ScanResult configureAndDriveIterator(BaseDocIdIterator leaf, Object context) {
+                                ScanResult result = super.configureAndDriveIterator(leaf, context);
+                                if ("C".equals(leaf.getField())) {
+                                    cScans.add(result);
+                                }
+                                return result;
+                            }
+                        };
+                        // Advance two milliseconds per clock read so even a positive time limit expires deterministically, without sleeping.
+                        Clock clock = mock(Clock.class);
+                        AtomicLong ticks = new AtomicLong();
+                        when(clock.millis()).thenAnswer(invocation -> ticks.getAndAdd(2L));
+                        ReflectionTestUtils.setField(visitor, "clock", clock);
+                        visitor.setMaxScanTimeMillis(maxScanTimeMillis);
+                        candidates.addAll(visitor.getDocIds(script));
+                    }
+                }
+
+                assertEquals(1, cScans.size());
+                assertEquals(timedOut, cScans.get(0).isTimeout());
+                assertEquals(timedOut ? 500 : 520, cScans.get(0).getResults().size());
+                Set<Key> missing = new TreeSet<>();
+                for (int id = 521; id <= 600; id++) {
+                    Key expected = new Key(ROW, DATATYPE + "\0" + uid(id));
+                    if (!candidates.contains(expected)) {
+                        missing.add(expected);
+                    }
+                }
+                assertTrue(missing.isEmpty(), "All 80 true matches must survive candidate generation; missing " + missing);
+            } finally {
+                logic.close();
+            }
+        }
+
+        /**
+         * Every event matches A and fails the unindexed U predicate. C matches the first 520 events; B matches only uid 1550, which must survive A && !C.
+         */
+        private void writeFixture() throws Exception {
+            try (BatchWriter shardWriter = client.createBatchWriter(TableName.SHARD);
+                            BatchWriter indexWriter = client.createBatchWriter(TableName.SHARD_INDEX);
+                            BatchWriter metadataWriter = client.createBatchWriter(TableName.METADATA)) {
+                Mutation shard = new Mutation(ROW);
+                for (int id = 1; id <= 600; id++) {
+                    writeField(shard, id, "A", "a", true);
+                    writeField(shard, id, "NON_INDEXED", "other", false);
+                    writeField(shard, id, "UUID", uid(id), false);
+                    if (id == 550) {
+                        writeField(shard, id, "B", "b", true);
+                    }
+                    if (id <= 520) {
+                        writeField(shard, id, "C", "c", true);
+                    }
+                }
+                shardWriter.addMutation(shard);
+                writeIndex(indexWriter, "A", "a", 600);
+                writeIndex(indexWriter, "B", "b", 1);
+                writeIndex(indexWriter, "C", "c", 520);
+                writeMetadata(metadataWriter, "A", true, 600);
+                writeMetadata(metadataWriter, "B", true, 1);
+                writeMetadata(metadataWriter, "C", true, 520);
+                writeMetadata(metadataWriter, "NON_INDEXED", false, 600);
+                writeMetadata(metadataWriter, "UUID", false, 600);
+                Mutation shards = new Mutation("num_shards");
+                shards.put("ns", DAY + "_1", empty);
+                metadataWriter.addMutation(shards);
+            }
+        }
+
+        private String uid(int id) {
+            return "uid-" + (1000 + id);
+        }
+
+        private void writeField(Mutation mutation, int id, String field, String value, boolean indexed) {
+            mutation.put(DATATYPE + "\0" + uid(id), field + "\0" + value, visibility, timestamp, empty);
+            if (indexed) {
+                mutation.put("fi\0" + field, value + "\0" + DATATYPE + "\0" + uid(id), visibility, timestamp, empty);
+            }
+        }
+
+        private void writeIndex(BatchWriter writer, String field, String value, int count) throws Exception {
+            Mutation mutation = new Mutation(value);
+            Uid.List uids = Uid.List.newBuilder().setIGNORE(true).setCOUNT(count).build();
+            mutation.put(field, ROW + "\0" + DATATYPE, visibility, timestamp, new Value(uids.toByteArray()));
+            writer.addMutation(mutation);
+        }
+
+        private void writeMetadata(BatchWriter writer, String field, boolean indexed, int count) throws Exception {
+            Mutation mutation = new Mutation(field);
+            mutation.put(MetadataColumnFamilyConstants.COLF_E, new Text(DATATYPE), empty);
+            mutation.put(MetadataColumnFamilyConstants.COLF_T, new Text(DATATYPE + "\0" + LcNoDiacriticsType.class.getName()), empty);
+            mutation.put(MetadataColumnFamilyConstants.COLF_F, new Text(DATATYPE + "\0" + DAY),
+                            new Value(new LongCombiner.VarLenEncoder().encode((long) count)));
+            if (indexed) {
+                mutation.put(MetadataColumnFamilyConstants.COLF_I, new Text(DATATYPE), empty);
+            }
+            writer.addMutation(mutation);
+        }
+
+        @Override
+        public ShardQueryLogic getLogic() {
+            return logic;
+        }
+
+        @Override
+        public Authorizations getAuths() {
+            return auths;
+        }
+
+        @Override
+        protected List<String> getIndexTableNames() {
+            return Collections.singletonList(TableName.SHARD_INDEX);
+        }
+
+        @Override
+        protected void extraConfigurations() {}
+
+        @Override
+        protected void extraAssertions() {}
     }
 
     private void assertUnrewrittenNegation() {

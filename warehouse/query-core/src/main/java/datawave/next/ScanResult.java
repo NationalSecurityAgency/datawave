@@ -214,8 +214,9 @@ public class ScanResult {
     }
 
     /**
-     * Unions when at least one operand is a partial scan. Two positive operands stay a partial union, but a partial scan cannot bound a union that also has to
-     * exclude: the missing hits would enlarge the exclusion and drop candidates the query can match.
+     * Unions when at least one operand is a partial scan. Two positive operands stay a partial union only if both contain known matches: exact results or
+     * partial scans. A completed inexact bound may contain nonmatches, so combining it with a partial scan yields no safe bound. A partial scan also cannot
+     * bound a union that has to exclude: the missing hits would enlarge the exclusion and drop candidates the query can match.
      *
      * @param left
      *            one operand
@@ -225,6 +226,10 @@ public class ScanResult {
      */
     private static ScanResult orPartial(ScanResult left, ScanResult right) {
         if (left.polarity == Polarity.INCLUDE && right.polarity == Polarity.INCLUDE) {
+            if ((!left.exact && !left.timeout) || (!right.exact && !right.timeout)) {
+                // Negation can subtract a partial union's keys, so none may be merely possible matches.
+                return null;
+            }
             ScanResult result = copy(left);
             result.union(right);
             return bound(result, Polarity.INCLUDE, false);
