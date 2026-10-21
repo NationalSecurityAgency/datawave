@@ -127,8 +127,8 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     /**
      * Builds the failure for a query the field index cannot bound.
      * <p>
-     * Reporting no documents would be a silently wrong answer, so this fails instead. It should be unreachable: a query needing a full table scan is rejected
-     * by the planner well before the field index sees it, provided full table scans are disabled.
+     * Reporting no documents would be a silently wrong answer, so this fails instead. This visitor cannot perform a full table scan, regardless of whether
+     * another scheduler is allowed to do so.
      *
      * @param script
      *            the query tree
@@ -137,7 +137,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     private DatawaveFatalQueryException unboundedQuery(ASTJexlScript script) {
         String msg = "Field index cannot bound the query, a full table scan would be required: [" + JexlStringBuildingVisitor.buildQuery(script) + "]";
         log.error(msg);
-        return new DatawaveFatalQueryException(new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED, msg));
+        return new DatawaveFatalQueryException(new QueryException(DatawaveErrorCode.FIELD_INDEX_CANNOT_BOUND_QUERY, msg));
     }
 
     protected DocIdIteratorVisitor(SortedKeyValueIterator<Key,Value> source, Range range, Set<String> datatypeFilter, LongRange timeFilter,
@@ -194,10 +194,13 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         }
 
         ScanResult result = null;
+        ScanResult parentContext = context(data);
         boolean first = true;
         for (JexlNode child : positiveTermsFirst(node)) {
-            // an intersection drives its own context, narrowing each scan by what the terms before it already bound
-            ScanResult childResult = scan(child, context(result));
+            // Narrow scans with our own bound when available, falling back to the parent for the first or an undecided child.
+            // The parent restricts scans; it is not an evaluated operand of this intersection.
+            ScanResult childContext = context(result);
+            ScanResult childResult = scan(child, childContext == null ? parentContext : childContext);
             result = first ? childResult : ScanResult.and(result, childResult);
             first = false;
 
@@ -280,7 +283,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     private ScanResult context(Object data) {
         if (data instanceof ScanResult) {
             ScanResult result = (ScanResult) data;
-            if (result.isBounded() && !result.isTimeout()) {
+            if (result.isBounded() && !result.isPartialScan()) {
                 return result;
             }
         }
@@ -310,13 +313,13 @@ public class DocIdIteratorVisitor extends BaseVisitor {
                 return handleListMarker(node, data, instance);
             case EXCEEDED_VALUE:
                 return handleExceededValue(node, data, instance);
-            case INDEX_HOLE:
-                log.info("found an index hole");
-                return null;
             case STRICT:
             case LENIENT:
                 // these only say how a missing field is evaluated, the source term is still scannable
                 return scan(JexlASTHelper.dereference(instance.getSource()), context(data));
+            case INDEX_HOLE:
+                log.info("found an index hole");
+                return null;
             case EVALUATION_ONLY:
             case DELAYED:
             case DROPPED:
@@ -434,7 +437,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             if (checkForTimeout && count % resultInterval == 0) {
                 elapsedScanTime = clock.millis() - scanStart;
                 if (elapsedScanTime >= maxScanTimeMillis) {
-                    result.setTimeout(true);
+                    result.setPartialScan(true);
                     log.warn("term: [{}] founds {} hits before hitting timeout threshold: {}", iterator.getNode(), result.getResults().size(),
                                     maxScanTimeMillis);
                     break;

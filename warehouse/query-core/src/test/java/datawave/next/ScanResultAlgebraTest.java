@@ -163,6 +163,24 @@ public class ScanResultAlgebraTest {
     }
 
     @Test
+    public void testPartialIntersectionWithEmptyOperandInEitherOrder() {
+        ScanResult empty = include();
+        empty.setAllowPartialIntersections(true);
+        ScanResult partial = partial(1, 2);
+        partial.setSource(ScanResult.SOURCE.EQ);
+
+        assertInclude(ScanResult.and(empty, partial));
+        assertInclude(ScanResult.and(partial, empty));
+
+        ScanResult whole = include(1, 2, 3);
+        whole.setAllowPartialIntersections(true);
+        ScanResult emptyPartial = partial();
+        emptyPartial.setSource(ScanResult.SOURCE.EQ);
+        assertInclude(ScanResult.and(whole, emptyPartial), 1, 2, 3);
+        assertInclude(ScanResult.and(emptyPartial, whole), 1, 2, 3);
+    }
+
+    @Test
     public void testAndOfTwoPartialScansIsUndecided() {
         assertNull(ScanResult.and(partial(1, 2), partial(2, 3)));
     }
@@ -181,7 +199,7 @@ public class ScanResultAlgebraTest {
     public void testOrOfAPartialScanAndAPositiveBoundStaysPartial() {
         ScanResult result = ScanResult.or(partial(1, 2), include(3, 4));
         assertNotNull(result);
-        assertTrue(result.isTimeout());
+        assertTrue(result.isPartialScan());
         assertFalse(result.isExact());
         assertExclude(ScanResult.negate(result), 1, 2, 3, 4);
         assertExclude(ScanResult.negate(ScanResult.or(include(3, 4), partial(1, 2))), 1, 2, 3, 4);
@@ -230,7 +248,7 @@ public class ScanResultAlgebraTest {
         ScanResult result = ScanResult.negate(partial(1, 2));
         assertExclude(result, 1, 2);
         assertFalse(result.isExact());
-        assertFalse(result.isTimeout());
+        assertFalse(result.isPartialScan());
     }
 
     /**
@@ -291,7 +309,7 @@ public class ScanResultAlgebraTest {
      */
     private ScanResult partial(int... uids) {
         ScanResult result = include(uids);
-        result.setTimeout(true);
+        result.setPartialScan(true);
         return result;
     }
 

@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
@@ -58,6 +59,8 @@ import datawave.query.util.AbstractQueryTest;
 import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
 
@@ -466,6 +469,64 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         assertResultSize(10);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"FIELD_A == 'a' && !(FIELD_B == 'b' && FIELD_C == 'c')", "FIELD_A == 'a' && !(NON_INDEXED == 'x' && FIELD_B == 'b')"})
+    public void testNestedIntersectionUsesParentContext(String query) {
+        writeIndex("FIELD_A", "a", "datatype-a", 550);
+        writeData("FIELD_B", "b", HITS_PAST_TIMEOUT_CHECK);
+        writeIndex("FIELD_C", "c", "datatype-a", 1);
+        List<ScanResult> bScans = new ArrayList<>();
+        DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(createSource(), range, datatypes, null, indexedFields) {
+            @Override
+            protected ScanResult configureAndDriveIterator(BaseDocIdIterator leaf, Object context) {
+                ScanResult result = super.configureAndDriveIterator(leaf, context);
+                if ("FIELD_B".equals(leaf.getField())) {
+                    bScans.add(result);
+                }
+                return result;
+            }
+        };
+
+        Set<Key> expected = Set.of(new Key(row, "datatype-a\0uid-1550"));
+        assertEquals(expected, visitor.getDocIds(parse(query)));
+        assertEquals(1, bScans.size());
+        assertEquals(1, bScans.get(0).getResults().size(), "The B scan should stay within the parent anchor, even after an undecided child");
+        assertEquals(expected, bScans.get(0).getResults(), "The B scan should stay within the parent anchor, even after an undecided child");
+    }
+
+    @Test
+    public void testNegatedBaseVisitorEchoDoesNotSubtractAnchor() {
+        writeData("FIELD_A", "value-a", 10);
+        // BaseVisitor returns its input context for ASTFalseNode. The scanner must treat that echo as undecided.
+        withQuery("FIELD_A == 'value-a' && !(false)");
+        drive();
+        assertResultSize(10);
+    }
+
+    @Test
+    public void testNestedPartialIntersectionWithEmptyScan() {
+        writeData("FIELD_A", "a", HITS_PAST_TIMEOUT_CHECK);
+        writeData("FIELD_B", "b", HITS_PAST_TIMEOUT_CHECK);
+        List<ScanResult> bScans = new ArrayList<>();
+        DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(createSource(), range, datatypes, null, indexedFields) {
+            @Override
+            protected ScanResult configureAndDriveIterator(BaseDocIdIterator leaf, Object context) {
+                ScanResult result = super.configureAndDriveIterator(leaf, context);
+                if ("FIELD_B".equals(leaf.getField())) {
+                    bScans.add(result);
+                }
+                return result;
+            }
+        };
+        visitor.setAllowPartialIntersections(true);
+        visitor.setMaxScanTimeMillis(0);
+        // The parent context allows B to time out. C then completes with no hits, so negating B && C must retain every anchor candidate.
+        Set<Key> candidates = visitor.getDocIds(parse("FIELD_A == 'a' && !(FIELD_B == 'b' && FIELD_C == 'c')"));
+        assertEquals(HITS_PAST_TIMEOUT_CHECK, candidates.size());
+        assertEquals(1, bScans.size());
+        assertTrue(bScans.get(0).isPartialScan());
+    }
+
     /**
      * Companion to {@link #testNegatedNonExecutableIntersectionLeavesIntersectionIntact()} for a negated union carrying a negation of its own, which reaches
      * the De Morgan path and used to hand back the candidate set as the matches to remove.
@@ -783,9 +844,38 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         @ParameterizedTest(name = "maxScanTimeMillis={0}, timedOut={1}")
         @CsvSource({"0, true", "1, true", "15000, false"})
         void testPlannedNegatedUnionRetainsMatches(long maxScanTimeMillis, boolean timedOut) throws Exception {
+            List<ScanResult> cScans = new ArrayList<>();
+            Set<Key> candidates = getPlannedCandidates(PLANNED_QUERY, "C", maxScanTimeMillis, cScans);
+            assertEquals(1, cScans.size());
+            assertEquals(timedOut, cScans.get(0).isPartialScan());
+            assertEquals(timedOut ? 500 : 520, cScans.get(0).getResults().size());
+            Set<Key> missing = new TreeSet<>();
+            for (int id = 521; id <= 600; id++) {
+                Key expected = new Key(ROW, DATATYPE + "\0" + uid(id));
+                if (!candidates.contains(expected)) {
+                    missing.add(expected);
+                }
+            }
+            assertTrue(missing.isEmpty(), "All 80 true matches must survive candidate generation; missing " + missing);
+        }
+
+        @Test
+        void testPlannedNestedIntersectionUsesAnchorContext() throws Exception {
+            String query = "B == 'b' && !(A == 'a' && NON_INDEXED == 'u')";
+            givenQuery(query);
+            List<ScanResult> aScans = new ArrayList<>();
+            Set<Key> expected = Set.of(new Key(ROW, DATATYPE + "\0" + uid(550)));
+            assertEquals(expected, getPlannedCandidates(query, "A", 15_000L, aScans));
+            assertEquals(1, aScans.size());
+            assertEquals(1, aScans.get(0).getResults().size(), "A must scan only the anchor's candidate, rather than all 600 hits");
+            assertEquals(expected, aScans.get(0).getResults());
+        }
+
+        private Set<Key> getPlannedCandidates(String expectedQuery, String observedField, long maxScanTimeMillis, List<ScanResult> observedScans)
+                        throws Exception {
             ShardQueryConfiguration config = (ShardQueryConfiguration) logic.initialize(client, getSettings(), Set.of(auths));
             try {
-                ASTJexlScript expectedPlan = JexlASTHelper.parseAndFlattenJexlQuery(PLANNED_QUERY);
+                ASTJexlScript expectedPlan = JexlASTHelper.parseAndFlattenJexlQuery(expectedQuery);
                 assertTrue(TreeEqualityVisitor.isEqual(expectedPlan, config.getQueryTree()));
 
                 try (Scanner scanner = client.createScanner(TableName.SHARD, auths)) {
@@ -794,7 +884,6 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
                 }
 
                 Set<Key> candidates = new TreeSet<>();
-                List<ScanResult> cScans = new ArrayList<>();
                 Iterator<QueryData> plans = config.getQueriesIter();
                 assertTrue(plans.hasNext(), "The full planner must produce query ranges");
                 while (plans.hasNext()) {
@@ -808,8 +897,8 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
                             @Override
                             protected ScanResult configureAndDriveIterator(BaseDocIdIterator leaf, Object context) {
                                 ScanResult result = super.configureAndDriveIterator(leaf, context);
-                                if ("C".equals(leaf.getField())) {
-                                    cScans.add(result);
+                                if (observedField.equals(leaf.getField())) {
+                                    observedScans.add(result);
                                 }
                                 return result;
                             }
@@ -824,17 +913,7 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
                     }
                 }
 
-                assertEquals(1, cScans.size());
-                assertEquals(timedOut, cScans.get(0).isTimeout());
-                assertEquals(timedOut ? 500 : 520, cScans.get(0).getResults().size());
-                Set<Key> missing = new TreeSet<>();
-                for (int id = 521; id <= 600; id++) {
-                    Key expected = new Key(ROW, DATATYPE + "\0" + uid(id));
-                    if (!candidates.contains(expected)) {
-                        missing.add(expected);
-                    }
-                }
-                assertTrue(missing.isEmpty(), "All 80 true matches must survive candidate generation; missing " + missing);
+                return candidates;
             } finally {
                 logic.close();
             }
@@ -960,6 +1039,7 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         DocIdIteratorVisitor visitor = new DocIdIteratorVisitor(source, range, datatypes, null, indexedFields);
         DatawaveFatalQueryException e = assertThrows(DatawaveFatalQueryException.class, () -> visitor.getDocIds(script));
         assertTrue(e.getMessage().contains("full table scan"), e.getMessage());
+        assertEquals(DatawaveErrorCode.FIELD_INDEX_CANNOT_BOUND_QUERY.getErrorCode(), ((QueryException) e.getCause()).getErrorCode());
     }
 
     /**

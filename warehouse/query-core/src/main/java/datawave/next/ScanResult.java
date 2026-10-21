@@ -43,12 +43,16 @@ public class ScanResult {
     private Polarity polarity = Polarity.INCLUDE;
 
     /**
-     * Whether the key set is the subtree's true match set, rather than merely containing it. Only an exact result can be negated, since complementing a set
-     * that is merely a superset yields a subset of the truth, which would drop candidates.
+     * Whether the bound describes the subtree's matches exactly. When false, {@link #partialScan} distinguishes an incomplete set of known matches from a
+     * conservative bound on the possible matches.
      */
     private boolean exact = true;
 
-    private boolean timeout = false;
+    /**
+     * Whether the keys are an incomplete set of known matches. A timed-out scan sets this flag, and unions of partial scans may retain it. Negation converts
+     * those known matches to an exclusion bound and clears the flag; it does not make the original scan complete.
+     */
+    private boolean partialScan = false;
     private boolean allowPartialIntersections = false;
 
     /**
@@ -88,7 +92,7 @@ public class ScanResult {
             return loosen(left);
         }
 
-        if (left.timeout || right.timeout) {
+        if (left.partialScan || right.partialScan) {
             return andPartial(left, right);
         }
 
@@ -130,7 +134,7 @@ public class ScanResult {
             return null;
         }
 
-        if (left.timeout || right.timeout) {
+        if (left.partialScan || right.partialScan) {
             return orPartial(left, right);
         }
 
@@ -174,9 +178,9 @@ public class ScanResult {
             return null;
         }
 
-        if (value.timeout) {
+        if (value.partialScan) {
             ScanResult result = copy(value);
-            result.timeout = false;
+            result.setPartialScan(false);
             return bound(result, opposite(value.polarity), false);
         }
 
@@ -200,9 +204,9 @@ public class ScanResult {
     private static ScanResult andPartial(ScanResult left, ScanResult right) {
         if (left.polarity == Polarity.INCLUDE && right.polarity == Polarity.INCLUDE) {
             // intersect requires a whole set on the left
-            ScanResult whole = left.timeout ? right : left;
-            ScanResult partial = left.timeout ? left : right;
-            if (!whole.timeout) {
+            ScanResult whole = left.partialScan ? right : left;
+            ScanResult partial = left.partialScan ? left : right;
+            if (!whole.partialScan) {
                 ScanResult result = copy(whole);
                 result.intersect(partial);
                 return bound(result, Polarity.INCLUDE, false);
@@ -210,7 +214,7 @@ public class ScanResult {
         }
 
         // anywhere else a partial scan is no bound at all
-        return and(left.timeout ? null : left, right.timeout ? null : right);
+        return and(left.partialScan ? null : left, right.partialScan ? null : right);
     }
 
     /**
@@ -226,7 +230,7 @@ public class ScanResult {
      */
     private static ScanResult orPartial(ScanResult left, ScanResult right) {
         if (left.polarity == Polarity.INCLUDE && right.polarity == Polarity.INCLUDE) {
-            if ((!left.exact && !left.timeout) || (!right.exact && !right.timeout)) {
+            if ((!left.exact && !left.partialScan) || (!right.exact && !right.partialScan)) {
                 // Negation can subtract a partial union's keys, so none may be merely possible matches.
                 return null;
             }
@@ -263,7 +267,7 @@ public class ScanResult {
      * @return a weakened copy, or null if there is nothing left to bound
      */
     private static ScanResult loosen(ScanResult source) {
-        if (source == null || source.timeout) {
+        if (source == null || source.partialScan) {
             // a partial scan holds only some of its matches, so on its own it bounds nothing
             return null;
         }
@@ -293,7 +297,7 @@ public class ScanResult {
     private static ScanResult copy(ScanResult source) {
         ScanResult result = new ScanResult(source.allowPartialIntersections);
         result.addKeys(source.getResults());
-        result.timeout = source.timeout;
+        result.partialScan = source.partialScan;
         result.polarity = source.polarity;
         result.exact = source.exact;
         return result;
@@ -308,10 +312,9 @@ public class ScanResult {
      *            another ScanResult
      */
     public void union(ScanResult other) {
-        if (other.isTimeout()) {
-            // a union can have one or both sides timeout, the entire union
-            // is considered a timeout
-            this.timeout = true;
+        if (other.isPartialScan()) {
+            // An incomplete operand makes the union partial and inexact.
+            setPartialScan(true);
         }
         addKeys(other.getResults());
     }
@@ -327,9 +330,9 @@ public class ScanResult {
      */
     public void intersect(ScanResult other) {
 
-        Preconditions.checkArgument(!isTimeout(), "Left side of intersection should never be a timeout");
+        Preconditions.checkArgument(!isPartialScan(), "Left side of intersection must be a complete candidate bound");
 
-        if (other.isTimeout()) {
+        if (other.isPartialScan()) {
 
             if (!allowPartialIntersections) {
                 return;
@@ -348,6 +351,7 @@ public class ScanResult {
         if (!isIntersectionPossible(other)) {
             log.info("Intersection not possible, skipping");
             results.clear();
+            updateMinMax();
             return;
         }
 
@@ -362,6 +366,10 @@ public class ScanResult {
      *            the external set
      */
     protected void partialIntersection(ScanResult other) {
+        // An empty receiver has nothing to intersect. An empty partial scan has no completed range that could eliminate candidates.
+        if (results.isEmpty() || other.results.isEmpty()) {
+            return;
+        }
 
         // special case where the external set sorts entirely before this one
         boolean externalFullyBefore = other.getMax().compareTo(this.min) < 0;
@@ -373,11 +381,13 @@ public class ScanResult {
         boolean externalFullyAfter = other.getMin().compareTo(this.max) > 0;
         if (externalFullyAfter) {
             results.clear();
+            updateMinMax();
             return;
         }
 
         int originalSize = results.size();
         results.removeIf(result -> nominate(result, other.getMin(), other.getMax(), other.getResults()));
+        updateMinMax();
 
         int newSize = results.size();
         int delta = originalSize - newSize;
@@ -522,15 +532,15 @@ public class ScanResult {
     }
 
     /**
-     * Marks this result as a partial scan. A partial scan holds only some of its matches, which is never the true match set, so this also clears
-     * {@link #isExact()}.
+     * Marks whether this result holds known matches from an incomplete scan. Setting the flag clears {@link #isExact()}; clearing the flag does not restore
+     * exactness, as when negation converts partial matches into a conservative exclusion bound.
      *
-     * @param timeout
-     *            whether the scan was cut short
+     * @param partialScan
+     *            whether the keys represent an incomplete set of known matches
      */
-    public void setTimeout(boolean timeout) {
-        this.timeout = timeout;
-        if (timeout) {
+    public void setPartialScan(boolean partialScan) {
+        this.partialScan = partialScan;
+        if (partialScan) {
             this.exact = false;
         }
     }
@@ -565,8 +575,8 @@ public class ScanResult {
         this.allowPartialIntersections = allowPartialIntersections;
     }
 
-    public boolean isTimeout() {
-        return timeout;
+    public boolean isPartialScan() {
+        return partialScan;
     }
 
     public Key getMin() {
