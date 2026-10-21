@@ -1,6 +1,7 @@
 package datawave.age.off.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.age.off.util.AgeOffCsvToMatchPatternFormatterConfiguration.Builder;
 
@@ -319,7 +320,7 @@ public class AgeOffCsvToMatchPatternFormatterTest {
         assertEquals(expectedOutputText, reformat(new Builder().disableLabel(), input));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void failsWithMissingPatternToken() throws IOException {
         // @formatter:off
         String input = HEADER_WITHOUT_LABEL + "\n" +
@@ -331,10 +332,10 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "         coffeeInstant,730d\n";;
         // @formatter:on
 
-        reformat(new Builder(), input);
+        assertThrows(IllegalStateException.class, () -> reformat(new Builder(), input));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void failsWithEmptyPatternToken() throws IOException {
         // @formatter:off
         String input = HEADER_WITHOUT_LABEL + "\n" +
@@ -346,10 +347,10 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "         coffeeInstant,730d\n";;
         // @formatter:on
 
-        reformat(new Builder(), input);
+        assertThrows(IllegalStateException.class, () -> reformat(new Builder(), input));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void failsWithMissingLabelToken() throws IOException {
         // @formatter:off
         String input = HEADER_WITH_LABEL + "\n" +
@@ -361,10 +362,10 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "    lbl,     coffeeInstant,730d\n";;
         // @formatter:on
 
-        reformat(new Builder(), input);
+        assertThrows(IllegalStateException.class, () -> reformat(new Builder(), input));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void failsWithEmptyLabelToken() throws IOException {
         // @formatter:off
         String input = HEADER_WITH_LABEL + "\n" +
@@ -375,10 +376,10 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "    lbl,     coffeeInstant,730d\n";;
         // @formatter:on
 
-        reformat(new Builder(), input);
+        assertThrows(IllegalStateException.class, () -> reformat(new Builder(), input));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void failsWithMissingDurationToken() throws IOException {
         // @formatter:off
         String input = HEADER_WITHOUT_LABEL + "\n" +
@@ -389,19 +390,19 @@ public class AgeOffCsvToMatchPatternFormatterTest {
                 "         coffeeInstant,730d\n";;
         // @formatter:on
 
-        reformat(new Builder(), input);
+        assertThrows(IllegalStateException.class, () -> reformat(new Builder(), input));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void failsWithMissingHeaderDurationToken() throws IOException {
         // @formatter:off
         String input = "bakingPowder, 365d\n";
         // @formatter:on
 
-        reformat(new Builder(), input);
+        assertThrows(IllegalStateException.class, () -> reformat(new Builder(), input));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void failsWithEmptyDurationToken() throws IOException {
         // @formatter:off
         String input = HEADER_WITHOUT_LABEL + "\n" +
@@ -414,7 +415,7 @@ public class AgeOffCsvToMatchPatternFormatterTest {
 
         Builder builder = new Builder();
 
-        reformat(builder, input);
+        assertThrows(IllegalStateException.class, () -> reformat(builder, input));
     }
 
     private String prepareInputWithOverride() {
