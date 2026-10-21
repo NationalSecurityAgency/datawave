@@ -4,7 +4,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.Key;
@@ -235,6 +237,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     private byte[] keyPartsShardId;
     private EventKeyParts keyParts;
 
+    // fi column families ("fi\0FIELDNAME") keyed by field name; cleared when full so dynamic field names cannot grow it without bound
+    static final int MAX_FI_COLF_CACHE_SIZE = 10_000;
+    private final Map<String,byte[]> fiColfCache = new HashMap<>();
+
     private Text shardTableName = null;
     private Text shardIndexTableName = null;
     private Text shardBitsetIndexTableName = null;
@@ -287,6 +293,26 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             keyPartsShardId = keyParts.shardId;
         }
         return keyParts;
+    }
+
+    /**
+     * Returns the field index column family ({@code fi\0fieldName}) for the given field, encoding it only the first time the field is seen. The returned array
+     * is shared and must not be modified.
+     *
+     * @param fieldName
+     *            the field name
+     * @return the field index column family bytes
+     */
+    protected byte[] getFieldIndexColf(String fieldName) {
+        byte[] colf = fiColfCache.get(fieldName);
+        if (colf == null) {
+            if (fiColfCache.size() >= MAX_FI_COLF_CACHE_SIZE) {
+                fiColfCache.clear();
+            }
+            colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName));
+            fiColfCache.put(fieldName, colf);
+        }
+        return colf;
     }
 
     private Collection<String> requestedFieldsForReindex;
@@ -1178,7 +1204,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         Multimap<BulkIngestKey,Value> values = HashMultimap.create();
 
         if (!StringUtils.isEmpty(fieldValue)) {
-            byte[] colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName));
+            byte[] colf = getFieldIndexColf(fieldName);
             byte[] idSuffix = getKeyParts(event, shardId).dataTypeUid();
             byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue), idSuffix);
 
@@ -1251,7 +1277,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         boolean deleteMode = helper.getDeleteMode();
 
         if (!StringUtils.isEmpty(fieldValue)) {
-            byte[] colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName));
+            byte[] colf = getFieldIndexColf(fieldName);
             byte[] idSuffix = getKeyParts(event, shardId).dataTypeUid();
             byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue), idSuffix);
 

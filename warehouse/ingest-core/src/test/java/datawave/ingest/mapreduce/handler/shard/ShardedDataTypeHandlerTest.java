@@ -2,6 +2,8 @@ package datawave.ingest.mapreduce.handler.shard;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -592,6 +594,52 @@ public class ShardedDataTypeHandlerTest {
         } finally {
             enableStandardIndex();
             disableBitsetIndex();
+        }
+    }
+
+    @Test
+    public void testFieldIndexColfEncoding() {
+        assertArrayEquals("fi\0FIELD_A".getBytes(StandardCharsets.UTF_8), handler.getFieldIndexColf("FIELD_A"));
+        assertArrayEquals("fi\0FIELD_B".getBytes(StandardCharsets.UTF_8), handler.getFieldIndexColf("FIELD_B"));
+    }
+
+    @Test
+    public void testFieldIndexColfCacheReusesBytes() {
+        byte[] first = handler.getFieldIndexColf("FIELD_A");
+        assertSame("expected cached colf for repeated field", first, handler.getFieldIndexColf("FIELD_A"));
+        assertNotSame(first, handler.getFieldIndexColf("FIELD_B"));
+    }
+
+    @Test
+    public void testFieldIndexColfCacheClearsWhenFull() {
+        byte[] first = handler.getFieldIndexColf("FIELD_0");
+        for (int i = 1; i < ShardedDataTypeHandler.MAX_FI_COLF_CACHE_SIZE; i++) {
+            handler.getFieldIndexColf("FIELD_" + i);
+        }
+        assertSame("cache should still hold the first field before reaching the cap", first, handler.getFieldIndexColf("FIELD_0"));
+
+        // one more distinct field fills the cache, so it is cleared and FIELD_0 is encoded again
+        handler.getFieldIndexColf("FIELD_OVERFLOW");
+        byte[] reencoded = handler.getFieldIndexColf("FIELD_0");
+        assertNotSame(first, reencoded);
+        assertArrayEquals(first, reencoded);
+    }
+
+    @Test
+    public void testFieldIndexKeysUseCachedColfPerField() {
+        RawRecordContainer record = createRawRecordContainer();
+        record.setId(HashUID.builder().newId(record.getRawData()));
+        String idSuffix = DATA_TYPE_NAME + "\0" + record.getId().toString();
+
+        // alternate fields so a stale cache entry would put a key under the wrong column family
+        String[][] fields = {{"FIELD_A", "a1"}, {"FIELD_B", "b1"}, {"FIELD_A", "a2"}, {"FIELD_B", "b2"}};
+        for (String[] field : fields) {
+            Multimap<BulkIngestKey,Value> values = handler.createShardFieldIndexColumn(record, field[0], field[1], visibility, null, null, shardId, null);
+            assertEquals(1, values.size());
+            Key key = values.keySet().iterator().next().getKey();
+            assertEquals(new Text(shardId), key.getRow());
+            assertEquals("fi\0" + field[0], key.getColumnFamily().toString());
+            assertEquals(field[1] + "\0" + idSuffix, key.getColumnQualifier().toString());
         }
     }
 
