@@ -48,12 +48,17 @@ public class AnnotationPublisher {
         boolean owner = existing == null;
         CorrelationData correlation = owner ? newCorrelation : existing;
         try {
-            if (owner && !annotationSource.send(MessageBuilder.withPayload(identifiedMessage).setCorrelationId(messageId)
-                            .setHeader(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, correlation).build())) {
+            // @formatter:off
+            if (owner && !annotationSource.send(
+                    MessageBuilder.withPayload(identifiedMessage)
+                            .setCorrelationId(messageId)
+                            .setHeader(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, correlation)
+                            .build())) {
                 // Release concurrent duplicate callers as well as the original sender.
                 correlation.getFuture().set(new CorrelationData.Confirm(false, "Local publication rejected"));
                 return Optional.empty();
             }
+            // @formatter:on
             if (!awaitConfirm) {
                 return Optional.of(identifiedMessage);
             }

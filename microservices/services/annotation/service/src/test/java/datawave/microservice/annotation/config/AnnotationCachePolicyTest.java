@@ -38,44 +38,58 @@ class AnnotationCachePolicyTest {
     void allRolesUseLocalCachesWithoutARemoteClient(String layout, String role, String discovery) {
         Path service = Path.of(System.getProperty("basedir")).toAbsolutePath();
         Path config = "service".equals(layout) ? service.resolve("src/main/config") : service.resolve("../../../../docker/config");
+        // @formatter:off
         new ApplicationContextRunner()
-                        .withConfiguration(AutoConfigurations.of(HazelcastDefaultClientAutoConfiguration.class, HazelcastDiscoveryClientAutoConfiguration.class,
-                                        HazelcastK8sClientAutoConfiguration.class, HazelcastAutoConfiguration.class, DatawaveCacheAutoConfiguration.class,
-                                        CacheAutoConfiguration.class))
-                        .withUserConfiguration(MarkingConfig.class, FederatedAuthorizationServiceRegistrarConfiguration.class, HealthComponents.class)
-                        .withInitializer(context -> {
-                            context.getEnvironment().setActiveProfiles(role, discovery);
-                            YamlPropertySourceLoader loader = new YamlPropertySourceLoader();
-                            try {
-                                context.getEnvironment().getPropertySources()
-                                                .addFirst(loader.load("shared", new FileSystemResource(config.resolve("annotation.yml"))).get(0));
-                                context.getEnvironment().getPropertySources()
-                                                .addFirst(loader.load("role", new FileSystemResource(config.resolve("annotation-" + role + ".yml"))).get(0));
-                            } catch (IOException e) {
-                                throw new IllegalStateException("Cannot load ordinary annotation configuration", e);
-                            }
-                        }).run(context -> {
-                            assertThat(context).hasNotFailed().doesNotHaveBean(ClientConfig.class).doesNotHaveBean(HazelcastInstance.class)
-                                            .doesNotHaveBean(HazelcastCacheClientHealthIndicator.class);
-                            assertThat(context.getBean("cacheManager")).isInstanceOf(CaffeineCacheManager.class);
-                            assertThat(context.getBean("markings-cache-manager")).isInstanceOf(CaffeineCacheManager.class);
-                            assertThat(context.getBean("remoteOperationsCacheManager")).isInstanceOf(CaffeineCacheManager.class);
-                            for (String manager : new String[] {"cacheManager", "markings-cache-manager", "remoteOperationsCacheManager"}) {
-                                CaffeineCacheManager caches = context.getBean(manager, CaffeineCacheManager.class);
-                                String name = "remoteOperationsCacheManager".equals(manager) ? "getRemoteUser" : "annotation-cache-probe";
-                                Cache cache = caches.getCache(name);
-                                assertThat(cache).isNotNull();
-                                cache.put("key", "value");
-                                assertThat(cache.get("key", String.class)).isEqualTo("value");
-                                cache.evict("key");
-                                assertThat(cache.get("key")).isNull();
-                            }
-                        });
+                .withConfiguration(AutoConfigurations.of(
+                        HazelcastDefaultClientAutoConfiguration.class,
+                        HazelcastDiscoveryClientAutoConfiguration.class,
+                        HazelcastK8sClientAutoConfiguration.class,
+                        HazelcastAutoConfiguration.class,
+                        DatawaveCacheAutoConfiguration.class,
+                        CacheAutoConfiguration.class))
+                .withUserConfiguration(MarkingConfig.class, FederatedAuthorizationServiceRegistrarConfiguration.class, HealthComponents.class)
+                .withInitializer(context -> {
+                    context.getEnvironment().setActiveProfiles(role, discovery);
+                    YamlPropertySourceLoader loader = new YamlPropertySourceLoader();
+                    try {
+                        context.getEnvironment().getPropertySources()
+                                .addFirst(loader.load("shared", new FileSystemResource(config.resolve("annotation.yml"))).get(0));
+                        context.getEnvironment().getPropertySources()
+                                .addFirst(loader.load("role", new FileSystemResource(config.resolve("annotation-" + role + ".yml"))).get(0));
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Cannot load ordinary annotation configuration", e);
+                    }
+                })
+                .run(context -> {
+                    assertThat(context)
+                            .hasNotFailed()
+                            .doesNotHaveBean(ClientConfig.class)
+                            .doesNotHaveBean(HazelcastInstance.class)
+                            .doesNotHaveBean(HazelcastCacheClientHealthIndicator.class);
+                    assertThat(context.getBean("cacheManager")).isInstanceOf(CaffeineCacheManager.class);
+                    assertThat(context.getBean("markings-cache-manager")).isInstanceOf(CaffeineCacheManager.class);
+                    assertThat(context.getBean("remoteOperationsCacheManager")).isInstanceOf(CaffeineCacheManager.class);
+                    for (String manager : new String[] {"cacheManager", "markings-cache-manager", "remoteOperationsCacheManager"}) {
+                        CaffeineCacheManager caches = context.getBean(manager, CaffeineCacheManager.class);
+                        String name = "remoteOperationsCacheManager".equals(manager) ? "getRemoteUser" : "annotation-cache-probe";
+                        Cache cache = caches.getCache(name);
+                        assertThat(cache).isNotNull();
+                        cache.put("key", "value");
+                        assertThat(cache.get("key", String.class)).isEqualTo("value");
+                        cache.evict("key");
+                        assertThat(cache.get("key")).isNull();
+                    }
+                });
+        // @formatter:on
     }
 
     private static Stream<Arguments> ordinaryProfiles() {
-        return Stream.of("service", "docker").flatMap(layout -> Stream.of("api", "writer", "combined")
-                        .flatMap(role -> Stream.of("default", "k8s", "consul").map(discovery -> Arguments.of(layout, role, discovery))));
+        // @formatter:off
+        return Stream.of("service", "docker")
+                .flatMap(layout -> Stream.of("api", "writer", "combined")
+                        .flatMap(role -> Stream.of("default", "k8s", "consul")
+                                .map(discovery -> Arguments.of(layout, role, discovery))));
+        // @formatter:on
     }
 
     @TestConfiguration(proxyBeanMethods = false)

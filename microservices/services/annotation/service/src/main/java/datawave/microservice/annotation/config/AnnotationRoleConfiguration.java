@@ -78,9 +78,13 @@ public class AnnotationRoleConfiguration {
                     continue;
                 }
                 // Bus adds its own consumer before startup. The service includes that consumer in the selected role's function list below.
-                if (BUS_PROPERTY_SOURCE.equals(source.getName()) && FUNCTION_DEFINITION.equals(property) && BUS_CONSUMER.equals(source.getProperty(property))) {
+                // @formatter:off
+                if (BUS_PROPERTY_SOURCE.equals(source.getName()) &&
+                        FUNCTION_DEFINITION.equals(property) &&
+                        BUS_CONSUMER.equals(source.getProperty(property))) {
                     continue;
                 }
+                // @formatter:on
                 if (source.containsProperty(property)) {
                     throw new IllegalStateException(property + " is managed by the annotation service; remove the override and select consumers with "
                                     + LOG_WRITER_ENABLED + ", " + ACCUMULO_WRITER_ENABLED + ", and " + DUMP_WRITER_ENABLED);
@@ -97,8 +101,13 @@ public class AnnotationRoleConfiguration {
         annotationFunctions.put(ACCUMULO_ANNOTATION_SINK, role.includesWriter() && accumuloEnabled);
         annotationFunctions.put(DUMP_ANNOTATION_SINK, role.includesWriter() && dumpEnabled);
 
-        List<String> functions = annotationFunctions.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey)
-                        .collect(Collectors.toCollection(ArrayList::new));
+        // @formatter:off
+        List<String> functions = annotationFunctions.entrySet()
+                .stream()
+                .filter(Map.Entry::getValue)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toCollection(ArrayList::new));
+        // @formatter:on
         if (role == AnnotationRole.WRITER && functions.isEmpty()) {
             throw new IllegalStateException("Profile writer requires an enabled log, accumulo, or dump queue consumer");
         }
@@ -107,7 +116,11 @@ public class AnnotationRoleConfiguration {
         }
 
         // Bind aliases exactly as Stream does, including bracket notation in property sources.
-        Map<String,String> aliases = Binder.get(environment).bind(STREAM_FUNCTION_BINDINGS, Bindable.mapOf(String.class, String.class)).orElse(Map.of());
+        // @formatter:off
+        Map<String,String> aliases = Binder.get(environment)
+                .bind(STREAM_FUNCTION_BINDINGS, Bindable.mapOf(String.class, String.class))
+                .orElse(Map.of());
+        // @formatter:on
         for (String name : annotationFunctions.keySet()) {
             String binding = name + (ANNOTATION_SOURCE.equals(name) ? "-out-0" : "-in-0");
             String alias = aliases.get(binding);
@@ -117,8 +130,12 @@ public class AnnotationRoleConfiguration {
             }
         }
 
-        Map<String,Object> properties = Map.of(FUNCTION_DEFINITION, String.join(";", functions), STREAM_FUNCTION_DEFINITION, String.join(";", functions),
-                        STREAM_FUNCTION_AUTODETECT, false);
+        // @formatter:off
+        Map<String,Object> properties = Map.of(
+                FUNCTION_DEFINITION, String.join(";", functions),
+                STREAM_FUNCTION_DEFINITION, String.join(";", functions),
+                STREAM_FUNCTION_AUTODETECT, false);
+        // @formatter:on
         environment.getPropertySources().addFirst(new MapPropertySource(ROLE_FUNCTION_PROPERTY_SOURCE, properties));
     }
 

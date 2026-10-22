@@ -32,7 +32,12 @@ class ConditionalOnAnnotationRoleTest {
             assertThat(methodAttributes).isNotNull();
             AnnotationRole[] roles = (AnnotationRole[]) methodAttributes.get("value");
             assertThat(roles).isNotNull();
-            assertThat(method.getAnnotations().get(ConditionalOnAnnotationRole.class).getEnumArray("value", AnnotationRole.class)).containsExactly(roles);
+            // @formatter:off
+            assertThat(method.getAnnotations()
+                    .get(ConditionalOnAnnotationRole.class)
+                    .getEnumArray("value", AnnotationRole.class))
+                    .containsExactly(roles);
+            // @formatter:on
             if ("noRolesBean".equals(method.getMethodName())) {
                 assertThat(roles).isEmpty();
             }
@@ -42,15 +47,19 @@ class ConditionalOnAnnotationRoleTest {
     @ParameterizedTest
     @EnumSource(AnnotationRole.class)
     void classAndBeanMethodConditionsSelectTheirDeclaredRoles(AnnotationRole role) {
-        new ApplicationContextRunner().withUserConfiguration(RoleBeans.class, ApiOnlyConfiguration.class)
-                        .withPropertyValues("spring.profiles.active=" + role.profile()).run(context -> {
-                            assertThat(context).hasNotFailed();
-                            assertThat(context.containsBean("apiBean")).isEqualTo(role == AnnotationRole.API);
-                            assertThat(context.containsBean("writerBean")).isEqualTo(role == AnnotationRole.WRITER);
-                            assertThat(context.containsBean("combinedBean")).isEqualTo(role == AnnotationRole.COMBINED);
-                            assertThat(context.containsBean("apiOnlyBean")).isEqualTo(role == AnnotationRole.API);
-                            assertThat(context).doesNotHaveBean("noRolesBean");
-                        });
+        // @formatter:off
+        new ApplicationContextRunner()
+                .withUserConfiguration(RoleBeans.class, ApiOnlyConfiguration.class)
+                .withPropertyValues("spring.profiles.active=" + role.profile())
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context.containsBean("apiBean")).isEqualTo(role == AnnotationRole.API);
+                    assertThat(context.containsBean("writerBean")).isEqualTo(role == AnnotationRole.WRITER);
+                    assertThat(context.containsBean("combinedBean")).isEqualTo(role == AnnotationRole.COMBINED);
+                    assertThat(context.containsBean("apiOnlyBean")).isEqualTo(role == AnnotationRole.API);
+                    assertThat(context).doesNotHaveBean("noRolesBean");
+                });
+        // @formatter:on
     }
 
     private AnnotationMetadata metadata(Class<?> type, boolean readClassFile) throws IOException {

@@ -50,10 +50,17 @@ class AnnotationRoleProfileTest {
     @ParameterizedTest
     @ValueSource(strings = {"api", "writer", "combined"})
     void roleProfilesPreserveSharedTuningAndBackendSelection(String profile) throws IOException {
-        StandardEnvironment environment = configuration(Map.of("annotation.annotation-ack-timeout-millis", 2500, "annotation.retry.max-attempts", 3,
-                        "annotation.retry.backoff-interval-millis", 1700, "annotation.retry.fail-timeout-millis", 19000, "annotation.writers.accumulo.enabled",
-                        false, "annotation.writers.log.enabled", true, "annotation.writers.dump.enabled", true,
-                        "spring.cloud.stream.bindings.accumuloAnnotationSink-in-0.consumer.concurrency", 8), profile);
+        // @formatter:off
+        StandardEnvironment environment = configuration(Map.of(
+                "annotation.annotation-ack-timeout-millis", 2500,
+                "annotation.retry.max-attempts", 3,
+                "annotation.retry.backoff-interval-millis", 1700,
+                "annotation.retry.fail-timeout-millis", 19000,
+                "annotation.writers.accumulo.enabled", false,
+                "annotation.writers.log.enabled", true,
+                "annotation.writers.dump.enabled", true,
+                "spring.cloud.stream.bindings.accumuloAnnotationSink-in-0.consumer.concurrency", 8), profile);
+        // @formatter:on
         AnnotationRoleConfiguration.configureFunctions(environment);
 
         AnnotationProperties properties = Binder.get(environment).bind("annotation", AnnotationProperties.class).get();
@@ -109,8 +116,11 @@ class AnnotationRoleProfileTest {
     @ValueSource(strings = {"api,writer", "api,combined", "writer,combined", "api,writer,combined"})
     void multipleRoleProfilesFail(String profiles) throws IOException {
         StandardEnvironment environment = configuration(profiles.split(","));
-        assertThatThrownBy(() -> AnnotationRole.from(environment)).isInstanceOf(IllegalStateException.class)
-                        .hasMessageStartingWith("Activate exactly one of combined, api, writer; selected ");
+        // @formatter:off
+        assertThatThrownBy(() -> AnnotationRole.from(environment))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageStartingWith("Activate exactly one of combined, api, writer; selected ");
+        // @formatter:on
     }
 
     @ParameterizedTest
@@ -119,8 +129,11 @@ class AnnotationRoleProfileTest {
         StandardEnvironment environment = new StandardEnvironment();
         environment.setActiveProfiles(profile);
 
-        assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment)).isInstanceOf(IllegalStateException.class)
-                        .hasMessageContaining("requires its matching Config Server overlay annotation-" + profile + ".yml");
+        // @formatter:off
+        assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("requires its matching Config Server overlay annotation-" + profile + ".yml");
+        // @formatter:on
         assertThat(environment.getPropertySources().contains("annotationRoleFunctions")).isFalse();
     }
 
@@ -130,8 +143,11 @@ class AnnotationRoleProfileTest {
         StandardEnvironment environment = new StandardEnvironment();
         environment.setActiveProfiles(profiles.isEmpty() ? new String[0] : profiles.split(","));
 
-        assertThatThrownBy(() -> AnnotationRole.from(environment)).isInstanceOf(IllegalStateException.class)
-                        .hasMessageStartingWith("Activate exactly one of combined, api, writer; selected ");
+        // @formatter:off
+        assertThatThrownBy(() -> AnnotationRole.from(environment))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageStartingWith("Activate exactly one of combined, api, writer; selected ");
+        // @formatter:on
     }
 
     @Test
@@ -139,8 +155,11 @@ class AnnotationRoleProfileTest {
         StandardEnvironment environment = configuration("api");
         environment.setActiveProfiles("writer");
 
-        assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment)).isInstanceOf(IllegalStateException.class)
-                        .hasMessageContaining("annotation-writer.yml");
+        // @formatter:off
+        assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("annotation-writer.yml");
+        // @formatter:on
     }
 
     @ParameterizedTest
@@ -150,8 +169,11 @@ class AnnotationRoleProfileTest {
         environment.setActiveProfiles(profile);
         environment.getPropertySources().addFirst(new MapPropertySource("old-overlay", Map.of("annotation.deployment.overlays.annotation-" + profile, true)));
 
-        assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment)).isInstanceOf(IllegalStateException.class)
-                        .hasMessageContaining("missing annotation.deployment.overlays." + profile);
+        // @formatter:off
+        assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("missing annotation.deployment.overlays." + profile);
+        // @formatter:on
         assertThat(environment.getPropertySources().contains("annotationRoleFunctions")).isFalse();
     }
 
@@ -160,7 +182,11 @@ class AnnotationRoleProfileTest {
         StandardEnvironment environment = new StandardEnvironment();
         environment.setDefaultProfiles("combined");
 
-        assertThatThrownBy(() -> AnnotationRole.from(environment)).isInstanceOf(IllegalStateException.class).hasMessageContaining("Activate exactly one");
+        // @formatter:off
+        assertThatThrownBy(() -> AnnotationRole.from(environment))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Activate exactly one");
+        // @formatter:on
     }
 
     @Test
@@ -180,17 +206,28 @@ class AnnotationRoleProfileTest {
         ConfigurationPropertySources.attach(environment);
         new BusEnvironmentPostProcessor().postProcessEnvironment(environment, new SpringApplication(AnnotationRoleConfiguration.class));
 
-        assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment)).isInstanceOf(IllegalStateException.class)
-                        .hasMessageContaining(property + " is managed by the annotation service").hasMessageContaining("remove the override");
+        // @formatter:off
+        assertThatThrownBy(() -> AnnotationRoleConfiguration.configureFunctions(environment))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining(property + " is managed by the annotation service")
+                .hasMessageContaining("remove the override");
+        // @formatter:on
         assertThat(environment.getPropertySources().contains("annotationRoleFunctions")).isFalse();
     }
 
     private static Stream<Arguments> functionOverrides() {
-        return Stream.of("api", "writer", "combined").flatMap(profile -> Stream
-                        .of("spring.cloud.function.definition", "spring.cloud.stream.function.definition")
-                        .flatMap(property -> Stream
-                                        .of("", "annotationSource", "identity|logAnnotationSink", "custom;other", "busConsumer", "annotationSource;busConsumer")
-                                        .map(definition -> Arguments.of(profile, property, definition))));
+        // @formatter:off
+        return Stream.of("api", "writer", "combined")
+                .flatMap(profile -> Stream.of("spring.cloud.function.definition", "spring.cloud.stream.function.definition")
+                        .flatMap(property -> Stream.of(
+                                "",
+                                "annotationSource",
+                                "identity|logAnnotationSink",
+                                "custom;other",
+                                "busConsumer",
+                                "annotationSource;busConsumer")
+                                .map(definition -> Arguments.of(profile, property, definition))));
+        // @formatter:on
     }
 
     @Test

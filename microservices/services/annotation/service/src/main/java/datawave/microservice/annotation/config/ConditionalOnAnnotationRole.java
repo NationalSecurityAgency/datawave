@@ -25,7 +25,11 @@ public @interface ConditionalOnAnnotationRole {
         public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
             AnnotationRole role = AnnotationRole.from(context.getEnvironment());
             // The annotation requires value(), so its class and method metadata always contain a non-null enum array.
-            AnnotationRole[] allowedRoles = metadata.getAnnotations().get(ConditionalOnAnnotationRole.class).getEnumArray("value", AnnotationRole.class);
+            // @formatter:off
+            AnnotationRole[] allowedRoles = metadata.getAnnotations()
+                    .get(ConditionalOnAnnotationRole.class)
+                    .getEnumArray("value", AnnotationRole.class);
+            // @formatter:on
             boolean matches = Arrays.asList(allowedRoles).contains(role);
             return new ConditionOutcome(matches, "annotation deployment profile is " + role.profile());
         }
