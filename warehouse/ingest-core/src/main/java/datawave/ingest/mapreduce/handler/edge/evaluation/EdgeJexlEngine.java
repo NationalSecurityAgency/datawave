@@ -9,11 +9,15 @@ import org.apache.commons.jexl3.internal.Engine;
 import org.apache.commons.jexl3.internal.Frame;
 import org.apache.commons.jexl3.internal.Interpreter;
 import org.apache.commons.jexl3.internal.Script;
+import org.apache.commons.jexl3.parser.DatawaveJexlParser;
+
+import datawave.util.jexl.DatawaveJexlUberspect;
 
 public class EdgeJexlEngine extends Engine {
 
     public EdgeJexlEngine(JexlBuilder conf) {
-        super(conf);
+        // Preserve Boolean AND results; JEXL 3.5 otherwise returns the last evaluated operand.
+        super(DatawaveJexlParser.configure(DatawaveJexlUberspect.configure(conf.booleanLogical(true))));
     }
 
     @Override

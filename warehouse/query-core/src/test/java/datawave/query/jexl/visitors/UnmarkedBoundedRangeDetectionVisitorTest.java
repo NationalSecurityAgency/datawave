@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -40,6 +42,20 @@ public class UnmarkedBoundedRangeDetectionVisitorTest {
     public void testNoMarkerValidSource() {
         String query = "FIELD >= '2' && FIELD <= '3'";
         test(true, query);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"FIELD >= '2' && FIELD <= '3' && OTHER == 'x'", "FIELD <= '3' && FIELD >= '2' && OTHER == 'x'",
+            "FIELD >= '2' && FIELD <= '3' && OTHER == 'x' && THIRD == 'y'", "(FIELD >= '2' && FIELD <= '3' && OTHER == 'x') || OTHER == 'y'"})
+    public void testLeadingUnmarkedRangeInWideJunction(String query) {
+        test(true, query);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"OTHER == 'x' && FIELD >= '2' && FIELD <= '3'", "FIELD >= '2' && OTHER <= '3' && THIRD == 'y'",
+            "FIELD >= '2' && FIELD >= '3' && OTHER == 'x'"})
+    public void testDoesNotIntroduceNewRangeBoundaries(String query) {
+        test(false, query);
     }
 
     @Test

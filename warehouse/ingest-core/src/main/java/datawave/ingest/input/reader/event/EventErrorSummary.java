@@ -19,6 +19,7 @@ import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlScript;
 import org.apache.commons.jexl3.internal.Engine;
+import org.apache.commons.jexl3.parser.DatawaveJexlParser;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
@@ -302,7 +303,7 @@ public class EventErrorSummary implements Cloneable, JexlContext {
         }
         if (matches && jexlQuery != null) {
             // Get a JexlEngine initialized with the correct JexlArithmetic for this Document
-            JexlEngine engine = new Engine(new JexlBuilder().strict(false));
+            JexlEngine engine = new Engine(DatawaveJexlParser.configure(new JexlBuilder().strict(false).booleanLogical(true)));
 
             // Evaluate the JexlContext against the Script
             JexlScript script = engine.createScript(jexlQuery);

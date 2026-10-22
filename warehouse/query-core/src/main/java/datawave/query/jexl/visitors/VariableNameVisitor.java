@@ -8,10 +8,10 @@ import java.util.Set;
 import org.apache.commons.jexl3.JexlInfo;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.DatawaveJexlParser;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.Parser;
-import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.commons.jexl3.parser.TokenMgrException;
 
 import com.google.common.collect.Sets;
@@ -42,7 +42,7 @@ public class VariableNameVisitor extends BaseVisitor {
      */
     public static Set<String> parseQuery(String query) throws ParseException {
         // Instantiate a parser and visitor
-        Parser parser = new Parser(new StringProvider(";"));
+        Parser parser = DatawaveJexlParser.create();
 
         // Parse the query
         try {
