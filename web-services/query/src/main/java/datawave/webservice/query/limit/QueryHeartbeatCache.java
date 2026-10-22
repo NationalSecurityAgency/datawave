@@ -9,6 +9,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import datawave.concurrent.ThreadUtils;
+import datawave.ingest.util.ThreadUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -194,8 +196,7 @@ public class QueryHeartbeatCache {
         // Shut down the executor service.
         if (this.executor != null) {
             try {
-                this.executor.shutdown();
-                boolean shutdown = this.executor.awaitTermination(1, TimeUnit.MINUTES);
+                boolean shutdown = ThreadUtils.shutdownAndWait(this.executor, 1, TimeUnit.MINUTES);
                 if (!shutdown) {
                     log.warn("Executor did not terminate within 1 minute");
                 }
