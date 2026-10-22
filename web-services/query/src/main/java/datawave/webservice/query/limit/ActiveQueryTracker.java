@@ -178,7 +178,7 @@ public class ActiveQueryTracker {
                 try {
                     node.close();
                 } catch (Exception e1) {
-                    log.error("Error closing PersistentNode", e);
+                    e.addSuppressed(new ActiveQueryException("Error closing PersistentNode", e1));
                 }
             }
             throw e;
