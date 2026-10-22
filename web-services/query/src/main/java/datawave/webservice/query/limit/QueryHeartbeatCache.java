@@ -9,14 +9,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import datawave.concurrent.ThreadUtils;
-import datawave.ingest.util.ThreadUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Preconditions;
+
+import datawave.concurrent.ThreadUtils;
 
 /**
  * The implementation of {@link QueryHeartbeatCache}.
