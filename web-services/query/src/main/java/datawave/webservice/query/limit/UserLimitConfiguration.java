@@ -28,6 +28,18 @@ public class UserLimitConfiguration {
         this.queryLogicGroupLimits = queryLogicGroupLimits == null ? Map.of() : Map.copyOf(queryLogicGroupLimits);
     }
 
+    /**
+     * Copy constructor
+     *
+     * @param other
+     *            the instance to copy
+     */
+    public UserLimitConfiguration(UserLimitConfiguration other) {
+        this.userDn = other.userDn;
+        this.queryLimit = other.queryLimit;
+        this.queryLogicGroupLimits = other.queryLogicGroupLimits == null ? Map.of() : Map.copyOf(other.queryLogicGroupLimits);
+    }
+
     public String getUserDn() {
         return userDn;
     }
@@ -50,6 +62,15 @@ public class UserLimitConfiguration {
 
     public void setQueryLogicGroupLimits(Map<String,Integer> queryLogicGroupLimits) {
         this.queryLogicGroupLimits = queryLogicGroupLimits == null ? Map.of() : queryLogicGroupLimits;
+    }
+
+    /**
+     * Return a deep copy of this {@link UserLimitConfiguration}.
+     *
+     * @return the deep copy
+     */
+    public UserLimitConfiguration deepCopy() {
+        return new UserLimitConfiguration(this);
     }
 
     @Override

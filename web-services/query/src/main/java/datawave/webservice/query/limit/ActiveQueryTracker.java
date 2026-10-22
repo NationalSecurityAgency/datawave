@@ -1,36 +1,28 @@
 package datawave.webservice.query.limit;
 
-import java.io.File;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
-import org.apache.curator.retry.RetryNTimes;
-import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.server.quorum.QuorumPeer;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
 
 /**
  * This class provides methods for leveraging Zookeeper to track queries and their active status.
  */
-public class ActiveQueryTracker implements AutoCloseable {
+public class ActiveQueryTracker {
 
-    public static final String ZOOKEEPER_NAMESPACE = "ActiveQueries";
-
-    private static final Logger log = Logger.getLogger(ActiveQueryTracker.class);
+    private static final Logger log = LoggerFactory.getLogger(ActiveQueryTracker.class);
 
     private static final byte[] EMPTY_DATA = new byte[0];
 
@@ -38,60 +30,29 @@ public class ActiveQueryTracker implements AutoCloseable {
     private static final String SYSTEMS_CONTAINER_PATH = "/systems";
     private static final String USERS_CONTAINER_PATH = "/users";
 
-    private final Lock clientLock = new ReentrantLock();
+    /**
+     * The Zookeeper client.
+     */
+    private final CuratorFramework client;
 
-    private CuratorFramework client;
+    private final int nodeCreationTimeout;
+
+    private final TimeUnit nodeCreationTimeoutUnit;
 
     /**
      * Create and return a new {@link ActiveQueryTracker} instance
-     *
-     * @param zookeeperConfig
-     *            the zookeeper config
-     * @throws QuorumPeerConfig.ConfigException
-     *             if an error occurs when verifying the zookeeper configuration
      */
-    public ActiveQueryTracker(String zookeeperConfig) throws QuorumPeerConfig.ConfigException {
-        // @formatter:off
-        this.client = CuratorFrameworkFactory.builder()
-                        .namespace(ZOOKEEPER_NAMESPACE)
-                        .connectString(getQuorumPeerConfig(zookeeperConfig))
-                        .sessionTimeoutMs(60000)
-                        .connectionTimeoutMs(60000)
-                        .retryPolicy(new RetryNTimes(10, 1000))
-                        .build();
-
-        // @formatter:on
-        client.start();
-    }
-
-    private static String getQuorumPeerConfig(String zookeeperConfig) throws QuorumPeerConfig.ConfigException {
-        URI zookeeperConfigFile;
-        try {
-            zookeeperConfigFile = new Path(zookeeperConfig).toUri();
-            if (new File(zookeeperConfigFile).exists()) {
-                QuorumPeerConfig zooConfig = new QuorumPeerConfig();
-                zooConfig.parse(zookeeperConfigFile.getPath());
-                StringBuilder sb = new StringBuilder();
-                for (QuorumPeer.QuorumServer server : zooConfig.getServers().values()) {
-                    if (sb.length() > 0) {
-                        sb.append(',');
-                    }
-                    sb.append(server.addr.getReachableOrOne().getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
-                }
-                if (sb.length() == 0) {
-                    sb.append(zooConfig.getClientPortAddress().getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
-                }
-                return sb.toString();
-            }
-        } catch (IllegalArgumentException e) {
-            // Try the zookeeper config as is.
-        }
-        return zookeeperConfig;
+    public ActiveQueryTracker(CuratorFramework client, int nodeCreationTimeout, TimeUnit nodeCreationTimeoutUnit) {
+        Preconditions.checkNotNull(client, "zookeeper client cannot be null");
+        Preconditions.checkArgument(nodeCreationTimeout > 0, "nodeCreationTimeout must be greater than 0");
+        Preconditions.checkNotNull(nodeCreationTimeoutUnit, "nodeCreationTimeoutUnit must not be null");
+        this.client = client;
+        this.nodeCreationTimeout = nodeCreationTimeout;
+        this.nodeCreationTimeoutUnit = nodeCreationTimeoutUnit;
     }
 
     /**
-     * Begin tracking an active query. All nodes will be created under the namespace {@value ZOOKEEPER_NAMESPACE}. The following nodes will be created as
-     * containers.
+     * Begin tracking an active query. The following nodes will be created as containers.
      *
      * <pre>
      * /users/&lt;userDn&gt;/&lt;queryLogic&gt; (Created only if systemCountsAgainstUserLimit is true)
@@ -113,7 +74,7 @@ public class ActiveQueryTracker implements AutoCloseable {
      * </pre>
      *
      * @param queryId
-     *            the query's ID
+     *            the query's ID, a UUID
      * @param userDn
      *            the DN of the user who submitted the query
      * @param system
@@ -123,8 +84,11 @@ public class ActiveQueryTracker implements AutoCloseable {
      * @param systemCountsAgainstUserLimit
      *            whether queries on the system count towards the user limit
      * @return a new query heartbeat that can close the ephemeral nodes associated with the query
+     * @throws ActiveQueryException
+     *             if an error occurs
      */
-    public QueryHeartbeat trackQuery(String queryId, String userDn, String system, String queryLogic, boolean systemCountsAgainstUserLimit) throws Exception {
+    public QueryHeartbeat trackQuery(String queryId, String userDn, String system, String queryLogic, boolean systemCountsAgainstUserLimit)
+                    throws ActiveQueryException {
         // Normalize the userDN, system, and queryLogic.
         userDn = userDn.trim().toLowerCase();
         system = system.trim();
@@ -133,67 +97,107 @@ public class ActiveQueryTracker implements AutoCloseable {
         QueryHeartbeat heartbeat;
 
         if (log.isTraceEnabled()) {
-            log.trace("Tracking query: queryId=" + queryId + ", user='" + userDn + "', system='" + system + "', queryLogic='" + queryLogic + "'");
+            log.trace("Tracking query: queryId={}, user='{}', system='{}', queryLogic='{}'", queryId, userDn, system, queryLogic);
         }
 
-        clientLock.lock();
         try {
-            try {
-                // Verify we are not already tracking the query.
-                String systemQueryIdPath = getSystemQueryIdPath(system, queryLogic, queryId);
-                Stat stat = client.checkExists().forPath(systemQueryIdPath);
-                if (stat != null) {
-                    throw new QueryAlreadyTrackedException(queryId);
-                }
-
-                // Ensure we create the following container nodes.
-                client.createContainers(getSystemQueryLogicPath(system, queryLogic));
-                client.createContainers(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
-                // Create the user DN containers only if the system counts against the user limit.
-                if (systemCountsAgainstUserLimit) {
-                    client.createContainers(getUserQueryLogicPath(userDn, queryLogic));
-                }
-
-                // Track the query logic as a distinct query logic if it isn't already.
-                try {
-                    String distinctQueryLogicPath = getDistinctQueryLogicPath(queryLogic);
-                    Stat distinctQueryLogicStat = client.checkExists().forPath(distinctQueryLogicPath);
-                    if (distinctQueryLogicStat == null) {
-                        client.create().forPath(distinctQueryLogicPath);
-                    }
-                } catch (KeeperException.NodeExistsException e) {
-                    // Do nothing, the queryLogic was tracked on another thread.
-                }
-
-                // Create ephemeral nodes for the query ID. These nodes will not persist beyond the lifetime of the tracker's client.
-                // NOTE: If the application-level ActiveQueryTracker or its zookeeper client is closed, all ephemeral nodes created via the ActiveQueryTracker
-                // will be deleted.
-                List<PersistentNode> nodes = new ArrayList<>();
-                nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, systemQueryIdPath, EMPTY_DATA, false));
-                if (systemCountsAgainstUserLimit) {
-                    String userQueryIdPath = getUserQueryIdPath(userDn, queryLogic, queryId);
-                    nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, userQueryIdPath, EMPTY_DATA, false));
-                }
-
-                // Persist each node to Zookeeper.
-                for (PersistentNode node : nodes) {
-                    node.start();
-                    node.waitForInitialCreate(1, TimeUnit.SECONDS);
-                }
-
-                // Initialize the heartbeat.
-                heartbeat = new QueryHeartbeat(queryId, nodes);
-
-            } catch (Exception e) {
-                log.error("Failed to track query " + queryId, e);
-                throw e;
+            // Verify we are not already tracking the query.
+            String systemQueryIdPath = getSystemQueryIdPath(system, queryLogic, queryId);
+            Stat stat = client.checkExists().forPath(systemQueryIdPath);
+            if (stat != null) {
+                throw new QueryAlreadyTrackedException(queryId);
             }
 
-        } finally {
-            clientLock.unlock();
+            // Ensure we create the following container nodes.
+            client.createContainers(getSystemQueryLogicPath(system, queryLogic));
+            client.createContainers(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
+            // Create the user DN containers only if the system counts against the user limit.
+            if (systemCountsAgainstUserLimit) {
+                client.createContainers(getUserQueryLogicPath(userDn, queryLogic));
+            }
+
+            // Track the query logic as a distinct query logic if it isn't already.
+            try {
+                String distinctQueryLogicPath = getDistinctQueryLogicPath(queryLogic);
+                Stat distinctQueryLogicStat = client.checkExists().forPath(distinctQueryLogicPath);
+                if (distinctQueryLogicStat == null) {
+                    client.create().forPath(distinctQueryLogicPath);
+                }
+            } catch (KeeperException.NodeExistsException e) {
+                // Do nothing, the queryLogic was tracked on another thread.
+            }
+
+            // Create ephemeral nodes for the query ID. These nodes will not persist beyond the lifetime of the tracker's client.
+            // NOTE: If the application-level ActiveQueryTracker or its zookeeper client is closed, all ephemeral nodes created via the ActiveQueryTracker
+            // will be deleted.
+            List<PersistentNode> nodes = new ArrayList<>();
+            nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, systemQueryIdPath, EMPTY_DATA, false));
+            if (systemCountsAgainstUserLimit) {
+                String userQueryIdPath = getUserQueryIdPath(userDn, queryLogic, queryId);
+                nodes.add(new PersistentNode(client, CreateMode.EPHEMERAL, false, userQueryIdPath, EMPTY_DATA, false));
+            }
+
+            // Start the nodes so that they are created in Zookeeper.
+            startNodes(nodes);
+
+            // Initialize the heartbeat.
+            heartbeat = new QueryHeartbeat(queryId, nodes);
+
+        } catch (Exception e) {
+            log.error("Failed to track query {}", queryId, e);
+            throw new ActiveQueryException("Failed to track query " + queryId, e);
         }
 
         return heartbeat;
+    }
+
+    /**
+     * Start the given nodes.
+     *
+     * @param nodes
+     *            the nodes to start
+     * @throws NodeCreationTimeoutException
+     *             if the nodes are not created within the configured timeout
+     * @throws InterruptedException
+     *             if the thread is interrupted
+     */
+    private void startNodes(List<PersistentNode> nodes) throws InterruptedException, NodeCreationTimeoutException {
+        boolean timedOut = false;
+        // Attempt to start the nodes, waiting for them to be created.
+        try {
+            for (PersistentNode node : nodes) {
+                node.start();
+                boolean started = node.waitForInitialCreate(nodeCreationTimeout, nodeCreationTimeoutUnit);
+                if (!started) {
+                    timedOut = true;
+                    break;
+                }
+            }
+        } catch (InterruptedException e) {
+            // If the thread is interrupted, close all nodes and rethrow the exception.
+            for (PersistentNode node : nodes) {
+                try {
+                    node.close();
+                } catch (Exception e1) {
+                    e.addSuppressed(new ActiveQueryException("Error closing PersistentNode", e1));
+                }
+            }
+            Thread.currentThread().interrupt();
+            throw e;
+        }
+
+        // If any of the nodes were not created within the timeout, close all of them and throw an exception.
+        if (timedOut) {
+            for (PersistentNode node : nodes) {
+                try {
+                    node.close();
+                } catch (Exception e) {
+                    log.error("Error closing PersistentNode", e);
+                }
+            }
+            throw new NodeCreationTimeoutException(
+                            "Failed to create nodes in Zookeeper within timeout of " + nodeCreationTimeout + " " + nodeCreationTimeoutUnit);
+        }
     }
 
     /**
@@ -213,7 +217,7 @@ public class ActiveQueryTracker implements AutoCloseable {
         userDn = userDn.trim().toLowerCase();
 
         if (log.isTraceEnabled()) {
-            log.trace("Fetching total queries for user='" + userDn + "', queryLogic='" + queryLogic + "'");
+            log.trace("Fetching total queries for user='{}', queryLogic='{}'", userDn, queryLogic);
         }
 
         return getTotalChildrenWithLock(getUserQueryLogicPath(userDn, queryLogic));
@@ -235,7 +239,7 @@ public class ActiveQueryTracker implements AutoCloseable {
         system = system.trim();
 
         if (log.isTraceEnabled()) {
-            log.trace("Fetching total queries for system='" + system + "', queryLogic='" + queryLogic + "'");
+            log.trace("Fetching total queries for system='{}', queryLogic='{}'", system, queryLogic);
         }
 
         return getTotalChildrenWithLock(getSystemQueryLogicPath(system, queryLogic));
@@ -251,14 +255,11 @@ public class ActiveQueryTracker implements AutoCloseable {
      *             if an error occurs while scanning nodes
      */
     private int getTotalChildrenWithLock(String path) throws Exception {
-        clientLock.lock();
         try {
             return getTotalChildren(path);
         } catch (Exception e) {
-            log.error("Failed to get total children for path " + path, e);
+            log.error("Failed to get total children for path {}", path, e);
             throw e;
-        } finally {
-            clientLock.unlock();
         }
     }
 
@@ -282,8 +283,8 @@ public class ActiveQueryTracker implements AutoCloseable {
         userDn = userDn.trim().toLowerCase();
 
         if (log.isTraceEnabled()) {
-            log.trace("Checking if total queries meets limit for user='" + userDn + "', queryLimit=" + queryLimit + ", queryLogicsAlreadyCounted="
-                            + queryLogicsAlreadyCounted + ", initialTotal=" + initialTotal);
+            log.trace("Checking if total queries meets limit for user='{}', queryLimit={}, queryLogicsAlreadyCounted={}, initialTotal={}", userDn, queryLimit,
+                            queryLogicsAlreadyCounted, initialTotal);
         }
 
         return totalQueriesMeetsLimit(userDn, queryLimit, queryLogicsAlreadyCounted, initialTotal, this::getUserPath, this::getUserQueryLogicPath);
@@ -309,8 +310,8 @@ public class ActiveQueryTracker implements AutoCloseable {
         system = system.trim();
 
         if (log.isTraceEnabled()) {
-            log.trace("Checking if total queries meets limit for system='" + system + "', queryLimit=" + queryLimit + ", queryLogicsAlreadyCounted="
-                            + queryLogicsAlreadyCounted + ", initialTotal=" + initialTotal);
+            log.trace("Checking if total queries meets limit for system='{}', queryLimit={}, queryLogicsAlreadyCounted={}, initialTotal={}", system, queryLimit,
+                            queryLogicsAlreadyCounted, initialTotal);
         }
 
         return totalQueriesMeetsLimit(system, queryLimit, queryLogicsAlreadyCounted, initialTotal, this::getSystemPath, this::getSystemQueryLogicPath);
@@ -337,33 +338,28 @@ public class ActiveQueryTracker implements AutoCloseable {
      */
     private boolean totalQueriesMeetsLimit(String owner, int limit, Set<String> queryLogicsAlreadyCounted, int initialTotal,
                     Function<String,String> ownerPathFunction, BiFunction<String,String,String> queryLogicPathFunction) throws Exception {
-        clientLock.lock();
         try {
-            try {
-                int total = initialTotal;
-                // Get the set of query logic nodes underneath the owner node.
-                List<String> queryLogics = client.getChildren().forPath(ownerPathFunction.apply(owner));
-                for (String queryLogic : queryLogics) {
-                    // If we have not already previously counted the total queries underneath the current query logic, increment the total by the number of
-                    // queries for the current query logic.
-                    if (!queryLogicsAlreadyCounted.contains(queryLogic)) {
-                        String queryLogicPath = queryLogicPathFunction.apply(owner, queryLogic);
-                        total += getTotalChildren(queryLogicPath);
-                        // If the total is equal to or greater than the limit, return true.
-                        if (total >= limit) {
-                            return true;
-                        }
+            int total = initialTotal;
+            // Get the set of query logic nodes underneath the owner node.
+            List<String> queryLogics = client.getChildren().forPath(ownerPathFunction.apply(owner));
+            for (String queryLogic : queryLogics) {
+                // If we have not already previously counted the total queries underneath the current query logic, increment the total by the number of
+                // queries for the current query logic.
+                if (!queryLogicsAlreadyCounted.contains(queryLogic)) {
+                    String queryLogicPath = queryLogicPathFunction.apply(owner, queryLogic);
+                    total += getTotalChildren(queryLogicPath);
+                    // If the total is equal to or greater than the limit, return true.
+                    if (total >= limit) {
+                        return true;
                     }
                 }
-            } catch (KeeperException.NoNodeException e) {
-                // If this exception occurs, the owner node does not exist. There are no active queries for the owner. Simply return false.
-                return false;
-            } catch (Exception e) {
-                log.error("Failed to count total queries for owner='" + owner + "'", e);
-                throw e;
             }
-        } finally {
-            clientLock.unlock();
+        } catch (KeeperException.NoNodeException e) {
+            // If this exception occurs, the owner node does not exist. There are no active queries for the owner. Simply return false.
+            return false;
+        } catch (Exception e) {
+            log.error("Failed to count total queries for owner='{}'", owner, e);
+            throw e;
         }
 
         return false;
@@ -387,7 +383,7 @@ public class ActiveQueryTracker implements AutoCloseable {
                 return stat.getNumChildren();
             }
         } catch (Exception e) {
-            log.error("Failed to obtain total children for path='" + path + "'", e);
+            log.error("Failed to obtain total children for path='{}'", path, e);
             throw e;
         }
     }
@@ -401,7 +397,6 @@ public class ActiveQueryTracker implements AutoCloseable {
         if (log.isTraceEnabled()) {
             log.trace("Fetching distinct query logics");
         }
-        clientLock.lock();
         try {
             // If any query logics were tracked, return them.
             Stat stat = client.checkExists().forPath(DISTINCT_QUERY_LOGICS_CONTAINER_PATH);
@@ -414,8 +409,6 @@ public class ActiveQueryTracker implements AutoCloseable {
         } catch (Exception e) {
             log.error("Failed to fetch distinct query logics", e);
             throw new ActiveQueryException(e);
-        } finally {
-            clientLock.unlock();
         }
     }
 
@@ -508,27 +501,5 @@ public class ActiveQueryTracker implements AutoCloseable {
         return getSystemQueryLogicPath(system, queryLogic) + "/" + queryId;
     }
 
-    /**
-     * Close the underlying client used by this {@link ActiveQueryTracker}. NOTE: all ephemeral nodes for {@link QueryHeartbeat} instances created by this
-     * {@link ActiveQueryTracker} will be deleted.
-     */
-    @Override
-    public void close() {
-        if (client != null) {
-            clientLock.lock();
-            try {
-                if (client != null) {
-                    try {
-                        client.close();
-                    } catch (Exception e) {
-                        log.error("Failed to close client", e);
-                    } finally {
-                        client = null;
-                    }
-                }
-            } finally {
-                clientLock.unlock();
-            }
-        }
-    }
+    public void TR() {}
 }
