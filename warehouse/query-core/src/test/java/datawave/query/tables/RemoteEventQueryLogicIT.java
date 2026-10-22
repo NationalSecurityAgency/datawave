@@ -169,8 +169,10 @@ public class RemoteEventQueryLogicIT {
         // only allow a single max connection
         remoteConfig.setMaxConnections(1);
 
-        // patch in the forever handler which will block until its unlocked
-        HttpHandler foreverHandler = new ForeverHandler(handlerInterrupt);
+        // wait for the first request to initialize the client and occupy its single connection
+        CountDownLatch arrivalLatch = new CountDownLatch(1);
+        ForeverHandler foreverHandler = new ForeverHandler(handlerInterrupt);
+        foreverHandler.setArrivalLatch(arrivalLatch);
 
         testUtil.updateRoute("/DataWave/Query/" + DEFAULT_REMOTE_LOGIC + "/create", foreverHandler);
 
@@ -179,9 +181,17 @@ public class RemoteEventQueryLogicIT {
         RemoteQueryServiceTestUtil.QueryRunnable r1 = new RemoteQueryServiceTestUtil.QueryRunnable(logic);
         RemoteQueryServiceTestUtil.QueryRunnable r2 = new RemoteQueryServiceTestUtil.QueryRunnable(logic);
 
-        // start both threads
+        // start the first thread and wait for it to acquire the single connection
         Thread t1 = new Thread(r1);
         t1.start();
+
+        try {
+            assertTrue("Timed out waiting for first request to arrive", arrivalLatch.await(10, TimeUnit.SECONDS));
+        } catch (InterruptedException e) {
+            throw new AssertionError("Interrupted while waiting for first request to arrive", e);
+        }
+
+        // now start the second thread which will find the pool exhausted
         Thread t2 = new Thread(r2);
         t2.start();
 
