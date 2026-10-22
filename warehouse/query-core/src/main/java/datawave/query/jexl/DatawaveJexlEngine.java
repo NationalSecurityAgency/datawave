@@ -13,6 +13,9 @@ import org.apache.commons.jexl3.internal.Interpreter;
 import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.DatawaveJexlParser;
+
+import datawave.util.jexl.DatawaveJexlUberspect;
 
 /**
  * An extension of the {@link JexlEngine} with reasonable default configurations for DataWave's use-case.
@@ -31,7 +34,7 @@ public class DatawaveJexlEngine extends Engine {
      */
     @Deprecated
     public DatawaveJexlEngine() {
-        super(new JexlBuilder().debug(false).namespaces(ArithmeticJexlEngines.functions()).permissions(JexlPermissions.UNRESTRICTED));
+        this(new JexlBuilder().debug(false).namespaces(ArithmeticJexlEngines.functions()).permissions(JexlPermissions.UNRESTRICTED));
     }
 
     /**
@@ -41,7 +44,7 @@ public class DatawaveJexlEngine extends Engine {
      *            a {@link JexlBuilder}
      */
     public DatawaveJexlEngine(JexlBuilder jexlBuilder) {
-        super(jexlBuilder);
+        super(DatawaveJexlParser.configure(DatawaveJexlUberspect.configure(jexlBuilder)));
     }
 
     @Override

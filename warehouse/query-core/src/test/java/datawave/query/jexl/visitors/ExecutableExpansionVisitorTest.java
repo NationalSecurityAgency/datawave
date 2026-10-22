@@ -23,11 +23,13 @@ import java.util.stream.Stream;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -553,21 +555,10 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
 
-        // update the generated queryTree to have an ExceededThreshold marker for BIRTH_DATE
-        JexlNode child = QueryPropertyMarker.create(origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1), EXCEEDED_VALUE);
-        // unlink the old node
-        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
-        // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(child, 1);
-
-        // update the generated queryTree to have an ExceededThreshold marker for BIRTH_DATE
-        child = QueryPropertyMarker.create(derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(1), EXCEEDED_VALUE);
-        // unlink the old node
-        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(1).jjtSetParent(null);
-        // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(child, 1);
-
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            ASTEQNode birthDate = findBirthDateEquality(queryTree);
+            JexlNodes.swap(birthDate.jjtGetParent(), birthDate, QueryPropertyMarker.create(birthDate, EXCEEDED_VALUE));
+
             ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
             MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
@@ -608,19 +599,11 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
         birthdates.add("123");
         birthdates.add("234");
         birthdates.add("345");
-        JexlNode child = QueryPropertyMarker.create(new ExceededOr("BIRTH_DATE", birthdates).getJexlNode(), EXCEEDED_OR);
-
-        // unlink the old node
-        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
-        // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(child, 1);
-
-        // unlink the old node
-        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(1).jjtSetParent(null);
-        // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtAddChild(child, 1);
-
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            ASTEQNode birthDate = findBirthDateEquality(queryTree);
+            JexlNode marker = QueryPropertyMarker.create(new ExceededOr("BIRTH_DATE", birthdates).getJexlNode(), EXCEEDED_OR);
+            JexlNodes.swap(birthDate.jjtGetParent(), birthDate, marker);
+
             ShardQueryConfiguration config = Mockito.mock(ShardQueryConfiguration.class);
             MetadataHelper helper = Mockito.mock(MetadataHelper.class);
 
@@ -654,6 +637,10 @@ public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
                             + "(filter:includeRegex(QUOTE, '.*kind.*') && UUID == 'capone')";
             assertEquals(expected, queryString);
         }
+    }
+
+    private ASTEQNode findBirthDateEquality(ASTJexlScript queryTree) {
+        return JexlASTHelper.getEQNodes(queryTree).stream().filter(node -> "BIRTH_DATE".equals(JexlASTHelper.getIdentifier(node))).findFirst().orElseThrow();
     }
 
     @Test

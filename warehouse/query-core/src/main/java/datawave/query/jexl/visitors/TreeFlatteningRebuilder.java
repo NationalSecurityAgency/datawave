@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
@@ -16,6 +17,7 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
@@ -93,7 +95,7 @@ public class TreeFlatteningRebuilder {
      */
     public <T extends JexlNode> T flattenTree(T rootNode) {
 
-        Deque<JexlNode> postOrderStack = new LinkedList<>();
+        Deque<JexlNode> postOrderStack = new ArrayDeque<>();
 
         // iteratively copy the root node, and create the post order traversal stack
         copyTree(rootNode, postOrderStack);
@@ -112,8 +114,8 @@ public class TreeFlatteningRebuilder {
      * @return the flattened tree
      */
     private JexlNode flattenTree(Deque<JexlNode> postOrderStack) {
-        Deque<JexlNode> parentStack = new LinkedList<>();
-        Deque<List<JexlNode>> childrenStack = new LinkedList<>();
+        Deque<JexlNode> parentStack = new ArrayDeque<>();
+        Deque<List<JexlNode>> childrenStack = new ArrayDeque<>();
 
         JexlNode newNode = null;
 
@@ -170,7 +172,7 @@ public class TreeFlatteningRebuilder {
      */
     private JexlNode copyTree(JexlNode node, Deque<JexlNode> postOrderDeque) {
         // add all the nodes to the stack and iterate...
-        Deque<JexlNode> workingStack = new LinkedList<>();
+        Deque<JexlNode> workingStack = new ArrayDeque<>();
 
         // create a copy of this node which shares the same children as the original node
         JexlNode copiedNode = rebuildNode(node);
@@ -231,7 +233,17 @@ public class TreeFlatteningRebuilder {
                         (currNode instanceof ASTOrNode ||
                         (currNode instanceof ASTAndNode && !isBoundedRange((ASTAndNode) currNode))))) {
                 // @formatter:on
-                for (int i = 0; i < currNode.jjtGetNumChildren(); i++) {
+                int firstChild = 0;
+                if (currNode instanceof ASTAndNode && currNode.jjtGetNumChildren() > 2 && isBoundedRange(currNode.jjtGetChild(0), currNode.jjtGetChild(1))) {
+                    // JEXL 3.3 grouped the first two terms of an AND chain. Preserve that range boundary when copying a
+                    // JEXL 3.5 junction so unmarked ranges are still detected. Do not change the original children's parents.
+                    ASTAndNode range = JexlNodes.ensureCapacity(new ASTAndNode(ParserTreeConstants.JJTANDNODE), 2);
+                    range.jjtAddChild(currNode.jjtGetChild(0), 0);
+                    range.jjtAddChild(currNode.jjtGetChild(1), 1);
+                    stack.push(range);
+                    firstChild = 2;
+                }
+                for (int i = firstChild; i < currNode.jjtGetNumChildren(); i++) {
                     stack.push(currNode.jjtGetChild(i));
                 }
             } else {
@@ -279,13 +291,16 @@ public class TreeFlatteningRebuilder {
      */
     private boolean isBoundedRange(ASTAndNode node) {
         if (node.jjtGetNumChildren() == 2) {
-            JexlNode firstChild = node.jjtGetChild(0);
-            JexlNode secondChild = node.jjtGetChild(1);
-            if (isLowerBound(firstChild) && isUpperBound(secondChild)) {
-                return isIdentifierEqual(firstChild, secondChild);
-            } else if (isUpperBound(firstChild) && isLowerBound(secondChild)) {
-                return isIdentifierEqual(secondChild, firstChild);
-            }
+            return isBoundedRange(node.jjtGetChild(0), node.jjtGetChild(1));
+        }
+        return false;
+    }
+
+    private boolean isBoundedRange(JexlNode firstChild, JexlNode secondChild) {
+        if (isLowerBound(firstChild) && isUpperBound(secondChild)) {
+            return isIdentifierEqual(firstChild, secondChild);
+        } else if (isUpperBound(firstChild) && isLowerBound(secondChild)) {
+            return isIdentifierEqual(secondChild, firstChild);
         }
         return false;
     }
@@ -358,8 +373,8 @@ public class TreeFlatteningRebuilder {
         // if there are multiple children, determine which ones can be flattened into the parent
         else {
 
-            Deque<JexlNode> children = new LinkedList<>();
-            Deque<JexlNode> stack = new LinkedList<>();
+            Deque<JexlNode> children = new ArrayDeque<>(node.jjtGetNumChildren());
+            Deque<JexlNode> stack = new ArrayDeque<>(node.jjtGetNumChildren());
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 stack.push(node.jjtGetChild(i));
             }
