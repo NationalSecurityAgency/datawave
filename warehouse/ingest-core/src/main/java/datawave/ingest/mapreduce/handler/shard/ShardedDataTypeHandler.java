@@ -202,7 +202,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         /**
          * @return {@code datatype}
          */
-        byte[] dataType() {
+        public byte[] dataType() {
             if (dataType == null) {
                 dataType = ShardUtil.utf8(event.getDataType().outputName());
             }
@@ -212,7 +212,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         /**
          * @return {@code datatype\0uid}: the event column family and the field index column qualifier suffix
          */
-        byte[] dataTypeUid() {
+        public byte[] dataTypeUid() {
             if (dataTypeUid == null) {
                 dataTypeUid = ShardUtil.joinWithNulls(dataType(), ShardUtil.utf8(event.getId().toString()));
             }
@@ -222,7 +222,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         /**
          * @return {@code shardId\0datatype}: the global index column qualifier
          */
-        byte[] shardDataType() {
+        public byte[] shardDataType() {
             if (shardDataType == null) {
                 shardDataType = ShardUtil.joinWithNulls(shardId, dataType());
             }

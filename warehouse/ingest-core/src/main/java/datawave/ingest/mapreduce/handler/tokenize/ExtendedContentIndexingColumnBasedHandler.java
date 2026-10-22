@@ -500,13 +500,14 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         if (StringUtils.isEmpty(fieldValue))
             return;
 
-        Text colf = new Text(event.getDataType().outputName());
-        TextUtil.textAppend(colf, event.getId().toString(), this.eventReplaceMalformedUTF8);
+        // datatype\0uid, encoded once per event
+        byte[] colf = getKeyParts(event, shardId).dataTypeUid();
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, this.ingestHelper.getReplaceMalformedUTF8());
-        Key k = ShardUtil.createKey(shardId, colf, colq, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
+        Key k = ShardUtil.buildKey(shardId, colf, colf.length, colq.getBytes(), colq.getLength(), visibility, event.getTimestamp(),
+                        this.ingestHelper.getDeleteMode());
+        BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
         contextWriter.write(bKey, DataTypeHandler.NULL_VALUE, context);
     }
 
@@ -620,7 +621,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         counters.increment(ContentIndexCounters.CONTENT_RECORDS_CREATED, reporter);
         if (!disableDCol) {
             if (offlineDocProcessing) {
-                BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
+                BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
                 contextWriter.write(bKey, value, context);
             } else {
                 DocWriter dw = new DocWriter();
@@ -753,18 +754,16 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     protected void createShardFieldIndexColumn(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
                     Value value, byte[] visibility, boolean replaceMalformedUTF8, boolean deleteMode) throws IOException, InterruptedException {
-        Text colf = new Text("fi");
-        TextUtil.textAppend(colf, nFV.getIndexedFieldName(), replaceMalformedUTF8);
-        Text colq = new Text(nFV.getIndexedFieldValue());
-        TextUtil.textAppend(colq, this.eventDataTypeName, replaceMalformedUTF8);
-        TextUtil.textAppend(colq, this.eventUid, replaceMalformedUTF8);
+        // fi\0field (cached per field name) and value\0datatype\0uid (reusing the per-event suffix)
+        byte[] colf = getFieldIndexColf(nFV.getIndexedFieldName());
+        byte[] colq = ShardUtil.joinWithNulls(ShardUtil.utf8(nFV.getIndexedFieldValue()), getKeyParts(event, shardId).dataTypeUid());
 
         if (value == null) {
             value = DataTypeHandler.NULL_VALUE;
         }
 
         Key k = ShardUtil.createKey(shardId, colf, colq, visibility, event.getTimestamp(), deleteMode);
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
+        BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
         contextWriter.write(bKey, value, context);
     }
 
@@ -802,13 +801,12 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         }
         Value value = new Value(builder.build().toByteArray());
 
-        StringBuilder colq = new StringBuilder(this.eventDataTypeName.length() + this.eventUid.length() + nfv.getIndexedFieldName().length()
-                        + nfv.getIndexedFieldValue().length() + 3);
-        colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
-                        .append(nfv.getIndexedFieldName());
+        // datatype\0uid\0value\0field, reusing the datatype\0uid prefix encoded once per event
+        byte[] colq = ShardUtil.joinWithNulls(getKeyParts(event, shardId).dataTypeUid(), ShardUtil.utf8(nfv.getIndexedFieldValue()),
+                        ShardUtil.utf8(nfv.getIndexedFieldName()));
 
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(),
-                        colq.toString().getBytes(), visibility, event.getTimestamp(), deleteMode));
+        BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(),
+                        new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(), colq, visibility, event.getTimestamp(), deleteMode));
 
         contextWriter.write(bKey, value, context);
     }
@@ -849,8 +847,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         // Colf: Field Name
         // Colq: Shard Id : DataType
         // Value: UID
-        Text colq = new Text(shardId);
-        TextUtil.textAppend(colq, this.eventDataTypeName, replacedMalformedUTF8);
+        // shardId\0datatype, encoded once per event
+        byte[] colq = getKeyParts(event, shardId).shardDataType();
 
         Key k = ShardUtil.createIndexKey(nFV.getIndexedFieldValue(), nFV.getIndexedFieldName(), colq, visibility, event.getTimestamp(), deleteMode);
 

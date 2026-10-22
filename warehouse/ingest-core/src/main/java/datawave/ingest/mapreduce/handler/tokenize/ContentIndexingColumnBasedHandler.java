@@ -224,13 +224,14 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         if (StringUtils.isEmpty(fieldValue))
             return;
 
-        Text colf = new Text(event.getDataType().outputName());
-        TextUtil.textAppend(colf, event.getId().toString(), helper.getReplaceMalformedUTF8());
+        // datatype\0uid, encoded once per event
+        byte[] colf = getKeyParts(event, shardId).dataTypeUid();
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, helper.getReplaceMalformedUTF8());
-        Key k = ShardUtil.createKey(shardId, colf, colq, fieldVisibility, event.getTimestamp(), helper.getDeleteMode());
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
+        Key k = ShardUtil.buildKey(shardId, colf, colf.length, colq.getBytes(), colq.getLength(), fieldVisibility, event.getTimestamp(),
+                        helper.getDeleteMode());
+        BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
         values.put(bKey, NULL_VALUE);
     }
 
@@ -589,13 +590,12 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         }
         Value value = new Value(builder.build().toByteArray());
 
-        StringBuilder colq = new StringBuilder(this.eventDataTypeName.length() + this.eventUid.length() + nfv.getIndexedFieldName().length()
-                        + nfv.getIndexedFieldValue().length() + 3);
-        colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
-                        .append(nfv.getIndexedFieldName());
+        // datatype\0uid\0value\0field, reusing the datatype\0uid prefix encoded once per event
+        byte[] colq = ShardUtil.joinWithNulls(getKeyParts(event, shardId).dataTypeUid(), ShardUtil.utf8(nfv.getIndexedFieldValue()),
+                        ShardUtil.utf8(nfv.getIndexedFieldName()));
 
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(),
-                        colq.toString().getBytes(), visibility, event.getTimestamp(), helper.getDeleteMode()));
+        BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(),
+                        new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(), colq, visibility, event.getTimestamp(), helper.getDeleteMode()));
 
         values.put(bKey, value);
     }

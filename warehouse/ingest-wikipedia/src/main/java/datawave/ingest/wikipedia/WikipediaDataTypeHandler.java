@@ -352,13 +352,14 @@ public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedCon
         if (StringUtils.isEmpty(fieldValue))
             return;
 
-        Text colf = new Text(event.getDataType().outputName());
-        TextUtil.textAppend(colf, event.getId().toString(), this.eventReplaceMalformedUTF8);
+        // datatype\0uid, encoded once per event
+        byte[] colf = getKeyParts(event, shardId).dataTypeUid();
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, this.ingestHelper.getReplaceMalformedUTF8());
-        Key k = ShardUtil.createKey(shardId, colf, colq, visibility, event.getTimestamp(), this.ingestHelper.getDeleteMode());
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
+        Key k = ShardUtil.buildKey(shardId, colf, colf.length, colq.getBytes(), colq.getLength(), visibility, event.getTimestamp(),
+                        this.ingestHelper.getDeleteMode());
+        BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
         contextWriter.write(bKey, DataTypeHandler.NULL_VALUE, context);
     }
 
