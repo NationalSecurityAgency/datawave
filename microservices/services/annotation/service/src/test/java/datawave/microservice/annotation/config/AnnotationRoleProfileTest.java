@@ -109,7 +109,8 @@ class AnnotationRoleProfileTest {
     @ValueSource(strings = {"api,writer", "api,combined", "writer,combined", "api,writer,combined"})
     void multipleRoleProfilesFail(String profiles) throws IOException {
         StandardEnvironment environment = configuration(profiles.split(","));
-        assertThatThrownBy(() -> AnnotationRole.from(environment)).isInstanceOf(IllegalStateException.class).hasMessageContaining("Activate exactly one");
+        assertThatThrownBy(() -> AnnotationRole.from(environment)).isInstanceOf(IllegalStateException.class)
+                        .hasMessageStartingWith("Activate exactly one of combined, api, writer; selected ");
     }
 
     @ParameterizedTest
@@ -129,7 +130,8 @@ class AnnotationRoleProfileTest {
         StandardEnvironment environment = new StandardEnvironment();
         environment.setActiveProfiles(profiles.isEmpty() ? new String[0] : profiles.split(","));
 
-        assertThatThrownBy(() -> AnnotationRole.from(environment)).isInstanceOf(IllegalStateException.class).hasMessageContaining("Activate exactly one");
+        assertThatThrownBy(() -> AnnotationRole.from(environment)).isInstanceOf(IllegalStateException.class)
+                        .hasMessageStartingWith("Activate exactly one of combined, api, writer; selected ");
     }
 
     @Test

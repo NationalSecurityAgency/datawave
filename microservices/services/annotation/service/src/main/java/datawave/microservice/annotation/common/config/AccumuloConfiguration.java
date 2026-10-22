@@ -1,5 +1,7 @@
 package datawave.microservice.annotation.common.config;
 
+import static datawave.microservice.annotation.config.AnnotationRoleConstants.ACCUMULO_WRITER_ENABLED;
+
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
@@ -36,7 +38,7 @@ public class AccumuloConfiguration {
         @Override
         public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
             boolean required = AnnotationRole.from(context.getEnvironment()).includesApi()
-                            || context.getEnvironment().getProperty("annotation.writers.accumulo.enabled", Boolean.class, false);
+                            || context.getEnvironment().getProperty(ACCUMULO_WRITER_ENABLED, Boolean.class, false);
             return new ConditionOutcome(required, "Accumulo is required for API reads or an enabled Accumulo writer");
         }
     }

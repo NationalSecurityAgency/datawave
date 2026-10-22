@@ -11,7 +11,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 @Target({ElementType.TYPE, ElementType.METHOD})
@@ -25,8 +24,9 @@ public @interface ConditionalOnAnnotationRole {
         @Override
         public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
             AnnotationRole role = AnnotationRole.from(context.getEnvironment());
-            AnnotationAttributes attributes = AnnotationAttributes.fromMap(metadata.getAnnotationAttributes(ConditionalOnAnnotationRole.class.getName()));
-            boolean matches = Arrays.asList((AnnotationRole[]) attributes.get("value")).contains(role);
+            // The annotation requires value(), so its class and method metadata always contain a non-null enum array.
+            AnnotationRole[] allowedRoles = metadata.getAnnotations().get(ConditionalOnAnnotationRole.class).getEnumArray("value", AnnotationRole.class);
+            boolean matches = Arrays.asList(allowedRoles).contains(role);
             return new ConditionOutcome(matches, "annotation deployment profile is " + role.profile());
         }
     }

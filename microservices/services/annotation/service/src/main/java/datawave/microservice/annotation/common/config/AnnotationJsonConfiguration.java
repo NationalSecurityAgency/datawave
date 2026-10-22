@@ -32,7 +32,7 @@ public class AnnotationJsonConfiguration {
         simpleModule.addSerializer(Annotation.class, new JacksonAnnotationSerializer());
         simpleModule.addDeserializer(Segment.class, new JacksonSegmentDeserializer());
         simpleModule.addSerializer(Segment.class, new JacksonSegmentSerializer());
-        simpleModule.addSerializer(AnnotationSource.class, new JsonSerializer<AnnotationSource>() {
+        simpleModule.addSerializer(AnnotationSource.class, new JsonSerializer<>() {
             @Override
             public void serialize(AnnotationSource source, JsonGenerator generator, SerializerProvider provider) throws IOException {
                 generator.writeRawValue(AnnotationJsonUtils.getPrinter().print(source));

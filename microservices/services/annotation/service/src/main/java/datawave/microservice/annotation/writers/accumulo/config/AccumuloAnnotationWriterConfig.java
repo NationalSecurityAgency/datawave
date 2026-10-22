@@ -1,5 +1,7 @@
 package datawave.microservice.annotation.writers.accumulo.config;
 
+import static datawave.microservice.annotation.config.AnnotationRoleConstants.ACCUMULO_WRITER_ENABLED;
+
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,7 +27,7 @@ import datawave.microservice.annotation.writers.accumulo.health.AccumuloHealthCh
  */
 @Configuration
 @EnableConfigurationProperties(AccumuloAnnotationWriterProperties.class)
-@ConditionalOnProperty(name = "annotation.writers.accumulo.enabled", havingValue = "true")
+@ConditionalOnProperty(name = ACCUMULO_WRITER_ENABLED, havingValue = "true")
 @ConditionalOnAnnotationRole({AnnotationRole.WRITER, AnnotationRole.COMBINED})
 public class AccumuloAnnotationWriterConfig {
 

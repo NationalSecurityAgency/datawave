@@ -1,5 +1,7 @@
 package datawave.microservice.annotation.writers.file.config;
 
+import static datawave.microservice.annotation.config.AnnotationRoleConstants.DUMP_WRITER_ENABLED;
+
 import java.util.List;
 
 import javax.validation.Valid;
@@ -23,7 +25,7 @@ import datawave.microservice.annotation.writers.file.FileAnnotationWriter;
  */
 @Configuration
 @EnableConfigurationProperties(DumpAnnotationWriterProperties.class)
-@ConditionalOnProperty(name = "annotation.writers.dump.enabled", havingValue = "true")
+@ConditionalOnProperty(name = DUMP_WRITER_ENABLED, havingValue = "true")
 @ConditionalOnAnnotationRole({AnnotationRole.WRITER, AnnotationRole.COMBINED})
 public class DumpAnnotationWriterConfig {
 

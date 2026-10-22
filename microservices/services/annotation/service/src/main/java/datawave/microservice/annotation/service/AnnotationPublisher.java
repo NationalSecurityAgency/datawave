@@ -35,6 +35,7 @@ public class AnnotationPublisher {
 
     public Optional<AnnotationMessage> publishAndConfirm(AnnotationMessage message) {
         if (healthChecker != null && !healthChecker.isHealthy()) {
+            log.debug("Skipping annotation publication because the messaging health check is unhealthy");
             return Optional.empty();
         }
         AnnotationMessage identifiedMessage = message.getAnnotationMessageId().isBlank() ? AnnotationUtils.injectAnnotationMessageHash(message) : message;
