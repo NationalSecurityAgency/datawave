@@ -304,6 +304,7 @@ public class AbstractIngest {
         String normalizedValue = getNormalizedValue(field, value);
 
         writeShardIndex(row, datatype, uid, field, List.of(normalizedValue));
+        writeReverseIndex(row, datatype, uid, field, List.of(normalizedValue));
         writeFieldIndex(row, datatype, uid, field, List.of(normalizedValue));
         writeEvent(row, datatype, uid, field, value);
     }
@@ -414,6 +415,24 @@ public class AbstractIngest {
             try (BatchWriter bw = client.createBatchWriter(SHARD_INDEX)) {
                 for (String value : values) {
                     Mutation m = new Mutation(value);
+                    Text cf = new Text(field);
+                    Text cq = new Text(row + "\0" + datatype);
+                    ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());
+                    m.put(cf, cq, cv, timestamp, getIndexUidValue(uid));
+                    bw.addMutation(m);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private void writeReverseIndex(String row, String datatype, String uid, String field, List<String> values) {
+        if (fieldColumns.containsEntry(field, "ri")) {
+            long timestamp = timestampForRow(row);
+            try (BatchWriter bw = client.createBatchWriter(SHARD_RINDEX)) {
+                for (String value : values) {
+                    Mutation m = new Mutation(new StringBuilder(value).reverse().toString());
                     Text cf = new Text(field);
                     Text cq = new Text(row + "\0" + datatype);
                     ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());
