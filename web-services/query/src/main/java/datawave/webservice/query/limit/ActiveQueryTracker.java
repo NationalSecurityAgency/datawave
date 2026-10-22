@@ -87,7 +87,7 @@ public class ActiveQueryTracker {
      * @throws ActiveQueryException
      *             if an error occurs
      */
-    public QueryHeartbeat trackQuery(String queryId, String userDn, String system, String queryLogic, boolean systemCountsAgainstUserLimit) throws Exception {
+    public QueryHeartbeat trackQuery(String queryId, String userDn, String system, String queryLogic, boolean systemCountsAgainstUserLimit) throws ActiveQueryException {
         // Normalize the userDN, system, and queryLogic.
         userDn = userDn.trim().toLowerCase();
         system = system.trim();
@@ -181,6 +181,7 @@ public class ActiveQueryTracker {
                     e.addSuppressed(new ActiveQueryException("Error closing PersistentNode", e1));
                 }
             }
+            Thread.currentThread().interrupt();
             throw e;
         }
 
