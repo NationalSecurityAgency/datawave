@@ -1,17 +1,19 @@
 package datawave.ingest.util;
 
+import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.admin.TabletMergeability;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Mutation;
@@ -26,6 +28,16 @@ import datawave.util.time.DateHelper;
 /**
  * Generates split points for the specified table and optionally adds them to the table This class creates split points of the form: yyyyMMdd_N In addition this
  * will create maker key/values for the specified data types if requested
+ * <p>
+ * Each split is created with the {@link TabletMergeability} given by {@code -mergeability}, which decides whether Accumulo may automatically merge the tablets
+ * on either side of it:
+ * <ul>
+ * <li>{@code never} (the default, and Accumulo's default for user-created splits): the split is never merged automatically</li>
+ * <li>{@code always}: the split may be merged automatically as soon as the tablets around it are small enough</li>
+ * <li>an ISO-8601 duration such as {@code P30D} or {@code PT12H}: the split may be merged automatically once that much time has passed since it was
+ * created</li>
+ * </ul>
+ * How small is small enough is set by the table's {@code table.mergeability.threshold} property.
  */
 public class GenerateShardSplits {
 
@@ -35,7 +47,7 @@ public class GenerateShardSplits {
 
     private static void printUsageAndExit() {
         System.out.println(
-                        "Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> [-splitsPerBatch <number of splits to create per batch>] [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
+                        "Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> [-splitsPerBatch <number of splits to create per batch>] [-mergeability <never|always|ISO-8601 duration, default never>] [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
         System.exit(-1);
     }
 
@@ -53,6 +65,7 @@ public class GenerateShardSplits {
         boolean addSplits = true;
         boolean addShardMarkers = false;
         int splitsPerBatch = 100000;
+        TabletMergeability mergeability = TabletMergeability.never();
         String[] shardMarkerTypes = null;
         String username = null;
         byte[] password = null;
@@ -103,6 +116,19 @@ public class GenerateShardSplits {
                     System.out.println("splitsPerBatch delay argument is not an integer:" + e.getMessage());
                     System.exit(-2);
                 }
+            } else if ("-mergeability".equalsIgnoreCase(args[i])) {
+                if (i + 1 >= args.length) {
+                    System.err.println("-mergeability must be followed by never, always, or an ISO-8601 duration such as P30D");
+                    System.exit(-2);
+                }
+                try {
+                    mergeability = parseMergeability(args[i + 1]);
+                } catch (IllegalArgumentException e) {
+                    System.err.println(e.getMessage());
+                    System.exit(-2);
+                }
+                // skip over cmd, for loop will skip over arg
+                i++;
             } else if (args[i].equals("-markersOnly")) {
                 addSplits = false;
             } else if (args[i].equals("-addShardMarkers")) {
@@ -184,7 +210,7 @@ public class GenerateShardSplits {
                     int callCount = 0;
                     int reducedBatchSize = 0;
 
-                    // as the addSplits command takes a sortedset, but we intentionally do not want the order to be
+                    // as the putSplits command takes a sorted map, but we intentionally do not want the order to be
                     // lexicographically sorted.
                     while (!splits.isEmpty()) {
                         if (callCount <= 10) {
@@ -196,10 +222,14 @@ public class GenerateShardSplits {
                         reducedBatchSize = Math.min(reducedBatchSize, splits.size());
 
                         // Extract a batch of splits from the front of the list
-                        SortedSet<Text> batch = new TreeSet<>(splits.subList(0, reducedBatchSize));
+                        SortedMap<Text,TabletMergeability> batch = new TreeMap<>();
+                        for (Text split : splits.subList(0, reducedBatchSize)) {
+                            batch.put(split, mergeability);
+                        }
 
-                        // Perform the operation on the current batch
-                        client.tableOperations().addSplits(tableName, batch);
+                        // Perform the operation on the current batch. addSplits would mark every split never mergeable, so use putSplits to apply the
+                        // requested mergeability
+                        client.tableOperations().putSplits(tableName, batch);
 
                         // Remove the processed batch from the list
                         splits.subList(0, reducedBatchSize).clear();
@@ -230,6 +260,32 @@ public class GenerateShardSplits {
             }
 
         }
+    }
+
+    /**
+     * @param value
+     *            never, always, or an ISO-8601 duration such as P30D
+     * @return the mergeability to create the splits with
+     * @throws IllegalArgumentException
+     *             if the value is not one of those, or is a negative duration
+     */
+    static TabletMergeability parseMergeability(String value) {
+        if ("never".equalsIgnoreCase(value)) {
+            return TabletMergeability.never();
+        }
+        if ("always".equalsIgnoreCase(value)) {
+            return TabletMergeability.always();
+        }
+        Duration delay;
+        try {
+            delay = Duration.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("-mergeability must be never, always, or an ISO-8601 duration such as P30D, but was: " + value);
+        }
+        if (delay.isNegative()) {
+            throw new IllegalArgumentException("-mergeability duration must not be negative, but was: " + value);
+        }
+        return TabletMergeability.after(delay);
     }
 
     protected static void calculateMidpoints(List<Text> splits, List<Text> midpoints) {
