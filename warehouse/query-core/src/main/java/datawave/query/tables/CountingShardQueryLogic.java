@@ -121,7 +121,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
      * @return true
      */
     @Override
-    public boolean isLongRunningQuery() {
+    public boolean isIntermediateEmptyPagesEnabled() {
         return true;
     }
 

@@ -416,8 +416,30 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
      * @return Return whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
      */
     @Override
-    public boolean isLongRunningQuery() {
+    public boolean isIntermediateEmptyPagesEnabled() {
         return false;
+    }
+
+    /**
+     * Whether the query is a type that is expected to run quickly. In this case we can do things like avoid an asynchronous thread in the running query
+     * mechanism. Implementations should override this if the default is not appropriate.
+     *
+     * @return Return whether the query is a type that is expected to run very quickly
+     */
+    @Override
+    public boolean isUseSynchronousRunningQuery() {
+        return false;
+    }
+
+    /**
+     * Check whether this query logic can bypass the query limiter mechanism. For example UUID queries which must remain as fast as possible may avoid the
+     * zookeeper overhead incurred by the query limit mechanism. Implementations should override this if the default is not appropriate.
+     *
+     * @return Return false if we can bypass the query limiter
+     */
+    @Override
+    public boolean isQueryLimiterEnabled() {
+        return true;
     }
 
     public ResponseEnricherBuilder getResponseEnricherBuilder() {
