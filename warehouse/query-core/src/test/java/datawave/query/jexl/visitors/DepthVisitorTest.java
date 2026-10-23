@@ -1,8 +1,9 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 
@@ -13,9 +14,9 @@ public class DepthVisitorTest {
         String originalQuery = "FOO == 'abc'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 2));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 1));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 0));
+        assertEquals(1, DepthVisitor.getDepth(script, 2));
+        assertEquals(1, DepthVisitor.getDepth(script, 1));
+        assertEquals(1, DepthVisitor.getDepth(script, 0));
     }
 
     @Test
@@ -23,10 +24,10 @@ public class DepthVisitorTest {
         String originalQuery = "FOO == 'abc' or FOO = 'bcd'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 3));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 2));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 1));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 0));
+        assertEquals(2, DepthVisitor.getDepth(script, 3));
+        assertEquals(2, DepthVisitor.getDepth(script, 2));
+        assertEquals(2, DepthVisitor.getDepth(script, 1));
+        assertEquals(1, DepthVisitor.getDepth(script, 0));
     }
 
     @Test
@@ -34,10 +35,10 @@ public class DepthVisitorTest {
         String originalQuery = "FOO == 'abc' or FOO = 'bcd' or FOO = 'abcdef'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 3));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 2));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 1));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 0));
+        assertEquals(2, DepthVisitor.getDepth(script, 3));
+        assertEquals(2, DepthVisitor.getDepth(script, 2));
+        assertEquals(2, DepthVisitor.getDepth(script, 1));
+        assertEquals(1, DepthVisitor.getDepth(script, 0));
     }
 
     @Test
@@ -45,10 +46,10 @@ public class DepthVisitorTest {
         String originalQuery = "FOO == 'abc' or FOO = 'bcd' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef' or FOO = 'abcdef'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 3));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 2));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 1));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 0));
+        assertEquals(2, DepthVisitor.getDepth(script, 3));
+        assertEquals(2, DepthVisitor.getDepth(script, 2));
+        assertEquals(2, DepthVisitor.getDepth(script, 1));
+        assertEquals(1, DepthVisitor.getDepth(script, 0));
     }
 
     @Test
@@ -56,10 +57,10 @@ public class DepthVisitorTest {
         String originalQuery = "FOO == 'abc' and FOO = 'bcd'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 3));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 2));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 1));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 0));
+        assertEquals(2, DepthVisitor.getDepth(script, 3));
+        assertEquals(2, DepthVisitor.getDepth(script, 2));
+        assertEquals(2, DepthVisitor.getDepth(script, 1));
+        assertEquals(1, DepthVisitor.getDepth(script, 0));
     }
 
     @Test
@@ -67,10 +68,10 @@ public class DepthVisitorTest {
         String originalQuery = "FOO == 'abc' and FOO = 'bcd' and FOO = 'abcdef'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 3));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 2));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 1));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 0));
+        assertEquals(2, DepthVisitor.getDepth(script, 3));
+        assertEquals(2, DepthVisitor.getDepth(script, 2));
+        assertEquals(2, DepthVisitor.getDepth(script, 1));
+        assertEquals(1, DepthVisitor.getDepth(script, 0));
     }
 
     @Test
@@ -78,10 +79,10 @@ public class DepthVisitorTest {
         String originalQuery = "FOO == 'abc' and FOO = 'bcd' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef' and FOO = 'abcdef'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 3));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 2));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 1));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 0));
+        assertEquals(2, DepthVisitor.getDepth(script, 3));
+        assertEquals(2, DepthVisitor.getDepth(script, 2));
+        assertEquals(2, DepthVisitor.getDepth(script, 1));
+        assertEquals(1, DepthVisitor.getDepth(script, 0));
     }
 
     @Test
@@ -89,12 +90,12 @@ public class DepthVisitorTest {
         String originalQuery = "FOO == 'abc' or (FOO = 'bcd' and FOO = 'abcdef')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        Assert.assertEquals(4, DepthVisitor.getDepth(script, 5));
-        Assert.assertEquals(4, DepthVisitor.getDepth(script, 4));
-        Assert.assertEquals(4, DepthVisitor.getDepth(script, 3));
-        Assert.assertEquals(3, DepthVisitor.getDepth(script, 2));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 1));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 0));
+        assertEquals(4, DepthVisitor.getDepth(script, 5));
+        assertEquals(4, DepthVisitor.getDepth(script, 4));
+        assertEquals(4, DepthVisitor.getDepth(script, 3));
+        assertEquals(3, DepthVisitor.getDepth(script, 2));
+        assertEquals(2, DepthVisitor.getDepth(script, 1));
+        assertEquals(1, DepthVisitor.getDepth(script, 0));
     }
 
     @Test
@@ -102,13 +103,13 @@ public class DepthVisitorTest {
         String originalQuery = "FOO == 'abc' or (FOO = 'bcd' and (FOO = 'abcdef'))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        Assert.assertEquals(5, DepthVisitor.getDepth(script, 6));
-        Assert.assertEquals(5, DepthVisitor.getDepth(script, 5));
-        Assert.assertEquals(5, DepthVisitor.getDepth(script, 4));
-        Assert.assertEquals(4, DepthVisitor.getDepth(script, 3));
-        Assert.assertEquals(3, DepthVisitor.getDepth(script, 2));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 1));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 0));
+        assertEquals(5, DepthVisitor.getDepth(script, 6));
+        assertEquals(5, DepthVisitor.getDepth(script, 5));
+        assertEquals(5, DepthVisitor.getDepth(script, 4));
+        assertEquals(4, DepthVisitor.getDepth(script, 3));
+        assertEquals(3, DepthVisitor.getDepth(script, 2));
+        assertEquals(2, DepthVisitor.getDepth(script, 1));
+        assertEquals(1, DepthVisitor.getDepth(script, 0));
     }
 
     @Test
@@ -116,14 +117,14 @@ public class DepthVisitorTest {
         String originalQuery = "(FOO == 'abc' or (FOO = 'bcd' and (FOO = 'abcdef')))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        Assert.assertEquals(6, DepthVisitor.getDepth(script, 7));
-        Assert.assertEquals(6, DepthVisitor.getDepth(script, 6));
-        Assert.assertEquals(6, DepthVisitor.getDepth(script, 5));
-        Assert.assertEquals(5, DepthVisitor.getDepth(script, 4));
-        Assert.assertEquals(4, DepthVisitor.getDepth(script, 3));
-        Assert.assertEquals(3, DepthVisitor.getDepth(script, 2));
-        Assert.assertEquals(2, DepthVisitor.getDepth(script, 1));
-        Assert.assertEquals(1, DepthVisitor.getDepth(script, 0));
+        assertEquals(6, DepthVisitor.getDepth(script, 7));
+        assertEquals(6, DepthVisitor.getDepth(script, 6));
+        assertEquals(6, DepthVisitor.getDepth(script, 5));
+        assertEquals(5, DepthVisitor.getDepth(script, 4));
+        assertEquals(4, DepthVisitor.getDepth(script, 3));
+        assertEquals(3, DepthVisitor.getDepth(script, 2));
+        assertEquals(2, DepthVisitor.getDepth(script, 1));
+        assertEquals(1, DepthVisitor.getDepth(script, 0));
     }
 
 }

@@ -1,6 +1,6 @@
 package datawave.ingest.util.cache.watch;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -8,8 +8,8 @@ import java.util.Collection;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.iterators.filter.ageoff.FilterRule;
 
@@ -24,7 +24,7 @@ public class FileRuleDataTypeMergeTest {
     // this one inherits defaults from parentFilter
     private TestDataTypeFilter childFilter;
 
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         Path childPath = new Path(this.getClass().getResource(CHILD_FILTER_CONFIGURATION_FILE).toString());
         Path rootPath = new Path(this.getClass().getResource(ROOT_FILTER_CONFIGURATION_FILE).toString());

@@ -279,10 +279,32 @@ public class AbstractIngest {
      *            the field value
      */
     public void writeFV(String row, String datatype, int eventId, String field, String value) {
-        String uid = uid(eventId);
+        writeFVForUid(row, datatype, uid(eventId), field, value);
+    }
+
+    /**
+     * Write the provided row, datatype, uid, field and value.
+     * <p>
+     * Unlike {@link #writeFV(String, String, int, String, String)} the uid is supplied directly rather than derived from an event id. This is what allows a
+     * test to express a top level document structure, where a child's uid is its parent's uid suffixed with {@code .N}. Operators writing a child must track
+     * the parent's uid themselves, via {@link #uid(int)}.
+     *
+     * @param row
+     *            the row
+     * @param datatype
+     *            the datatype
+     * @param uid
+     *            the event uid
+     * @param field
+     *            the field name
+     * @param value
+     *            the field value
+     */
+    public void writeFVForUid(String row, String datatype, String uid, String field, String value) {
         String normalizedValue = getNormalizedValue(field, value);
 
         writeShardIndex(row, datatype, uid, field, List.of(normalizedValue));
+        writeReverseIndex(row, datatype, uid, field, List.of(normalizedValue));
         writeFieldIndex(row, datatype, uid, field, List.of(normalizedValue));
         writeEvent(row, datatype, uid, field, value);
     }
@@ -393,6 +415,24 @@ public class AbstractIngest {
             try (BatchWriter bw = client.createBatchWriter(SHARD_INDEX)) {
                 for (String value : values) {
                     Mutation m = new Mutation(value);
+                    Text cf = new Text(field);
+                    Text cq = new Text(row + "\0" + datatype);
+                    ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());
+                    m.put(cf, cq, cv, timestamp, getIndexUidValue(uid));
+                    bw.addMutation(m);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private void writeReverseIndex(String row, String datatype, String uid, String field, List<String> values) {
+        if (fieldColumns.containsEntry(field, "ri")) {
+            long timestamp = timestampForRow(row);
+            try (BatchWriter bw = client.createBatchWriter(SHARD_RINDEX)) {
+                for (String value : values) {
+                    Mutation m = new Mutation(new StringBuilder(value).reverse().toString());
                     Text cf = new Text(field);
                     Text cq = new Text(row + "\0" + datatype);
                     ColumnVisibility cv = new ColumnVisibility(auths.iterator().next());

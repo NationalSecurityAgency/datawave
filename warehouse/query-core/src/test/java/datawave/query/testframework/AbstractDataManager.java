@@ -1,5 +1,7 @@
 package datawave.query.testframework;
 
+import static org.junit.Assert.fail;
+
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
@@ -9,7 +11,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.normalizer.Normalizer;
@@ -88,7 +89,7 @@ public abstract class AbstractDataManager implements RawDataManager {
                     }
                 } catch (ParseException pe) {
                     log.error(pe);
-                    Assert.fail("invalid shard date value(" + dateStr + ")");
+                    fail("invalid shard date value(" + dateStr + ")");
                 }
             }
         }

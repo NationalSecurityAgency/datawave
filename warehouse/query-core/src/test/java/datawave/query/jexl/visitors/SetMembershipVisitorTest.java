@@ -1,6 +1,8 @@
 package datawave.query.jexl.visitors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -8,10 +10,9 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -31,7 +32,7 @@ public class SetMembershipVisitorTest {
     private static MockMetadataHelper helper;
     private static MockDateIndexHelper helper2;
 
-    @BeforeClass
+    @BeforeAll
     public static void initializeMetadata() {
         indexOnly = Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED", "BODY");
         helper = new MockMetadataHelper();
@@ -44,18 +45,18 @@ public class SetMembershipVisitorTest {
         config.setDatatypeFilter(Collections.singleton("test"));
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         query = null;
         fields.clear();
     }
 
     private void assertMembers(String query, Set<String> expectedMembers) throws Exception {
-        Assert.assertEquals(expectedMembers, SetMembershipVisitor.getMembers(indexOnly, JexlASTHelper.parseJexlQuery(query)));
+        assertEquals(expectedMembers, SetMembershipVisitor.getMembers(indexOnly, JexlASTHelper.parseJexlQuery(query)));
     }
 
     private void assertContains(String query) throws Exception {
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, JexlASTHelper.parseJexlQuery(query)));
+        assertTrue(SetMembershipVisitor.contains(indexOnly, JexlASTHelper.parseJexlQuery(query)));
     }
 
     @Test
@@ -75,7 +76,7 @@ public class SetMembershipVisitorTest {
     public void phraseTestMembers() throws Exception {
         JexlNode node = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2,
                         JexlASTHelper.parseJexlQuery("BAR == 'foo' && content:phrase(termOffsetMap, 'foo', 'bar')"));
-        Assert.assertEquals(Sets.newHashSet("BODY"), SetMembershipVisitor.getMembers(indexOnly, node));
+        assertEquals(Sets.newHashSet("BODY"), SetMembershipVisitor.getMembers(indexOnly, node));
     }
 
     @Test
@@ -137,7 +138,7 @@ public class SetMembershipVisitorTest {
     public void phraseTestContains() throws Exception {
         JexlNode node = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2,
                         JexlASTHelper.parseJexlQuery("BAR == 'foo' && content:phrase(termOffsetMap, 'foo', 'bar')"));
-        Assert.assertTrue(SetMembershipVisitor.contains(indexOnly, node));
+        assertTrue(SetMembershipVisitor.contains(indexOnly, node));
     }
 
     /**

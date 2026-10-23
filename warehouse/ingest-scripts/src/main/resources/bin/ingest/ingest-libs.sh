@@ -133,5 +133,38 @@ if [[ "$ADDITIONAL_INGEST_LIBS" != "" ]]; then
     CLASSPATH=${CLASSPATH}:$ADDITIONAL_INGEST_LIBS
 fi
 
+#
+# Build the list of dependencies distributed to YARN tasks separately from the
+# local launcher classpath. Hadoop dependencies are supplied by the cluster and
+# must not be uploaded into the job cache where they can override the runtime's
+# own Hadoop classes.
+#
+declare -a DISTRIBUTED_CACHE_CLASSPATH_ENTRIES
+DISTRIBUTED_CACHE_CLASSPATH_ENTRIES=()
+IFS=: read -r -a CLASSPATH_ENTRIES <<< "$CLASSPATH"
+for CLASSPATH_ENTRY in "${CLASSPATH_ENTRIES[@]}"; do
+    [[ -z "$CLASSPATH_ENTRY" ]] && continue
+
+    IS_HADOOP_CLASSPATH_ENTRY=false
+    for HADOOP_INSTALLATION in "$HADOOP_HOME" "$INGEST_HADOOP_HOME" "$WAREHOUSE_HADOOP_HOME"; do
+        [[ -z "$HADOOP_INSTALLATION" ]] && continue
+        case "$CLASSPATH_ENTRY" in
+            "$HADOOP_INSTALLATION"|"$HADOOP_INSTALLATION"/*)
+                IS_HADOOP_CLASSPATH_ENTRY=true
+                break
+                ;;
+        esac
+    done
+
+    if [[ "$IS_HADOOP_CLASSPATH_ENTRY" == false ]]; then
+        DISTRIBUTED_CACHE_CLASSPATH_ENTRIES+=("$CLASSPATH_ENTRY")
+    fi
+done
+
+DISTRIBUTED_CACHE_JARS=$(
+    IFS=,
+    echo "${DISTRIBUTED_CACHE_CLASSPATH_ENTRIES[*]}"
+)
+export DISTRIBUTED_CACHE_JARS
 
 export HADOOP_USER_CLASSPATH_FIRST=true

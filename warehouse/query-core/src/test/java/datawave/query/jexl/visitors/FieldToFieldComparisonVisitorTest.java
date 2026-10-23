@@ -1,8 +1,10 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.test.JexlNodeAssert;
@@ -63,9 +65,9 @@ public class FieldToFieldComparisonVisitorTest {
         assertResult("(UUID !~ 'C.*?' || UUID !~ 'S.*?')", "(UUID !~ 'C.*?' || UUID !~ 'S.*?')");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testChainedEQThrowsException() throws ParseException {
-        JexlASTHelper.parseJexlQuery("FIELD_A == FIELD_B == FIELD_C");
+        assertThrows(IllegalArgumentException.class, () -> JexlASTHelper.parseJexlQuery("FIELD_A == FIELD_B == FIELD_C"));
     }
 
     private void assertResult(String original, String expected) throws ParseException {
