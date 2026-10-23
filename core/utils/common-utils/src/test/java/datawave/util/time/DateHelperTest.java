@@ -168,4 +168,41 @@ public class DateHelperTest {
 
         assertEquals(expected, actual.get());
     }
+
+    @Test
+    public void testValidateDateRangeAcceptsValidRange() {
+        Date begin = DateHelper.parse("20200101");
+        Date end = DateHelper.parse("20200102");
+        assertDoesNotThrow(() -> DateHelper.validateDateRange(begin, end));
+        assertDoesNotThrow(() -> DateHelper.validateDateRange(begin, begin));
+        assertDoesNotThrow(() -> DateHelper.validateDateRange(DateHelper.MIN_SUPPORTED_DATE, DateHelper.MAX_SUPPORTED_DATE));
+        assertDoesNotThrow(() -> DateHelper.validateRange(begin, end));
+    }
+
+    @Test
+    public void testValidateDateRangeRejectsBeginAfterEnd() {
+        Date begin = DateHelper.parse("20200102");
+        Date end = DateHelper.parse("20200101");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> DateHelper.validateDateRange(begin, end));
+        assertEquals("begin date should not be greater than end date; specified range is [20200102 (1577923200000), 20200101 (1577836800000)]", e.getMessage());
+    }
+
+    @Test
+    public void testValidateDateRangeRejectsNulls() {
+        Date date = DateHelper.parse("20200101");
+        NullPointerException e = assertThrows(NullPointerException.class, () -> DateHelper.validateDateRange(null, date));
+        assertEquals("begin date should not be null; specified range is [null (null), 20200101 (1577836800000)]", e.getMessage());
+        e = assertThrows(NullPointerException.class, () -> DateHelper.validateDateRange(date, null));
+        assertEquals("end date should not be null;  specified range is [20200101 (1577836800000), null (null)]", e.getMessage());
+    }
+
+    @Test
+    public void testValidateDateRangeRejectsDatesOutsideSupportedRange() {
+        Date beforeMin = new Date(DateHelper.MIN_SUPPORTED_DATE.getTime() - 1);
+        Date afterMax = new Date(DateHelper.MAX_SUPPORTED_DATE.getTime() + 1);
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> DateHelper.validateDateRange(beforeMin, DateHelper.parse("20200101")));
+        assertEquals("begin date less than min supported date; specified range is [00001231 (-62135596800001), 20200101 (1577836800000)]", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> DateHelper.validateDateRange(DateHelper.parse("20200101"), afterMax));
+        assertEquals("end date greater than max supported date;  specified range is [20200101 (1577836800000), +100000101 (253402300800000)]", e.getMessage());
+    }
 }
