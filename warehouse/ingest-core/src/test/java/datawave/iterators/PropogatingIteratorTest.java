@@ -39,7 +39,6 @@ import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
-import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
 
 public class PropogatingIteratorTest {
     private static final String SHARD = "20121002_1";
@@ -197,7 +196,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -233,7 +232,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -285,7 +284,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         iter.init(createSourceWithTestData(), options, null);
 
@@ -306,7 +305,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(true);
 
@@ -363,7 +362,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -389,7 +388,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(true);
 
@@ -430,7 +429,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -467,7 +466,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -498,7 +497,7 @@ public class PropogatingIteratorTest {
     @Test(expected = NullPointerException.class)
     public void testNullEnvironmentWithInit() throws IOException {
         Map<String,String> options = Maps.newHashMap();
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
         new PropogatingIterator().init(createSourceWithTestData(), options, null);
     }
 
@@ -516,7 +515,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(true);
 
@@ -573,7 +572,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
@@ -599,7 +598,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         IteratorEnvironment env = new MockIteratorEnvironment(true);
 
@@ -627,7 +626,7 @@ public class PropogatingIteratorTest {
         final PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, LegacyGlobalIndexUidAggregator.class.getCanonicalName());
 
         final IteratorEnvironment env = new MockIteratorEnvironment(true);
 
@@ -707,4 +706,5 @@ public class PropogatingIteratorTest {
         PropogatingIterator uut = new PropogatingIterator(createSourceWithTestData(), null);
         Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", uut);
     }
+
 }

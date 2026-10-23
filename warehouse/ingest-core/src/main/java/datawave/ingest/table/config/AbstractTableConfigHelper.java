@@ -21,7 +21,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.table.aggregator.CombinerConfiguration;
-import datawave.iterators.PropogatingIterator;
+import datawave.iterators.PropagatingIterator;
 
 public abstract class AbstractTableConfigHelper implements TableConfigHelper {
 
@@ -271,7 +271,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
 
         for (IteratorScope iterScope : IteratorScope.values()) {
             if (!aggregators.isEmpty()) {
-                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + "." + AGG_ITER_NAME, AGG_ITER_PRI + "," + PropogatingIterator.class.getName());
+                props.put(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + "." + AGG_ITER_NAME, AGG_ITER_PRI + "," + PropagatingIterator.class.getName());
             }
         }
 

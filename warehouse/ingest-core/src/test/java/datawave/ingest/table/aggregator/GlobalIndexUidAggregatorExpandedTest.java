@@ -1269,13 +1269,13 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
     private Uid.List testAsPartialCompaction(List<Value> values) {
         agg.reset();
-        agg.propogate = true;
+        agg.propagate = true;
         return UidTestBuilder.valueToUidList(agg.reduce(KEY, values.iterator()));
     }
 
     private Uid.List testAsFullMajorCompaction(List<Value> values) {
         agg.reset();
-        agg.propogate = false;
+        agg.propagate = false;
         return UidTestBuilder.valueToUidList(agg.reduce(KEY, values.iterator()));
     }
 
