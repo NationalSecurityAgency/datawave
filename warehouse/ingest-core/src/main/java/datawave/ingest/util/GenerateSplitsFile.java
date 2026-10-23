@@ -8,6 +8,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 /**
@@ -42,8 +43,8 @@ public class GenerateSplitsFile {
                 System.exit(1);
             }
             if (cl.hasOption("sp")) {
-                conf.set(TableSplitsCache.SPLITS_CACHE_DIR, cl.getOptionValue("sp"));
-                log.info("Set " + TableSplitsCache.SPLITS_CACHE_DIR + " to " + cl.getOptionValue("sp"));
+                conf.set(SplitsConstants.SPLITS_CACHE_DIR, cl.getOptionValue("sp"));
+                log.info("Set " + SplitsConstants.SPLITS_CACHE_DIR + " to " + cl.getOptionValue("sp"));
             }
             if (cl.hasOption("cs")) {
                 configSuffix = cl.getOptionValue("cs");

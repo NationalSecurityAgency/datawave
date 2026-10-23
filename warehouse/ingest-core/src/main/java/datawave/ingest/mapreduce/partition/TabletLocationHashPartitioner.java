@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.partition;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
@@ -13,7 +13,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.SplitsFile;
+import datawave.ingest.mapreduce.job.SplitsCache;
 
 /**
  * The TabletLocationHashPartitioner will generate partitions for the shard table using the hashCode method on the tserver location string
@@ -22,7 +22,19 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
     private static final Logger log = Logger.getLogger(TabletLocationHashPartitioner.class);
 
     private Configuration conf;
-    private Map<String,Map<Text,Integer>> shardHashes;
+    private SplitsCache splitsCache;
+    private Map<String,Map<Text,String>> locationsByTable = new ConcurrentHashMap<>();
+
+    private Map<Text,String> getLocationsByTable(String table) throws IOException {
+        Map<Text,String> cached = locationsByTable.get(table);
+        if (cached == null) {
+            cached = splitsCache.getSplitsAndLocationByTable(table);
+            if (cached != null) {
+                locationsByTable.put(table, cached);
+            }
+        }
+        return cached;
+    }
 
     /**
      * Given a map of shard IDs to tablet server locations, this method determines a partition for a given key's shard ID. The goal is that we want to ensure
@@ -35,18 +47,23 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
      * between when the job starts and the map files are loaded, then we may end up sending multiple map files to each tablet server.
      */
     @Override
-    public synchronized int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {
+    public int getPartition(BulkIngestKey key, Value value, int numReduceTasks) {
+        Text shardId = key.getKey().getRow();
+        String tableName = key.getTableName().toString();
+        Map<Text,String> locations = null;
         try {
-            Text shardId = key.getKey().getRow();
-            Map<Text,Integer> shardHash = getShardHashes(key.getTableName().toString());
-            Integer hash = shardHash.get(shardId);
-            if (hash != null) {
-                return (hash & Integer.MAX_VALUE) % numReduceTasks;
-            } else {
-                return (shardId.hashCode() & Integer.MAX_VALUE) % numReduceTasks;
-            }
+            locations = getLocationsByTable(tableName);
         } catch (IOException e) {
+            log.error("IOException: ", e);
             throw new RuntimeException(e);
+        }
+        String location = locations != null ? locations.get(shardId) : null;
+
+        if (location != null) {
+            int hash = location.hashCode();
+            return (hash & Integer.MAX_VALUE) % numReduceTasks;
+        } else {
+            return (shardId.hashCode() & Integer.MAX_VALUE) % numReduceTasks;
         }
     }
 
@@ -58,35 +75,7 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
     @Override
     public void setConf(Configuration conf) {
         this.conf = conf;
-    }
-
-    /**
-     * hashCode of the tserver name Read in the sequence file (that was created at job startup) that contains a list of shard IDs and the corresponding tablet
-     * server to which that shard is assigned. The hash is a simple hashCode of the location string.
-     *
-     * @param tableName
-     *            the table name
-     * @throws IOException
-     *             for issues with read or write
-     * @return a mapping of the shard hashes
-     */
-    private Map<Text,Integer> getShardHashes(String tableName) throws IOException {
-        if (this.shardHashes == null) {
-            this.shardHashes = new HashMap<>();
-        }
-
-        if (null == this.shardHashes.get(tableName)) {
-            Map<Text,Integer> hashedForTable = new HashMap<>();
-
-            for (Map.Entry<Text,String> entry : SplitsFile.getSplitsAndLocations(conf, tableName).entrySet()) {
-
-                hashedForTable.put(entry.getKey(), entry.getValue().toString().hashCode());
-            }
-
-            this.shardHashes.put(tableName, hashedForTable);
-        }
-
-        return this.shardHashes.get(tableName);
+        this.splitsCache = SplitsCache.getInstance(conf);
     }
 
     @Override
