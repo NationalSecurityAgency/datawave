@@ -98,6 +98,7 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
         TypeMetadata typeMetadata = EasyMock.mock(TypeMetadata.class);
         EasyMock.expect(typeMetadata.getNormalizerNamesForField("A")).andReturn(NUMBER_TYPE);
         EasyMock.expect(typeMetadata.getNormalizerNamesForField("B")).andReturn(LC_NO_DIACRITICS_TYPE);
+        EasyMock.expect(typeMetadata.getNormalizerNamesForField("C")).andReturn(LC_NO_DIACRITICS_TYPE);
         EasyMock.expect(typeMetadata.getNormalizerNamesForField("D")).andReturn(LC_NO_DIACRITICS_TYPE);
         EasyMock.replay(typeMetadata);
         givenTypeMetadata(typeMetadata);
@@ -135,6 +136,38 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
         givenTypeMetadata(typeMetadata);
 
         expectMessage("Range values supplied for non-numeric field(s): Q");
+
+        assertResult();
+    }
+
+    @Test
+    void testNonNumericValuesForNumericFields() throws Exception {
+        givenQuery("FOO == '>60' && BAR != 'abc' && BAZ == 'xyz'");
+
+        TypeMetadata typeMetadata = EasyMock.mock(TypeMetadata.class);
+        EasyMock.expect(typeMetadata.getNormalizerNamesForField("FOO")).andReturn(NUMBER_TYPE);
+        EasyMock.expect(typeMetadata.getNormalizerNamesForField("BAR")).andReturn(NUMBER_TYPE);
+        EasyMock.expect(typeMetadata.getNormalizerNamesForField("BAZ")).andReturn(LC_NO_DIACRITICS_TYPE);
+        EasyMock.replay(typeMetadata);
+        givenTypeMetadata(typeMetadata);
+
+        expectMessage("Non-numeric values supplied for numeric field(s): FOO, BAR");
+
+        assertResult();
+    }
+
+    @Test
+    void testBothDirectionsReportedTogether() throws Exception {
+        givenQuery("FOO == 'abc' && BAR > 5");
+
+        TypeMetadata typeMetadata = EasyMock.mock(TypeMetadata.class);
+        EasyMock.expect(typeMetadata.getNormalizerNamesForField("FOO")).andReturn(NUMBER_TYPE);
+        EasyMock.expect(typeMetadata.getNormalizerNamesForField("BAR")).andReturn(LC_NO_DIACRITICS_TYPE);
+        EasyMock.replay(typeMetadata);
+        givenTypeMetadata(typeMetadata);
+
+        expectMessage("Range values supplied for non-numeric field(s): BAR");
+        expectMessage("Non-numeric values supplied for numeric field(s): FOO");
 
         assertResult();
     }
