@@ -105,13 +105,13 @@ public class GenerateShardSplits {
                     System.exit(-2);
                 }
                 try {
-                    splitsPerBatch = Integer.parseInt(args[i]);
+                    splitsPerBatch = Integer.parseInt(args[++i]);
                     if (splitsPerBatch < 0) {
                         System.out.println("splitsPerBatch cannot be less than 0");
                         System.exit(-2);
                     }
                 } catch (NumberFormatException e) {
-                    System.out.println("splitsPerBatch delay argument is not an integer:" + e.getMessage());
+                    System.out.println("splitsPerBatch argument is not an integer:" + e.getMessage());
                     System.exit(-2);
                 }
             } else if ("-balancerDelay".equalsIgnoreCase(args[i])) {
@@ -143,7 +143,11 @@ public class GenerateShardSplits {
                     System.exit(-2);
                 }
                 try {
-                    pctBatchBalanceRequired = Integer.parseInt(args[++i]);
+                    pctBatchBalanceRequired = Double.parseDouble(args[++i]);
+                    if (pctBatchBalanceRequired < 0 || pctBatchBalanceRequired > 1) {
+                        System.err.println("-pctBatchBalanceRequired must be between 0 and 1");
+                        System.exit(-2);
+                    }
                 } catch (NumberFormatException e) {
                     System.err.println(
                                     "-pctBatchBalanceRequired must be followed a double of the percentage of batch size that must be on a different server to continue");
