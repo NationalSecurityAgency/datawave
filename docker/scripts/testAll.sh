@@ -28,11 +28,11 @@ runTest () {
         echo
 
         attempt_start_time=$(date +%s%N)
-        QUERY_RESPONSE="$(timeout ${QUERY_TIMEOUT} ${SCRIPT_DIR}/$1)"
-        attempt_end_time=$(date +%s%N)
+        QUERY_RESPONSE="$(timeout "${QUERY_TIMEOUT}" "${SCRIPT_DIR}/$1")"
         EXIT_CODE=$?
+        attempt_end_time=$(date +%s%N)
 
-        if [[ "$QUERY_RESPONSE" == *"Returned $2 events"* ]] ; then
+        if [ "$EXIT_CODE" -eq 0 ] && [[ "$QUERY_RESPONSE" == *"Returned $2 events"* ]] ; then
             if [ ! -z "$3" ] ; then
                 if [[ "$QUERY_RESPONSE" == *"Returned $3 pages"* ]] ; then
                     TEST_STATUS="${LABEL_PASS} -> Returned $2 events and $3 pages" && TESTS_PASSED="${TESTS_PASSED} $1"
@@ -70,6 +70,12 @@ runTest () {
             if [ $EXIT_CODE == 124 ] ; then
                 TEST_STATUS="${LABEL_FAIL} -> Query timed out after ${QUERY_TIMEOUT}"
                 printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
+            elif [ "$EXIT_CODE" -ne 0 ] ; then
+                TEST_STATUS="${LABEL_FAIL} -> Query command exited with status ${EXIT_CODE}"
+                printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
+                echo "Query Response:"
+                echo "$QUERY_RESPONSE"
+                echo "----------------"
             else
                 TEST_STATUS="${LABEL_FAIL} -> Unexpected number of events returned: Expected $2 events."
                 printTestStatus "$attempt_start_time" "$attempt_end_time" "$TEST_STATUS"
@@ -190,12 +196,16 @@ runTest query.sh 12 2
 #runTest mapReduceQuery.sh 12 2
 #runTest oozieQuery.sh 0 0
 
-# Gives option to skip the cleanup stage
-if [ "${1}" == "-noCleanup" ] ; then
-    printTestSummary
-    exit 0
+printTestSummary
+CLEANUP_EXIT_CODE=0
+if [ "${1}" != "-noCleanup" ] ; then
+    # Only passed-test logs are deleted; failed-test evidence remains.
+    "$SCRIPT_DIR"/cleanup.sh "${TESTS_PASSED}"
+    CLEANUP_EXIT_CODE=$?
 fi
 
-printTestSummary
-# The cleanup script will only delete the logs for tests that passed. Failed test logs will remain.
-"$SCRIPT_DIR"/cleanup.sh "${TESTS_PASSED}"
+# Cleanup must not mask assertion failures, even when it is skipped.
+if [ -n "${TEST_FAILURES}" ] ; then
+    exit 1
+fi
+exit "$CLEANUP_EXIT_CODE"
