@@ -25,6 +25,7 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
+import datawave.webservice.query.runner.RunningQuery.RunningQueryTiming;
 
 public class QueryExpirationBeanTest {
 
@@ -112,6 +113,30 @@ public class QueryExpirationBeanTest {
 
         // Verify the query is removed.
         verifyQueryRemoved(query, DatawaveErrorCode.QUERY_TIMEOUT);
+    }
+
+    @Test
+    public void testNullQueryTimingDoesNotDisableGlobalTimeout() throws Exception {
+        RunningQuery query = createNextTooLongQuery();
+        when(query.getTiming()).thenReturn(null);
+        when(queryLimiter.getActiveQueries()).thenReturn(Set.of());
+        bean.removeIdleOrExpired();
+        verifyQueryRemoved(query, DatawaveErrorCode.QUERY_TIMEOUT);
+    }
+
+    @Test
+    public void testRequestPartialPageBeforeGlobalTimeout() throws Exception {
+        RunningQuery query = createBaseQuery();
+        RunningQueryTiming timing = Mockito.mock(RunningQueryTiming.class);
+        when(timing.getPageShortCircuitTimeoutMs()).thenReturn(1000L);
+        when(query.getTiming()).thenReturn(timing);
+        when(query.hasActiveCall()).thenReturn(true);
+        when(query.getTimeOfCurrentCall()).thenReturn(System.currentTimeMillis() - 5000);
+        when(query.getCurrentPageCount()).thenReturn(1);
+        when(queryLimiter.getActiveQueries()).thenReturn(Set.of());
+        bean.removeIdleOrExpired();
+        verify(query).attemptForcedPageReturn();
+        verifyQueryNotRemoved(query);
     }
 
     /**

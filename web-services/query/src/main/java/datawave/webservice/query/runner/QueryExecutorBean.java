@@ -1495,7 +1495,7 @@ public class QueryExecutorBean implements QueryExecutor {
         testForUncaughtException(query.getSettings(), resultsPage);
 
         // If the query is finished, stop counting it towards query limits.
-        if (resultsPage.getStatus() == ResultsPage.Status.COMPLETE || resultsPage.getStatus() == ResultsPage.Status.NONE) {
+        if (query.isFinished() || resultsPage.getStatus() == ResultsPage.Status.NONE) {
             markQueryAsInactive(queryId);
         }
 

@@ -221,6 +221,11 @@ public class QueryExpirationBean {
                             + "s.  We are evicting this query from the cache.");
             return true;
         } else {
+            // Optional per-query timing controls early page returns, never the global call deadline above.
+            if (query.getTiming() != null && query.getCurrentPageCount() > 0
+                            && difference > Math.min(config.getShortCircuitTimeoutMillis(), query.getTiming().getPageShortCircuitTimeoutMs())) {
+                query.attemptForcedPageReturn();
+            }
             if (log.isDebugEnabled()) {
                 log.debug("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
                                 + "s.");

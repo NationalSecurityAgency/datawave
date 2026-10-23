@@ -3,6 +3,7 @@ package datawave.webservice.query.runner;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.eq;
@@ -47,6 +48,7 @@ import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnProperties;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
@@ -411,14 +413,11 @@ public class ExtendedRunningQueryTest {
         subject.setExecutor(executor);
         subject.cancel();
         boolean result1 = subject.isCanceled();
-        ResultsPage result2 = subject.next();
+        assertThrows(QueryException.class, subject::next);
 
         // Verify results
         assertTrue(result1, "Expected isCanceled() to return true");
 
-        assertNotNull(result2, "Expected a non-null page");
-        assertNotNull(result2.getResults(), "Expected a non-null list of results");
-        assertTrue(result2.getResults().isEmpty(), "Expected an empty list of results");
         assertEquals(QueryMetric.Lifecycle.CANCELLED, subject.getMetric().getLifecycle(), "Expected status to be cancelled");
     }
 

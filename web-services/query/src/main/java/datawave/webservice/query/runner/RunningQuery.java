@@ -6,13 +6,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
@@ -28,7 +23,6 @@ import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
-import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.core.query.predict.QueryPredictor;
 import datawave.microservice.query.Query;
@@ -65,20 +59,26 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private transient QueryLogic<?> logic = null;
     private Query settings = null;
     private long numResults = 0;
-    private long lastPageNumber = 0;
+    private volatile long lastPageNumber = 0;
     private volatile transient TransformIterator iter = null;
     private Set<Authorizations> calculatedAuths = null;
     private volatile boolean finished = false;
     private volatile boolean canceled = false;
     private transient QueryMetricsBean queryMetrics = null;
     private transient RunningQueryTiming timing = null;
-    private ExecutorService executor = null;
-    private volatile Future<Object> future = null;
-    private final BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(1);
-    private volatile Exception resultsThreadException = null;
-    private final AtomicInteger hasNext = new AtomicInteger(0);
-    private final AtomicInteger gotNext = new AtomicInteger(0);
-    private final AtomicBoolean running = new AtomicBoolean(false);
+    private transient ExecutorService executor = null;
+    private transient volatile ResultsSource source;
+    private transient volatile ResultsSource.PageRequest currentPage;
+    private transient volatile Thread currentThread;
+    private transient volatile Throwable terminalFailure;
+    private final AtomicBoolean nextInProgress = new AtomicBoolean();
+    private volatile int currentPageCount;
+    private volatile boolean closed;
+    private boolean initializing;
+    private boolean hasExecution;
+    private boolean logicClosed;
+    private boolean cardinalitiesWritten;
+    private transient QueryMetricFactory metricFactory;
     private QueryPredictor predictor = null;
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
@@ -87,6 +87,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
+        metricFactory = new QueryMetricFactoryImpl();
     }
 
     public RunningQuery(AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths,
@@ -112,13 +113,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, QueryMetricFactory metricFactory)
                     throws Exception {
-        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, null, null, metricFactory);
+        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, predictor, null, metricFactory);
     }
 
     public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, UserOperations userOperations,
                     QueryMetricFactory metricFactory) throws Exception {
         super(metricFactory);
+        this.metricFactory = metricFactory;
         if (logic != null && logic.getCollectQueryMetrics()) {
             this.queryMetrics = queryMetrics;
         }
@@ -168,24 +170,32 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     public static RunningQuery createQueryWithAuthorizations(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority,
                     QueryLogic<?> logic, Query settings, String methodAuths, RunningQueryTiming timing, QueryPredictor predictor,
                     QueryMetricFactory metricFactory) throws Exception {
-        RunningQuery runningQuery = new RunningQuery(queryMetrics, client, priority, logic, settings, methodAuths, null, timing, predictor, metricFactory);
-        runningQuery.calculatedAuths = Collections.singleton(new Authorizations(methodAuths));
+        RunningQuery runningQuery = new RunningQuery(queryMetrics, null, priority, logic, settings, methodAuths, null, timing, predictor, metricFactory);
+        runningQuery.calculatedAuths = WSAuthorizationsUtil
+                        .buildAuthorizations(methodAuths == null ? null : Collections.singleton(WSAuthorizationsUtil.splitAuths(methodAuths)));
+        if (client != null) {
+            runningQuery.setClient(client);
+        }
         return runningQuery;
     }
 
-    private void addNDC() {
+    private boolean addNDC() {
         String user = this.settings.getUserDN();
         UUID uuid = this.settings.getId();
         if (user != null && uuid != null) {
             NDC.push("[" + user + "] [" + uuid + "]");
+            return true;
+        }
+        return false;
+    }
+
+    private void removeNDC(boolean pushed) {
+        if (pushed) {
+            NDC.pop();
         }
     }
 
-    private void removeNDC() {
-        NDC.pop();
-    }
-
-    public void setClient(AccumuloClient client) throws Exception {
+    public synchronized void setClient(AccumuloClient client) throws Exception {
         // if we are setting this null, we shouldn't try to initialize
         // the internal logic
         if (client == null) {
@@ -193,8 +203,47 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             return;
         }
 
+        synchronized (nextInProgress) {
+            if (nextInProgress.get()) {
+                throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Cannot reset during a next call");
+            }
+            if (this.client != null && hasExecution) {
+                throw new IllegalStateException("Close the existing connection before resetting the query");
+            }
+            if (source != null) {
+                source.cancel();
+                if (!source.awaitStopped(5000)) {
+                    throw new QueryException(DatawaveErrorCode.CLOSE_ERROR, "Previous results reader has not stopped");
+                }
+            }
+            if (hasExecution) {
+                settings.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
+                if (metricFactory == null) {
+                    metricFactory = new QueryMetricFactoryImpl();
+                }
+                this.metric = metricFactory.createMetric();
+                this.metric.populate(settings);
+                this.metric.setQueryType(getClass().getSimpleName());
+                maxResults = logic.getResultLimit(settings);
+            }
+            hasExecution = true;
+            source = null;
+            iter = null;
+            terminalFailure = null;
+            finished = false;
+            canceled = false;
+            closed = false;
+            logicClosed = false;
+            cardinalitiesWritten = false;
+            numResults = 0;
+            lastPageNumber = 0;
+            currentTimeoutcount = 0;
+            initializing = true;
+        }
+
+        boolean ndcPushed = false;
         try {
-            addNDC();
+            ndcPushed = addNDC();
             applyPrediction(null);
             this.client = client;
             if (this.client instanceof WrappedAccumuloClient && this.logic.getClientConfig() != null) {
@@ -216,7 +265,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.getMetric().setLifecycle(QueryMetric.Lifecycle.INITIALIZED);
             testForUncaughtException(0);
             // TODO: applyPrediction("Plan");
-        } catch (Exception e) {
+        } catch (Exception | Error e) {
+            terminalFailure = e;
             log.error(e.getMessage(), e);
             if (this.logic instanceof BaseQueryLogic && this.logic.getCollectQueryMetrics() && null != this.getMetric()) {
                 GenericQueryConfiguration config = ((BaseQueryLogic) this.logic).getConfig();
@@ -229,7 +279,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         } finally {
             // update AbstractRunningQuery.lastUsed in case this operation took a long time
             touch();
-            removeNDC();
+            removeNDC(ndcPushed);
+            synchronized (nextInProgress) {
+                initializing = false;
+            }
             if (this.queryMetrics != null) {
                 try {
                     this.queryMetrics.updateMetric(this.getMetric());
@@ -238,93 +291,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         }
-    }
-
-    /**
-     * This is the results thread which will pull results from the iterator and add them to a blocking queue. The blocking queue will be of size 1 which means
-     * that the main RunningQuery.next() loop will have to pull the results before the next one can be retrieved. The hasNext and gotNext counters keep track of
-     * the calls to hasNext and next on the underlying iterator. They will be decremented once a result is acknowledged in the RunningQuery.next() loop. The
-     * running boolean will allow the graceful termination of this thread.
-     *
-     * @return running (with a value of false)
-     */
-    private Object getResultsThread() {
-        try {
-            while (running.get() && !this.finished && !this.canceled && this.iter.hasNext()) {
-                synchronized (hasNext) {
-                    hasNext.incrementAndGet();
-                    hasNext.notifyAll();
-                }
-                // wait until the queue is emptied
-                if (log.isDebugEnabled()) {
-                    log.debug(this.settings.getId() + " : Waiting for resultsThreadQueue to be emptied or termination");
-                }
-                while (running.get() && !this.finished && !this.canceled && !resultsThreadQueue.isEmpty()) {
-                    try {
-                        Thread.sleep(1);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
-                    }
-                }
-                // if the queue is available and we are still running, then get the next result
-                if (running.get() && !this.finished && !this.canceled && resultsThreadQueue.isEmpty()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(this.settings.getId() + " : Get next async result");
-                    }
-                    Object o = this.iter.next();
-                    if (o != null) {
-                        if (log.isDebugEnabled()) {
-                            log.debug(this.settings.getId() + " : Offering result to resultsThreadQueue");
-                        }
-                        resultsThreadQueue.offer(o);
-                        synchronized (gotNext) {
-                            gotNext.incrementAndGet();
-                            gotNext.notifyAll();
-                        }
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug(this.settings.getId() + " : Null result returned");
-                        }
-                    }
-
-                    // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
-                    if (iter.getTransformer() instanceof WritesQueryMetrics) {
-                        ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
-                    }
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug(this.settings.getId() + " : running:" + running.get() + " finished:" + this.finished + " canceled:" + this.canceled);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error(this.settings.getId() + " : Results thread exception", e);
-            resultsThreadException = e;
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
-            if (settings.getUncaughtExceptionHandler() != null) {
-                settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
-            }
-            running.set(false);
-            synchronized (hasNext) {
-                hasNext.notifyAll();
-            }
-            synchronized (gotNext) {
-                gotNext.notifyAll();
-            }
-        }
-
-        running.set(false);
-        synchronized (hasNext) {
-            hasNext.notifyAll();
-        }
-        synchronized (gotNext) {
-            gotNext.notifyAll();
-        }
-
-        return running;
     }
 
     public boolean isUseResultsThread() {
@@ -332,340 +298,218 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     }
 
     public void setUseResultsThread(boolean useResultsThread) {
-        this.useResultsThread = useResultsThread;
+        synchronized (nextInProgress) {
+            if (source != null) {
+                throw new IllegalStateException("Cannot change result delivery during an execution");
+            }
+            this.useResultsThread = useResultsThread;
+        }
     }
 
     /**
-     * This method is used to determine if we have a next result. This will throw a timeout exception if the page short circuit limit is reached.
-     *
-     * @param pageStartTime
-     *            the page start time
-     * @return true if hasNext()
-     * @throws TimeoutException
-     *             if there is a timeout
+     * Request, rather than infer, an early return of this page. The request survives notification before the consumer starts waiting.
      */
-    private boolean hasNext(long pageStartTime) throws TimeoutException {
-        if (useResultsThread && executor != null) {
-            synchronized (hasNext) {
-                if (hasNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
-                    long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
-                                    : Long.MAX_VALUE);
-                    try {
-                        if (log.isDebugEnabled()) {
-                            log.debug("hasNext waiting for " + timeout + " ms");
-                        }
-                        hasNext.wait(timeout);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        // if we got interrupted, then just return false
-                        return false;
-                    }
-                    if (resultsThreadException != null) {
-                        if (resultsThreadException instanceof RuntimeException) {
-                            throw (RuntimeException) resultsThreadException;
-                        } else {
-                            throw new RuntimeException(resultsThreadException);
-                        }
-                    }
-                    if (running.get() && (hasNext.get() == 0)) {
-                        throw new TimeoutException("hasNext timed out");
-                    }
-                }
-                if (hasNext.get() == 0) {
-                    log.debug("hasNext returned false.  No more results");
-                    return false;
-                } else {
-                    return true;
-                }
-            }
-        } else {
-            if (!this.finished && !this.canceled && this.iter.hasNext()) {
-                hasNext.incrementAndGet();
-                return true;
-            } else {
-                return false;
+    public void attemptForcedPageReturn() {
+        synchronized (nextInProgress) {
+            if (hasActiveCall() && nextInProgress.get() && currentPageCount > 0 && source != null) {
+                source.requestPageReturn(currentPage);
             }
         }
     }
 
     /**
-     * This method will get the next object from the results thread queue. This presumes that hasNext has returned true. A timeout exception will be thrown if
-     * the page short circuit timeout has been reached.
-     *
-     * @param pageStartTime
-     *            the page start time
-     * @return the next object (could be null)
-     * @throws TimeoutException
-     *             if there is a timeout
-     */
-    private Object getNext(long pageStartTime) throws TimeoutException {
-        if (useResultsThread && executor != null) {
-            synchronized (gotNext) {
-                if (gotNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
-                    long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
-                                    : Long.MAX_VALUE);
-                    try {
-                        if (log.isDebugEnabled()) {
-                            log.debug("getNext waiting for " + timeout + " ms");
-                        }
-                        gotNext.wait(timeout);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        // if we got interrupted, then just return null
-                        return null;
-                    }
-                    if (running.get() && (gotNext.get() == 0)) {
-                        throw new TimeoutException("gotNext timed out");
-                    }
-                }
-                return resultsThreadQueue.poll();
-            }
-        } else {
-            Object o = iter.next();
-            gotNext.incrementAndGet();
-
-            // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
-            if (iter.getTransformer() instanceof WritesQueryMetrics) {
-                ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
-            }
-
-            return o;
-        }
-    }
-
-    /**
-     * terminate the results thread.
+     * Signal the reader to stop. closeConnection also closes its resources and verifies that it has actually stopped before returning the client.
      */
     public void terminateResultsThread() {
-        running.set(false);
-        if (future != null) {
-            future.cancel(false);
-            while (!future.isDone()) {
-                future.cancel(true);
+        synchronized (nextInProgress) {
+            if (source != null) {
+                source.cancel();
             }
-            future = null;
         }
     }
 
-    /**
-     * Get the next results page
-     *
-     * @return a results page.
-     * @throws Exception
-     *             if there are issues
-     */
     public ResultsPage next() throws Exception {
-        // update AbstractRunningQuery.lastUsed
-        touch();
-        long pageStartTime = System.currentTimeMillis();
-        if (log.isDebugEnabled()) {
-            log.debug("Starting next call at " + pageStartTime);
+        synchronized (nextInProgress) {
+            if (initializing || !nextInProgress.compareAndSet(false, true)) {
+                throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Query setup or a next call is already in progress");
+            }
         }
-        this.logic.setPageProcessingStartTime(pageStartTime);
-        List<Object> resultList = new ArrayList<>();
-        boolean hitIntermediateResult = false;
-        boolean hitShortCircuitForLongRunningQuery = false;
-
-        int currentPageCount = 0;
-        long currentPageBytes = 0;
-        int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
-
+        ResultsSource resultsSource = null;
+        ResultsSource.PageRequest request = null;
+        boolean ndcPushed = false;
         try {
-            addNDC();
-
-            // test for any exceptions prior to loop as hasNext() would likely be false;
-            testForUncaughtException(resultList.size());
-
-            // start up the results thread if needed
-            if (useResultsThread && future == null && executor != null && !this.canceled && !this.finished) {
-                running.set(true);
-                future = executor.submit(() -> getResultsThread());
+            touch();
+            long startTime = System.currentTimeMillis();
+            currentThread = Thread.currentThread();
+            this.logic.setPageProcessingStartTime(startTime);
+            ndcPushed = addNDC();
+            testForUncaughtException(0);
+            checkExecution();
+            List<Object> results = new ArrayList<>();
+            PagePolicy policy = new PagePolicy(settings, logic, maxResults, timing);
+            PageStopReason reason = finished ? PageStopReason.EXHAUSTED : null;
+            if (reason == null) {
+                synchronized (nextInProgress) {
+                    checkExecution();
+                    if (source == null) {
+                        source = useResultsThread && executor != null ? new AsyncResultsSource(iter, executor) : new DirectResultsSource(iter);
+                    }
+                    resultsSource = source;
+                    request = resultsSource.beginPage(timing == null ? Long.MAX_VALUE : timing.getPageShortCircuitTimeoutMs());
+                    currentPage = request;
+                }
             }
-
-            try {
-                while (!this.finished && hasNext(pageStartTime)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("hasNext(" + pageStartTime + ") returned");
-                    }
-                    // if we are canceled, then break out
-                    if (this.canceled) {
-                        log.info("Query has been cancelled, aborting query.next call");
-                        this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
-                        break;
-                    }
-                    // if the number of results has reached our page size, then break out
-                    if (currentPageCount >= this.settings.getPagesize()) {
-                        log.info("Query requested page size had been reached, aborting query.next call");
-                        break;
-                    }
-                    // if the logic had a max page size, and we have reached that, then break out
-                    if (this.logic.getMaxPageSize() > 0 && currentPageCount >= this.logic.getMaxPageSize()) {
-                        log.info("Query logic max page size has been reached, aborting query.next call");
-                        break;
-                    }
-                    // if the logic had a page byte trigger, and we have reached that, then break out
-                    if (this.logic.getPageByteTrigger() > 0 && currentPageBytes >= this.logic.getPageByteTrigger()) {
-                        log.info("Query logic max page byte trigger has been reached, aborting query.next call");
-                        break;
-                    }
-                    // if the logic had a max num results (across all pages) and we have reached that (or the maxResultsOverride if set), then break out
-                    if (this.settings.isMaxResultsOverridden()) {
-                        if (this.settings.getMaxResultsOverride() >= 0 && numResults >= this.settings.getMaxResultsOverride()) {
-                            log.info("Max results override has been reached, aborting query.next call");
-                            this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
-                            break;
-                        }
-                    } else if (this.maxResults >= 0 && numResults >= this.maxResults) {
-                        log.info("Query logic max results has been reached, aborting query.next call");
-                        this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
-                        break;
-                    }
-                    if (this.logic.getMaxWork() >= 0 && (this.getMetric().getNextCount() + this.getMetric().getSeekCount()) >= this.logic.getMaxWork()) {
-                        log.info("Query logic max work has been reached, aborting query.next call");
-                        this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXWORK);
-                        break;
-                    }
-                    // if we are the specified amount on the way to timing out on this call and we have results,
-                    // determine whether we are on track to having enough results
-                    // use the pagestart time for the time in call since we only care about the execution time of
-                    // this page.
-                    long pageTimeInCall = (System.currentTimeMillis() - pageStartTime);
-
-                    if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
-                        log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
-                                        + pageTimeInCall + " " + timing);
-                        break;
-                    }
-
-                    // now get the next object
-                    Object o = getNext(pageStartTime);
-                    if (log.isDebugEnabled()) {
-                        log.debug("getNext(" + pageStartTime + ") returned with " + (o == null ? "null" : "result"));
-                    }
-
-                    // now that we got the next object, acknowledge via the counters
-                    gotNext.decrementAndGet();
-                    hasNext.decrementAndGet();
-
-                    if (o instanceof EventBase && ((EventBase) o).isIntermediateResult()) {
-                        log.info("Received an intermediate result");
-                        // in this case we have timed out up stream somewhere, so lets return what we have
-                        hitIntermediateResult = true;
-                        break;
-                    }
-
-                    if (null == o) {
-                        log.debug("Null result encountered, no more results");
-                        this.finished = true;
-                        terminateResultsThread();
-                        break;
-                    }
-
-                    resultList.add(o);
-                    if (this.logic.getPageByteTrigger() > 0) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Determining size of object");
-                        }
-                        currentPageBytes += ObjectSizeOf.Sizer.getObjectSize(o);
-                        if (log.isDebugEnabled()) {
-                            log.debug("Current page is up to " + currentPageBytes + " bytes");
-                        }
-                    }
-                    currentPageCount++;
+            long pageBytes = 0;
+            while (reason == null) {
+                checkExecution();
+                resultsSource.checkFailure();
+                resultsSource.flushMetrics(getMetric());
+                reason = policy.beforeRead(results.size(), pageBytes, numResults, getMetric());
+                if (reason != null) {
+                    break;
+                }
+                ResultsSource.Attempt attempt;
+                try {
+                    attempt = resultsSource.poll(request);
+                } finally {
+                    resultsSource.flushMetrics(getMetric());
+                }
+                if (attempt.outcome == ResultsSource.Outcome.EXHAUSTED) {
+                    reason = PageStopReason.EXHAUSTED;
+                } else if (attempt.outcome == ResultsSource.Outcome.DEADLINE) {
+                    reason = PageStopReason.DEADLINE;
+                } else if (attempt.outcome == ResultsSource.Outcome.FORCED) {
+                    reason = PageStopReason.FORCED;
+                } else if (attempt.result instanceof EventBase && ((EventBase) attempt.result).isIntermediateResult()) {
+                    reason = PageStopReason.INTERMEDIATE;
+                } else {
+                    results.add(attempt.result);
                     numResults++;
-
-                    testForUncaughtException(resultList.size());
+                    currentPageCount = results.size();
+                    if (policy.countBytes()) {
+                        pageBytes += ObjectSizeOf.Sizer.getObjectSize(attempt.result);
+                    }
                 }
-            } catch (TimeoutException te) {
-                log.info("Hit the timeout waiting for a result");
-                // This means the iter.hasNext() call didn't return within the allotted time. If this is a long running query,
-                // then we want to signal that the caller should call next to keep going (as opposed to just returning the
-                // page as COMPLETE)
-                if (allowIntermediateEmptyPages) {
-                    log.info("Short circuiting the long running query");
-                    hitShortCircuitForLongRunningQuery = true;
-                } else if (resultList.isEmpty()) {
-                    log.warn("Query timed out waiting for next result");
-                    terminateResultsThread();
-                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for next result");
-                }
+                testForUncaughtException(results.size());
             }
-            // if the last hasNext() call failed, then we would catch the exception here
-            testForUncaughtException(resultList.size());
-
-            // Update the metric
+            checkExecution();
+            if (resultsSource != null) {
+                resultsSource.checkFailure();
+            }
+            testForUncaughtException(results.size());
+            ResultsPage page = resultsPage(reason, results);
+            if (reason.terminal) {
+                finished = true;
+                terminateResultsThread();
+            }
             long now = System.currentTimeMillis();
-            this.getMetric().addPageTime(currentPageCount, now - pageStartTime, pageStartTime, now);
-            // check the query plan for updates
+            getMetric().addPageTime(results.size(), now - startTime, startTime, now);
             if (logic instanceof BaseQueryLogic) {
-                BaseQueryLogic baseLogic = (BaseQueryLogic) logic;
+                BaseQueryLogic<?> baseLogic = (BaseQueryLogic<?>) logic;
                 if (baseLogic.getConfig() != null && !StringUtils.isEmpty(baseLogic.getConfig().getQueryString())) {
-                    this.getMetric().setPlan(baseLogic.getConfig().getQueryString());
+                    getMetric().setPlan(baseLogic.getConfig().getQueryString());
                 }
             }
-            this.lastPageNumber++;
-            if (!resultList.isEmpty()) {
-                this.getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);
+            lastPageNumber++;
+            if (reason.lifecycle != null) {
+                getMetric().setLifecycle(reason.lifecycle);
+            } else if (!results.isEmpty()) {
+                getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);
             }
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            this.getMetric().setError(e);
+            return page;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            QueryException failure = new QueryException(DatawaveErrorCode.QUERY_CANCELED, e);
+            terminalFailure = failure;
+            canceled = true;
+            getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
+            getMetric().setError(failure);
+            terminateResultsThread();
+            throw failure;
+        } catch (Exception | Error e) {
+            terminalFailure = e;
+            getMetric().setError(e);
             terminateResultsThread();
             throw e;
         } finally {
-            // update AbstractRunningQuery.lastUsed in case this operation took a long time
-            touch();
-            removeNDC();
-
-            if (this.queryMetrics != null) {
-                try {
-                    this.queryMetrics.updateMetric(this.getMetric());
-                } catch (Exception e) {
-                    log.error(e.getMessage(), e);
+            synchronized (nextInProgress) {
+                if (resultsSource != null) {
+                    resultsSource.endPage(request);
                 }
+                currentPage = null;
+                currentPageCount = 0;
+                currentThread = null;
+            }
+            try {
+                touch();
+                removeNDC(ndcPushed);
+                updateQueryMetrics();
+            } finally {
+                nextInProgress.set(false);
             }
         }
+    }
 
-        if (!resultList.isEmpty()) {
-            log.info("Returning page of results");
-            // we have results!
-            // we also indicate whether we returned less than the requested page size in the response
-            return new ResultsPage(resultList, ((hasNext.get() > 0 && numResults < this.maxResults && currentPageCount < maxPageSize) || hitIntermediateResult
-                            || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE);
-        } else {
-            // we have no results. Let us determine whether we are done or not.
+    private void checkExecution() throws Exception {
+        if (terminalFailure != null) {
+            ResultsSource.rethrow(terminalFailure);
+        }
+        if (canceled || closed) {
+            throw new QueryException(DatawaveErrorCode.QUERY_CANCELED);
+        }
+        if (Thread.currentThread().isInterrupted()) {
+            throw new InterruptedException("Query page retrieval interrupted");
+        }
+    }
 
-            // if we have hit an intermediate result or a short circuit then check to see how many times we hit this
-            if (hitIntermediateResult || hitShortCircuitForLongRunningQuery) {
-                currentTimeoutcount++;
-                if (timing != null && currentTimeoutcount == timing.getMaxLongRunningTimeoutRetries()) {
-                    log.warn("Query timed out waiting for results for too many ( " + currentTimeoutcount + ") cycles.");
-                    terminateResultsThread();
-                    // this means that we have timed out waiting for a result too many times over the course of this query.
-                    // In this case we need to fail the next call with a timeout
-                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT,
-                                    "Query timed out waiting for results for too many (" + currentTimeoutcount + ") cycles.");
-                } else {
-                    log.info("Returning an empty partial results page");
-                    // We are returning an empty page with a PARTIAL status to allow the query to continue running
-                    return new ResultsPage(new ArrayList<>(), ResultsPage.Status.PARTIAL);
-                }
-            } else {
-                log.info("Returning final empty page");
-                terminateResultsThread();
-                // This query is done, we have no more results to return.
-                return new ResultsPage(Collections.emptyList(), ResultsPage.Status.NONE);
+    private ResultsPage resultsPage(PageStopReason reason, List<Object> results) throws QueryException {
+        if (!results.isEmpty()) {
+            return new ResultsPage(results, reason.status);
+        }
+        if (reason == PageStopReason.DEADLINE || reason == PageStopReason.INTERMEDIATE) {
+            if (reason == PageStopReason.DEADLINE && !allowIntermediateEmptyPages) {
+                throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for a result");
+            }
+            // Preserve the existing execution-wide retry budget, including intermediate markers.
+            currentTimeoutcount++;
+            int retries = timing == null ? 0 : timing.getMaxLongRunningTimeoutRetries();
+            if (retries > 0 && currentTimeoutcount >= retries) {
+                throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT,
+                                "Query timed out waiting for results for too many (" + currentTimeoutcount + ") cycles");
+            }
+            return new ResultsPage(results, ResultsPage.Status.PARTIAL);
+        }
+        return new ResultsPage(results, reason.terminal ? ResultsPage.Status.NONE : reason.status);
+    }
+
+    private void updateQueryMetrics() {
+        if (queryMetrics != null) {
+            try {
+                queryMetrics.updateMetric(getMetric());
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
             }
         }
     }
 
     public void cancel() {
-        this.canceled = true;
+        synchronized (nextInProgress) {
+            canceled = true;
+            getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
+            terminateResultsThread();
+        }
+    }
 
-        terminateResultsThread();
+    public int getCurrentPageCount() {
+        return currentPageCount;
+    }
 
-        // change status to cancelled
-        this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
+    public Thread getCurrentThread() {
+        return currentThread;
+    }
+
+    public RunningQueryTiming getTiming() {
+        return timing;
     }
 
     public boolean isFinished() {
@@ -727,39 +571,66 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         }
     }
 
-    public void closeConnection(AccumuloConnectionFactory factory) throws Exception {
-        this.getMetric().setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
-
-        if (iter != null && iter.getTransformer() instanceof WritesResultCardinalities) {
-            ((WritesResultCardinalities) iter.getTransformer()).writeResultCardinalities();
+    public synchronized void closeConnection(AccumuloConnectionFactory factory) throws Exception {
+        ResultsSource resultsSource;
+        synchronized (nextInProgress) {
+            closed = true;
+            resultsSource = source;
+            terminateResultsThread();
         }
-
-        if (client != null) {
-            try {
-                factory.returnClient(client);
-                client = null;
-            } finally {
-                // only push metrics if this RunningQuery was initialized
-                if (this.queryMetrics != null) {
+        Throwable failure = null;
+        boolean ndcPushed = false;
+        try {
+            ndcPushed = addNDC();
+            getMetric().setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
+            if (logic != null && !logicClosed) {
+                try {
+                    // Closing scanners can unblock an iterator that does not respond to interruption.
+                    logic.close();
+                    logicClosed = true;
+                } catch (Throwable t) {
+                    failure = t;
+                }
+            }
+            boolean stopped = resultsSource == null || resultsSource.awaitStopped(5000);
+            if (!stopped) {
+                failure = appendFailure(failure, new QueryException(DatawaveErrorCode.CLOSE_ERROR,
+                                "Results reader has not stopped; retaining its client until cleanup can complete"));
+            } else {
+                if (!cardinalitiesWritten && iter != null && iter.getTransformer() instanceof WritesResultCardinalities) {
                     try {
-                        queryMetrics.updateMetric(this.getMetric());
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
+                        ((WritesResultCardinalities) iter.getTransformer()).writeResultCardinalities();
+                        cardinalitiesWritten = true;
+                    } catch (Throwable t) {
+                        failure = appendFailure(failure, t);
+                    }
+                }
+                if (client != null) {
+                    try {
+                        factory.returnClient(client);
+                        client = null;
+                    } catch (Throwable t) {
+                        failure = appendFailure(failure, t);
                     }
                 }
             }
+        } finally {
+            removeNDC(ndcPushed);
+            updateQueryMetrics();
         }
+        if (failure != null) {
+            ResultsSource.rethrow(failure);
+        }
+    }
 
-        if (logic != null) {
-            try {
-                addNDC();
-                logic.close();
-            } catch (Exception e) {
-                log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
-            } finally {
-                removeNDC();
-            }
+    private static Throwable appendFailure(Throwable first, Throwable next) {
+        if (first == null) {
+            return next;
         }
+        if (first != next) {
+            first.addSuppressed(next);
+        }
+        return first;
     }
 
     @Override

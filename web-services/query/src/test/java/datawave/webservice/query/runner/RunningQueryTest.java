@@ -7,7 +7,6 @@ import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
@@ -235,18 +234,15 @@ public class RunningQueryTest {
         RunningQuery rq = new RunningQuery(client, connectionPriority, logic, settings, null, principal, new QueryMetricFactoryImpl());
         assertEquals("((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))", rq.getMetric().getPlan());
         ResultsPage page = rq.next();
-        // transforms two or three page/results depending on how far the asynchronous results thread has gotten
-        List<String> plans = Arrays.asList(new String[] {"((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))))",
-                "((page = '3') && ((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar')))))"});
-        assertTrue(plans.contains(rq.getMetric().getPlan()));
+        // A full page returns before transforming a result for the following page.
+        assertEquals("((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar')))", rq.getMetric().getPlan());
         assertEquals(1, page.getResults().size());
         page = rq.next();
-        // transforms the third page
-        assertEquals("((page = '3') && ((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar')))))",
-                        rq.getMetric().getPlan());
+        // transforms the second page
+        assertEquals("((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar'))))", rq.getMetric().getPlan());
         assertEquals(1, page.getResults().size());
         page = rq.next();
-        // transforms nothing, but returns the third page
+        // transforms and returns the third page
         assertEquals("((page = '3') && ((page = '2') && ((page = '1') && ((setup = 'true') && ((initialize = 'true') && FOO == 'bar')))))",
                         rq.getMetric().getPlan());
         assertEquals(1, page.getResults().size());
