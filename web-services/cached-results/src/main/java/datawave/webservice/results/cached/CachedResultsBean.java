@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 import javax.annotation.PostConstruct;
@@ -248,7 +249,7 @@ public class CachedResultsBean {
 
     private static final String IMPORT_FILE = "replication_scripts/import.sh";
 
-    private static Map<String,RunningQuery> loadingQueryMap = Collections.synchronizedMap(new HashMap<>());
+    private static Map<String,RunningQuery> loadingQueryMap = new ConcurrentHashMap<>();
     private static Set<String> loadingQueries = Collections.synchronizedSet(new HashSet<>());
     private URL importFileUrl = null;
     private CachedResultsQueryParameters cp = new CachedResultsQueryParameters();
