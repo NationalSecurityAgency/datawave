@@ -21,6 +21,7 @@
         <module>warehouse</module>
         <module>commons</module>
     </modules>
+    <!-- Adding solely so it will require a build-->
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
         <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
