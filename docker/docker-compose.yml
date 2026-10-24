@@ -443,7 +443,7 @@ services:
     image: nationalsecurityagency/datawave/annotation-service:1.0.0-SNAPSHOT
     scale: 1
     command:
-      - --spring.profiles.active=consul,compose,remoteauth,log-disabled
+      - --spring.profiles.active=combined,consul,compose,remoteauth,log-disabled
       - --spring.output.ansi.enabled=NEVER
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
