@@ -1,9 +1,9 @@
 package datawave.util.cli;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -18,7 +18,7 @@ public class PasswordConverterTest {
         String password;
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         argv = new String[] {"--password", ""};
         password = new Password();
@@ -46,7 +46,7 @@ public class PasswordConverterTest {
         // prefix with env var not defined should return null
         String name = "HighlyUnlikelyThisWillBeDefined";
         // make sure it is not defined
-        assertEquals("Expected " + name + " to not be defined but it was!", null, System.getenv(name));
+        assertEquals(null, System.getenv(name), "Expected " + name + " to not be defined but it was!");
 
         argv[1] = "env:" + name;
 

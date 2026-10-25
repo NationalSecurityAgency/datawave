@@ -1,7 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -9,8 +10,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -27,7 +28,7 @@ public class BoundedRangeDetectionVisitorTest {
     private MockMetadataHelper helper;
     private Set<String> nonEventFields;
 
-    @Before
+    @BeforeEach
     public void init() throws Exception {
         Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
         queryFieldsDatatypes.put("FOO", new StringType());
@@ -56,9 +57,9 @@ public class BoundedRangeDetectionVisitorTest {
         test("(FOO == '1' && FOO == '10')", false);
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testBoundedRangeMalformed() {
-        test("((_Bounded_ = true) && (FOO == '1' && FOO == '10'))", false);
+        assertThrows(DatawaveFatalQueryException.class, () -> test("((_Bounded_ = true) && (FOO == '1' && FOO == '10'))", false));
     }
 
     private void test(String query, boolean expected) {

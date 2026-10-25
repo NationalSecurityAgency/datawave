@@ -16,8 +16,8 @@ import java.util.List;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -42,7 +42,7 @@ public class ExpandMultiNormalizedTermsTest {
     private ShardQueryConfiguration config;
     private MockMetadataHelper helper;
 
-    @Before
+    @BeforeEach
     public void before() {
         // Create fresh query config
         config = new ShardQueryConfiguration();

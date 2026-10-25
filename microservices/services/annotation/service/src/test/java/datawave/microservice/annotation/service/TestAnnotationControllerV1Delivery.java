@@ -527,7 +527,7 @@ public class TestAnnotationControllerV1Delivery {
         Optional<Annotation> result = annotationController.writeAnnotation(annotation);
 
         assertTrue(result.isPresent());
-        assertEquals(AnnotationUtils.calculateAnnotationHash(annotation), result.get().getAnnotationId());
+        assertEquals(AnnotationUtils.injectAllHashes(annotation).getAnnotationId(), result.get().getAnnotationId());
         verify(annotationSink, times(1)).send(any());
     }
 
@@ -551,7 +551,7 @@ public class TestAnnotationControllerV1Delivery {
         Optional<Annotation> result = annotationController.writeAnnotation(annotation);
 
         assertTrue(result.isPresent());
-        assertEquals(AnnotationUtils.calculateAnnotationHash(annotation), result.get().getAnnotationId());
+        assertEquals(AnnotationUtils.injectAllHashes(annotation).getAnnotationId(), result.get().getAnnotationId());
         verify(annotationSink, times(3)).send(any());
     }
 
@@ -565,7 +565,7 @@ public class TestAnnotationControllerV1Delivery {
         Optional<Annotation> result = annotationController.writeAnnotation(annotation);
 
         assertTrue(result.isPresent(), "should fall back to the file writer when all send attempts fail");
-        assertEquals(AnnotationUtils.calculateAnnotationHash(annotation), result.get().getAnnotationId());
+        assertEquals(AnnotationUtils.injectAllHashes(annotation).getAnnotationId(), result.get().getAnnotationId());
         verify(fileWriter, times(1)).write(any());
         verify(annotationSink, times(annotationProperties.getRetry().getMaxAttempts())).send(any());
     }

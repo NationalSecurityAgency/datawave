@@ -32,10 +32,25 @@ env:
   GITHUB_PASSWORD: ${{ secrets.GHCR_WRITE_ACCESS_TOKEN }}
 
 jobs:
-  deploy-packages-and-images:
+  configure-runner:
     runs-on: ubuntu-latest
+    steps:
+      - id: set_output_step
+        run: |
+          echo "Determining runner to be ${{ vars.RUNNER_TYPE }}"
+          echo "runner=${{ vars.RUNNER_TYPE }}" >> "$GITHUB_OUTPUT"
+    outputs:
+      runner: ${{ steps.set_output_step.outputs.runner }}
+
+  deploy-packages-and-images:
+    needs: configure-runner
+    runs-on: ${{ needs.configure-runner.outputs.runner }}
     continue-on-error: true
     steps:
+    - name: Set owner of working dir and m2 dir recursively
+      # Compose can leave files owned by root on persistent runners.
+      if: needs.configure-runner.outputs.runner == 'self-hosted'
+      run: sudo chown -R $(whoami) . ~/.m2 || true
     - name: Log in to the Container registry
       uses: docker/login-action@v4
       with:
@@ -48,6 +63,8 @@ jobs:
     - uses: ./.github/actions/free-space
       with:
         tool-cache: false
+        # Preserve the Docker layer cache and images used by other jobs on persistent runners.
+        docker-images: ${{ needs.configure-runner.outputs.runner != 'self-hosted' }}
     - name: Configure Maven Settings
       run: |
         mkdir -p ~/.m2

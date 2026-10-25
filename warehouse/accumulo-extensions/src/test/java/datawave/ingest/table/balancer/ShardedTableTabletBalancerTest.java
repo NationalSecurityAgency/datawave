@@ -1,8 +1,8 @@
 package datawave.ingest.table.balancer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -39,12 +39,12 @@ import org.apache.accumulo.core.spi.balancer.data.TServerStatus;
 import org.apache.accumulo.core.spi.balancer.data.TabletMigration;
 import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
 import org.apache.hadoop.io.Text;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.TestWatcher;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.HashMultiset;
@@ -52,7 +52,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 
-import datawave.common.test.integration.IntegrationTest;
 import datawave.util.MapCounter;
 
 public class ShardedTableTabletBalancerTest {
@@ -62,15 +61,15 @@ public class ShardedTableTabletBalancerTest {
     private TestShardedTableTabletBalancer testBalancer;
     private long randomSeed = new Random().nextLong();
 
-    @Rule
+    @RegisterExtension
     public TestWatcher watcher = new TestWatcher() {
         @Override
-        protected void failed(Throwable e, Description description) {
+        public void testFailed(ExtensionContext context, Throwable cause) {
             System.err.println("Random seed for this test was: " + randomSeed);
         }
     };
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         testTServers = new TestTServers(new Random(randomSeed));
         testBalancer = new TestShardedTableTabletBalancer(testTServers);
@@ -265,10 +264,10 @@ public class ShardedTableTabletBalancerTest {
                 new TabletIdImpl(new KeyExtent(bar, new Text("2"), new Text("1"))),
                 new TabletIdImpl(new KeyExtent(TNAME, new Text("2"), new Text("1"))));
         //@formatter:on
-        long balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(),
-                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), migrations, migrationsOut, Ample.DataLevel.USER, null));
-        assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
-        assertTrue("Generated migrations when we had pending migrations for our table! [" + migrationsOut + "]", migrationsOut.isEmpty());
+        long balanceWaitTime = testBalancer
+                        .balance(new BalanceParamsImpl(testTServers.getCurrent(), Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), migrations, migrationsOut, Ample.DataLevel.USER, null));
+        assertEquals(5000, balanceWaitTime, "Incorrect balance wait time reported");
+        assertTrue(migrationsOut.isEmpty(), "Generated migrations when we had pending migrations for our table! [" + migrationsOut + "]");
 
         // Now balance with pending migrations w/o our table name and make sure everything balances.
         //@formatter:off
@@ -276,9 +275,10 @@ public class ShardedTableTabletBalancerTest {
                 new TabletIdImpl(new KeyExtent(foo, new Text("2"), new Text("1"))),
                 new TabletIdImpl(new KeyExtent(bar, new Text("2"), new Text("1"))));
         //@formatter:on
-        balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(),
-                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), migrations, migrationsOut, Ample.DataLevel.USER, null));
-        assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
+        balanceWaitTime = testBalancer
+                        .balance(new BalanceParamsImpl(testTServers.getCurrent(), Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()),
+                                        migrations, migrationsOut, Ample.DataLevel.USER, null));
+        assertEquals(5000, balanceWaitTime, "Incorrect balance wait time reported");
         ensureUniqueMigrations(migrationsOut);
         testTServers.applyMigrations(migrationsOut);
         assertEquals(4, migrationsOut.size());
@@ -286,7 +286,7 @@ public class ShardedTableTabletBalancerTest {
     }
 
     @Test
-    @Category(IntegrationTest.class)
+    @Tag("datawave.common.test.integration.IntegrationTest")
     public void testRandomPerturbations() {
         final int NUM_TSERVERS = 255;
         final int NUM_SHARDS = 241;
@@ -472,7 +472,7 @@ public class ShardedTableTabletBalancerTest {
     }
 
     @Test
-    @Category(IntegrationTest.class)
+    @Tag("datawave.common.test.integration.IntegrationTest")
     public void testHugeBalance() {
         int NUM_TSERVERS = 4000;
         int NUM_SHARDS = 317;
@@ -573,7 +573,7 @@ public class ShardedTableTabletBalancerTest {
         migrationsOut.clear();
         testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(), Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()),
                         new HashSet<>(), migrationsOut, Ample.DataLevel.USER, null));
-        assertEquals("Left with " + migrationsOut.size() + " migrations after " + numPasses + " balance attempts.", 0, migrationsOut.size());
+        assertEquals(0, migrationsOut.size(), "Left with " + migrationsOut.size() + " migrations after " + numPasses + " balance attempts.");
         testTServers.checkBalance(testBalancer.getPartitioner());
     }
 
@@ -590,7 +590,7 @@ public class ShardedTableTabletBalancerTest {
     private void ensureUniqueMigrations(ArrayList<TabletMigration> migrations) {
         Set<TabletId> migrated = new HashSet<>();
         for (TabletMigration m : migrations) {
-            assertFalse("Found multiple migrations for the same tablet: " + m.getTablet(), migrated.contains(m.getTablet()));
+            assertFalse(migrated.contains(m.getTablet()), "Found multiple migrations for the same tablet: " + m.getTablet());
             migrated.add(m.getTablet());
         }
     }
@@ -642,7 +642,7 @@ public class ShardedTableTabletBalancerTest {
             for (Map.Entry<TabletId,TabletServerId> entry : assignments.entrySet()) {
                 TabletId extentToAssign = entry.getKey();
                 TabletServerId assignedServer = entry.getValue();
-                assertTrue("Assignments list has server instance " + entry.getValue() + " that isn't in our servers list.", tservers.contains(assignedServer));
+                assertTrue(tservers.contains(assignedServer), "Assignments list has server instance " + entry.getValue() + " that isn't in our servers list.");
                 tabletLocs.put(extentToAssign, assignedServer);
             }
         }
@@ -690,16 +690,15 @@ public class ShardedTableTabletBalancerTest {
                 MapCounter<String> tgc = entry.getValue();
                 int tserverExtra = 0;
                 for (String group : groupCounts.keySet()) {
-                    assertTrue("Group " + group + " had " + tgc.get(group) + " tablets on " + entry.getKey() + ", which is less than the expected minimum of "
-                                    + expectedCounts.get(group), tgc.get(group) >= expectedCounts.get(group));
-                    assertTrue("Group " + group + " had " + tgc.get(group) + " tablets on " + entry.getKey()
-                                    + ", which is greater than the expected maximum of " + (expectedCounts.get(group) + 1),
-                                    tgc.get(group) <= expectedCounts.get(group) + 1);
+                    assertTrue(tgc.get(group) >= expectedCounts.get(group), "Group " + group + " had " + tgc.get(group) + " tablets on " + entry.getKey()
+                                    + ", which is less than the expected minimum of " + expectedCounts.get(group));
+                    assertTrue(tgc.get(group) <= expectedCounts.get(group) + 1, "Group " + group + " had " + tgc.get(group) + " tablets on " + entry.getKey()
+                                    + ", which is greater than the expected maximum of " + (expectedCounts.get(group) + 1));
                     tserverExtra += tgc.get(group) - expectedCounts.get(group);
                 }
 
-                assertTrue("tserverExtra of " + tserverExtra + " is less than expected " + expectedExtra, tserverExtra >= expectedExtra);
-                assertTrue("tserverExtra of " + tserverExtra + " is greater than expected " + maxExtraGroups, tserverExtra <= maxExtraGroups);
+                assertTrue(tserverExtra >= expectedExtra, "tserverExtra of " + tserverExtra + " is less than expected " + expectedExtra);
+                assertTrue(tserverExtra <= maxExtraGroups, "tserverExtra of " + tserverExtra + " is greater than expected " + maxExtraGroups);
             }
         }
 
@@ -718,8 +717,8 @@ public class ShardedTableTabletBalancerTest {
                 if (!partitions.containsKey(date))
                     partitions.put(date, groupID);
 
-                assertEquals("Extent " + extent + " is assigned to partition " + groupID + " but we expected " + partitions.get(date), groupID,
-                                partitions.get(date));
+                assertEquals(groupID, partitions.get(date),
+                                "Extent " + extent + " is assigned to partition " + groupID + " but we expected " + partitions.get(date));
             }
         }
 
@@ -759,12 +758,12 @@ public class ShardedTableTabletBalancerTest {
                 int shardsInMonth = (int) shardsPerMonth.get(month);
                 if (shardsInMonth < tservers.size()) {
                     float percent = count / (float) shardsInMonth;
-                    assertTrue("Month " + month + " only has tablets on " + (percent * 100) + "% of the tservers per shard in month (" + count + "/"
-                                    + shardsInMonth + ")", percent >= 0.9f);
+                    assertTrue(percent >= 0.9f, "Month " + month + " only has tablets on " + (percent * 100) + "% of the tservers per shard in month (" + count
+                                    + "/" + shardsInMonth + ")");
                 } else {
                     float percent = count / (float) tservers.size();
-                    assertTrue("Month " + month + " only has tablets on " + (percent * 100) + "% of the tservers (" + count + "/" + tservers.size() + ")",
-                                    percent >= 0.9f);
+                    assertTrue(percent >= 0.9f,
+                                    "Month " + month + " only has tablets on " + (percent * 100) + "% of the tservers (" + count + "/" + tservers.size() + ")");
                 }
             }
 
@@ -773,14 +772,14 @@ public class ShardedTableTabletBalancerTest {
                 int shardsInWeek = (int) shardsPerWeek.get(week);
                 if (shardsInWeek < tservers.size()) {
                     float percent = count / (float) shardsInWeek;
-                    assertTrue("Week " + week + " only has tablets on " + (percent * 100) + "% of the tservers (" + count + "/" + tservers.size() + ")",
-                                    percent >= 0.9f);
+                    assertTrue(percent >= 0.9f,
+                                    "Week " + week + " only has tablets on " + (percent * 100) + "% of the tservers (" + count + "/" + tservers.size() + ")");
                 } else {
                     // Given the way we partition data, a week could easily be split across multiple groups and then the two pieces of the week
                     // that span groups might get stacked on the same tservers a little bit more, so we check a lower coverage percentage here.
                     float percent = count / (float) tservers.size();
-                    assertTrue("Week " + week + " only has tablets on " + (percent * 100) + "% of the tservers (" + count + "/" + tservers.size() + ")",
-                                    percent >= 0.7f);
+                    assertTrue(percent >= 0.7f,
+                                    "Week " + week + " only has tablets on " + (percent * 100) + "% of the tservers (" + count + "/" + tservers.size() + ")");
                 }
             }
 
@@ -788,7 +787,7 @@ public class ShardedTableTabletBalancerTest {
                 int count = dayCounts.get(date).size();
                 int shardsInDay = (int) shardsPerDay.get(date);
                 assertTrue(shardsInDay <= tservers.size());
-                assertEquals("Expected day " + date + " to be on " + shardsInDay + " tservers, but only found on " + count, shardsInDay, count);
+                assertEquals(shardsInDay, count, "Expected day " + date + " to be on " + shardsInDay + " tservers, but only found on " + count);
             }
         }
 
@@ -808,8 +807,8 @@ public class ShardedTableTabletBalancerTest {
             for (Map.Entry<TabletServerId,Multiset<String>> entry : shardsPerServer.entrySet()) {
                 Multiset<String> entries = entry.getValue();
                 for (String date : entries.elementSet()) {
-                    assertTrue(entries.count(date) + " less than minimum of " + evenMin, entries.count(date) >= evenMin);
-                    assertTrue(entries.count(date) + " greater than minimum of " + evenMax + " for " + date, entries.count(date) <= evenMax);
+                    assertTrue(entries.count(date) >= evenMin, entries.count(date) + " less than minimum of " + evenMin);
+                    assertTrue(entries.count(date) <= evenMax, entries.count(date) + " greater than minimum of " + evenMax + " for " + date);
                 }
             }
         }
@@ -838,9 +837,9 @@ public class ShardedTableTabletBalancerTest {
                 for (int j = 0; j < migrationsToMove; j++) {
                     TabletId extent = fromExtents.get(random.nextInt(fromExtents.size()));
                     fromExtents.remove(extent); // we have a local copy
-                    assertTrue("Couldn't remove extent " + extent + " from server " + fromServer, serverTablets.remove(fromServer, extent));
-                    assertTrue("Couldn't add extent " + extent + " to server " + toServer, serverTablets.put(toServer, extent));
-                    assertEquals("Extent " + extent + " wasn't assigned to " + fromServer, fromServer, tabletLocs.put(extent, toServer));
+                    assertTrue(serverTablets.remove(fromServer, extent), "Couldn't remove extent " + extent + " from server " + fromServer);
+                    assertTrue(serverTablets.put(toServer, extent), "Couldn't add extent " + extent + " to server " + toServer);
+                    assertEquals(fromServer, tabletLocs.put(extent, toServer), "Extent " + extent + " wasn't assigned to " + fromServer);
                 }
             }
         }

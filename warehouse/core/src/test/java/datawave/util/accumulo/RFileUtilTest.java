@@ -1,9 +1,8 @@
 package datawave.util.accumulo;
 
 import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,21 +26,21 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RFileUtilTest {
     private Configuration config;
     private File tmpFile;
 
-    @Before
+    @BeforeEach
     public void setup() {
         Logger.getRootLogger().setLevel(Level.WARN);
         config = new Configuration();
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         if (tmpFile != null && tmpFile.exists()) {
             assertTrue(tmpFile.delete());

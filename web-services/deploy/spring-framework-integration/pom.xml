@@ -112,8 +112,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.arquillian.junit</groupId>
-            <artifactId>arquillian-junit-container</artifactId>
+            <groupId>org.jboss.arquillian.junit5</groupId>
+            <artifactId>arquillian-junit5-container</artifactId>
+            <version>1.10.2.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -232,7 +233,7 @@
                 <configuration>
                     <skipTests>${skipUTs}</skipTests>
                     <argLine>@{argLine}</argLine>
-                    <reuseForks>false</reuseForks>
+                    <reuseForks>${surefire.reuseForks}</reuseForks>
                     <additionalClasspathElements>
                         <additionalClasspathElement>${project.build.directory}/conf</additionalClasspathElement>
                         <additionalClasspathElement>${project.parent.basedir}/web-service/properties</additionalClasspathElement>
