@@ -1,6 +1,7 @@
 package datawave.util.accumulo;
 
 import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
