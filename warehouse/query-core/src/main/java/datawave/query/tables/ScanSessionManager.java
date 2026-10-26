@@ -1,8 +1,8 @@
 package datawave.query.tables;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -18,7 +18,7 @@ public class ScanSessionManager extends ScanManager {
 
     private static final Logger log = LoggerFactory.getLogger(ScanSessionManager.class);
 
-    protected final Set<ScannerSession> sessionInstances = Collections.synchronizedSet(new HashSet<>());
+    protected final Set<ScannerSession> sessionInstances = ConcurrentHashMap.newKeySet();
 
     protected final AtomicBoolean sessionsClosed = new AtomicBoolean(false);
 
