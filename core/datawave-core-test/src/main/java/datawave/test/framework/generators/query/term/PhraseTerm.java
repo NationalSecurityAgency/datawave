@@ -20,6 +20,8 @@ import datawave.data.type.Type;
 public class PhraseTerm extends ValueDependentQueryTerm {
 
     private static final int DEFAULT_WORD_COUNT = 2;
+    private static final String PHRASE_PREFIX = "content:phrase(";
+    private static final String TERM_OFFSET_ARGUMENT = ", termOffsetMap, ";
 
     private final int wordCount;
     private Map<List<String>,List<Integer>> eventIdsByPhrase;
@@ -80,8 +82,8 @@ public class PhraseTerm extends ValueDependentQueryTerm {
         String quotedNormalizedWords = normalizedWords.stream().map(w -> "'" + w + "'").collect(Collectors.joining(", "));
         String equalityTerms = normalizedWords.stream().map(w -> field + " == '" + w + "'").collect(Collectors.joining(" && "));
 
-        this.queryTerm = "content:phrase(" + field + ", termOffsetMap, " + quotedWords + ")";
-        this.planTerm = "content:phrase(" + field + ", termOffsetMap, " + quotedNormalizedWords + ") && " + equalityTerms;
+        this.queryTerm = PHRASE_PREFIX + field + TERM_OFFSET_ARGUMENT + quotedWords + ")";
+        this.planTerm = PHRASE_PREFIX + field + TERM_OFFSET_ARGUMENT + quotedNormalizedWords + ") && " + equalityTerms;
         this.eventIds = eventIdsByPhrase.getOrDefault(normalizedWords, List.of());
     }
 }
