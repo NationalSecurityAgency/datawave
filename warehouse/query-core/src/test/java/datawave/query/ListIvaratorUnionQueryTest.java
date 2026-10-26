@@ -29,8 +29,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.base.Preconditions;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.LcType;
 import datawave.query.index.day.IndexIngestUtil;

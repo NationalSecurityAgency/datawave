@@ -109,10 +109,10 @@ public class TableConfigurationUtilTest {
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
         TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);
         tcu.configureTables(conf);
-        
+
         assertEquals(0, tempCacheFile.length(), "Expected the config cache file to be empty");
         tcu.updateCacheFile();
-        
+
         assertTrue(tempCacheFile.length() > 0, "No data was written to the config cache file");
 
         tcu.serializeTableConfgurationIntoConf(conf);

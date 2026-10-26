@@ -412,11 +412,11 @@ public class BulkIngestMapFileLoaderTest {
                 default:
                     throw new RuntimeException("Unsupported import mode " + bulkMode);
             }
-            
+
             assertFalse(shardRfilePath + " should've been imported but it got left behind", Files.exists(shardRfilePath));
 
             verifyImportedData(SHARD_TABLE);
-            
+
             assertTrue("Missing " + FAILED_FILE_MARKER + " marker after failed import", Files.exists(expectedFailedMarker));
 
         } finally {
@@ -842,7 +842,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_ONE, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
+
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "usage: BulkIngestMapFileLoader "));
 
@@ -879,7 +879,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
+
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "Configured data types is empty"));
 
@@ -946,7 +946,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
+
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "Configured data types is empty"));
 
@@ -1117,7 +1117,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
+
             assertTrue("BulkIngestMapLoader#main failed to generate the expected SleepTime error message",
                             processOutputContains(stdOut, "-sleepTime must be followed by the number of ms to sleep between checks for map files."));
 
@@ -1158,7 +1158,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
+
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-majcThreshold must be followed by the maximum number of major compactions allowed before waiting"));
 
@@ -1198,7 +1198,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
+
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-majcThreshold must be followed by the maximum number of major compactions allowed before waiting"));
 
@@ -1239,7 +1239,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
+
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
                             "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
         } finally {
@@ -1278,7 +1278,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
+
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
                             "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
         } finally {
@@ -1318,7 +1318,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
+
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-maxDirectories must be followed a number of directories"));
 
@@ -1358,7 +1358,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
+
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-maxDirectories must be followed a number of directories"));
 
