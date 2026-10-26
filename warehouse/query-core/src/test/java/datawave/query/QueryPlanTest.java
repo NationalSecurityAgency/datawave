@@ -4,7 +4,6 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.IOException;
 import java.util.Collections;
 
 import org.apache.commons.jexl3.parser.ParseException;
@@ -69,8 +68,7 @@ public class QueryPlanTest extends AbstractFunctionalQueryJUnit5 {
     }
 
     @BeforeEach
-    public void before() throws IOException {
-        super.querySetUp();
+    public void before() {
         // Use RunningQuery to test that query metrics being updated with plan
         this.useRunningQuery();
 
