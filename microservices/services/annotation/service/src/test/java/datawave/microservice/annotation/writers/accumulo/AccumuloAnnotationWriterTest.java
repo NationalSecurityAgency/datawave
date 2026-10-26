@@ -36,8 +36,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.annotation.data.AnnotationUpdateException;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;

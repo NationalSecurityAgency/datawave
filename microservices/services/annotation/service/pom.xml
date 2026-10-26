@@ -19,16 +19,17 @@
     </scm>
     <properties>
         <start-class>datawave.microservice.annotation.AnnotationService</start-class>
+        <version.annotation-api>9.0.0-SNAPSHOT</version.annotation-api>
         <version.commons-io>2.18.0</version.commons-io>
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.commons-pool>2.11.1</version.commons-pool>
         <version.commons-text>1.11.0</version.commons-text>
         <version.curator>5.9.0</version.curator>
         <version.datawave-commons-security>${version.datawave.annotation-core}</version.datawave-commons-security>
-        <version.datawave.annotation-core>8.2.0</version.datawave.annotation-core>
-        <version.datawave.hazelcast-client>4.0.7</version.datawave.hazelcast-client>
-        <version.datawave.hazelcast-common>4.0.7</version.datawave.hazelcast-common>
-        <version.datawave.starter>4.0.13</version.datawave.starter>
+        <version.datawave.annotation-core>9.0.0-SNAPSHOT</version.datawave.annotation-core>
+        <version.datawave.hazelcast-client>9.0.0-SNAPSHOT</version.datawave.hazelcast-client>
+        <version.datawave.hazelcast-common>9.0.0-SNAPSHOT</version.datawave.hazelcast-common>
+        <version.datawave.starter>9.0.0-SNAPSHOT</version.datawave.starter>
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.4.1</version.hadoop>
         <version.in-memory-accumulo>9.0.0-SNAPSHOT</version.in-memory-accumulo>
@@ -38,8 +39,7 @@
         <version.protobuf-java>3.16.3</version.protobuf-java>
         <version.protostuff>1.7.4</version.protostuff>
         <version.swagger>2.2.42</version.swagger>
-        <version.zookeeper>3.8.4</version.zookeeper>
-        <version.annotation-api>9.0.0-SNAPSHOT</version.annotation-api>
+        <version.zookeeper>3.9.5</version.zookeeper>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -544,6 +544,10 @@
             <artifactId>hadoop-hdfs</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
@@ -568,10 +572,6 @@
             <artifactId>datawave-query-core</artifactId>
             <classifier>tests</classifier>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
         </dependency>
     </dependencies>
     <repositories>
