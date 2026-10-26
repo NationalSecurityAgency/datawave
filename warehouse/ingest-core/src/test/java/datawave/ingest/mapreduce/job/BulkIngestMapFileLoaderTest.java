@@ -321,33 +321,17 @@ public class BulkIngestMapFileLoaderTest {
         BulkIngestMapFileLoader loader = newJobCompleteLoader(jobName, 1000, bulkMode);
         runLoader(loader, jobDir, true, log);
 
-        try {
-            new Thread(loader, "map-file-watcher").start();
+        assertTrue("Unexpected log output: " + log, log.contains("Bringing Map Files online for " + METADATA_TABLE));
+        assertTrue("Unexpected log output: " + log, log.contains("Bringing Map Files online for " + SHARD_TABLE));
+        assertTrue("Unexpected log output: " + log, log.contains("Completed bringing map files online for " + METADATA_TABLE));
+        assertTrue("Unexpected log output: " + log, log.contains("Completed bringing map files online for " + SHARD_TABLE));
+        assertTrue("Unexpected log output: " + log, log.contains("Marking 1 sequence files from flagged to loaded"));
 
-            // Wait up to 30 secs for the bulk loader to log completion
-            for (int i = 1; i <= 15; i++) {
-                Thread.sleep(2000);
-                if (log.contains("Renamed file:" + loadingFileMarker + " to " + CLEANUP_FILE_MARKER)) {
-                    break;
-                }
-            }
-            assertTrue("Unexpected log output: " + log, log.contains("Bringing Map Files online for " + METADATA_TABLE));
-            assertTrue("Unexpected log output: " + log, log.contains("Bringing Map Files online for " + SHARD_TABLE));
-            assertTrue("Unexpected log output: " + log, log.contains("Completed bringing map files online for " + METADATA_TABLE));
-            assertTrue("Unexpected log output: " + log, log.contains("Completed bringing map files online for " + SHARD_TABLE));
-            assertTrue("Unexpected log output: " + log, log.contains("Marking 1 sequence files from flagged to loaded"));
+        verifyImportedData(SHARD_TABLE, METADATA_TABLE);
 
-            verifyImportedData(SHARD_TABLE, METADATA_TABLE);
-            
-            assertTrue("Source file was not moved to loaded", Files.exists(loadedPath.resolve(jobName).resolve("dummy")));
-            assertTrue("Source file still exists in flagged", Files.notExists(flaggedPath.resolve(jobName).resolve("dummy")));
-            assertTrue(jobDir + " still exists, but should've been cleaned up by the loader", Files.notExists(jobDir));
-
-        } finally {
-            if (loader != null) {
-                loader.shutdown();
-            }
-        }
+        assertTrue("Source file was not moved to loaded", Files.exists(loadedPath.resolve(jobName).resolve("dummy")));
+        assertTrue("Source file still exists in flagged", Files.notExists(flaggedPath.resolve(jobName).resolve("dummy")));
+        assertTrue(jobDir + " still exists, but should've been cleaned up by the loader", Files.notExists(jobDir));
     }
 
     /**
@@ -381,7 +365,7 @@ public class BulkIngestMapFileLoaderTest {
             // Overwrite the staged metadata rfile with bad content
             Files.delete(metaRfilePath);
             Files.createFile(metaRfilePath);
-            Files.writeString(metaRfilePath, "Intentionally invalid rfile content here!!!");
+            Files.write(metaRfilePath, "Intentionally invalid rfile content here!!!".getBytes(StandardCharsets.UTF_8));
 
             try {
                 validateRfile(metaRfilePath.toAbsolutePath().toString(), conf);
@@ -396,6 +380,7 @@ public class BulkIngestMapFileLoaderTest {
 
             if (bulkMode == ImportMode.V2) {
                 // TODO: Should client side Accumulo or DataWave code detect a corrupt rfile at this point in a load planning scenario?
+
                 // For V2, corrupting the rfile alone isn't enough to trigger a client- or server-side import failure,
                 // assuming the rfile has an associated LoadPlan already written for it. So, without additional action
                 // here, the import would succeed with no way to know there's a problem until later, if/when a scan or
@@ -427,11 +412,11 @@ public class BulkIngestMapFileLoaderTest {
                 default:
                     throw new RuntimeException("Unsupported import mode " + bulkMode);
             }
-
+            
             assertFalse(shardRfilePath + " should've been imported but it got left behind", Files.exists(shardRfilePath));
 
             verifyImportedData(SHARD_TABLE);
-
+            
             assertTrue("Missing " + FAILED_FILE_MARKER + " marker after failed import", Files.exists(expectedFailedMarker));
 
         } finally {
@@ -456,11 +441,11 @@ public class BulkIngestMapFileLoaderTest {
                 if (task.isDone()) {
                     task.get();
                     // The worker may have finished the job since the loop's filesystem check.
-                    Assert.assertTrue("Loader stopped before finishing " + jobDir + ". Log: " + log, jobFinished.getAsBoolean());
+                    assertTrue("Loader stopped before finishing " + jobDir + ". Log: " + log, jobFinished.getAsBoolean());
                     break;
                 }
                 if (System.nanoTime() >= deadline) {
-                    Assert.fail("Timed out waiting for " + jobDir + " to " + (expectSuccess ? "be cleaned up" : "be marked failed") + ". Log: " + log);
+                    fail("Timed out waiting for " + jobDir + " to " + (expectSuccess ? "be cleaned up" : "be marked failed") + ". Log: " + log);
                 }
                 Thread.sleep(25);
             }
@@ -468,7 +453,7 @@ public class BulkIngestMapFileLoaderTest {
             loader.shutdown();
             // shutdown() only sets a flag. Join even if the wait was interrupted or an assertion failed.
             joinUninterruptibly(thread, 30, TimeUnit.SECONDS);
-            Assert.assertFalse("Loader did not stop for " + jobDir + ". Log: " + log, thread.isAlive());
+            assertFalse("Loader did not stop for " + jobDir + ". Log: " + log, thread.isAlive());
         }
         task.get();
     }
@@ -857,7 +842,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_ONE, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-
+            
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "usage: BulkIngestMapFileLoader "));
 
@@ -894,7 +879,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-
+            
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "Configured data types is empty"));
 
@@ -961,7 +946,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-
+            
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "Configured data types is empty"));
 
@@ -1132,7 +1117,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-
+            
             assertTrue("BulkIngestMapLoader#main failed to generate the expected SleepTime error message",
                             processOutputContains(stdOut, "-sleepTime must be followed by the number of ms to sleep between checks for map files."));
 
@@ -1173,7 +1158,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-
+            
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-majcThreshold must be followed by the maximum number of major compactions allowed before waiting"));
 
@@ -1213,7 +1198,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-
+            
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-majcThreshold must be followed by the maximum number of major compactions allowed before waiting"));
 
@@ -1254,7 +1239,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-
+            
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
                             "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
         } finally {
@@ -1293,7 +1278,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-
+            
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
                             "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
         } finally {
@@ -1333,7 +1318,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-
+            
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-maxDirectories must be followed a number of directories"));
 
@@ -1373,7 +1358,7 @@ public class BulkIngestMapFileLoaderTest {
             assertEquals(ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults, "BulkIngestMapLoader#main failed to return the expected value.");
 
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-
+            
             assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
                             processOutputContains(stdOut, "-maxDirectories must be followed a number of directories"));
 
