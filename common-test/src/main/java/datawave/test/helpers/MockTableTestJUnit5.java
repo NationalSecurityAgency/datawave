@@ -2,6 +2,7 @@ package datawave.test.helpers;
 
 import java.util.concurrent.TimeUnit;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -16,7 +17,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 
 public abstract class MockTableTestJUnit5 {
     public static final String TABLE_NAME = "test";
@@ -26,7 +26,7 @@ public abstract class MockTableTestJUnit5 {
 
     @BeforeEach
     public void setup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
-        InMemoryInstance i = new InMemoryInstance(this.getClass().toString());
+        InMemoryAccumulo i = new InMemoryAccumulo(this.getClass().toString());
         client = new InMemoryAccumuloClient("root", i);
         if (client.tableOperations().exists(TABLE_NAME))
             client.tableOperations().delete(TABLE_NAME);

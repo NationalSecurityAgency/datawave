@@ -13,7 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.table.constants.TableName;
 
 class TableCreatorTest {
@@ -22,7 +22,7 @@ class TableCreatorTest {
 
     @BeforeEach
     void createClient() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance(getClass().getSimpleName() + "-" + UUID.randomUUID());
+        InMemoryAccumulo instance = new InMemoryAccumulo(getClass().getSimpleName() + "-" + UUID.randomUUID());
         client = new InMemoryAccumuloClient("root", instance);
     }
 

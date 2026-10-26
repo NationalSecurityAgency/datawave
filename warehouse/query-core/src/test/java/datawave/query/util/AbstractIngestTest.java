@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.data.type.LcType;
 import datawave.table.constants.TableName;
 
@@ -30,7 +30,7 @@ class AbstractIngestTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        client = new InMemoryAccumuloClient("root", new InMemoryInstance(UUID.randomUUID().toString()));
+        client = new InMemoryAccumuloClient("root", new InMemoryAccumulo(UUID.randomUUID().toString()));
         ingest = new AbstractIngest(client, AUTHS);
     }
 
