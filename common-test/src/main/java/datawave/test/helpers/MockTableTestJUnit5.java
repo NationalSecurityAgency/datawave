@@ -2,7 +2,6 @@ package datawave.test.helpers;
 
 import java.util.concurrent.TimeUnit;
 
-import datawave.accumulo.inmemory.InMemoryAccumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -16,6 +15,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 
 public abstract class MockTableTestJUnit5 {

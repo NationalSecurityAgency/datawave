@@ -264,8 +264,8 @@ public class ShardedTableTabletBalancerTest {
                 new TabletIdImpl(new KeyExtent(bar, new Text("2"), new Text("1"))),
                 new TabletIdImpl(new KeyExtent(TNAME, new Text("2"), new Text("1"))));
         //@formatter:on
-        long balanceWaitTime = testBalancer
-                        .balance(new BalanceParamsImpl(testTServers.getCurrent(), Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), migrations, migrationsOut, Ample.DataLevel.USER, null));
+        long balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(),
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), migrations, migrationsOut, Ample.DataLevel.USER, null));
         assertEquals(5000, balanceWaitTime, "Incorrect balance wait time reported");
         assertTrue(migrationsOut.isEmpty(), "Generated migrations when we had pending migrations for our table! [" + migrationsOut + "]");
 
@@ -275,9 +275,8 @@ public class ShardedTableTabletBalancerTest {
                 new TabletIdImpl(new KeyExtent(foo, new Text("2"), new Text("1"))),
                 new TabletIdImpl(new KeyExtent(bar, new Text("2"), new Text("1"))));
         //@formatter:on
-        balanceWaitTime = testBalancer
-                        .balance(new BalanceParamsImpl(testTServers.getCurrent(), Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()),
-                                        migrations, migrationsOut, Ample.DataLevel.USER, null));
+        balanceWaitTime = testBalancer.balance(new BalanceParamsImpl(testTServers.getCurrent(),
+                        Map.of(ResourceGroupId.DEFAULT, testTServers.getCurrent().keySet()), migrations, migrationsOut, Ample.DataLevel.USER, null));
         assertEquals(5000, balanceWaitTime, "Incorrect balance wait time reported");
         ensureUniqueMigrations(migrationsOut);
         testTServers.applyMigrations(migrationsOut);
