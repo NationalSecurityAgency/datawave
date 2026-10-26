@@ -2,7 +2,7 @@
 <!--
 
     WARNING WARNING WARNING
-    
+
     If you change anything in this file, you need to make the corresponding change in deploy-datawave/pom.xml
     in the RPM profile.  Unfortunately, there is no way for the RPM to inherit the assembly dist.xml config
     file, so therefore this information must be duplicated.
@@ -61,7 +61,7 @@
         that are needed for Accumulo (jars to go in either the lib or lib/ext
         folder) and the web service lib folder.  Anything listed here must be a
         dependency of this project, or any transitive dependency of the included
-        DATAWAVE_DW modules. 
+        DATAWAVE_DW modules.
      -->
     <dependencySets>
         <!-- Stuff that goes in /opt/accumulo-warehouse/current/lib -->
@@ -95,7 +95,6 @@
                 <include>org.apache.commons:commons-collections4</include>
                 <include>org.apache.commons:commons-jexl3</include>
                 <include>org.apache.curator:curator-client</include>
-                <include>javax.xml.bind:jaxb-api</include>
                 <include>org.apache.accumulo:accumulo-access-core</include>
                 <include>${groupId}:datawave-accumulo-extensions</include>
                 <include>${groupId}:datawave-common</include>
