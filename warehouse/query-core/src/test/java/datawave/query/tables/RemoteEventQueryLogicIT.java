@@ -187,7 +187,7 @@ public class RemoteEventQueryLogicIT {
         t1.start();
 
         try {
-            assertTrue("Timed out waiting for first request to arrive", arrivalLatch.await(10, TimeUnit.SECONDS));
+            assertTrue(arrivalLatch.await(10, TimeUnit.SECONDS), "Timed out waiting for first request to arrive");
         } catch (InterruptedException e) {
             throw new AssertionError("Interrupted while waiting for first request to arrive", e);
         }
