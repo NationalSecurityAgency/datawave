@@ -17,7 +17,7 @@ Add the dependency to each annotation message producer or consumer:
 <dependency>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>annotation-messaging</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>9.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
