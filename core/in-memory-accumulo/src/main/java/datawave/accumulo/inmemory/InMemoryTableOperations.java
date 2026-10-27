@@ -59,7 +59,6 @@ import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.dataImpl.TabletIdImpl;
 import org.apache.accumulo.core.metadata.SystemTables;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.Validators;
 import org.apache.accumulo.core.util.tables.TableNameUtil;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
@@ -111,7 +110,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
     @Override
     public void create(String tableName, NewTableConfiguration ntc) throws AccumuloException, AccumuloSecurityException, TableExistsException {
         String namespace = TableNameUtil.qualify(tableName).namespaceName();
-        Validators.NEW_TABLE_NAME.validate(tableName);
+        AccumuloValidators.NEW_TABLE_NAME.validate(tableName);
         if (exists(tableName))
             throw new TableExistsException(tableName, tableName, "");
         checkArgument(namespaceExists(namespace), "Namespace (" + namespace + ") does not exist, create it first");
