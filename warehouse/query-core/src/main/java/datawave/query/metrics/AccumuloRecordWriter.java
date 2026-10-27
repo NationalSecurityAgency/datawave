@@ -329,7 +329,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
 
     protected static AccumuloClient getClient(Configuration conf) throws AccumuloSecurityException, AccumuloException {
         if (conf.getBoolean(MOCK, false)) {
-            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryAccumulo(conf.get(INSTANCE_NAME)));
+            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), InMemoryAccumulo.getInstance(conf.get(INSTANCE_NAME)));
             client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
             return client;
         } else {

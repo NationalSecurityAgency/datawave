@@ -35,32 +35,61 @@ import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.Credentials;
-import org.apache.accumulo.core.clientImpl.thrift.SecurityErrorCode;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.SystemPermission;
 
-public class InMemoryAccumuloClient extends ClientContext implements AccumuloClient {
+// Remove `extends ClientContext` since it's deprecated.
+// Need a workaround for the features that are no longer supported. Not sure if we can just throw them away atm.
+
+public class InMemoryAccumuloClient implements AccumuloClient {
 
     String username;
     private final InMemoryAccumulo acu;
 
-    public InMemoryAccumuloClient(String username, InMemoryAccumulo acu) throws AccumuloSecurityException {
-        this(new Credentials(username, new PasswordToken(new byte[0])), acu);
+    private ConditionalWriterConfig conditionalWriterConfig;
+    private volatile boolean closed = false;
+
+    /**
+     * Creates an InMemoryAccumuloClient with a new default InMemoryAccumulo.
+     *
+     * @param username
+     *            the username
+     */
+    public InMemoryAccumuloClient(String username) {
+        this(username, new InMemoryAccumulo());
     }
 
-    public InMemoryAccumuloClient(Credentials credentials, InMemoryAccumulo acu) throws AccumuloSecurityException {
-        super(new InMemoryClientInfo(credentials), DefaultConfiguration.getInstance(), null);
-        if (credentials.getToken().isDestroyed())
-            throw new AccumuloSecurityException(credentials.getPrincipal(), SecurityErrorCode.TOKEN_EXPIRED);
-        this.username = credentials.getPrincipal();
+    /**
+     * Creates an InMemoryAccumuloClient with the provided InMemoryAccumulo.
+     *
+     * @param username
+     *            the username
+     * @param acu
+     *            the InMemoryAccumulo instance
+     */
+    public InMemoryAccumuloClient(String username, InMemoryAccumulo acu) {
+        this.username = username;
         this.acu = acu;
         if (!acu.users.containsKey(username)) {
             InMemoryUser user = new InMemoryUser(username, new PasswordToken(new byte[0]), Authorizations.EMPTY);
             user.permissions.add(SystemPermission.SYSTEM);
             acu.users.put(user.name, user);
+        }
+    }
+
+    @Override
+    public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) throws TableNotFoundException {
+        // Intentionally unsupported - required for AccumuloClient interface but not used by DataWave
+        throw new UnsupportedOperationException();
+    }
+
+    public ConditionalWriter createConditionalWriter(String tableName) throws TableNotFoundException {
+        return this.createConditionalWriter(tableName, (ConditionalWriterConfig) null);
+    }
+
+    private void ensureOpen() {
+        if (this.closed) {
+            throw new IllegalStateException("This client was closed.");
         }
     }
 
@@ -152,12 +181,6 @@ public class InMemoryAccumuloClient extends ClientContext implements AccumuloCli
     @Override
     public NamespaceOperations namespaceOperations() {
         return new InMemoryNamespaceOperations(acu, username);
-    }
-
-    @Override
-    public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) {
-        // TODO add implementation
-        throw new UnsupportedOperationException();
     }
 
     @Override
