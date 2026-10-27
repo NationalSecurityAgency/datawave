@@ -22,9 +22,9 @@ public class AccumuloExceptionCheckerTest {
 
     @Test
     public void testIsScanTimedOutException() {
-        assertTrue(AccumuloExceptionChecker.isScanTimedOutException(new ScanTimedOutException()));
+        assertTrue(AccumuloExceptionChecker.isScanTimedOutException(new ScanTimedOutException("timed out")));
         assertFalse(AccumuloExceptionChecker.isScanTimedOutException(new IOException()));
         assertFalse(AccumuloExceptionChecker.isScanTimedOutException(null));
-        assertFalse(AccumuloExceptionChecker.isScanTimedOutException(new IOException(new ScanTimedOutException())));
+        assertFalse(AccumuloExceptionChecker.isScanTimedOutException(new IOException(new ScanTimedOutException("timed out"))));
     }
 }
