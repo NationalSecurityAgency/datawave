@@ -1,8 +1,8 @@
 package datawave.util.ssdeep;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ChunkTupleTest {
     public static final String[] GOOD_TUPLES = {"12288:/VG4Gje", "12288:Q1lK55p", "6144:6e8o4to", "6144:6y7ppFj", "3072:DMxud7f", "3072:D6pIJLI",
