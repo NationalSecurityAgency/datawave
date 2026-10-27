@@ -10,17 +10,13 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.ActiveCompaction;
 import org.apache.accumulo.core.client.admin.Locations;
-import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.client.admin.servers.ServerId;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
-import org.apache.accumulo.core.manager.thrift.ManagerClientService;
-import org.apache.accumulo.core.manager.thrift.ManagerMonitorInfo;
-import org.apache.accumulo.core.master.thrift.TableInfo;
-import org.apache.accumulo.core.rpc.ThriftUtil;
-import org.apache.accumulo.core.rpc.clients.ThriftClientTypes;
 import org.apache.hadoop.io.Text;
 
 /**
@@ -131,43 +127,27 @@ public final class AccumuloTableUtils {
         return result;
     }
 
-    // NON-PUBLIC API: Uses Thrift RPC to get queued + running compaction counts.
-    // No public Accumulo API exists for queued compactions as of 2.1.x.
-    // Tracking: https://github.com/apache/accumulo/issues/5965
-    //
-    // To swap out: when a public API for compaction counts is available,
-    // replace this method body and remove the Thrift imports above.
     /**
-     * Get the count of queued and running major compactions across all tablet servers.
+     * Get the count of running major compactions across all compactors.
+     * <p>
+     * Accumulo 4 removed the manager stats RPC ({@code ManagerMonitorInfo}) that reported queued and running major compactions per table, so this counts the
+     * running non-minor compactions reported by the public {@code InstanceOperations.getActiveCompactions} API. Queued compactions are not included.
      *
      * @param client
      *            the Accumulo client
-     * @return the number of queued and running major compactions
+     * @return the number of running major compactions
      * @throws AccumuloException
      *             if a general Accumulo error occurs
      */
+    // ACCUMULO4_TODO this used to get running+queued compactions from the manager. getActiveCompactions() reaches out to every compactor and asks what it
+    // is compacting, and only reports running compactions. It would be better to get this from a place where the information is already summarized, like
+    // the metrics system, monitor, or manager. See apache/accumulo#4939.
     public static int getMajorCompactionCount(AccumuloClient client) throws AccumuloException {
-        int majC = 0;
-
-        ClientContext context = (ClientContext) client;
-        ManagerClientService.Client managerClient = null;
         try {
-            managerClient = ThriftClientTypes.MANAGER.getConnection(context);
-            ManagerMonitorInfo mmi = managerClient.getManagerStats(null, context.rpcCreds());
-            Map<String,TableInfo> tableStats = mmi.getTableMap();
-
-            for (Map.Entry<String,TableInfo> e : tableStats.entrySet()) {
-                majC += e.getValue().getMajors().getQueued();
-                majC += e.getValue().getMajors().getRunning();
-            }
-        } catch (Exception e) {
+            return (int) client.instanceOperations().getActiveCompactions(client.instanceOperations().getServers(ServerId.Type.COMPACTOR)).stream()
+                            .filter(activeCompaction -> activeCompaction.getType() != ActiveCompaction.CompactionType.MINOR).count();
+        } catch (AccumuloSecurityException e) {
             throw new AccumuloException("Unable to retrieve major compaction stats", e);
-        } finally {
-            if (managerClient != null) {
-                ThriftUtil.close(managerClient, context);
-            }
         }
-
-        return majC;
     }
 }

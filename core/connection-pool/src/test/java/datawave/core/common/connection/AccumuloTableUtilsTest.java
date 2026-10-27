@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
@@ -18,8 +17,8 @@ import org.apache.hadoop.io.Text;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 
 public class AccumuloTableUtilsTest {
 
@@ -27,16 +26,14 @@ public class AccumuloTableUtilsTest {
 
     @Before
     public void setup() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance();
+        InMemoryAccumulo instance = new InMemoryAccumulo();
         client = new InMemoryAccumuloClient("root", instance);
     }
 
-    @Test(expected = AccumuloException.class)
-    public void testGetMajorCompactionCountThrowsWithoutCluster() throws Exception {
-        // The Thrift-based implementation requires a live Accumulo cluster.
-        // With InMemoryAccumuloClient, the underlying ClientContext cannot connect
-        // to ZooKeeper, so this should throw AccumuloException.
-        AccumuloTableUtils.getMajorCompactionCount(client);
+    @Test
+    public void testGetMajorCompactionCountWithNoCompactors() throws Exception {
+        // InMemoryAccumulo has no compactors, so there are no running compactions to count.
+        assertEquals(0, AccumuloTableUtils.getMajorCompactionCount(client));
     }
 
     @Test
