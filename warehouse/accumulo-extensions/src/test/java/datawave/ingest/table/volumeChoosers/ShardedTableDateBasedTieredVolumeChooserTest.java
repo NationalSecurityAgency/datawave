@@ -1,6 +1,7 @@
 package datawave.ingest.table.volumeChoosers;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,13 +15,13 @@ import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
 import org.apache.hadoop.io.Text;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSupport {
     Set<String> options = new HashSet<>();
     {
@@ -173,7 +174,7 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
 
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testNegativeDaysBack() {
         String newVolumes = "newData1,newData2,newData3";
         String oldVolumes = "oldData1,oldData2";
@@ -186,7 +187,7 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
         String shardId = "20200101_123";
         setupMock(tiers, shardId);
         ShardedTableDateBasedTieredVolumeChooser chooser = new ShardedTableDateBasedTieredVolumeChooser();
-        chooser.choose(env, options);
+        assertThrows(IllegalStateException.class, () -> chooser.choose(env, options));
 
     }
 
