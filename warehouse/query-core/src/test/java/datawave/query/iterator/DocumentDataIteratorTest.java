@@ -1,8 +1,8 @@
 package datawave.query.iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -14,8 +14,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.util.SortedMapIterator;
 
@@ -28,7 +28,7 @@ public class DocumentDataIteratorTest {
     private static final int numEvents = 5;
     private static final int numFields = 5;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         data.put(new Key("row"), EMPTY_VALUE);
         data.put(new Key("row", datatype), EMPTY_VALUE);

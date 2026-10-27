@@ -1,7 +1,7 @@
 package datawave.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -19,9 +19,9 @@ import java.util.concurrent.Executors;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -64,7 +64,7 @@ public class LongRunningQueryTest {
     private ShardQueryLogic logic;
     private ExecutorService executor;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
         datawavePrincipal = new DatawavePrincipal((Collections.singleton(user)));
@@ -97,7 +97,7 @@ public class LongRunningQueryTest {
         executor = Executors.newSingleThreadExecutor();
     }
 
-    @After
+    @AfterEach
     public void after() {
         if (executor != null) {
             executor.shutdown();
@@ -204,9 +204,8 @@ public class LongRunningQueryTest {
         ShardQueryConfiguration config = (ShardQueryConfiguration) logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
 
-        QueryExpirationProperties conf = new QueryExpirationProperties();
-        conf.setMaxLongRunningTimeoutRetries(1000);
-        RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, 1);
+        // Set a very low pageShortCircuitTimeoutMs to force timeouts and partial results with zero results
+        RunningQueryTimingImpl timing = new RunningQueryTimingImpl(60000, 30000, 10, 1000);
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,
                         new QueryMetricFactoryImpl());
         runningQuery.setExecutor(executor);
@@ -227,7 +226,7 @@ public class LongRunningQueryTest {
                 foundIntermediate = true;
             }
         }
-        assertTrue("Did not find intermediate results", foundIntermediate);
+        assertTrue(foundIntermediate, "Did not find intermediate results");
     }
 
     /***

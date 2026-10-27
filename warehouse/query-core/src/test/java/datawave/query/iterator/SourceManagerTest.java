@@ -1,9 +1,9 @@
 package datawave.query.iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -38,8 +38,8 @@ import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -54,7 +54,7 @@ public class SourceManagerTest {
     private SourceCounter counter;
     private SortedListKeyValueIterator dataIterator;
 
-    @Before
+    @BeforeEach
     public void setup() throws ParseException, IOException {
 
         data = new SortedMapIterator(createTestData());
@@ -82,19 +82,19 @@ public class SourceManagerTest {
         // individual next loops
         int copy1Count = 0;
         while (copy1.hasTop()) {
-            assertNotEquals("unexpected topKey on iteration=" + copy1Count, null, copy1.getTopKey());
+            assertNotEquals(null, copy1.getTopKey(), "unexpected topKey on iteration=" + copy1Count);
             copy1Count++;
             copy1.next();
         }
 
         int copy2Count = 0;
         while (copy2.hasTop()) {
-            assertNotEquals("unexpected topKey on iteration=" + copy2Count, null, copy2.getTopKey());
+            assertNotEquals(null, copy2.getTopKey(), "unexpected topKey on iteration=" + copy2Count);
             copy2Count++;
             copy2.next();
         }
 
-        assertTrue("both copies should have the same number of next calls; copy1=" + copy1Count + " copy2=" + copy2Count, copy1Count == copy2Count);
+        assertTrue(copy1Count == copy2Count, "both copies should have the same number of next calls; copy1=" + copy1Count + " copy2=" + copy2Count);
     }
 
     @Test

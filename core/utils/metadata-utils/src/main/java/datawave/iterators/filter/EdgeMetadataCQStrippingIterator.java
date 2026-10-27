@@ -15,7 +15,7 @@ public class EdgeMetadataCQStrippingIterator extends WrappingIterator {
     @Override
     public Key getTopKey() {
         Key key = super.getTopKey();
-        if (key.getColumnFamily().equals(datawave.data.ColumnFamilyConstants.COLF_EDGE)) {
+        if (key.getColumnFamily().equals(datawave.table.constants.MetadataColumnFamilyConstants.COLF_EDGE)) {
             return transformKey(key);
         } else {
             return key;

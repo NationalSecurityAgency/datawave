@@ -40,11 +40,13 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.rfile.RFile;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -87,9 +89,10 @@ public class ShardReindexMapperTest extends EasyMockSupport {
     private Mapper.Context context;
 
     private AccumuloClient mockClient;
+    private SecurityOperations mockSecOps;
     private Scanner mockScanner;
 
-    private ShardReindexMapper mapper = new ShardReindexMapper();
+    private final ShardReindexMapper mapper = new ShardReindexMapper();
 
     @Before
     public void setup() {
@@ -119,6 +122,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         mockContextWriter = createMock(ContextWriter.class);
         context = createMock(Mapper.Context.class);
         mockClient = createMock(AccumuloClient.class);
+        mockSecOps = createMock(SecurityOperations.class);
         mockScanner = createMock(Scanner.class);
     }
 
@@ -1194,7 +1198,10 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
     private void expectScanner(String tableName, Range r, Iterator<Map.Entry<Key,Value>> result)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
-        expect(mockClient.createScanner(tableName)).andReturn(mockScanner);
+        expect(mockClient.whoami()).andReturn("testUser");
+        expect(mockClient.securityOperations()).andReturn(mockSecOps);
+        expect(mockSecOps.getUserAuthorizations("testUser")).andReturn(new Authorizations());
+        expect(mockClient.createScanner(eq(tableName), isA(Authorizations.class))).andReturn(mockScanner);
         mockScanner.setRange(eq(r));
         expect(mockScanner.iterator()).andReturn(result);
         mockScanner.close();

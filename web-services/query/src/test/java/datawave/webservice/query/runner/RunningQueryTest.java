@@ -5,8 +5,10 @@ import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -25,11 +27,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -53,7 +53,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.query.logic.TestQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 import datawave.webservice.result.BaseQueryResponse;
@@ -75,10 +75,10 @@ public class RunningQueryTest {
     private SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDn", "issuerDn");
     private final QueryLogic<?> logic = createMock(BaseQueryLogic.class);
 
-    @Before
+    @BeforeEach
     public void setup() throws MalformedURLException, IllegalArgumentException, IllegalAccessException {
 
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
 
         settings.setQueryLogicName("testQueryLogic");
@@ -158,17 +158,16 @@ public class RunningQueryTest {
         assertEquals(client, query.getClient());
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test
     public void testConstructorShouldNotMergeAuths() throws Exception {
         // setup
         AccumuloClient client = null;
         methodAuths = "A,B,C";
 
-        // expected merged auths
+        // user auths
         String[] auths = new String[2];
         auths[0] = "A";
         auths[1] = "C";
-        Authorizations expected = new Authorizations(auths);
 
         expect(logic.getCollectQueryMetrics()).andReturn(false);
         logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("A", "B", "C"))));
@@ -177,9 +176,8 @@ public class RunningQueryTest {
 
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
-        RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
-
-        assertEquals(expected, query.getCalculatedAuths());
+        assertThrows(AuthorizationException.class,
+                        () -> new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl()));
     }
 
     @Test
@@ -215,7 +213,7 @@ public class RunningQueryTest {
         try {
             RunningQuery query = new RunningQuery(client, connectionPriority, compositeQueryLogic, settings, null, principal, new QueryMetricFactoryImpl());
         } catch (NullPointerException npe) {
-            Assert.fail("NullPointer encountered. This could be caused by configuration being null. Check logic.initialize() ");
+            fail("NullPointer encountered. This could be caused by configuration being null. Check logic.initialize() ");
         }
     }
 
