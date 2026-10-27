@@ -176,7 +176,8 @@ public class QueryIteratorIT extends EasyMockSupport {
         pluginEnv = createMock(PluginEnvironment.class);
         EasyMock.expect(iterEnv.getTableId()).andReturn(TableId.of("test")).anyTimes();
         EasyMock.expect(iterEnv.getPluginEnv()).andReturn(pluginEnv).anyTimes();
-        EasyMock.expect(pluginEnv.getConfiguration(TableId.of("test"))).andReturn(new AccumuloConfigurationWrapper(DefaultConfiguration.getInstance())).anyTimes();
+        EasyMock.expect(pluginEnv.getConfiguration(TableId.of("test"))).andReturn(new AccumuloConfigurationWrapper(DefaultConfiguration.getInstance()))
+                        .anyTimes();
         EasyMock.expect(pluginEnv.getConfiguration()).andReturn(new AccumuloConfigurationWrapper(DefaultConfiguration.getInstance())).anyTimes();
         filter = createMock(EventDataQueryFilter.class);
     }
