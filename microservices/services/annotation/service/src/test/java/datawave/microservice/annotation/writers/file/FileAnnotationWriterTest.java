@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.hadoop.security.UserGroupInformation;
@@ -71,9 +73,11 @@ public class FileAnnotationWriterTest {
             assertNotNull(result, "expected a write result");
             assertTrue(result.isPresent(), "expected the write to succeed");
 
+            // the Hadoop local file system also writes a hidden .crc checksum file next to each file
             try (Stream<java.nio.file.Path> files = Files.list(tempDir)) {
-                java.nio.file.Path writtenFile = files.filter(p -> !Files.isDirectory(p)).findFirst()
-                                .orElseThrow(() -> new AssertionError("expected a file to have been written"));
+                List<java.nio.file.Path> writtenFiles = files.filter(p -> p.getFileName().toString().endsWith(".json")).collect(Collectors.toList());
+                assertEquals(1, writtenFiles.size(), "expected exactly one file to have been written, but found: " + writtenFiles);
+                java.nio.file.Path writtenFile = writtenFiles.get(0);
                 assertTrue(writtenFile.getFileName().toString().startsWith("annotation-"),
                                 "expected the written file to be named with the annotation-specific prefix, but was: " + writtenFile.getFileName());
             }
