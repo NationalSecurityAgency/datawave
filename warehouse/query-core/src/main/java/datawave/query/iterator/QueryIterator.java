@@ -490,6 +490,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
                 pipelineDocuments = uniquify.getIterator(pipelineDocuments, this.yieldCallback);
+                if (range.getStartKey() != null && !WaitWindowObserver.hasMarker(range.getStartKey())) {
+                    // After a teardown the unique transform reloads what it persisted before the rebuild, so it can hand back documents that were already
+                    // returned and sort before the seek range. A tablet server passes such keys straight to the client, so drop them here. Subclasses such
+                    // as AncestorQueryIterator turn the teardown range into an inclusive one before calling this, so the start key's inclusivity is not a
+                    // reliable sign of a rebuild; nothing before the range start belongs in the results either way. A yield resume is left alone: its start
+                    // key is the yield marker, and documents before it have not been returned yet.
+                    final Range seekRange = range;
+                    pipelineDocuments = Iterators.filter(pipelineDocuments, entry -> !seekRange.beforeStartKey(entry.getKey()));
+                }
             }
 
             // apply the grouping iterator if requested and if the batch size is greater than zero
