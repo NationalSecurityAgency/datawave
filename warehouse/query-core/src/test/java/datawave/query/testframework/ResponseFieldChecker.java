@@ -1,8 +1,9 @@
 package datawave.query.testframework;
 
-import java.util.Set;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
-import org.junit.Assert;
+import java.util.Set;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -37,20 +38,20 @@ public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentCheck
     public void assertValid(final Document doc) {
         for (final String field : this.fields) {
             final Attribute val = doc.get(field);
-            Assert.assertNotNull("missing return field(" + field + ") from " + doc, val);
+            assertNotNull("missing return field(" + field + ") from " + doc, val);
             if (val instanceof Attributes) {
                 Attributes multiAttr = (Attributes) val;
                 for (Attribute attr : multiAttr.getAttributes()) {
-                    Assert.assertNotNull("missing metadata for field(" + field + ") from " + doc, attr.getMetadata());
+                    assertNotNull("missing metadata for field(" + field + ") from " + doc, attr.getMetadata());
                 }
             } else {
-                Assert.assertNotNull("missing metadata for field(" + field + ") from " + doc, val.getMetadata());
+                assertNotNull("missing metadata for field(" + field + ") from " + doc, val.getMetadata());
             }
         }
 
         for (final String field : this.missing) {
             final Attribute val = doc.get(field);
-            Assert.assertNull("disallowlisted return field(" + field + ") from " + doc, val);
+            assertNull("disallowlisted return field(" + field + ") from " + doc, val);
         }
     }
 }

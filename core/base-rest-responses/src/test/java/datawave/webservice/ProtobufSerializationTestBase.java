@@ -13,6 +13,7 @@ import io.protostuff.LinkedBuffer;
 import io.protostuff.Message;
 import io.protostuff.ProtobufIOUtil;
 
+@Deprecated
 public class ProtobufSerializationTestBase {
     protected LinkedBuffer buffer;
 
