@@ -4,22 +4,22 @@ import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.NOT_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -27,14 +27,14 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
 
-public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
+public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(MaxExpansionIndexOnlyQueryTest.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig max = new MaxExpandCityFields();
@@ -74,7 +74,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(2);
         try {
             runTest(query, query);
-            Assert.fail("exception expected");
+            fail("exception expected");
         } catch (DatawaveFatalQueryException e) {
             // expected
         }
@@ -103,7 +103,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(2);
         try {
             runTest(query, query);
-            Assert.fail("exception expected");
+            fail("exception expected");
         } catch (DatawaveFatalQueryException e) {
             // expected
         }
@@ -133,7 +133,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(2);
         try {
             runTest(query, expect);
-            Assert.fail("exception expected");
+            fail("exception expected");
         } catch (RuntimeException re) {
             // expected
         }
@@ -171,7 +171,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(2);
         try {
             runTest(query, expect);
-            Assert.fail("exception expected");
+            fail("exception expected");
         } catch (RuntimeException re) {
             // expected
         }
@@ -204,7 +204,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(1);
         try {
             runTest(query, expect);
-            Assert.fail("exception expected");
+            fail("exception expected");
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
@@ -232,7 +232,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(1);
         try {
             runTest(query, expect);
-            Assert.fail("exception expected");
+            fail("exception expected");
         } catch (FullTableScansDisallowedException e) {
             // expected
         }

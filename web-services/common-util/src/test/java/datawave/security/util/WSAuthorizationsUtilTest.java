@@ -1,8 +1,8 @@
 package datawave.security.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
@@ -41,7 +41,7 @@ public class WSAuthorizationsUtilTest {
     // the overall user is a combination of the proxied and remote users
     private DatawavePrincipal overallUserPrincipal;
 
-    @Before
+    @BeforeEach
     public void initialize() {
         System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         methodAuths = "A,C";
@@ -84,24 +84,23 @@ public class WSAuthorizationsUtilTest {
         assertEquals(expected, WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal, proxiedUserPrincipal));
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test
     public void testDowngradeAuthorizationsUserRequestsAuthTheyDontHave() throws AuthorizationException {
-        WSAuthorizationsUtil.getDowngradedAuthorizations("A,C,E", proxiedUserPrincipal, proxiedUserPrincipal);
-        fail("Exception not thrown!");
+        assertThrows(AuthorizationException.class, () -> WSAuthorizationsUtil.getDowngradedAuthorizations("A,C,E", proxiedUserPrincipal, proxiedUserPrincipal));
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test
     public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave1() throws AuthorizationException {
         // p1, p3 - call will succeed if p1 is primaryUser, throw exception if p3 is primaryUser
-        WSAuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal1, proxiedServerPrincipal1);
-        fail("Exception not thrown!");
+        assertThrows(AuthorizationException.class,
+                        () -> WSAuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal1, proxiedServerPrincipal1));
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test
     public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave2() throws AuthorizationException {
         // p1, p2, p3 - call will succeed if p1 is primaryUser, throw exception if p2 is primaryUser
-        WSAuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal2, proxiedServerPrincipal2);
-        fail("Exception not thrown!");
+        assertThrows(AuthorizationException.class,
+                        () -> WSAuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal2, proxiedServerPrincipal2));
     }
 
     @Test
@@ -110,17 +109,17 @@ public class WSAuthorizationsUtilTest {
         assertEquals(expected, WSAuthorizationsUtil.getDowngradedAuthorizations(remoteAuths, overallUserPrincipal, remoteUserPrincipal));
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test
     public void testDowngradeRemoteAuthorizationsFail() throws AuthorizationException {
-        HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A"), new Authorizations("A", "B", "E"), new Authorizations("A", "F", "E"));
-        assertEquals(expected, WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, remoteUserPrincipal, remoteUserPrincipal));
+        assertThrows(AuthorizationException.class,
+                        () -> WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, remoteUserPrincipal, remoteUserPrincipal));
     }
 
     @Test
     public void testUserAuthsFirstInMergedSet() throws AuthorizationException {
         Set<Authorizations> mergedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal, proxiedUserPrincipal);
         assertEquals(3, mergedAuths.size());
-        assertEquals("Merged user authorizations were not first in the return set", new Authorizations("A", "C"), mergedAuths.iterator().next());
+        assertEquals(new Authorizations("A", "C"), mergedAuths.iterator().next(), "Merged user authorizations were not first in the return set");
     }
 
     @Test
@@ -138,12 +137,11 @@ public class WSAuthorizationsUtilTest {
         assertEquals(new Authorizations(), WSAuthorizationsUtil.union(new Authorizations(), new Authorizations()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testUserRequestsAuthTheyDontHave() {
         // This is the case where we could throw an error or write something to the logs
         String methodAuths = "A,C,F";
-        WSAuthorizationsUtil.mergeAuthorizations(methodAuths, userAuths);
-        fail("Exception not thrown!");
+        assertThrows(IllegalArgumentException.class, () -> WSAuthorizationsUtil.mergeAuthorizations(methodAuths, userAuths));
     }
 
     @Test
@@ -261,9 +259,10 @@ public class WSAuthorizationsUtilTest {
         assertUserEquals(expected, user3);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testCannotMergeUser() {
-        WSAuthorizationsUtil.mergeUsers(proxiedServerPrincipal1.getPrimaryUser(), proxiedServerPrincipal2.getPrimaryUser());
+        assertThrows(IllegalArgumentException.class,
+                        () -> WSAuthorizationsUtil.mergeUsers(proxiedServerPrincipal1.getPrimaryUser(), proxiedServerPrincipal2.getPrimaryUser()));
     }
 
     @Test
@@ -272,9 +271,9 @@ public class WSAuthorizationsUtilTest {
         assertPrincipalEquals(overallUserPrincipal, merged);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testCannotMergePrincipal() {
-        WSAuthorizationsUtil.mergePrincipals(proxiedServerPrincipal1, proxiedServerPrincipal2);
+        assertThrows(IllegalArgumentException.class, () -> WSAuthorizationsUtil.mergePrincipals(proxiedServerPrincipal1, proxiedServerPrincipal2));
     }
 
     private void assertUserEquals(DatawaveUser user1, DatawaveUser user2) {

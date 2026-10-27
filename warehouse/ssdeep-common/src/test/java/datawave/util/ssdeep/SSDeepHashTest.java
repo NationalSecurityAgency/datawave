@@ -1,9 +1,10 @@
 package datawave.util.ssdeep;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,9 +48,9 @@ public class SSDeepHashTest {
     public void testParse() {
         for (int i = 0; i < GOOD_HASHES.length; i++) {
             SSDeepHash ssdh = SSDeepHash.parse(GOOD_HASHES[i]);
-            assertEquals("chunksize is not expected", EXPECTED_CHUNK_SIZES[i], ssdh.getChunkSize());
-            assertEquals("chunk is not expected", EXPECTED_CHUNKS[i], ssdh.getChunk());
-            assertEquals("double chunk is not expected", EXPECTED_DOUBLE_CHUNKS[i], ssdh.getDoubleChunk());
+            assertEquals(EXPECTED_CHUNK_SIZES[i], ssdh.getChunkSize(), "chunksize is not expected");
+            assertEquals(EXPECTED_CHUNKS[i], ssdh.getChunk(), "chunk is not expected");
+            assertEquals(EXPECTED_DOUBLE_CHUNKS[i], ssdh.getDoubleChunk(), "double chunk is not expected");
 
         }
     }
@@ -65,17 +66,17 @@ public class SSDeepHashTest {
                 parseFailure = true;
                 if (BAD_HASH_TYPE[i] != ILLEGAL_ARGUMENT) {
                     log.info("IllegalArgumentException received", ia);
-                    Assert.fail("Received unexpected IllegalArgumentException");
+                    fail("Received unexpected IllegalArgumentException");
                 }
             } catch (SSDeepParseException pe) {
                 parseFailure = true;
                 if (BAD_HASH_TYPE[i] != PARSE) {
                     log.info("SSDeepParseException received", pe);
-                    Assert.fail("Received unexpected SSDeepParseException");
+                    fail("Received unexpected SSDeepParseException");
                 }
             } finally {
                 if (!parseFailure) {
-                    Assert.fail("Did not receive expected parse failure");
+                    fail("Did not receive expected parse failure");
                 }
             }
         }
@@ -106,7 +107,7 @@ public class SSDeepHashTest {
             }
         }
 
-        Assert.assertTrue(hasNoFailure);
+        assertTrue(hasNoFailure);
     }
 
     @Test
@@ -132,6 +133,6 @@ public class SSDeepHashTest {
             }
         }
 
-        Assert.assertTrue(hasNoFailure);
+        assertTrue(hasNoFailure);
     }
 }
