@@ -44,7 +44,10 @@ public class GenerateShardSplits {
     private static final ColumnVisibility EMPTY_VIS = new ColumnVisibility();
     private static final Text EMPTY_TEXT = new Text();
     private static final Value EMPTY_VALUE = new Value(EMPTY_TEXT.getBytes());
-
+    
+    private static final String TABLET_MERGEABILITY_NEVER = "never";
+    private static final String TABLET_MERGEABILITY_ALWAYS = "always";
+    
     private static void printUsageAndExit() {
         System.out.println(
                         "Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> [-splitsPerBatch <number of splits to create per batch>] [-mergeability <never|always|ISO-8601 duration, default never>] [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
@@ -270,10 +273,10 @@ public class GenerateShardSplits {
      *             if the value is not one of those, or is a negative duration
      */
     static TabletMergeability parseMergeability(String value) {
-        if ("never".equalsIgnoreCase(value)) {
+        if (TABLET_MERGEABILITY_NEVER.equalsIgnoreCase(value)) {
             return TabletMergeability.never();
         }
-        if ("always".equalsIgnoreCase(value)) {
+        if (TABLET_MERGEABILITY_ALWAYS.equalsIgnoreCase(value)) {
             return TabletMergeability.always();
         }
         Duration delay;
