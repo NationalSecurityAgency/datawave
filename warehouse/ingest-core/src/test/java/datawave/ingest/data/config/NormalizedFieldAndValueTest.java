@@ -1,7 +1,11 @@
 package datawave.ingest.data.config;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.Type;
 import datawave.marking.Markings;
@@ -298,8 +302,8 @@ public class NormalizedFieldAndValueTest {
 
         NormalizedFieldAndValue uut = new NormalizedFieldAndValue(nci);
 
-        Assert.assertNull("Constructor created a non-existance Group for Test Content", uut.getGroup());
-        Assert.assertNull("Constructor created a non-existance SubGroup for Test Content", uut.getSubGroup());
+        assertNull(uut.getGroup(), "Constructor created a non-existance Group for Test Content");
+        assertNull(uut.getSubGroup(), "Constructor created a non-existance SubGroup for Test Content");
     }
 
     @Test
@@ -309,9 +313,9 @@ public class NormalizedFieldAndValueTest {
 
         NormalizedFieldAndValue uut = new NormalizedFieldAndValue(nci);
 
-        Assert.assertTrue("Constructor failed to create a Group for the Test Content", uut.isGrouped());
-        Assert.assertNotNull("Constructor failed to create Group for Test Content", uut.getGroup());
-        Assert.assertNotNull("Constructor failed to create a SubGroup for Test Content", uut.getSubGroup());
+        assertTrue(uut.isGrouped(), "Constructor failed to create a Group for the Test Content");
+        assertNotNull(uut.getGroup(), "Constructor failed to create Group for Test Content");
+        assertNotNull(uut.getSubGroup(), "Constructor failed to create a SubGroup for Test Content");
     }
 
     @Test
@@ -321,20 +325,20 @@ public class NormalizedFieldAndValueTest {
 
         // Test a simple String as bytes but not expecting it to be Binary
         String results = NormalizedFieldAndValue.decode(testValue.getBytes(), false);
-        Assert.assertEquals("Decode failed to correctly decode test value", testValue, results);
+        assertEquals(testValue, results, "Decode failed to correctly decode test value");
 
         // Test a simple String as bytes but expecting it to be Binary
         results = NormalizedFieldAndValue.decode(testValue.getBytes(), true);
-        Assert.assertEquals("Decode failed to correctly decode test value", testValue, results);
+        assertEquals(testValue, results, "Decode failed to correctly decode test value");
 
         String expected = "a";
         byte[] binary = new byte[] {(byte) 0x61};
 
         results = NormalizedFieldAndValue.decode(binary, false);
-        Assert.assertEquals("Decode failed to correctly decode binary test", expected, results);
+        assertEquals(expected, results, "Decode failed to correctly decode binary test");
 
         results = NormalizedFieldAndValue.decode(binary, true);
-        Assert.assertEquals("Decode failed to correctly decode binary test", expected, results);
+        assertEquals(expected, results, "Decode failed to correctly decode binary test");
 
     }
 
@@ -349,8 +353,8 @@ public class NormalizedFieldAndValueTest {
         String generatedEventFieldName = uut.getEventFieldName();
         String expectedName = "TestIndexedField.GROUP.SUBGROUP";
 
-        Assert.assertEquals("NormalizedFieldAndValue.getEventFieldName failed to generate the expected default Event Field Name", expectedName,
-                        generatedEventFieldName);
+        assertEquals(expectedName, generatedEventFieldName,
+                        "NormalizedFieldAndValue.getEventFieldName failed to generate the expected default Event Field Name");
 
         nci = new NormalizedFieldAndValueTest.NonGroupedInstance();
 
@@ -358,7 +362,7 @@ public class NormalizedFieldAndValueTest {
         expectedName = "TestIndexedField";
         generatedEventFieldName = uut.getEventFieldName();
 
-        Assert.assertEquals("NormalizedFieldAndValue.getEventFieldName failed to generate the expected default Event Field Name", expectedName,
-                        generatedEventFieldName);
+        assertEquals(expectedName, generatedEventFieldName,
+                        "NormalizedFieldAndValue.getEventFieldName failed to generate the expected default Event Field Name");
     }
 }

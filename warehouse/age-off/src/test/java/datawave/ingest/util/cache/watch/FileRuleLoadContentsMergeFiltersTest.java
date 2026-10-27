@@ -1,8 +1,8 @@
 package datawave.ingest.util.cache.watch;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -14,8 +14,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.AgeOffTtlUnits;
@@ -42,7 +42,7 @@ public class FileRuleLoadContentsMergeFiltersTest {
     private long anchorTime;
     private FilterOptions filterOptions;
 
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         Path childPath = new Path(this.getClass().getResource(CHILD_FILTER_CONFIGURATION_FILE).toString());
         Path rootPath = new Path(this.getClass().getResource(ROOT_FILTER_CONFIGURATION_FILE).toString());
@@ -157,8 +157,8 @@ public class FileRuleLoadContentsMergeFiltersTest {
         long timestamp = anchorTime - (offsetInDays * MILLIS_IN_DAY) + 1;
         Key key = TestTrieFilter.create(data, timestamp);
         // @formatter:off
-        assertEquals(failedExpectationMessage(data, offsetInDays, expectation),
-            filter.accept(filterOptions.getAgeOffPeriod(anchorTime), key, value), expectation);
+        assertEquals(expectation, filter.accept(filterOptions.getAgeOffPeriod(anchorTime), key, value),
+            failedExpectationMessage(data, offsetInDays, expectation));
         // @formatter:on
     }
 

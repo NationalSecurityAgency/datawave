@@ -2,7 +2,7 @@ package datawave.query.index.lookup;
 
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
-import static datawave.util.TableName.SHARD_INDEX;
+import static datawave.table.constants.TableName.SHARD_INDEX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -42,7 +42,6 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
-import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
 
 /**
@@ -3553,13 +3552,12 @@ public class RangeStreamTestX {
         helper.setIndexedFields(dataTypes.keySet());
 
         // Run a standard limited-scanner range stream.
-        ScannerFactory scannerFactory = new ScannerFactory(config);
-        RangeStream rangeStream = new RangeStream(config, scannerFactory, helper);
+        RangeStream rangeStream = new RangeStream(config, helper);
         rangeStream.setLimitScanners(true);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
 
         // Run a default range stream.
-        rangeStream = new RangeStream(config, scannerFactory, helper);
+        rangeStream = new RangeStream(config, helper);
         rangeStream.setLimitScanners(false);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
 
@@ -3640,8 +3638,7 @@ public class RangeStreamTestX {
             helper.setIndexedFields(dataTypes.keySet());
 
             // Run a standard limited-scanner range stream.
-            ScannerFactory scannerFactory = new ScannerFactory(config);
-            try (RangeStream rangeStream = new RangeStream(config, scannerFactory, helper)) {
+            try (RangeStream rangeStream = new RangeStream(config, helper)) {
                 rangeStream.setLimitScanners(true);
 
                 Iterator<QueryPlan> plans = rangeStream.streamPlans(script).iterator();

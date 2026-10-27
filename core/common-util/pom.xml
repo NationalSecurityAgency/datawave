@@ -4,15 +4,25 @@
     <parent>
         <groupId>gov.nsa.datawave.core</groupId>
         <artifactId>datawave-core-parent</artifactId>
-        <version>7.42.0-SNAPSHOT</version>
+        <version>8.5.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-core-common-util</artifactId>
     <name>${project.artifactId}</name>
-    <properties />
+    <properties>
+        <version.commons-lang3>3.17.0</version.commons-lang3>
+    </properties>
     <dependencyManagement>
         <dependencies />
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>datawave-core-connection-pool</artifactId>
@@ -21,6 +31,19 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>authorization-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${version.commons-lang3}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
@@ -32,6 +55,36 @@
                     <artifactId>servlet-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit-pioneer</groupId>
+            <artifactId>junit-pioneer</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
@@ -47,6 +100,10 @@
                 <targetPath>test-classes</targetPath>
                 <filtering>true</filtering>
                 <directory>src/test/resources</directory>
+                <excludes>
+                    <exclude>*.jks</exclude>
+                    <exclude>*.p12</exclude>
+                </excludes>
             </resource>
         </resources>
         <plugins>

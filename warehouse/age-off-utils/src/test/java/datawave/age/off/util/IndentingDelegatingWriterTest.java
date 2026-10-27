@@ -1,12 +1,12 @@
 package datawave.age.off.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class IndentingDelegatingWriterTest {
     @Test

@@ -38,6 +38,10 @@ public final class AnnotationV1 {
     static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_annotation_protobuf_v1_SegmentList_fieldAccessorTable;
     static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_annotation_protobuf_v1_AnnotationList_descriptor;
     static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_annotation_protobuf_v1_AnnotationList_fieldAccessorTable;
+    static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_descriptor;
+    static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_fieldAccessorTable;
+    static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_ParametersEntry_descriptor;
+    static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_ParametersEntry_fieldAccessorTable;
 
     public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
         return descriptor;
@@ -79,10 +83,13 @@ public final class AnnotationV1 {
                         + "\n\005value\030\002 \001(\t:\0028\001B\013\n\t_platformJ\004\010\007\0202\"`\n\013"
                         + "SegmentList\022:\n\010segments\030\001 \003(\0132(.datawave" + ".annotation.protobuf.v1.Segment\022\025\n\rnextP"
                         + "ageToken\030\002 \001(\t\"i\n\016AnnotationList\022@\n\013anno" + "tations\030\001 \003(\0132+.datawave.annotation.prot"
-                        + "obuf.v1.Annotation\022\025\n\rnextPageToken\030\002 \001("
-                        + "\t*O\n\014BoundaryType\022\013\n\007UNKNOWN\020\000\022\007\n\003ALL\020\001\022"
-                        + "\n\n\006POINTS\020\002\022\016\n\nTIME_MILLI\020\003\022\r\n\tTEXT_CHAR" + "\020\004B#\n\037datawave.annotation.protobuf.v1P\001b"
-                        + "\006proto3"};
+                        + "obuf.v1.Annotation\022\025\n\rnextPageToken\030\002 \001(" + "\t\"\215\002\n\021AnnotationMessage\022\033\n\023annotationMes"
+                        + "sageId\030\001 \001(\t\022@\n\013annotations\030\002 \003(\0132+.data" + "wave.annotation.protobuf.v1.Annotation\022\016"
+                        + "\n\006source\030\003 \001(\t\022V\n\nparameters\0302 \003(\0132B.dat" + "awave.annotation.protobuf.v1.AnnotationM"
+                        + "essage.ParametersEntry\0321\n\017ParametersEntr"
+                        + "y\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001*O\n\014Bou"
+                        + "ndaryType\022\013\n\007UNKNOWN\020\000\022\007\n\003ALL\020\001\022\n\n\006POINT"
+                        + "S\020\002\022\016\n\nTIME_MILLI\020\003\022\r\n\tTEXT_CHAR\020\004B#\n\037da" + "tawave.annotation.protobuf.v1P\001b\006proto3"};
         descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
                         new com.google.protobuf.Descriptors.FileDescriptor[] {});
         internal_static_datawave_annotation_protobuf_v1_Point_descriptor = getDescriptor().getMessageTypes().get(0);
@@ -135,6 +142,14 @@ public final class AnnotationV1 {
         internal_static_datawave_annotation_protobuf_v1_AnnotationList_descriptor = getDescriptor().getMessageTypes().get(7);
         internal_static_datawave_annotation_protobuf_v1_AnnotationList_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
                         internal_static_datawave_annotation_protobuf_v1_AnnotationList_descriptor, new java.lang.String[] {"Annotations", "NextPageToken",});
+        internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_descriptor = getDescriptor().getMessageTypes().get(8);
+        internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_descriptor,
+                        new java.lang.String[] {"AnnotationMessageId", "Annotations", "Source", "Parameters",});
+        internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_ParametersEntry_descriptor = internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_descriptor
+                        .getNestedTypes().get(0);
+        internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_ParametersEntry_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_annotation_protobuf_v1_AnnotationMessage_ParametersEntry_descriptor, new java.lang.String[] {"Key", "Value",});
     }
 
     // @@protoc_insertion_point(outer_class_scope)

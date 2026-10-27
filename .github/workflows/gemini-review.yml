@@ -1,0 +1,351 @@
+name: '🔎 Gemini Review'
+
+on:
+  workflow_call:
+    inputs:
+      additional_context:
+        type: 'string'
+        description: 'Any additional context from the request'
+        required: false
+
+concurrency:
+  group: '${{ github.workflow }}-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.issue.number }}'
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: 'bash'
+
+jobs:
+  review:
+    runs-on: 'ubuntu-latest'
+    timeout-minutes: 7
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      issues: 'write'
+      pull-requests: 'write'
+    steps:
+      - name: 'Mint identity token'
+        id: 'mint_identity_token'
+        if: |-
+          ${{ vars.APP_ID }}
+        uses: 'actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf' # ratchet:actions/create-github-app-token@v2
+        with:
+          app-id: '${{ vars.APP_ID }}'
+          private-key: '${{ secrets.APP_PRIVATE_KEY }}'
+          permission-contents: 'read'
+          permission-issues: 'write'
+          permission-pull-requests: 'write'
+
+      - name: 'Checkout repository'
+        uses: 'actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8' # ratchet:actions/checkout@v6
+
+      - name: 'Setup Node.js'
+        uses: 'actions/setup-node@v4'
+        with:
+          node-version: '20'
+
+      - name: 'Configure Gemini CLI settings'
+        env:
+          SETTINGS: |-
+            {
+              "model": {
+                "maxSessionTurns": 100
+              },
+              "telemetry": {
+                "enabled": true,
+                "target": "local",
+                "outfile": ".gemini/telemetry.log"
+              },
+              "mcpServers": {
+                "github": {
+                  "command": "docker",
+                  "args": [
+                    "run",
+                    "-i",
+                    "--rm",
+                    "-e",
+                    "GITHUB_PERSONAL_ACCESS_TOKEN",
+                    "ghcr.io/github/github-mcp-server:v0.27.0"
+                  ],
+                  "includeTools": [
+                    "add_comment_to_pending_review",
+                    "pull_request_read",
+                    "pull_request_review_write"
+                  ],
+                  "env": {
+                    "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+                  }
+                }
+              }
+            }
+          GITHUB_TOKEN: '${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}'
+        run: |
+          mkdir -p .gemini/commands
+          echo "${SETTINGS}" > .gemini/settings.json
+          if [ -d .github/commands ]; then
+            cp -r .github/commands/* .gemini/commands/
+          fi
+
+      - name: 'Install Gemini CLI'
+        run: |
+          npm install --silent --no-audit --prefer-offline --global @google/gemini-cli@${{ vars.GEMINI_CLI_VERSION || 'latest' }}
+
+      - name: 'Install Extensions'
+        run: |
+          gemini extensions install "https://github.com/gemini-cli-extensions/code-review" --consent --skip-settings
+
+      - name: 'Authenticate to Google Cloud'
+        if: |-
+          ${{ vars.GCP_WIF_PROVIDER }}
+        id: 'auth'
+        uses: 'google-github-actions/auth@v3'
+        with:
+          project_id: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
+          workload_identity_provider: '${{ vars.GCP_WIF_PROVIDER }}'
+          service_account: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
+          token_format: 'access_token'
+
+      - name: 'Run Gemini CLI'
+        id: 'gemini_run'
+        env:
+          GEMINI_API_KEY: '${{ secrets.GEMINI_API_KEY }}'
+          GOOGLE_API_KEY: '${{ secrets.GOOGLE_API_KEY }}'
+          GOOGLE_CLOUD_PROJECT: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
+          GOOGLE_CLOUD_LOCATION: '${{ vars.GOOGLE_CLOUD_LOCATION }}'
+          GOOGLE_CLOUD_ACCESS_TOKEN: '${{ steps.auth.outputs.access_token }}'
+          GOOGLE_GENAI_USE_VERTEXAI: '${{ vars.GOOGLE_GENAI_USE_VERTEXAI }}'
+          GOOGLE_GENAI_USE_GCA: '${{ vars.GOOGLE_GENAI_USE_GCA }}'
+          GEMINI_MODEL: '${{ vars.GEMINI_MODEL }}'
+          SURFACE: 'GitHub'
+          GH_WORKFLOW_NAME: 'gemini-review'
+          GH_PR_NUMBER: '${{ github.event.pull_request.number }}'
+          GH_ISSUE_NUMBER: '${{ github.event.issue.number }}'
+          GITHUB_TOKEN: '${{ steps.mint_identity_token.outputs.token || secrets.GITHUB_TOKEN || github.token }}'
+          ISSUE_TITLE: '${{ github.event.pull_request.title || github.event.issue.title }}'
+          ISSUE_BODY: '${{ github.event.pull_request.body || github.event.issue.body }}'
+          PULL_REQUEST_NUMBER: '${{ github.event.pull_request.number || github.event.issue.number }}'
+          REPOSITORY: '${{ github.repository }}'
+          ADDITIONAL_CONTEXT: '${{ inputs.additional_context }}'
+          GEMINI_DEBUG: '${{ fromJSON(vars.GEMINI_DEBUG || vars.ACTIONS_STEP_DEBUG || false) }}'
+        run: |
+          set -euo pipefail
+          
+          TEMP_STDOUT="$(mktemp -p "${RUNNER_TEMP}" gemini-out.XXXXXXXXXX)"
+          TEMP_STDERR="$(mktemp -p "${RUNNER_TEMP}" gemini-err.XXXXXXXXXX)"
+          function cleanup {
+            rm -f "${TEMP_STDOUT}" "${TEMP_STDERR}"
+          }
+          trap cleanup EXIT
+          
+          FAILED=false
+          if [[ "${GEMINI_DEBUG}" = "true" ]]; then
+            echo "::: Start Gemini CLI STDOUT :::"
+            if ! gemini --debug --yolo --prompt "/pr-code-review" --output-format json 2> >(tee "${TEMP_STDERR}" >&2) | tee "${TEMP_STDOUT}"; then
+              FAILED=true
+            fi
+            sleep 1
+            echo "::: End Gemini CLI STDOUT :::"
+          else
+            if ! gemini --yolo --prompt "/pr-code-review" --output-format json 2> "${TEMP_STDERR}" 1> "${TEMP_STDOUT}"; then
+              FAILED=true
+            fi
+          fi
+          
+          mkdir -p gemini-artifacts
+          cp "${TEMP_STDOUT}" gemini-artifacts/stdout.log
+          cp "${TEMP_STDERR}" gemini-artifacts/stderr.log
+          if [[ -f .gemini/telemetry.log ]]; then
+            cp .gemini/telemetry.log gemini-artifacts/telemetry.log
+          else
+            touch gemini-artifacts/telemetry.log
+          fi
+          
+          RESPONSE=""
+          ERROR_JSON=""
+          if jq -e . "${TEMP_STDOUT}" >/dev/null 2>&1; then
+             RESPONSE=$(jq -r '.response // ""' "${TEMP_STDOUT}")
+          fi
+          if jq -e . "${TEMP_STDERR}" >/dev/null 2>&1; then
+             ERROR_JSON=$(jq -c '.error // empty' "${TEMP_STDERR}")
+          fi
+          
+          if { [[ -s "${TEMP_STDERR}" ]] && ! jq -e . "${TEMP_STDERR}" >/dev/null 2>&1; }; then
+            echo "::warning::Gemini CLI stderr was not valid JSON"
+          fi
+          if { [[ -s "${TEMP_STDOUT}" ]] && ! jq -e . "${TEMP_STDOUT}" >/dev/null 2>&1; }; then
+            echo "::warning::Gemini CLI stdout was not valid JSON"
+          fi
+          
+          echo "gemini_response<<EOF" >> "${GITHUB_OUTPUT}"
+          if [[ -n "${RESPONSE}" ]]; then
+            echo "${RESPONSE}" >> "${GITHUB_OUTPUT}"
+          else
+            cat "${TEMP_STDOUT}" >> "${GITHUB_OUTPUT}"
+          fi
+          echo "EOF" >> "${GITHUB_OUTPUT}"
+          
+          echo "gemini_errors<<EOF" >> "${GITHUB_OUTPUT}"
+          if [[ -n "${ERROR_JSON}" ]]; then
+            echo "${ERROR_JSON}" >> "${GITHUB_OUTPUT}"
+          else
+            cat "${TEMP_STDERR}" >> "${GITHUB_OUTPUT}"
+          fi
+          echo "EOF" >> "${GITHUB_OUTPUT}"
+          
+          if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+            {
+              echo "### Gemini CLI Execution"
+              echo
+              echo "#### Prompt"
+              echo
+              echo "\`\`\`"
+              echo "/pr-code-review"
+              echo "\`\`\`"
+              echo
+              if [[ -n "${RESPONSE}" ]]; then
+                 echo "#### Response"
+                 echo
+                 echo "${RESPONSE}"
+                 echo
+              fi
+              if [[ -n "${ERROR_JSON}" ]]; then
+                 echo "#### Error"
+                 echo
+                 echo "\`\`\`json"
+                 echo "${ERROR_JSON}"
+                 echo "\`\`\`"
+                 echo
+              elif [[ "${FAILED}" == "true" ]]; then
+                 echo "#### Error Output"
+                 echo
+                 echo "\`\`\`"
+                 cat "${TEMP_STDERR}"
+                 echo "\`\`\`"
+                 echo
+              fi
+            } >> "${GITHUB_STEP_SUMMARY}"
+          fi
+          
+          if [[ "${FAILED}" = "true" ]]; then
+            if [[ -n "${ERROR_JSON}" ]]; then
+               ERROR_MSG=$(jq -r '.message // .' <<< "${ERROR_JSON}")
+               echo "::error title=Gemini CLI execution failed::${ERROR_MSG}"
+            fi
+            echo "::: Start Gemini CLI STDERR :::"
+            cat "${TEMP_STDERR}"
+            echo "::: End Gemini CLI STDERR :::"
+            exit 1
+          fi
+
+      - name: 'Upload Gemini CLI outputs'
+        if: |-
+          ${{ vars.UPLOAD_ARTIFACTS == 'true' }}
+        uses: 'actions/upload-artifact@v4'
+        with:
+          name: 'gemini-output'
+          path: 'gemini-artifacts/'
+
+      - name: 'Upload Telemetry to Google Cloud'
+        if: |-
+          ${{ vars.GCP_WIF_PROVIDER }}
+        shell: 'bash'
+        run: |-
+          set -euo pipefail
+
+          # If the telemetry log doesn't exist or is empty, do nothing.
+          if [[ ! -s ".gemini/telemetry.log" ]]; then
+            echo "No telemetry log found, skipping upload."
+            exit 0
+          fi
+
+          # Create the config file
+          cat <<EOF > .gemini/collector-gcp.yaml
+          receivers:
+            filelog:
+              include: ['.gemini/telemetry.log']
+              start_at: 'beginning'
+
+          processors:
+            resource:
+              attributes:
+                - key: 'github.repository'
+                  value: '${{ github.repository }}'
+                  action: 'upsert'
+                - key: 'github.run_id'
+                  value: '${{ github.run_id }}'
+                  action: 'upsert'
+                - key: 'github.pr.number'
+                  value: '${{ github.event.pull_request.number || github.event.issue.number }}'
+                  action: 'upsert'
+                - key: 'github.issue.number'
+                  value: '${{ github.event.pull_request.number || github.event.issue.number }}'
+                  action: 'upsert'
+                - key: 'github.workflow'
+                  value: 'gemini-review'
+                  action: 'upsert'
+            batch:
+              send_batch_size: 100
+              timeout: '10s'
+
+          exporters:
+            googlecloud:
+              project: '${{ vars.GOOGLE_CLOUD_PROJECT }}'
+              log:
+                default_log_name: 'gemini-cli'
+
+          service:
+            pipelines:
+              logs:
+                receivers: ['filelog']
+                processors: ['batch', 'resource']
+                exporters: ['googlecloud']
+            telemetry:
+              metrics:
+                address: '0.0.0.0:8888'
+          EOF
+
+          # Ensure credentials file has the right permissions
+          chmod 444 "$GOOGLE_APPLICATION_CREDENTIALS"
+
+          # Run the collector in the background with a known name
+          docker run --rm --name gemini-telemetry-collector --network host \
+            -v "${GITHUB_WORKSPACE}:/github/workspace" \
+            -e "GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS/$GITHUB_WORKSPACE//github/workspace}" \
+            -w "/github/workspace" \
+            otel/opentelemetry-collector-contrib:0.108.0 \
+            --config /github/workspace/.gemini/collector-gcp.yaml &
+
+          # Wait for the collector to start up
+          echo "Waiting for collector to initialize..."
+          sleep 10
+
+          # Monitor the queue until it's empty or we time out
+          echo "Monitoring exporter queue..."
+          ATTEMPTS=0
+          MAX_ATTEMPTS=12 # 12 * 5s = 60s timeout
+          while true; do
+              # Use -f to fail silently if the server isn't ready yet
+              # Filter out the prometheus help/type comments before grabbing the value
+              QUEUE_SIZE=$(curl -sf http://localhost:8888/metrics | grep otelcol_exporter_queue_size | grep -v '^#' | awk '{print $2}' || echo "-1")
+
+              if [ "$QUEUE_SIZE" == "0" ]; then
+                  echo "Exporter queue is empty, all data processed."
+                  break
+              fi
+
+              if [ "$ATTEMPTS" -ge "$MAX_ATTEMPTS" ]; then
+                  echo "::warning::Timed out waiting for exporter queue to empty. Proceeding with shutdown."
+                  break
+              fi
+
+              echo "Queue size: $QUEUE_SIZE, waiting..."
+              sleep 5
+              ATTEMPTS=$((ATTEMPTS + 1))
+          done
+
+          # Gracefully shut down the collector
+          echo "Stopping collector..."
+          docker stop gemini-telemetry-collector
+          echo "Collector stopped."

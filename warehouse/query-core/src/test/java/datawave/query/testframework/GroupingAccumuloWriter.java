@@ -1,6 +1,8 @@
 package datawave.query.testframework;
 
 import static datawave.query.testframework.AbstractDataTypeConfig.YMD_DateFormat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Calendar;
 import java.util.Collection;
@@ -20,11 +22,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import com.google.common.collect.Multimap;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.normalizer.LcNoDiacriticsNormalizer;
 import datawave.data.normalizer.Normalizer;
@@ -34,6 +34,7 @@ import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
 
 /**
@@ -110,18 +111,18 @@ class GroupingAccumuloWriter {
                 for (String column : rawData.keySet()) {
                     if (meta.containsKey(column.toLowerCase())) {
                         Mutation mut = new Mutation(column);
-                        mut.put(ColumnFamilyConstants.COLF_E, dtText, EMPTY_VALUE);
+                        mut.put(MetadataColumnFamilyConstants.COLF_E, dtText, EMPTY_VALUE);
                         Value colVal = new Value(SummingCombiner.VAR_LEN_ENCODER.encode((long) rawData.get(column).size()));
-                        mut.put(ColumnFamilyConstants.COLF_F, new Text(this.dataType + NULL_SEP + shardDate), colVal);
+                        mut.put(MetadataColumnFamilyConstants.COLF_F, new Text(this.dataType + NULL_SEP + shardDate), colVal);
                         if (this.fieldConfig.getIndexFields().contains(column)) {
-                            mut.put(ColumnFamilyConstants.COLF_I, dtText, EMPTY_VALUE);
+                            mut.put(MetadataColumnFamilyConstants.COLF_I, dtText, EMPTY_VALUE);
                         }
                         if (this.fieldConfig.getReverseIndexFields().contains(column)) {
-                            mut.put(ColumnFamilyConstants.COLF_RI, dtText, EMPTY_VALUE);
+                            mut.put(MetadataColumnFamilyConstants.COLF_RI, dtText, EMPTY_VALUE);
                         }
                         Normalizer<?> norm = meta.get(column.toLowerCase()).normalizer;
                         String type = getNormalizerTypeName(norm);
-                        mut.put(ColumnFamilyConstants.COLF_T, new Text(this.dataType + NULL_SEP + type), EMPTY_VALUE);
+                        mut.put(MetadataColumnFamilyConstants.COLF_T, new Text(this.dataType + NULL_SEP + type), EMPTY_VALUE);
 
                         bw.addMutation(mut);
                     } else {
@@ -208,8 +209,8 @@ class GroupingAccumuloWriter {
 
     private String extractShard(Multimap<String,String> data) {
         Collection<String> shard = data.get(this.shardField);
-        Assert.assertNotNull("shard date field not found in raw data", shard);
-        Assert.assertEquals("shard date is invalid", 1, shard.size());
+        assertNotNull("shard date field not found in raw data", shard);
+        assertEquals("shard date is invalid", 1, shard.size());
         return shard.iterator().next();
     }
 
@@ -240,7 +241,7 @@ class GroupingAccumuloWriter {
         }
 
         // add others as needed
-        Assert.assertNotNull(clName);
+        assertNotNull(clName);
         return clName;
     }
 }

@@ -15,7 +15,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -28,6 +27,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import datawave.scan.ScannerBuilder;
 
 /**
  * Created on 8/10/16. This class will scan an accumulo table for all or a specified number of columns. The number of results for rows old than A,B,C,D... days
@@ -173,7 +174,7 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
 
         try {
             Authorizations userAuthorizations = accumuloClient.securityOperations().getUserAuthorizations(accumuloClient.whoami());
-            scanner = accumuloClient.createScanner(tableName, userAuthorizations);
+            scanner = ScannerBuilder.create(accumuloClient).setTableName(tableName).setAuthorizations(userAuthorizations).build();
             scanner = addColumnsToScanner(scanner);
             Range range = new Range();
             scanner.setRange(range);
@@ -200,8 +201,6 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
             log.error("Authorization error.");
         } catch (AccumuloSecurityException ase) {
             log.error("Accumulo security error.");
-        } catch (TableNotFoundException tnfe) {
-            log.error("Unable to find " + tableName + " in our accumulo instance.");
         } finally {
             if (scanner != null) {
                 scanner.close();

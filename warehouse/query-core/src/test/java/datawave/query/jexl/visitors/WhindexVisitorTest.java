@@ -1,5 +1,7 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,9 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -31,7 +32,7 @@ public class WhindexVisitorTest {
 
     private static final MockMetadataHelper metadataHelper = new MockMetadataHelper();
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
 
         mappingFields.add("TOPPINGS");
@@ -93,7 +94,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(0), metadataHelper);
 
-        Assert.assertEquals("geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && TOPPINGS == 'HOT_FUDGE'",
+        assertEquals("geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && TOPPINGS == 'HOT_FUDGE'",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -109,7 +110,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -125,7 +126,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals("geo:within_bounding_box(HOT_FUDGE_SUNDAE, '-10_-10', '10_10')", JexlStringBuildingVisitor.buildQuery(jexlScript));
+        assertEquals("geo:within_bounding_box(HOT_FUDGE_SUNDAE, '-10_-10', '10_10')", JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
     @Test
@@ -140,7 +141,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals("geo:within_bounding_box(HOT_FUDGE_SUNDAE, '-10_-10', '10_10')", JexlStringBuildingVisitor.buildQuery(jexlScript));
+        assertEquals("geo:within_bounding_box(HOT_FUDGE_SUNDAE, '-10_-10', '10_10')", JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
     @Test
@@ -155,7 +156,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals("geo:within_circle(HOT_FUDGE_SUNDAE, '-10_-10', '10')", JexlStringBuildingVisitor.buildQuery(jexlScript));
+        assertEquals("geo:within_circle(HOT_FUDGE_SUNDAE, '-10_-10', '10')", JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
     @Test
@@ -170,8 +171,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "((TOPPINGS == 'HOT_FUDGE' && FIELD == 'blah') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+        assertEquals("((TOPPINGS == 'HOT_FUDGE' && FIELD == 'blah') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -187,8 +187,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && FIELD == 'blah') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && FIELD == 'blah') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -204,7 +203,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -220,8 +219,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (HOT_FUDGE_SUNDAE == '0100' || ((BoundedRange = true) && (HOT_FUDGE_SUNDAE >= '0102' && HOT_FUDGE_SUNDAE <= '0103')))",
+        assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (HOT_FUDGE_SUNDAE == '0100' || ((BoundedRange = true) && (HOT_FUDGE_SUNDAE >= '0102' && HOT_FUDGE_SUNDAE <= '0103')))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -237,8 +235,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (HOT_FUDGE_SUNDAE == '0100' || ((BoundedRange = true) && (HOT_FUDGE_SUNDAE >= '0102' && HOT_FUDGE_SUNDAE <= '0103')))",
+        assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (HOT_FUDGE_SUNDAE == '0100' || ((BoundedRange = true) && (HOT_FUDGE_SUNDAE >= '0102' && HOT_FUDGE_SUNDAE <= '0103')))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -254,7 +251,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -270,7 +267,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -286,8 +283,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -303,8 +299,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -320,7 +315,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals("FIELD == 'VALUE' && (TOPPINGS == 'HOT_FUDGE' || TOPPINGS == 'BANANA')", JexlStringBuildingVisitor.buildQuery(jexlScript));
+        assertEquals("FIELD == 'VALUE' && (TOPPINGS == 'HOT_FUDGE' || TOPPINGS == 'BANANA')", JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
     @Test
@@ -335,7 +330,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals("(TOPPINGS == 'HOT_FUDGE' || TOPPINGS == 'BANANA') && FIELD == 'VALUE'", JexlStringBuildingVisitor.buildQuery(jexlScript));
+        assertEquals("(TOPPINGS == 'HOT_FUDGE' || TOPPINGS == 'BANANA') && FIELD == 'VALUE'", JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
     @Test
@@ -350,8 +345,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (CONTAINER == 'CONE' || CONTAINER == 'BOWL')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (CONTAINER == 'CONE' || CONTAINER == 'BOWL')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -367,8 +361,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (CONTAINER == 'CONE' || CONTAINER == 'BOWL')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (CONTAINER == 'CONE' || CONTAINER == 'BOWL')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -384,8 +377,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(TOPPINGS == 'HOT_FUDGE' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || (TOPPINGS == 'BANANA' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("(TOPPINGS == 'HOT_FUDGE' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || (TOPPINGS == 'BANANA' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -401,8 +393,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(TOPPINGS == 'HOT_FUDGE' && geo:within_bounding_box(SHERBERT, '-10_-10', '10_10')) || geo:within_bounding_box(HOT_FUDGE_SUNDAE, '-10_-10', '10_10') || (TOPPINGS == 'BANANA' && geo:within_bounding_box(SHERBERT, '-10_-10', '10_10')) || geo:within_bounding_box(BANANA_SPLIT, '-10_-10', '10_10')",
+        assertEquals("(TOPPINGS == 'HOT_FUDGE' && geo:within_bounding_box(SHERBERT, '-10_-10', '10_10')) || geo:within_bounding_box(HOT_FUDGE_SUNDAE, '-10_-10', '10_10') || (TOPPINGS == 'BANANA' && geo:within_bounding_box(SHERBERT, '-10_-10', '10_10')) || geo:within_bounding_box(BANANA_SPLIT, '-10_-10', '10_10')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -418,8 +409,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(TOPPINGS == 'HOT_FUDGE' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || (TOPPINGS == 'BANANA' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("(TOPPINGS == 'HOT_FUDGE' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || (TOPPINGS == 'BANANA' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -435,8 +425,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))')) || (geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))'))",
+        assertEquals("(geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))')) || (geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))'))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -452,8 +441,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(geowave:intersects(BANANA_SPLIT, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || (geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+        assertEquals("(geowave:intersects(BANANA_SPLIT, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || (geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -469,8 +457,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "TOPPINGS == 'PEANUT' && ((TOPPINGS == 'HOT_FUDGE' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || (TOPPINGS == 'BANANA' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+        assertEquals("TOPPINGS == 'PEANUT' && ((TOPPINGS == 'HOT_FUDGE' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || (TOPPINGS == 'BANANA' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -486,8 +473,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "TOPPINGS == 'PEANUT' && ((TOPPINGS == 'HOT_FUDGE' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || (TOPPINGS == 'BANANA' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+        assertEquals("TOPPINGS == 'PEANUT' && ((TOPPINGS == 'HOT_FUDGE' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || (TOPPINGS == 'BANANA' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -503,8 +489,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "TOPPINGS == 'PEANUT' && (geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+        assertEquals("TOPPINGS == 'PEANUT' && (geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -520,8 +505,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "TOPPINGS == 'PEANUT' && (geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+        assertEquals("TOPPINGS == 'PEANUT' && (geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -537,8 +521,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && TOPPINGS == 'CHERRY') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && TOPPINGS == 'CHERRY') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -554,8 +537,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && TOPPINGS == 'CHERRY') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && TOPPINGS == 'CHERRY') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -571,8 +553,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (ICE_CREAM == '0100' || ((BoundedRange = true) && (ICE_CREAM >= '0102' && ICE_CREAM <= '0103'))) && TOPPINGS == 'CHERRY') || (geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (HOT_FUDGE_SUNDAE == '0100' || ((BoundedRange = true) && (HOT_FUDGE_SUNDAE >= '0102' && HOT_FUDGE_SUNDAE <= '0103')))) || (geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (BANANA_SPLIT == '0100' || ((BoundedRange = true) && (BANANA_SPLIT >= '0102' && BANANA_SPLIT <= '0103'))))",
+        assertEquals("(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (ICE_CREAM == '0100' || ((BoundedRange = true) && (ICE_CREAM >= '0102' && ICE_CREAM <= '0103'))) && TOPPINGS == 'CHERRY') || (geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (HOT_FUDGE_SUNDAE == '0100' || ((BoundedRange = true) && (HOT_FUDGE_SUNDAE >= '0102' && HOT_FUDGE_SUNDAE <= '0103')))) || (geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (BANANA_SPLIT == '0100' || ((BoundedRange = true) && (BANANA_SPLIT >= '0102' && BANANA_SPLIT <= '0103'))))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -588,8 +569,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "((ICE_CREAM == '0100' || ((BoundedRange = true) && (ICE_CREAM >= '0102' && ICE_CREAM <= '0103'))) && geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && TOPPINGS == 'CHERRY') || (geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (HOT_FUDGE_SUNDAE == '0100' || ((BoundedRange = true) && (HOT_FUDGE_SUNDAE >= '0102' && HOT_FUDGE_SUNDAE <= '0103')))) || (geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (BANANA_SPLIT == '0100' || ((BoundedRange = true) && (BANANA_SPLIT >= '0102' && BANANA_SPLIT <= '0103'))))",
+        assertEquals("((ICE_CREAM == '0100' || ((BoundedRange = true) && (ICE_CREAM >= '0102' && ICE_CREAM <= '0103'))) && geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && TOPPINGS == 'CHERRY') || (geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (HOT_FUDGE_SUNDAE == '0100' || ((BoundedRange = true) && (HOT_FUDGE_SUNDAE >= '0102' && HOT_FUDGE_SUNDAE <= '0103')))) || (geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (BANANA_SPLIT == '0100' || ((BoundedRange = true) && (BANANA_SPLIT >= '0102' && BANANA_SPLIT <= '0103'))))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -605,8 +585,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (((_Eval_ = true) && (TOPPINGS == 'PEANUT')) || ((_Eval_ = true) && (TOPPINGS == 'PISTACHIO')) || ((_Eval_ = true) && (TOPPINGS == 'CASHEW')))",
+        assertEquals("geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (((_Eval_ = true) && (TOPPINGS == 'PEANUT')) || ((_Eval_ = true) && (TOPPINGS == 'PISTACHIO')) || ((_Eval_ = true) && (TOPPINGS == 'CASHEW')))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -622,8 +601,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (((_Eval_ = true) && (TOPPINGS == 'PEANUT')) || ((_Eval_ = true) && (TOPPINGS == 'PISTACHIO')))",
+        assertEquals("geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (((_Eval_ = true) && (TOPPINGS == 'PEANUT')) || ((_Eval_ = true) && (TOPPINGS == 'PISTACHIO')))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -639,8 +617,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -656,8 +633,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && (geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+        assertEquals("((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && (geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -673,8 +649,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (((_Eval_ = true) && (TOPPINGS == 'PEANUT')) || ((_Eval_ = true) && (TOPPINGS == 'PISTACHIO')) || ((_Eval_ = true) && (TOPPINGS == 'CASHEW')))",
+        assertEquals("geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (((_Eval_ = true) && (TOPPINGS == 'PEANUT')) || ((_Eval_ = true) && (TOPPINGS == 'PISTACHIO')) || ((_Eval_ = true) && (TOPPINGS == 'CASHEW')))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -690,8 +665,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && FOO == 'BAR' && geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+        assertEquals("((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && FOO == 'BAR' && geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -707,8 +681,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "((geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && FOO == 'BAR') || (BAR == 'FOO' && geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')))",
+        assertEquals("((geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && FOO == 'BAR') || (BAR == 'FOO' && geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -724,8 +697,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "((TOPPINGS == 'HOT_FUDGE' && FOO == 'BAR') || (BAR == 'FOO' && geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')))",
+        assertEquals("((TOPPINGS == 'HOT_FUDGE' && FOO == 'BAR') || (BAR == 'FOO' && geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -741,8 +713,7 @@ public class WhindexVisitorTest {
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
         jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
 
-        Assert.assertEquals(
-                        "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(ICE_CREAM, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))')) && ((TOPPINGS == 'HOT_FUDGE' && BAR == 'FOO') || FOO == 'BAR')",
+        assertEquals("(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(ICE_CREAM, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))')) && ((TOPPINGS == 'HOT_FUDGE' && BAR == 'FOO') || FOO == 'BAR')",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 
@@ -761,8 +732,7 @@ public class WhindexVisitorTest {
 
         System.out.println(JexlStringBuildingVisitor.buildQuery(jexlScript));
 
-        Assert.assertEquals(
-                        "(TOPPINGS == 'PEANUT' && geowave:intersects(NOTHING, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || (((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+        assertEquals("(TOPPINGS == 'PEANUT' && geowave:intersects(NOTHING, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || (((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 }

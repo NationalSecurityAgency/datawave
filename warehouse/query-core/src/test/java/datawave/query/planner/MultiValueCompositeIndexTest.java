@@ -2,30 +2,23 @@ package datawave.query.planner;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.microservice.query.QueryParameters.QUERY_END;
-import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.microservice.query.QueryParameters.QUERY_NAME;
-import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -39,25 +32,21 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.GeometryType;
 import datawave.data.type.NumberType;
@@ -76,28 +65,30 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.microservice.query.DefaultQueryParameters;
-import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
+import datawave.query.util.AbstractQueryTest;
 import datawave.table.constants.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 
-@RunWith(Arquillian.class)
-public class MultiValueCompositeIndexTest {
-
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class MultiValueCompositeIndexTest extends AbstractQueryTest {
 
     private static final int NUM_SHARDS = 3;
     private static final String DATA_TYPE_NAME = "wkt";
@@ -107,17 +98,16 @@ public class MultiValueCompositeIndexTest {
     private static final String WKT_BYTE_LENGTH_FIELD = "WKT_BYTE_LENGTH";
 
     private static final String AUTHS = "ALL";
+    private static final Authorizations auths = new Authorizations(AUTHS);
 
     private static final String formatPattern = "yyyyMMdd HHmmss.SSS";
     private static final SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
 
     private static final String COMPOSITE_BEGIN_DATE = "20010101 000000.000";
 
-    private static final String BEGIN_DATE = "20000101 000000.000";
-    private static final String END_DATE = "20020101 000000.000";
-
-    private static final String USER = "testcorp";
-    private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
+    // every event is ingested at COMPOSITE_BEGIN_DATE, so the query only needs to cover that single shard day
+    private static final String BEGIN_DATE = "20010101 000000.000";
+    private static final String END_DATE = "20010101 235959.999";
 
     private static final Configuration conf = new Configuration();
 
@@ -174,22 +164,75 @@ public class MultiValueCompositeIndexTest {
 
     private static final List<TestData> testData = new ArrayList<>();
 
-    @Inject
-    @SpringBean(name = "EventQuery")
-    ShardQueryLogic logic;
+    @Autowired
+    @Qualifier("EventQuery")
+    protected ShardQueryLogic logic;
 
-    private static InMemoryInstance instance;
+    private static AccumuloClient clientForTest;
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+    private ShardQueryLogic currentLogic;
+    private List<DefaultEvent> events = new ArrayList<>();
+    private int expectedEventCount = -1;
+
+    @Override
+    public ShardQueryLogic getLogic() {
+        return currentLogic;
+    }
+
+    @Override
+    public Authorizations getAuths() {
+        return auths;
+    }
+
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
+    }
+
+    @Override
+    protected QueryImpl getSettings() throws Exception {
+        QueryImpl settings = new QueryImpl();
+        settings.setBeginDate(formatter.parse(BEGIN_DATE));
+        settings.setEndDate(formatter.parse(END_DATE));
+        settings.setPagesize(Integer.MAX_VALUE);
+        settings.setQueryAuthorizations(getAuths().serialize());
+        settings.setQuery(getQuery());
+        settings.setParameters(getParameters());
+        settings.setId(UUID.randomUUID());
+        return settings;
+    }
+
+    @Override
+    protected void executeQuery(ShardQueryLogic logic) throws Exception {
+        try {
+            Iterator<?> iter = logic.getTransformIterator(logic.getConfig().getQuery());
+            events = new ArrayList<>();
+            while (iter.hasNext()) {
+                events.add((DefaultEvent) iter.next());
+            }
+        } finally {
+            logic.close();
+        }
+    }
+
+    @Override
+    protected void extraAssertions() {
+        assertEquals(expectedEventCount, events.size());
+
+        for (DefaultEvent event : events) {
+            List<String> wkt = new ArrayList<>();
+            List<Integer> wktByteLength = new ArrayList<>();
+
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD))
+                    wkt.add(field.getValueString());
+                else if (field.getName().equals(WKT_BYTE_LENGTH_FIELD))
+                    wktByteLength.add(Integer.parseInt(field.getValueString()));
+            }
+
+            TestData result = new TestData(wkt, wktByteLength);
+            assertTrue(testData.contains(result));
+        }
     }
 
     public static void createTestData() {
@@ -205,8 +248,8 @@ public class MultiValueCompositeIndexTest {
 
     }
 
-    @BeforeClass
-    public static void setupClass() throws Exception {
+    @BeforeAll
+    public static void setupClass(@TempDir Path tempDir) throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
 
         createTestData();
@@ -256,14 +299,17 @@ public class MultiValueCompositeIndexTest {
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
 
         // write these values to their respective tables
-        instance = new InMemoryInstance();
+        InMemoryInstance instance = new InMemoryInstance();
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
 
         writeKeyValues(client, keyValues);
+        clientForTest = client;
         ingestUtil.write(client, new Authorizations(AUTHS));
 
-        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
+        Path ivaratorDir = tempDir.resolve("ivarator");
+        Files.createDirectories(ivaratorDir);
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(ivaratorDir.toUri().toString()));
     }
 
     public static void setupConfiguration(Configuration conf) {
@@ -324,6 +370,14 @@ public class MultiValueCompositeIndexTest {
         }
     }
 
+    private void runGeoQuery(boolean useIvarator, String query, int expectedCount) throws Exception {
+        setClientForTest(clientForTest);
+        currentLogic = getShardQueryLogic(useIvarator);
+        this.expectedEventCount = expectedCount;
+        givenQuery(query);
+        planAndExecuteQuery();
+    }
+
     @Test
     public void compositeWithoutIvaratorTest() throws Exception {
         // @formatter:off
@@ -339,28 +393,10 @@ public class MultiValueCompositeIndexTest {
             // immediately from the ThreadedRangeBundler. The test framework also begins pulling ranges and the
             // final count is obviously incorrect
             List<QueryData> queries = getQueryRanges(query, false);
-            Assert.assertEquals(2, queries.size());
+            assertEquals(2, queries.size());
         }
 
-        List<DefaultEvent> events = getQueryResults(query, false);
-        Assert.assertEquals(3, events.size());
-
-        for (DefaultEvent event : events) {
-            List<String> wkt = new ArrayList<>();
-            List<Integer> wktByteLength = new ArrayList<>();
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt.add(field.getValueString());
-                else if (field.getName().equals(WKT_BYTE_LENGTH_FIELD))
-                    wktByteLength.add(Integer.parseInt(field.getValueString()));
-            }
-
-            TestData result = new TestData(wkt, wktByteLength);
-            Assert.assertTrue(testData.contains(result));
-        }
-
-        Assert.assertEquals(3, events.size());
+        runGeoQuery(false, query, 3);
     }
 
     @Test
@@ -380,40 +416,23 @@ public class MultiValueCompositeIndexTest {
             List<QueryData> queries = getQueryRanges(query, true);
 
             if (logic.isUseShardedIndex()) {
-                Assert.assertEquals(2, queries.size());
+                assertEquals(2, queries.size());
             } else {
-                Assert.assertEquals(2196, queries.size());
+                // the ivarator forces a full scan of the query's date range: one shard day at NUM_SHARDS shards
+                assertEquals(NUM_SHARDS, queries.size());
             }
         }
 
-        List<DefaultEvent> events = getQueryResults(query, true);
-        Assert.assertEquals(3, events.size());
-
-        for (DefaultEvent event : events) {
-            List<String> wkt = new ArrayList<>();
-            List<Integer> wktByteLength = new ArrayList<>();
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt.add(field.getValueString());
-                else if (field.getName().equals(WKT_BYTE_LENGTH_FIELD))
-                    wktByteLength.add(Integer.parseInt(field.getValueString()));
-            }
-
-            TestData result = new TestData(wkt, wktByteLength);
-            Assert.assertTrue(testData.contains(result));
-        }
-
-        Assert.assertEquals(3, events.size());
+        runGeoQuery(true, query, 3);
     }
 
     private List<QueryData> getQueryRanges(String queryString, boolean useIvarator) throws Exception {
-        ShardQueryLogic logic = getShardQueryLogic(useIvarator);
+        ShardQueryLogic rangeLogic = getShardQueryLogic(useIvarator);
 
-        Iterator iter = getQueryRangesIterator(queryString, logic);
+        Iterator<QueryData> iter = getQueryRangesIterator(queryString, rangeLogic);
         List<QueryData> queryData = new ArrayList<>();
         while (iter.hasNext()) {
-            queryData.add((QueryData) iter.next());
+            queryData.add(iter.next());
         }
 
         if (iter instanceof CloseableIterable) {
@@ -423,91 +442,41 @@ public class MultiValueCompositeIndexTest {
         return queryData;
     }
 
-    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator) throws Exception {
-        ShardQueryLogic logic = getShardQueryLogic(useIvarator);
+    private Iterator<QueryData> getQueryRangesIterator(String queryString, ShardQueryLogic rangeLogic) throws Exception {
+        QueryImpl query = new QueryImpl();
+        query.setBeginDate(formatter.parse(BEGIN_DATE));
+        query.setEndDate(formatter.parse(END_DATE));
+        query.setPagesize(Integer.MAX_VALUE);
+        query.setQueryAuthorizations(auths.serialize());
+        query.setQuery(queryString);
+        query.setId(UUID.randomUUID());
 
-        Iterator iter = getResultsIterator(queryString, logic);
-        List<DefaultEvent> events = new ArrayList<>();
-        while (iter.hasNext())
-            events.add((DefaultEvent) iter.next());
-        return events;
-    }
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(rangeLogic, query);
 
-    private Iterator getQueryRangesIterator(String queryString, ShardQueryLogic logic) throws Exception {
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
-        params.putSingle(QUERY_STRING, queryString);
-        params.putSingle(QUERY_NAME, "geoQuery");
-        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
-        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
-        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
-        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
-        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
-        params.putSingle(QUERY_END, END_DATE);
+        rangeLogic.initialize(config, clientForTest, query, Collections.singleton(auths));
 
-        QueryParameters queryParams = new DefaultQueryParameters();
-        queryParams.validate(params);
-
-        Set<Authorizations> auths = new HashSet<>();
-        auths.add(new Authorizations(AUTHS));
-
-        Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
-
-        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-
-        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
-
-        logic.setupQuery(config);
+        rangeLogic.setupQuery(config);
 
         return config.getQueriesIter();
     }
 
-    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic) throws Exception {
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
-        params.putSingle(QUERY_STRING, queryString);
-        params.putSingle(QUERY_NAME, "geoQuery");
-        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
-        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
-        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
-        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
-        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
-        params.putSingle(QUERY_END, END_DATE);
-
-        QueryParameters queryParams = new DefaultQueryParameters();
-        queryParams.validate(params);
-
-        Set<Authorizations> auths = new HashSet<>();
-        auths.add(new Authorizations(AUTHS));
-
-        Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
-
-        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-
-        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
-
-        logic.setupQuery(config);
-
-        return logic.getTransformIterator(query);
-    }
-
     private ShardQueryLogic getShardQueryLogic(boolean useIvarator) {
-        ShardQueryLogic logic = new ShardQueryLogic(this.logic);
+        ShardQueryLogic clonedLogic = new ShardQueryLogic(this.logic);
 
         // increase the depth threshold
-        logic.setMaxDepthThreshold(20);
+        clonedLogic.setMaxDepthThreshold(20);
 
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
+        ((DefaultQueryPlanner) (clonedLogic.getQueryPlanner())).setPushdownThreshold(1000000);
 
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
-        logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
-        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
+        clonedLogic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
+        clonedLogic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
 
         if (useIvarator)
-            setupIvarator(logic);
+            setupIvarator(clonedLogic);
 
-        return logic;
+        return clonedLogic;
     }
 
     private void setupIvarator(ShardQueryLogic logic) {

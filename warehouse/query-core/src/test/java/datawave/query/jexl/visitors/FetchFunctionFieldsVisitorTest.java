@@ -1,5 +1,7 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -7,10 +9,9 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.jexl.JexlASTHelper;
@@ -24,7 +25,7 @@ public class FetchFunctionFieldsVisitorTest {
 
     private final Set<FetchFunctionFieldsVisitor.FunctionFields> expected = new HashSet<>();
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         metadataHelper.addNormalizers("FOO", Collections.singleton(new LcNoDiacriticsType()));
         metadataHelper.addNormalizers("FOO2", Collections.singleton(new LcNoDiacriticsType()));
@@ -32,7 +33,7 @@ public class FetchFunctionFieldsVisitorTest {
         metadataHelper.addNormalizers("FOO4", Collections.singleton(new LcNoDiacriticsType()));
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         query = null;
         functions.clear();
@@ -408,7 +409,7 @@ public class FetchFunctionFieldsVisitorTest {
     private void assertResults() throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Set<FetchFunctionFieldsVisitor.FunctionFields> actual = FetchFunctionFieldsVisitor.fetchFields(script, functions, metadataHelper);
-        Assert.assertEquals(expected, actual);
+        assertEquals(expected, actual);
         clearExpected();
     }
 }

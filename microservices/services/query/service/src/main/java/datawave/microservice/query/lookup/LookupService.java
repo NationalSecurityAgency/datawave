@@ -48,7 +48,7 @@ import datawave.microservice.query.stream.listener.StreamingResponseListener;
 import datawave.query.data.UUIDType;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.ProxiedUserDetails;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NoResultsQueryException;
@@ -134,7 +134,7 @@ public class LookupService {
      */
     public void lookupUUID(MultiValueMap<String,String> parameters, String pool, DatawaveUserDetails currentUser, StreamingResponseListener listener)
                     throws QueryException {
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
             log.info("Request: lookupUUID from {} with params: {}", user, parameters);
         } else {
@@ -188,7 +188,7 @@ public class LookupService {
      *             if there is an unknown error
      */
     public BaseQueryResponse lookupUUID(MultiValueMap<String,String> parameters, String pool, DatawaveUserDetails currentUser) throws QueryException {
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
             log.info("Request: lookupUUID from {} with params: {}", user, parameters);
         } else {
@@ -245,7 +245,7 @@ public class LookupService {
      */
     public <T> T lookupContentUUID(MultiValueMap<String,String> parameters, String pool, DatawaveUserDetails currentUser, StreamingResponseListener listener)
                     throws QueryException {
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
             log.info("Request: lookupContentUUID from {} with params: {}", user, parameters);
         } else {
@@ -300,7 +300,7 @@ public class LookupService {
      *             if there is an unknown error
      */
     public BaseQueryResponse lookupContentUUID(MultiValueMap<String,String> parameters, String pool, DatawaveUserDetails currentUser) throws QueryException {
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
             log.info("Request: lookupContentUUID from {} with params: {}", user, parameters);
         } else {
@@ -533,7 +533,7 @@ public class LookupService {
 
     protected void setupEventQueryParameters(MultiValueMap<String,String> parameters, LookupQueryLogic<?> queryLogic, DatawaveUserDetails currentUser)
                     throws AuthorizationException {
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
         final String queryName = user + "-" + UUID.randomUUID().toString();
 
         final String endDate;
@@ -664,7 +664,7 @@ public class LookupService {
     }
 
     protected void setContentQueryParameters(MultiValueMap<String,String> parameters, DatawaveUserDetails currentUser) {
-        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String user = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
 
         setOptionalQueryParameters(parameters);
 
