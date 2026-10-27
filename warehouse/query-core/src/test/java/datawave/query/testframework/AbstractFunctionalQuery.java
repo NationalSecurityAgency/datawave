@@ -1,6 +1,9 @@
 package datawave.query.testframework;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,7 +48,6 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
@@ -85,7 +87,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
@@ -100,7 +102,11 @@ import datawave.webservice.result.EventQueryResponseBase;
  * <li>DATAWAVE_INGEST_HOME => target directory</li>
  * <li>hadoop.home.dir => target directory</li>
  * </ul>
+ * This is the JUnit 4 functional-query fixture.
+ *
+ * @deprecated Use {@link AbstractFunctionalQueryJUnit5} for Jupiter tests.
  */
+@Deprecated
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
 
     @Rule
@@ -114,7 +120,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", StandardCharsets.UTF_8.name());
-        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnProperties.NPE_OU_PROPERTY, "iamnotaperson");
         try {
             File dir = new File(ClassLoader.getSystemClassLoader().getResource(".").toURI());
             File targetDir = dir.getParentFile();
@@ -122,7 +128,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             System.setProperty("hadoop.home.dir", targetDir.getAbsolutePath());
         } catch (URISyntaxException se) {
             log.error("failed to get URI for .", se);
-            Assert.fail();
+            fail();
         }
     }
 
@@ -264,7 +270,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         // init must set auths
         testInit();
 
-        Assert.assertNotNull(this.auths);
+        assertNotNull(this.auths);
         authSet.clear();
         authSet.add(this.auths);
 
@@ -307,17 +313,17 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     @Override
     public String parse(Key key, Document document) {
         Attribute<?> attr = document.get(this.documentKey);
-        Assert.assertNotNull("document key(" + this.documentKey + ") attribute is null", attr);
+        assertNotNull("document key(" + this.documentKey + ") attribute is null", attr);
 
         Object data = attr.getData();
-        Assert.assertNotNull("document key attribute is null: key(" + this.documentKey + ")", data);
+        assertNotNull("document key attribute is null: key(" + this.documentKey + ")", data);
         String keyVal = null;
         if (data instanceof Type) {
             keyVal = ((Type<?>) data).getDelegate().toString();
         } else if (data instanceof String) {
             keyVal = (String) data;
         } else {
-            Assert.fail("invalid type for document key(" + this.documentKey + "");
+            fail("invalid type for document key(" + this.documentKey + "");
         }
 
         return keyVal;
@@ -348,7 +354,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
                 test = test.substring(idx + subStr.length());
             }
         } while (-1 < idx);
-        Assert.assertEquals("marker (" + subStr + ") in plan: " + plan, expect, total);
+        assertEquals("marker (" + subStr + ") in plan: " + plan, expect, total);
     }
 
     /**
@@ -575,16 +581,16 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         Collection<String> expect = getExpectedKeyResponse(query);
 
         List<EventBase> events = resp.getEvents();
-        Assert.assertEquals(1, events.size());
+        assertEquals(1, events.size());
         EventBase<?,?> event = events.get(0);
         List<?> fields = event.getFields();
-        Assert.assertEquals(1, fields.size());
+        assertEquals(1, fields.size());
         FieldBase<?> count = (FieldBase<?>) fields.get(0);
         String val = count.getValueString();
         if (log.isDebugEnabled()) {
             log.debug("expected count(" + expect.size() + ") actual count(" + val + ")");
         }
-        Assert.assertEquals("" + expect.size(), val);
+        assertEquals("" + expect.size(), val);
     }
 
     /**
@@ -681,16 +687,16 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected List<String>[] ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
         final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
-        Assert.assertNotNull(hdfsConfig);
+        assertNotNull(hdfsConfig);
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
 
         final List<String> dirs = new ArrayList<>();
         final List<String> fstDirs = new ArrayList<>();
         for (int d = 1; d <= hdfsLocations; d++) {
-            Path ivCache = Paths.get(temporaryFolder.newFolder().toURI());
+            Path ivCache = Paths.get(createTemporaryFolder().toURI());
             dirs.add(ivCache.toUri().toString());
             if (fst) {
-                ivCache = Paths.get(temporaryFolder.newFolder().toURI());
+                ivCache = Paths.get(createTemporaryFolder().toURI());
                 fstDirs.add(ivCache.toAbsolutePath().toString());
             }
         }
@@ -704,6 +710,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         }
 
         return new List[] {dirs, fstDirs};
+    }
+
+    protected File createTemporaryFolder() throws IOException {
+        return temporaryFolder.newFolder();
     }
 
     /**

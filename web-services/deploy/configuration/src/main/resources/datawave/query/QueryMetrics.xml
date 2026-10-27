@@ -189,10 +189,6 @@
 	</property>	
 
     <property>
-        <name>shard.table.index.bloom.enable</name>
-        <value>false</value>
-    </property>
-    <property>
         <name>AccumuloRecordWriter.maxmemory</name>
         <value>10000000</value>
     </property>

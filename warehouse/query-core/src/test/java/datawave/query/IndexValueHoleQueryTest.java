@@ -2,6 +2,7 @@ package datawave.query;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,15 +12,15 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.query.config.IndexValueHole;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.testframework.AbstractFields;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.BaseShardIdRange;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
@@ -33,10 +34,10 @@ import datawave.query.testframework.ShardIdValues;
 /**
  * The index hole provides the means of using the entries in the event when indexes are missing for a range.
  */
-public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
+public class IndexValueHoleQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(IndexValueHoleQueryTest.class);
 
@@ -47,7 +48,7 @@ public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
         INDEX_HOLE.add(hole);
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         // add two datatypes that contain different indexes - this will create an index hole
@@ -79,14 +80,14 @@ public class IndexValueHoleQueryTest extends AbstractFunctionalQuery {
         runTest(query, query, start, end);
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testErrorFieldOnly() throws Exception {
         log.info("------  testErrorFieldOnly  ------");
         String usa = "'uSa'";
         String query = CityField.CODE.name() + EQ_OP + usa;
         // setting the index hole creates an invalid query
         this.logic.setIndexValueHoles(INDEX_HOLE);
-        runTest(query, query);
+        assertThrows(DatawaveFatalQueryException.class, () -> runTest(query, query));
     }
 
     @Test
