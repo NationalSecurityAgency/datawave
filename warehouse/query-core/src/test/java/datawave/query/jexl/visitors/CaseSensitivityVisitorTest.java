@@ -6,8 +6,8 @@ import java.util.Collections;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.util.MockMetadataHelper;
@@ -18,7 +18,7 @@ public class CaseSensitivityVisitorTest {
     private final MockMetadataHelper helper = new MockMetadataHelper();
     private final ShardQueryConfiguration config = new ShardQueryConfiguration();
 
-    @Before
+    @BeforeEach
     public void beforeTest() {
         helper.addTermFrequencyFields(Collections.singletonList("FOO"));
         helper.setIndexedFields(Collections.singleton("FOO"));
