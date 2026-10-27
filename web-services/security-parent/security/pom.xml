@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-security-parent</artifactId>
-        <version>8.2.1-SNAPSHOT</version>
+        <version>8.5.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-security</artifactId>
     <packaging>ejb</packaging>
@@ -132,8 +132,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.arquillian.junit</groupId>
-            <artifactId>arquillian-junit-container</artifactId>
+            <groupId>org.jboss.arquillian.junit5</groupId>
+            <artifactId>arquillian-junit5-container</artifactId>
+            <version>1.10.2.Final</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -232,24 +233,4 @@
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>java17</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludes>
-                                <exclude>**/DatawaveCertRolesLoginModuleTest.java</exclude>
-                                <exclude>**/DatawavePrincipalLoginModuleTest.java</exclude>
-                                <exclude>**/DatawaveUsersRolesLoginModuleTest.java</exclude>
-                            </excludes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
