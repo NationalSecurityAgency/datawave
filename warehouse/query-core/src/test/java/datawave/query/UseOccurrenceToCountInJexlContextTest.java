@@ -1,5 +1,10 @@
 package datawave.query;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -25,11 +30,10 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
@@ -74,7 +78,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
     public static class ShardRange extends UseOccurrenceToCountInJexlContextTest {
         protected static AccumuloClient client = null;
 
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,T,U,V,W,X,Y,Z");
             QueryTestTableHelper qtth = new QueryTestTableHelper(UseOccurrenceToCountInJexlContextTest.ShardRange.class.toString(), log);
@@ -87,7 +91,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
         }
 
-        @Before
+        @BeforeEach
         public void setup() throws Exception {
             super.setup();
             logic.setCollapseUids(true);
@@ -103,7 +107,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
     public static class DocumentRange extends UseOccurrenceToCountInJexlContextTest {
         protected static AccumuloClient client = null;
 
-        @BeforeClass
+        @BeforeAll
         public static void setUp() throws Exception {
             System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,T,U,V,W,X,Y,Z");
             QueryTestTableHelper qtth = new QueryTestTableHelper(UseOccurrenceToCountInJexlContextTest.DocumentRange.class.toString(), log);
@@ -116,7 +120,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
             PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
         }
 
-        @Before
+        @BeforeEach
         public void setup() throws Exception {
             super.setup();
             logic.setCollapseUids(false);
@@ -150,12 +154,12 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
 
     };
 
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         TypeRegistry.reset();
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
@@ -211,14 +215,14 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
 
             Attribute<?> attr = d.get("UUID.0");
 
-            Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
-                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
+            assertNotNull(attr, "Result Document did not contain a 'UUID'");
+            assertTrue(attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute,
+                            "Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName());
 
             TypeAttribute<?> uuidAttr = (TypeAttribute<?>) attr;
 
             String uuid = uuidAttr.getType().getDelegate().toString();
-            Assert.assertTrue("Received unexpected UUID: " + uuid, expected.contains(uuid));
+            assertTrue(expected.contains(uuid), "Received unexpected UUID: " + uuid);
 
             Attribute<?> hitTermAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
             if (hitTermAttribute instanceof Attributes) {
@@ -234,8 +238,8 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
                     if (result == false) {
                         log.debug("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerms:"
                                         + hitTerms);
-                        Assert.fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms
-                                        + " from hitTerms:" + hitTerms);
+                        fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerms:"
+                                        + hitTerms);
                     } else {
                         log.debug("removed hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerms:"
                                         + hitTerms);
@@ -249,7 +253,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
                 boolean result = expectedHitTerms.get(uuid).remove(hitString);
                 if (result == false) {
                     log.debug("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
-                    Assert.fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
+                    fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms);
                 } else {
                     log.debug("removed hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerm:"
                                     + (Attribute<?>) hitTermAttribute);
@@ -272,12 +276,12 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         if (!expected.containsAll(resultSet)) {
             log.error("Expected results " + expected + " differ form actual results " + resultSet);
         }
-        Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
-        Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
+        assertTrue(expected.containsAll(resultSet), "Expected results " + expected + " differ form actual results " + resultSet);
+        assertEquals(expected.size(), resultSet.size(), "Unexpected number of records");
 
         // the map is empty if there were no unexpected hit terms in it
         log.debug("expectedHitTerms:" + expectedHitTerms);
-        Assert.assertTrue(expectedHitTerms.isEmpty());
+        assertTrue(expectedHitTerms.isEmpty());
     }
 
     @Test
