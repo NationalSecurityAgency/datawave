@@ -94,13 +94,13 @@ public class GenerateShardSplits {
                     System.exit(-2);
                 }
                 try {
-                    splitsPerBatch = Integer.parseInt(args[i]);
+                    splitsPerBatch = Integer.parseInt(args[++i]);
                     if (splitsPerBatch < 0) {
                         System.out.println("splitsPerBatch cannot be less than 0");
                         System.exit(-2);
                     }
                 } catch (NumberFormatException e) {
-                    System.out.println("splitsPerBatch delay argument is not an integer:" + e.getMessage());
+                    System.out.println("splitsPerBatch argument is not an integer:" + e.getMessage());
                     System.exit(-2);
                 }
             } else if (args[i].equals("-markersOnly")) {
