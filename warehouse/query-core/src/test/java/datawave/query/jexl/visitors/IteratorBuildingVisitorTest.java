@@ -1,6 +1,14 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,11 +36,9 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.Constants;
@@ -53,8 +59,8 @@ import datawave.query.util.TypeMetadata;
 
 public class IteratorBuildingVisitorTest {
 
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static Path temporaryFolder;
 
     private IteratorBuildingVisitor getDefault() {
         IteratorBuildingVisitor visitor = new IteratorBuildingVisitor();
@@ -74,27 +80,27 @@ public class IteratorBuildingVisitorTest {
         Key end = new Key(shard, dt + '\u0000' + uid + new String(Character.toChars(Character.MAX_CODE_POINT)));
         Range range = new Range(start, false, end, false);
         String doc = visitor.getDocument(range);
-        Assert.assertEquals(dt + '_' + uid, doc);
+        assertEquals(dt + '_' + uid, doc);
 
         end = new Key(shard, new String(Character.toChars(Character.MAX_CODE_POINT)) + "YIELD_BEGIN");
         range = new Range(start, false, end, false);
         doc = visitor.getDocument(range);
-        Assert.assertEquals(null, doc);
+        assertEquals(null, doc);
 
         start = new Key(shard);
         end = new Key(shard + '\u0000');
         range = new Range(start, false, end, false);
         doc = visitor.getDocument(range);
-        Assert.assertEquals(null, doc);
+        assertEquals(null, doc);
 
         doc = visitor.getDocument(null);
-        Assert.assertEquals(null, doc);
+        assertEquals(null, doc);
     }
 
     @Test
     public void ivaratorCacheDirTest() throws IOException {
         IteratorBuildingVisitor visitor = getDefault();
-        String folder = temporaryFolder.newFolder().toURI().toString();
+        String folder = Files.createTempDirectory(temporaryFolder, "ivarator-").toFile().toURI().toString();
         List<IvaratorCacheDirConfig> configs = Collections.singletonList(new IvaratorCacheDirConfig(folder));
         visitor.setIvaratorCacheDirConfigs(configs);
         visitor.setQueryId("QID_1");
@@ -104,7 +110,7 @@ public class IteratorBuildingVisitorTest {
         List<IvaratorCacheDir> dirs = visitor.getIvaratorCacheDirs(1, null, "field", "value");
 
         IvaratorCacheDir config = dirs.get(0);
-        Assert.assertEquals(expected, config.getPathURI().toString());
+        assertEquals(expected, config.getPathURI().toString());
 
         String shard = "20250101_01";
         String dt = "dt";
@@ -116,7 +122,7 @@ public class IteratorBuildingVisitorTest {
 
         config = dirs.get(0);
         // make sure we now have the document in the path
-        Assert.assertEquals(expected + "_doc_" + dt + '_' + uid, config.getPathURI().toString());
+        assertEquals(expected + "_doc_" + dt + '_' + uid, config.getPathURI().toString());
     }
 
     /**
@@ -190,14 +196,14 @@ public class IteratorBuildingVisitorTest {
 
         IteratorBuildingVisitor visitor = getDefault();
 
-        Assert.assertEquals(null, node.jjtAccept(visitor, null));
-        Assert.assertEquals(0, visitor.getDeepCopiesCalled());
+        assertEquals(null, node.jjtAccept(visitor, null));
+        assertEquals(0, visitor.getDeepCopiesCalled());
     }
 
     /**
      * index only null value should result in an error
      */
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void visitEqNode_nullValueIndexOnlyTest() {
         ASTEQNode node = (ASTEQNode) JexlNodeFactory.buildEQNode("FIELD", "blah");
         node.jjtAddChild(JexlNodes.makeStringLiteral(), 1);
@@ -205,10 +211,7 @@ public class IteratorBuildingVisitorTest {
         IteratorBuildingVisitor visitor = getDefault();
         visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
 
-        node.jjtAccept(visitor, null);
-
-        // this should never be reached
-        Assert.assertFalse(true);
+        assertThrows(DatawaveFatalQueryException.class, () -> node.jjtAccept(visitor, null));
     }
 
     /**
@@ -224,26 +227,23 @@ public class IteratorBuildingVisitorTest {
         NestedIterator nestedIterator = visitor.root();
 
         // the only leaf in the iterator is FOO == 'bar'
-        Assert.assertNotEquals(null, nestedIterator);
-        Assert.assertEquals(1, nestedIterator.leaves().size());
-        Assert.assertTrue(nestedIterator.leaves().iterator().next().toString().contains("FOO"));
-        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
+        assertNotEquals(null, nestedIterator);
+        assertEquals(1, nestedIterator.leaves().size());
+        assertTrue(nestedIterator.leaves().iterator().next().toString().contains("FOO"));
+        assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
     /**
      * null value should result in an error. In this case a top level negation is not allowed, so pair it with an indexed lookup
      */
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void visitNeNode_nullValueIndexOnlyTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar' && FIELD != null");
 
         IteratorBuildingVisitor visitor = getDefault();
         visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
 
-        query.jjtAccept(visitor, null);
-
-        // this should never be reached
-        Assert.assertFalse(true);
+        assertThrows(DatawaveFatalQueryException.class, () -> query.jjtAccept(visitor, null));
     }
 
     @Test
@@ -254,7 +254,7 @@ public class IteratorBuildingVisitorTest {
         IteratorBuildingVisitor visitor = getDefault();
         script.jjtAccept(visitor, null);
 
-        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
+        assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
     @Test
@@ -265,7 +265,7 @@ public class IteratorBuildingVisitorTest {
         IteratorBuildingVisitor visitor = getDefault();
         script.jjtAccept(visitor, null);
 
-        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
+        assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
     @Test
@@ -274,7 +274,7 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
         IteratorBuildingVisitor visitor = getDefault();
         script.jjtAccept(visitor, null);
-        Assert.assertEquals(1, visitor.getDeepCopiesCalled());
+        assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
     @Test
@@ -283,10 +283,10 @@ public class IteratorBuildingVisitorTest {
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(query);
         LiteralRange<?> range = IteratorBuildingVisitor.buildLiteralRange(erNodes.get(0));
 
-        Assert.assertTrue(range.getLower().equals("bar"));
-        Assert.assertTrue(range.isLowerInclusive());
-        Assert.assertTrue(range.getUpper().equals("bar" + Constants.MAX_UNICODE_STRING));
-        Assert.assertTrue(range.isUpperInclusive());
+        assertTrue(range.getLower().equals("bar"));
+        assertTrue(range.isLowerInclusive());
+        assertTrue(range.getUpper().equals("bar" + Constants.MAX_UNICODE_STRING));
+        assertTrue(range.isUpperInclusive());
     }
 
     /**
@@ -301,10 +301,10 @@ public class IteratorBuildingVisitorTest {
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(query);
         LiteralRange<?> range = IteratorBuildingVisitor.buildLiteralRange(erNodes.get(0));
 
-        Assert.assertTrue(range.getLower().equals(Constants.NULL_BYTE_STRING));
-        Assert.assertTrue(range.isLowerInclusive());
-        Assert.assertTrue(range.getUpper().equals(Constants.MAX_UNICODE_STRING));
-        Assert.assertTrue(range.isUpperInclusive());
+        assertTrue(range.getLower().equals(Constants.NULL_BYTE_STRING));
+        assertTrue(range.isLowerInclusive());
+        assertTrue(range.getUpper().equals(Constants.MAX_UNICODE_STRING));
+        assertTrue(range.isUpperInclusive());
     }
 
     @Test
@@ -313,10 +313,10 @@ public class IteratorBuildingVisitorTest {
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(query);
         LiteralRange<?> range = IteratorBuildingVisitor.buildLiteralRange(erNodes.get(0));
 
-        Assert.assertTrue(range.getLower().equals("bar"));
-        Assert.assertTrue(range.isLowerInclusive());
-        Assert.assertTrue(range.getUpper().equals("bar" + Constants.MAX_UNICODE_STRING));
-        Assert.assertTrue(range.isUpperInclusive());
+        assertTrue(range.getLower().equals("bar"));
+        assertTrue(range.isLowerInclusive());
+        assertTrue(range.getUpper().equals("bar" + Constants.MAX_UNICODE_STRING));
+        assertTrue(range.isUpperInclusive());
     }
 
     @Test
@@ -325,14 +325,14 @@ public class IteratorBuildingVisitorTest {
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(query);
         LiteralRange<?> range = IteratorBuildingVisitor.buildLiteralRange(erNodes.get(0));
 
-        Assert.assertTrue(range.getLower().equals("barbaz"));
-        Assert.assertTrue(range.isLowerInclusive());
-        Assert.assertTrue(range.getUpper().equals("barbaz"));
-        Assert.assertTrue(range.isUpperInclusive());
+        assertTrue(range.getLower().equals("barbaz"));
+        assertTrue(range.isLowerInclusive());
+        assertTrue(range.getUpper().equals("barbaz"));
+        assertTrue(range.isUpperInclusive());
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void NeTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 != 'v1'");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
@@ -349,7 +349,7 @@ public class IteratorBuildingVisitorTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void excludedOrTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' || !(F2 == 'v2')");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
@@ -365,7 +365,7 @@ public class IteratorBuildingVisitorTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     public void nestedExcludeOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' && (!(F2 == 'v2') || !(F3 == 'v3'))");
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
@@ -1062,57 +1062,57 @@ public class IteratorBuildingVisitorTest {
 
         query.jjtAccept(visitor, null);
         NestedIterator result = visitor.root();
-        Assert.assertTrue(result != null);
+        assertTrue(result != null);
         SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result, env);
         seekableNestedIterator.seek(docRange, Collections.emptySet(), true);
         seekableNestedIterator.initialize();
 
         // asserts for a hit or miss
         if (docKeyHit == null) {
-            Assert.assertFalse(seekableNestedIterator.hasNext());
+            assertFalse(seekableNestedIterator.hasNext());
         } else {
-            Assert.assertTrue(seekableNestedIterator.hasNext());
+            assertTrue(seekableNestedIterator.hasNext());
             Key next = (Key) seekableNestedIterator.next();
-            Assert.assertTrue(next != null);
-            Assert.assertTrue(next.getRow().toString().equals(docKeyHit.getRow().toString()));
-            Assert.assertTrue(next.getColumnFamily().toString().equals(docKeyHit.getColumnFamily().toString()));
+            assertTrue(next != null);
+            assertTrue(next.getRow().toString().equals(docKeyHit.getRow().toString()));
+            assertTrue(next.getColumnFamily().toString().equals(docKeyHit.getColumnFamily().toString()));
 
             // asserts for document build
             Document d = seekableNestedIterator.document();
-            Assert.assertTrue(d != null);
+            assertTrue(d != null);
 
             if (buildDoc) {
                 // +1 is for RECORD_ID field
-                Assert.assertTrue(docKeys.keySet().size() + 1 == d.getDictionary().size());
+                assertTrue(docKeys.keySet().size() + 1 == d.getDictionary().size());
 
                 // verify hits for each specified field
                 for (String field : docKeys.keySet()) {
                     List<String> expected = docKeys.get(field);
                     if (expected.size() == 1) {
                         // verify the only doc
-                        Assert.assertTrue(d.getDictionary().get(field).getData().equals(expected.get(0)));
+                        assertTrue(d.getDictionary().get(field).getData().equals(expected.get(0)));
                     } else {
                         // the data should be a set, verify it matches expected
                         Object dictData = d.getDictionary().get(field).getData();
-                        Assert.assertTrue(dictData != null);
-                        Assert.assertTrue(dictData instanceof Set);
+                        assertTrue(dictData != null);
+                        assertTrue(dictData instanceof Set);
                         Set dictSet = (Set) dictData;
-                        Assert.assertTrue(dictSet.size() == expected.size());
+                        assertTrue(dictSet.size() == expected.size());
                         Iterator<Attribute> dictIterator = dictSet.iterator();
                         while (dictIterator.hasNext()) {
-                            Assert.assertTrue(expected.remove(dictIterator.next().getData()));
+                            assertTrue(expected.remove(dictIterator.next().getData()));
                         }
                         // verify that the expected set is now empty
-                        Assert.assertTrue(expected.size() == 0);
+                        assertTrue(expected.size() == 0);
                     }
                 }
             } else {
                 // doc should be empty
-                Assert.assertTrue(d.getDictionary().size() == 0);
+                assertTrue(d.getDictionary().size() == 0);
             }
 
             // there should be no other hits
-            Assert.assertFalse(seekableNestedIterator.hasNext());
+            assertFalse(seekableNestedIterator.hasNext());
         }
     }
 
