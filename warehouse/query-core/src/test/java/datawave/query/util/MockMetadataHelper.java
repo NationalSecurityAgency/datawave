@@ -84,11 +84,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     private static AccumuloClient getClient() {
-        try {
-            return new InMemoryAccumuloClient("root", new InMemoryAccumulo());
-        } catch (AccumuloSecurityException e) {
-            throw new RuntimeException(e);
-        }
+        return new InMemoryAccumuloClient("root", new InMemoryAccumulo());
     }
 
     public void addContentFields(Collection<String> fields) {
