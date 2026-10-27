@@ -29,16 +29,16 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.WaitWindowQueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -46,10 +46,10 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 
-public class IvaratorYieldingTest extends AbstractFunctionalQuery {
+public class IvaratorYieldingTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(IvaratorYieldingTest.class);
 
@@ -64,7 +64,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         this.documentKey = EVENT_ID.name();
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
@@ -78,7 +78,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         client = accumuloSetup.loadTables(log, RebuildingScannerTestHelper.TEARDOWN.NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
@@ -91,7 +91,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
         // setup a directory for cache results
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(createTemporaryFolder().toURI().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         logic.setYieldThresholdMs(1);
