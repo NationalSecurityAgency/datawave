@@ -8,7 +8,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.hadoop.io.Text;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.normalizer.AbstractNormalizer;
 

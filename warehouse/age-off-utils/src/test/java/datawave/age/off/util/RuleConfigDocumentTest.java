@@ -1,6 +1,6 @@
 package datawave.age.off.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -17,7 +17,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.xerces.dom.DocumentImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
 import datawave.ingest.util.cache.watch.RuleConfig;
@@ -33,7 +33,7 @@ public class RuleConfigDocumentTest {
                 "  <filterClass>myclass</filterClass>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
@@ -49,7 +49,7 @@ public class RuleConfigDocumentTest {
                 "  <ttl units=\"h\">2468</ttl>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
@@ -64,7 +64,7 @@ public class RuleConfigDocumentTest {
                 "  <matchPattern>\n1234\n</matchPattern>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
@@ -78,7 +78,7 @@ public class RuleConfigDocumentTest {
                 "  <filterClass>myclass</filterClass>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
@@ -96,7 +96,7 @@ public class RuleConfigDocumentTest {
                 "  <b/>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
@@ -110,7 +110,7 @@ public class RuleConfigDocumentTest {
                 "  <filterClass>myclass</filterClass>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class RuleConfigDocumentTest {
                 "  <b/>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     private String transformToXmlString(RuleConfig ruleConfig) throws IOException {
