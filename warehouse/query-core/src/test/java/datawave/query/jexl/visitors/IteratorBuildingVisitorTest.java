@@ -135,26 +135,26 @@ public class IteratorBuildingVisitorTest {
     public void ivaratorCreationOrderIsDeterministicTest() throws Exception {
         String query = "((_Value_ = true) && (FOO =~ 'a.*')) && ((_Value_ = true) && (BAR =~ 'b.*')) && ((_Value_ = true) && (BAZ =~ 'c.*'))";
         // use a single cache dir config for both builds so the resulting paths are directly comparable
-        String folder = temporaryFolder.newFolder().toURI().toString();
+        String folder = Files.createTempDirectory(temporaryFolder, "ivarator-").toFile().toURI().toString();
 
         List<String> firstBuild = collectIvaratorCacheDirs(query, folder);
         List<String> secondBuild = collectIvaratorCacheDirs(query, folder);
 
         // the query contains three ivarated terms
-        Assert.assertEquals(3, firstBuild.size());
+        assertEquals(3, firstBuild.size());
 
         // rebuilding the same query must yield the same directories in the same order
-        Assert.assertEquals(firstBuild, secondBuild);
+        assertEquals(firstBuild, secondBuild);
 
         // term numbers are assigned in creation order, starting at one
         for (int i = 0; i < firstBuild.size(); i++) {
-            Assert.assertTrue("expected term number " + (i + 1) + " in " + firstBuild.get(i), firstBuild.get(i).contains("_term_" + (i + 1) + "_"));
+            assertTrue(firstBuild.get(i).contains("_term_" + (i + 1) + "_"), "expected term number " + (i + 1) + " in " + firstBuild.get(i));
         }
 
         // each distinct ivarator keeps its term number, tying a stable term number to a stable field across rebuilds
-        Assert.assertTrue(firstBuild.get(0).contains("_term_1_field_FOO_"));
-        Assert.assertTrue(firstBuild.get(1).contains("_term_2_field_BAR_"));
-        Assert.assertTrue(firstBuild.get(2).contains("_term_3_field_BAZ_"));
+        assertTrue(firstBuild.get(0).contains("_term_1_field_FOO_"));
+        assertTrue(firstBuild.get(1).contains("_term_2_field_BAR_"));
+        assertTrue(firstBuild.get(2).contains("_term_3_field_BAZ_"));
     }
 
     private List<String> collectIvaratorCacheDirs(String query, String folder) throws Exception {
