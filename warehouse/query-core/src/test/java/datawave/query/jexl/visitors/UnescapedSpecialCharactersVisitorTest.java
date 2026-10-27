@@ -1,5 +1,7 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -8,9 +10,8 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -28,7 +29,7 @@ public class UnescapedSpecialCharactersVisitorTest {
     private final Multimap<String,Character> expectedLiterals = HashMultimap.create();
     private final Multimap<String,Character> expectedPatterns = HashMultimap.create();
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         query = null;
         clearExpected();
@@ -269,7 +270,7 @@ public class UnescapedSpecialCharactersVisitorTest {
                         patternExceptions, escapedWhitespaceRequiredForPatterns);
         Multimap<String,Character> actualLiterals = visitor.getUnescapedCharactersInLiterals();
         Multimap<String,Character> actualPatterns = visitor.getUnescapedCharactersInPatterns();
-        Assert.assertEquals("Unescaped chars for literals did not match expected", expectedLiterals, actualLiterals);
-        Assert.assertEquals("Unescaped chars for patterns did not match expected", expectedPatterns, actualPatterns);
+        assertEquals(expectedLiterals, actualLiterals, "Unescaped chars for literals did not match expected");
+        assertEquals(expectedPatterns, actualPatterns, "Unescaped chars for patterns did not match expected");
     }
 }

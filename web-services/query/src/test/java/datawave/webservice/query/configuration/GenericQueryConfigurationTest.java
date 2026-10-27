@@ -1,12 +1,12 @@
 package datawave.webservice.query.configuration;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
 import java.util.Date;
 
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.table.constants.TableName;

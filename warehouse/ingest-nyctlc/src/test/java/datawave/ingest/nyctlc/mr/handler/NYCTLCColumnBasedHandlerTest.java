@@ -1,5 +1,8 @@
 package datawave.ingest.nyctlc.mr.handler;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.TimeZone;
@@ -11,12 +14,11 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import datawave.ingest.csv.mr.handler.ColumnBasedHandlerTestUtil;
+import datawave.ingest.csv.mr.handler.ColumnBasedHandlerTestUtilJUnit5;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
@@ -31,14 +33,14 @@ public class NYCTLCColumnBasedHandlerTest {
     private Configuration conf;
     private static Logger log = Logger.getLogger(NYCTLCColumnBasedHandlerTest.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void setupSystemSettings() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", "UTF8");
     }
 
     private NYCTLCReader getNYCTLCRecordReader(String file) throws IOException, URISyntaxException {
-        InputSplit split = ColumnBasedHandlerTestUtil.getSplit(file);
+        InputSplit split = ColumnBasedHandlerTestUtilJUnit5.getSplit(file);
         TaskAttemptContext ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         TypeRegistry.reset();
         TypeRegistry.getInstance(ctx.getConfiguration());
@@ -48,7 +50,7 @@ public class NYCTLCColumnBasedHandlerTest {
         return reader;
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         TypeRegistry.reset();
         conf = new Configuration();
@@ -82,30 +84,30 @@ public class NYCTLCColumnBasedHandlerTest {
 
         // ----------------------------------------------------------------------
         // EVENT 1
-        Assert.assertTrue("First Record did not read properly?", reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue(), "First Record did not read properly?");
         RawRecordContainer event = reader.getEvent();
-        Assert.assertNotNull("Event 1 was null.", event);
-        Assert.assertTrue("Event 1 has parsing errors", event.getErrors().isEmpty());
+        assertNotNull(event, "Event 1 was null.");
+        assertTrue(event.getErrors().isEmpty(), "Event 1 has parsing errors");
         System.out.println("================================= EVENT 1 =================================");
-        ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 66, 33, 0, 0, false);
+        ColumnBasedHandlerTestUtilJUnit5.processEvent(abstractHandler, null, event, 66, 33, 0, 0, false);
 
         // ----------------------------------------------------------------------
         // EVENT 2
-        Assert.assertTrue("Second Record did not read properly?", reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue(), "Second Record did not read properly?");
         event = reader.getEvent();
-        Assert.assertNotNull("Event 2 was null.", event);
-        Assert.assertTrue("Event 2 has parsing errors", event.getErrors().isEmpty());
+        assertNotNull(event, "Event 2 was null.");
+        assertTrue(event.getErrors().isEmpty(), "Event 2 has parsing errors");
         System.out.println("================================= EVENT 2 =================================");
-        ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 63, 27, 0, 0, false);
+        ColumnBasedHandlerTestUtilJUnit5.processEvent(abstractHandler, null, event, 63, 27, 0, 0, false);
 
         // ----------------------------------------------------------------------
         // EVENT 3
-        Assert.assertTrue("Third Record did not read properly?", reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue(), "Third Record did not read properly?");
         event = reader.getEvent();
-        Assert.assertNotNull("Event 3 was null.", event);
-        Assert.assertTrue("Event 3 has parsing errors", event.getErrors().isEmpty());
+        assertNotNull(event, "Event 3 was null.");
+        assertTrue(event.getErrors().isEmpty(), "Event 3 has parsing errors");
         System.out.println("================================= EVENT 3 =================================");
-        ColumnBasedHandlerTestUtil.processEvent(abstractHandler, null, event, 74, 39, 0, 0, false);
+        ColumnBasedHandlerTestUtilJUnit5.processEvent(abstractHandler, null, event, 74, 39, 0, 0, false);
 
         reader.close();
     }
