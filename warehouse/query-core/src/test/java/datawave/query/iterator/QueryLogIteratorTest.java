@@ -25,8 +25,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.security.util.ScannerHelper;
 
 /**
@@ -50,7 +50,7 @@ public class QueryLogIteratorTest {
 
     @Before
     public void setUp() throws Exception {
-        accumuloClient = new InMemoryAccumuloClient("root", new InMemoryInstance(QueryLogIteratorTest.class.toString()));
+        accumuloClient = new InMemoryAccumuloClient("root", new InMemoryAccumulo(QueryLogIteratorTest.class.toString()));
         if (!accumuloClient.tableOperations().exists(TABLE_NAME)) {
             accumuloClient.tableOperations().create(TABLE_NAME);
         }
