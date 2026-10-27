@@ -1,10 +1,10 @@
 package datawave.util.keyword;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TagCloudTest {
 
@@ -233,7 +233,7 @@ public class TagCloudTest {
             unseenLanguages.remove(c.getMetadata().get("language"));
             resultsMap.put(c.getMetadata().get("language"), c);
         }
-        assertTrue("We expected to observe the following languages, but did not: " + unseenLanguages, unseenLanguages.isEmpty());
+        assertTrue(unseenLanguages.isEmpty(), "We expected to observe the following languages, but did not: " + unseenLanguages);
 
         // make some assertions about the individual maps.
         TagCloud oneCloud = resultsMap.get("ONE");
@@ -294,14 +294,14 @@ public class TagCloudTest {
 
         TagCloudEntry lastEntry = null;
         for (TagCloudEntry entry : tagCloudEntries) {
-            assertTrue("Entry score must be greater than zero", entry.getScore() > 0);
-            assertTrue("Entry frequency must be greater than zero", entry.getFrequency() > 0);
-            assertFalse("Entry sources size must not be empty", entry.getSources().isEmpty());
-            assertFalse("Entry keyword must not be empty", entry.getKeyword() == null || entry.getKeyword().isEmpty());
+            assertTrue(entry.getScore() > 0, "Entry score must be greater than zero");
+            assertTrue(entry.getFrequency() > 0, "Entry frequency must be greater than zero");
+            assertFalse(entry.getSources().isEmpty(), "Entry sources size must not be empty");
+            assertFalse(entry.getKeyword() == null || entry.getKeyword().isEmpty(), "Entry keyword must not be empty");
 
             if (lastEntry != null) {
-                assertTrue("Entries must be sorted in ascending order; last entry: " + lastEntry + " current entry: " + entry,
-                                comparator.compare(lastEntry, entry) < 0);
+                assertTrue(comparator.compare(lastEntry, entry) < 0,
+                                "Entries must be sorted in ascending order; last entry: " + lastEntry + " current entry: " + entry);
             }
 
             // update state
@@ -317,8 +317,8 @@ public class TagCloudTest {
                 maxScore = lastScore;
             }
         }
-        assertEquals("Minimum score must be " + expectedMinScore, expectedMinScore, minScore, 0.0);
-        assertEquals("Maximum score must be " + expectedMaxScore, expectedMaxScore, maxScore, 0.0);
+        assertEquals(expectedMinScore, minScore, 0.0, "Minimum score must be " + expectedMinScore);
+        assertEquals(expectedMaxScore, maxScore, 0.0, "Maximum score must be " + expectedMaxScore);
     }
 
     public static void assertFirstAndLastFrequency(int firstFrequency, int lastFrequency, Collection<TagCloudEntry> tagCloudEntries) {

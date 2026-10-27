@@ -10,9 +10,10 @@ import static datawave.query.iterator.QueryOptions.SEEKING_EVENT_AGGREGATION;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS;
 import static datawave.query.iterator.QueryOptions.TF_FIELD_SEEK;
 import static datawave.query.iterator.QueryOptions.TF_NEXT_SEEK;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -28,9 +29,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -51,7 +51,7 @@ import datawave.query.util.TypeMetadataSerializer;
 
 public class QueryOptionsTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() {
         Logger.getLogger(QueryOptions.class).setLevel(Level.TRACE);
     }
@@ -62,7 +62,7 @@ public class QueryOptionsTest {
         Map<String,Set<String>> expectedDataTypeMap = new HashMap<>();
         expectedDataTypeMap.put("k", Sets.newHashSet("v"));
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(singleValueData);
-        assertEquals("Failed to parse single value option string", expectedDataTypeMap, fieldDataTypeMap);
+        assertEquals(expectedDataTypeMap, fieldDataTypeMap, "Failed to parse single value option string");
     }
 
     @Test
@@ -72,7 +72,7 @@ public class QueryOptionsTest {
         expectedDataTypeMap.put("k", Sets.newHashSet("v"));
         expectedDataTypeMap.put("key", Sets.newHashSet("value"));
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(multiValueData);
-        assertEquals("Failed to parse multi-value option string", expectedDataTypeMap, fieldDataTypeMap);
+        assertEquals(expectedDataTypeMap, fieldDataTypeMap, "Failed to parse multi-value option string");
     }
 
     @Test
@@ -80,7 +80,7 @@ public class QueryOptionsTest {
         String emptyData = "";
         Map<String,Set<String>> expectedDataTypeMap = new HashMap<>();
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(emptyData);
-        assertEquals("Failed to parse empty option string", expectedDataTypeMap, fieldDataTypeMap);
+        assertEquals(expectedDataTypeMap, fieldDataTypeMap, "Failed to parse empty option string");
     }
 
     @Test
@@ -88,7 +88,7 @@ public class QueryOptionsTest {
         String nulldata = null;
         Map<String,Set<String>> expectedDataTypeMap = new HashMap<>();
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(nulldata);
-        assertEquals("Failed to parse null option string", expectedDataTypeMap, fieldDataTypeMap);
+        assertEquals(expectedDataTypeMap, fieldDataTypeMap, "Failed to parse null option string");
     }
 
     @Test
@@ -96,7 +96,7 @@ public class QueryOptionsTest {
         String badData = "k:k2:k3:v;";
         Map<String,Set<String>> expectedDataTypeMap = new HashMap<>();
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(badData);
-        assertEquals("Failed to parse bad option string", expectedDataTypeMap, fieldDataTypeMap);
+        assertEquals(expectedDataTypeMap, fieldDataTypeMap, "Failed to parse bad option string");
     }
 
     @Test
@@ -104,7 +104,7 @@ public class QueryOptionsTest {
         String data = "k:v;";
         Set<String> expectedDataTypeKeys = Sets.newHashSet("k");
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
-        assertEquals("Failed to parse single value option string", expectedDataTypeKeys, dataTypeKeys);
+        assertEquals(expectedDataTypeKeys, dataTypeKeys, "Failed to parse single value option string");
     }
 
     @Test
@@ -112,7 +112,7 @@ public class QueryOptionsTest {
         String data = "k:v;key:value";
         Set<String> expectedDataTypeKeys = Sets.newHashSet("k", "key");
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
-        assertEquals("Failed to parse multi-value option string", expectedDataTypeKeys, dataTypeKeys);
+        assertEquals(expectedDataTypeKeys, dataTypeKeys, "Failed to parse multi-value option string");
     }
 
     @Test
@@ -120,7 +120,7 @@ public class QueryOptionsTest {
         String data = "";
         Set<String> expectedDataTypeKeys = Sets.newHashSet();
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
-        assertEquals("Failed to parse empty option string", expectedDataTypeKeys, dataTypeKeys);
+        assertEquals(expectedDataTypeKeys, dataTypeKeys, "Failed to parse empty option string");
     }
 
     @Test
@@ -128,7 +128,7 @@ public class QueryOptionsTest {
         String data = null;
         Set<String> expectedDataTypeKeys = Sets.newHashSet();
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
-        assertEquals("Failed to parse null option string", expectedDataTypeKeys, dataTypeKeys);
+        assertEquals(expectedDataTypeKeys, dataTypeKeys, "Failed to parse null option string");
     }
 
     @Test
@@ -205,7 +205,7 @@ public class QueryOptionsTest {
         String data = QueryOptions.buildFieldNormalizerString(expected);
         Map<String,Set<String>> actual = QueryOptions.buildFieldDataTypeMap(data);
 
-        Assert.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -217,7 +217,7 @@ public class QueryOptionsTest {
         String data = QueryOptions.buildFieldNormalizerString(expected);
         Map<String,Set<String>> actual = QueryOptions.buildFieldDataTypeMap(data);
 
-        Assert.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -227,7 +227,7 @@ public class QueryOptionsTest {
         String data = QueryOptions.buildFieldNormalizerString(expected);
         Map<String,Set<String>> actual = QueryOptions.buildFieldDataTypeMap(data);
 
-        Assert.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -235,7 +235,7 @@ public class QueryOptionsTest {
         Map<String,String> noOpts = Collections.emptyMap();
         QueryOptions opts = new QueryOptions();
         opts.validateOptions(noOpts);
-        Assert.assertSame(EntryKeyIdentity.Function, opts.getFieldIndexKeyDataTypeFilter());
+        assertSame(opts.getFieldIndexKeyDataTypeFilter(), EntryKeyIdentity.Function);
     }
 
     @Test
@@ -245,7 +245,7 @@ public class QueryOptionsTest {
         opts.put(QueryOptions.DISABLE_EVALUATION, "true");
         QueryOptions qopts = new QueryOptions();
         qopts.validateOptions(opts);
-        Assert.assertTrue(qopts.getFieldIndexKeyDataTypeFilter() instanceof FieldIndexKeyDataTypeFilter);
+        assertTrue(qopts.getFieldIndexKeyDataTypeFilter() instanceof FieldIndexKeyDataTypeFilter);
     }
 
     @Test
@@ -293,8 +293,8 @@ public class QueryOptionsTest {
         String compressedOptions = QueryOptions.compressOption(initialString, QueryOptions.UTF8);
         String decompressOptions = WrappedQueryOptions.decompressOption(compressedOptions, QueryOptions.UTF8);
 
-        Assert.assertEquals(initialString.length(), decompressOptions.length());
-        Assert.assertEquals(initialString, decompressOptions);
+        assertEquals(initialString.length(), decompressOptions.length());
+        assertEquals(initialString, decompressOptions);
     }
 
     private static class WrappedQueryOptions extends QueryOptions {

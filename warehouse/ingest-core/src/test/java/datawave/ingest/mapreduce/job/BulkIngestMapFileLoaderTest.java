@@ -1,5 +1,6 @@
 package datawave.ingest.mapreduce.job;
 
+import static com.google.common.util.concurrent.Uninterruptibles.joinUninterruptibly;
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.CLEANUP_FILE_MARKER;
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.COMPLETE_FILE_MARKER;
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.FAILED_FILE_MARKER;
@@ -37,6 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -285,38 +289,21 @@ public class BulkIngestMapFileLoaderTest {
         List<String> log = logCollector.getMessages();
         Assert.assertTrue("Unexpected log messages", log.isEmpty());
 
-        BulkIngestMapFileLoader loader = null;
-
         var jobDir = Paths.get(workPath.toString(), jobName);
-        var loadingFileMarker = Paths.get(jobDir.toString(), LOADING_FILE_MARKER).toAbsolutePath().toString();
+        BulkIngestMapFileLoader loader = newJobCompleteLoader(jobName, 1000, bulkMode);
+        runLoader(loader, jobDir, true, log);
 
-        try {
-            loader = newJobCompleteLoader(jobName, 1000, bulkMode);
+        Assert.assertTrue("Unexpected log output: " + log, log.contains("Bringing Map Files online for " + METADATA_TABLE));
+        Assert.assertTrue("Unexpected log output: " + log, log.contains("Bringing Map Files online for " + SHARD_TABLE));
+        Assert.assertTrue("Unexpected log output: " + log, log.contains("Completed bringing map files online for " + METADATA_TABLE));
+        Assert.assertTrue("Unexpected log output: " + log, log.contains("Completed bringing map files online for " + SHARD_TABLE));
+        Assert.assertTrue("Unexpected log output: " + log, log.contains("Marking 1 sequence files from flagged to loaded"));
 
-            new Thread(loader, "map-file-watcher").start();
+        verifyImportedData(SHARD_TABLE, METADATA_TABLE);
 
-            // Wait up to 30 secs for the bulk loader to log completion
-            for (int i = 1; i <= 15; i++) {
-                Thread.sleep(2000);
-                if (log.contains("Renamed file:" + loadingFileMarker + " to " + CLEANUP_FILE_MARKER)) {
-                    break;
-                }
-            }
-            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
-            Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + SHARD_TABLE));
-            Assert.assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + METADATA_TABLE));
-            Assert.assertTrue("Unexpected log output", log.contains("Completed bringing map files online for " + SHARD_TABLE));
-            Assert.assertTrue("Unexpected log output", log.contains("Marking 1 sequence files from flagged to loaded"));
-
-            verifyImportedData(SHARD_TABLE, METADATA_TABLE);
-
-            Assert.assertTrue(jobDir + " still exists, but should've been cleaned up by the loader", !Files.exists(jobDir));
-
-        } finally {
-            if (loader != null) {
-                loader.shutdown();
-            }
-        }
+        Assert.assertTrue("Source file was not moved to loaded", Files.exists(loadedPath.resolve(jobName).resolve("dummy")));
+        Assert.assertTrue("Source file still exists in flagged", Files.notExists(flaggedPath.resolve(jobName).resolve("dummy")));
+        Assert.assertTrue(jobDir + " still exists, but should've been cleaned up by the loader", Files.notExists(jobDir));
     }
 
     /**
@@ -382,15 +369,7 @@ public class BulkIngestMapFileLoaderTest {
                 Files.delete(loadPlanPath);
             }
 
-            // Start loader and wait up to 30 secs for it to mark the failure
-            new Thread(loader, "map-file-watcher").start();
-
-            for (int i = 1; i <= 10; i++) {
-                Thread.sleep(3000);
-                if (Files.exists(expectedFailedMarker)) {
-                    break;
-                }
-            }
+            runLoader(loader, expectedFailedMarker.getParent(), false, log);
 
             Assert.assertTrue("Unexpected log output", log.contains("Bringing Map Files online for " + METADATA_TABLE));
 
@@ -430,6 +409,38 @@ public class BulkIngestMapFileLoaderTest {
                 loader.shutdown();
             }
         }
+    }
+
+    /**
+     * Wait for the job's final filesystem state, then stop the loader before inspecting results or allowing another test to replace the filesystem cache or log
+     * collector. The cleanup marker only means source-file renames are about to start.
+     */
+    static void runLoader(BulkIngestMapFileLoader loader, java.nio.file.Path jobDir, boolean expectSuccess, List<String> log) throws Exception {
+        FutureTask<Void> task = new FutureTask<>(loader, null);
+        Thread thread = new Thread(task, "map-file-watcher");
+        BooleanSupplier jobFinished = () -> expectSuccess ? Files.notExists(jobDir) : Files.exists(jobDir.resolve(FAILED_FILE_MARKER));
+        thread.start();
+        try {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+            while (!jobFinished.getAsBoolean()) {
+                if (task.isDone()) {
+                    task.get();
+                    // The worker may have finished the job since the loop's filesystem check.
+                    Assert.assertTrue("Loader stopped before finishing " + jobDir + ". Log: " + log, jobFinished.getAsBoolean());
+                    break;
+                }
+                if (System.nanoTime() >= deadline) {
+                    Assert.fail("Timed out waiting for " + jobDir + " to " + (expectSuccess ? "be cleaned up" : "be marked failed") + ". Log: " + log);
+                }
+                Thread.sleep(25);
+            }
+        } finally {
+            loader.shutdown();
+            // shutdown() only sets a flag. Join even if the wait was interrupted or an assertion failed.
+            joinUninterruptibly(thread, 30, TimeUnit.SECONDS);
+            Assert.assertFalse("Loader did not stop for " + jobDir + ". Log: " + log, thread.isAlive());
+        }
+        task.get();
     }
 
     /**

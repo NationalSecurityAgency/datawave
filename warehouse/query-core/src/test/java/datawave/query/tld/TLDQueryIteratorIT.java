@@ -17,8 +17,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.Constants;
 import datawave.query.iterator.QueryIteratorIT;
@@ -35,7 +35,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         return TestTLDQueryIterator.class;
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         super.setup();
 
