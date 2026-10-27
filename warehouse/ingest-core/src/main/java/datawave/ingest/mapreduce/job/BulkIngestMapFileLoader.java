@@ -32,10 +32,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.ActiveCompaction;
-import org.apache.accumulo.core.client.admin.servers.ServerId;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configurable;
@@ -64,6 +61,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
+import datawave.core.common.connection.AccumuloTableUtils;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.util.cli.PasswordConverter;
@@ -712,20 +710,12 @@ public final class BulkIngestMapFileLoader implements Runnable {
     }
 
     private int getMajorCompactionCount() {
-        int majC = 0;
-        ClientContext context = (ClientContext) accumuloClient;
         try {
-            // ACCUMULO4_TODO this code used to contact the monitor and get the running+queued compactions. Now it is only getting the running compaction count
-            // and it is getting that count in a very inefficient way. The following call to getActiveCompactions() will reach out to every tserver and
-            // compactor process and ask what it is compacting. It would be better to get this from a place where the information is already summarized like
-            // the metrics system, monitor, or manager. This change was made to get things compiling, but it is a terrible way to do things and must be fixed at
-            // some point. Opened accumulo issue #4939 based partially on this.
-            majC = (int) accumuloClient.instanceOperations().getActiveCompactions(accumuloClient.instanceOperations().getServers(ServerId.Type.COMPACTOR))
-                            .stream().filter(activeCompaction -> activeCompaction.getType() != ActiveCompaction.CompactionType.MINOR).count();
-        } catch (AccumuloSecurityException | AccumuloException e) {
+            return AccumuloTableUtils.getMajorCompactionCount(accumuloClient);
+        } catch (Exception e) {
             log.error("Unable to retrieve major compaction stats: " + e.getMessage());
+            return 0;
         }
-        return majC;
     }
 
     /**
