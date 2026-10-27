@@ -24,14 +24,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 public class AnyFieldScannerBuilderTest implements BaseScannerSessionTest<AnyFieldScannerBuilder> {
 
-    private static final InMemoryInstance instance = new InMemoryInstance(AnyFieldScannerBuilderTest.class.getName());
+    private static final InMemoryAccumulo instance = InMemoryAccumulo.getInstance(AnyFieldScannerBuilderTest.class.getName());
 
     private static AccumuloClient client;
     private static final String tableName = "shard";

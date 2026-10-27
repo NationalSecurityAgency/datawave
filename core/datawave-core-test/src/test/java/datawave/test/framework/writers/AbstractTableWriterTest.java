@@ -14,7 +14,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.BeforeEach;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.test.framework.FieldMetadata;
@@ -42,7 +42,7 @@ public abstract class AbstractTableWriterTest {
     @BeforeEach
     void createClientAndTables() throws Exception {
         // a fresh instance per test method, so entries written by one test cannot be scanned by another
-        InMemoryInstance instance = new InMemoryInstance(getClass().getSimpleName() + "-" + UUID.randomUUID());
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance(getClass().getSimpleName() + "-" + UUID.randomUUID());
         client = new InMemoryAccumuloClient("root", instance);
         TableCreator.createTables(client);
         client.securityOperations().changeUserAuthorizations("root", AUTHS);

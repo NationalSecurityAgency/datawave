@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.CheckpointableQueryLogic;
@@ -232,7 +232,7 @@ public abstract class BaseEdgeQueryTestJUnit5 {
         // Need to set SDFs after setting the timezone to GMT, else dates will be EST and converted to GMT
         simpleFormat = new SimpleDateFormat("yyyyMMdd");
 
-        InMemoryInstance i = new InMemoryInstance(BaseEdgeQueryTestJUnit5.class.toString());
+        InMemoryAccumulo i = InMemoryAccumulo.getInstance(BaseEdgeQueryTestJUnit5.class.toString());
         client = new InMemoryAccumuloClient("root", i);
 
         // Create the CB tables

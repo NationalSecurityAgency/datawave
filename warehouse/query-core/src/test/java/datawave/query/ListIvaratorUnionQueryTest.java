@@ -30,7 +30,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.google.common.base.Preconditions;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.LcType;
 import datawave.query.index.day.IndexIngestUtil;
@@ -137,7 +137,7 @@ public class ListIvaratorUnionQueryTest extends AbstractQueryTest {
 
     @BeforeAll
     public static void beforeAll() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance(ListIvaratorUnionQueryTest.class.getName());
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance(ListIvaratorUnionQueryTest.class.getName());
         client = new InMemoryAccumuloClient("", instance);
 
         ingest = new AbstractIngest(client, auths);

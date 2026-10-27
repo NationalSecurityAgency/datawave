@@ -39,7 +39,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -152,7 +152,7 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
             mac.start();
             client = mac.createAccumuloClient("root", new PasswordToken(PASSWORD));
         } else {
-            InMemoryInstance instance = new InMemoryInstance(IntermediateResultsQueryTest.class.getName());
+            InMemoryAccumulo instance = InMemoryAccumulo.getInstance(IntermediateResultsQueryTest.class.getName());
             client = new InMemoryAccumuloClient("root", instance);
         }
 

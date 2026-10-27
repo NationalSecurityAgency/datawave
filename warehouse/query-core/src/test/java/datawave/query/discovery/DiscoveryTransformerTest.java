@@ -28,7 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
@@ -59,7 +59,7 @@ public class DiscoveryTransformerTest {
 
     @BeforeAll
     public static void beforeAll() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance(DiscoveryTransformerTest.class.getName());
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance(DiscoveryTransformerTest.class.getName());
         client = new InMemoryAccumuloClient("", instance);
         client.tableOperations().create(METADATA_TABLE_NAME);
     }

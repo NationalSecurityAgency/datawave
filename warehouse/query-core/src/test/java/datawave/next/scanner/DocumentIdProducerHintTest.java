@@ -16,7 +16,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.query.configuration.QueryData;
 import datawave.query.iterator.QueryOptions;
 
@@ -118,7 +118,7 @@ public class DocumentIdProducerHintTest {
     }
 
     private DocumentScannerConfig createConfig() throws Exception {
-        AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance());
+        AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryAccumulo());
         client.tableOperations().create(SHARD);
 
         DocumentScannerConfig config = new DocumentScannerConfig();

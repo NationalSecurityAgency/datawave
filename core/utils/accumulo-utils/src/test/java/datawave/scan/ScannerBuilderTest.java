@@ -21,11 +21,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 
 public class ScannerBuilderTest {
 
-    private static final InMemoryInstance instance = new InMemoryInstance(ScannerBuilderTest.class.getName());
+    private static final InMemoryAccumulo instance = InMemoryAccumulo.getInstance(ScannerBuilderTest.class.getName());
 
     private static AccumuloClient client;
     private static final String tableName = "shard";

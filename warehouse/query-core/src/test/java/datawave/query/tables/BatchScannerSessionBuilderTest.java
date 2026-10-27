@@ -27,7 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -36,7 +36,7 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 public class BatchScannerSessionBuilderTest implements BaseScannerSessionTest<BatchScannerSessionBuilder> {
 
-    private static final InMemoryInstance instance = new InMemoryInstance(BatchScannerSessionBuilderTest.class.getName());
+    private static final InMemoryAccumulo instance = InMemoryAccumulo.getInstance(BatchScannerSessionBuilderTest.class.getName());
 
     private static AccumuloClient client;
     private static final String tableName = "shard";
