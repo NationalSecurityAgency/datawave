@@ -41,8 +41,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.core.iterators.IteratorTimeoutException;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;

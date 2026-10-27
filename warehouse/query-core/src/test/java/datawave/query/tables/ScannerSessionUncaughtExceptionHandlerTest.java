@@ -26,8 +26,8 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.util.concurrent.Service.State;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;

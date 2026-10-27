@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.util.time.DateHelper;
 

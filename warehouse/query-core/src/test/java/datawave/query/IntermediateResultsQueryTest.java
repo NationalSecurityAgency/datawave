@@ -38,8 +38,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;

@@ -11,8 +11,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.ingest.mapreduce.handler.shard.NumShards;
 import datawave.query.index.lookup.RangeStream.NumShardFinder;
 import datawave.table.constants.TableName;

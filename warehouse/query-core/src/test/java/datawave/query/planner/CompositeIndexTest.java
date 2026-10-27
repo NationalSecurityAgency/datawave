@@ -48,8 +48,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.GeometryType;
 import datawave.data.type.NumberType;

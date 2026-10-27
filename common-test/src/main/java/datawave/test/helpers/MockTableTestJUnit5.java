@@ -15,8 +15,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 
 public abstract class MockTableTestJUnit5 {
     public static final String TABLE_NAME = "test";

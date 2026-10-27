@@ -12,8 +12,8 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.table.constants.TableName;
 
 class TableCreatorTest {
