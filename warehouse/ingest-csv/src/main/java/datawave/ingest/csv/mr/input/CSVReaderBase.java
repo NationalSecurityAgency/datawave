@@ -1,6 +1,7 @@
 package datawave.ingest.csv.mr.input;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
@@ -186,7 +187,7 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
         // decorate with additional data (used by overriding classes)
         decorateEvent();
 
-        event.setRawData(rawEventRecordStr.getBytes());
+        event.setRawData(rawEventRecordStr.getBytes(StandardCharsets.UTF_8));
 
         // Check to see if we need to override the UID. The use case for this is that some of the hashes are "enrichment" and the same
         // values will be loaded over and over again. By default, the UID is calculated on the raw byte[]
