@@ -1,9 +1,10 @@
 package datawave.iterators.filter;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URL;
@@ -21,7 +22,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.util.cache.watch.FileRuleCacheValue;
 import datawave.iterators.filter.ageoff.AppliedRule;
@@ -149,7 +150,7 @@ public class ConfigurableAgeOffFilterTest {
         assertTrue(filter.accept(getKey(daysAgo(2)), VALUE));
         assertTrue(filter.accept(getKey(daysAgo(3)), VALUE));
         assertTrue(filter.accept(getKey(daysAgo(4)), VALUE));
-        assertTrue("If this fails it may be an edge case due to date rollover, try again in a minute", filter.accept(getKey(daysAgo(5)), VALUE));
+        assertTrue(filter.accept(getKey(daysAgo(5)), VALUE), "If this fails it may be an edge case due to date rollover, try again in a minute");
 
         // these will not hit the ttl short circuit and the single applied rule
         assertTrue(filter.accept(getKey("foo", daysAgo(6)), VALUE));
@@ -203,18 +204,18 @@ public class ConfigurableAgeOffFilterTest {
         assertFalse(filter.accept(lowBar, VALUE));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testInitWithNoTtl() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
-        filter.init(source, new HashMap<>(), env);
+        assertThrows(NullPointerException.class, () -> filter.init(source, new HashMap<>(), env));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testInitWithNoTtlUnits() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         HashMap<String,String> options = new HashMap<>();
         options.put(AgeOffConfigParams.TTL, "31");
-        filter.init(source, options, env);
+        assertThrows(NullPointerException.class, () -> filter.init(source, options, env));
     }
 
     @Test
@@ -288,7 +289,7 @@ public class ConfigurableAgeOffFilterTest {
 
     private String pathFromClassloader(String name) {
         URL resource = this.getClass().getResource(name);
-        assertNotNull("Unable to get resource with name: " + name, resource);
+        assertNotNull(resource, "Unable to get resource with name: " + name);
         return resource.getPath();
     }
 
