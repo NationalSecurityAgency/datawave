@@ -614,6 +614,7 @@
     <!-- Query Logic that returns document content -->
     <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryLogic">
         <property name="tableName" value="shard" />
+        <property name="maxIds" value="10" />
         <property name="maxResults" value="-1" />
         <property name="maxWork" value="-1" />
         <property name="auditType" value="NONE" />

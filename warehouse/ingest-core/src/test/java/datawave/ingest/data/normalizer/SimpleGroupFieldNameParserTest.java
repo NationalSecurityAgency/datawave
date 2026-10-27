@@ -1,8 +1,9 @@
 package datawave.ingest.data.normalizer;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -12,7 +13,7 @@ public class SimpleGroupFieldNameParserTest {
 
     SimpleGroupFieldNameParser parser;
 
-    @Before
+    @BeforeEach
     public void setup() {
         parser = new SimpleGroupFieldNameParser();
     }
@@ -109,9 +110,9 @@ public class SimpleGroupFieldNameParserTest {
 
         GroupedNormalizedContentInterface newNci = (GroupedNormalizedContentInterface) parser.extractAndTrimFieldNameComponents(nci);
 
-        Assert.assertEquals(expectedFieldName, newNci.getIndexedFieldName());
-        Assert.assertEquals(expectedGroup, newNci.getGroup());
-        Assert.assertEquals(expectedSubGroup, newNci.getSubGroup());
+        assertEquals(expectedFieldName, newNci.getIndexedFieldName());
+        assertEquals(expectedGroup, newNci.getGroup());
+        assertEquals(expectedSubGroup, newNci.getSubGroup());
     }
 
     public void verify(String field, String expectedFieldName, String expectedGroup, String expectedSubGroup) {
@@ -120,9 +121,9 @@ public class SimpleGroupFieldNameParserTest {
 
         GroupedNormalizedContentInterface newNci = (GroupedNormalizedContentInterface) parser.extractFieldNameComponents(nci);
 
-        Assert.assertEquals(expectedFieldName, newNci.getIndexedFieldName());
-        Assert.assertEquals(expectedGroup, newNci.getGroup());
-        Assert.assertEquals(expectedSubGroup, newNci.getSubGroup());
+        assertEquals(expectedFieldName, newNci.getIndexedFieldName());
+        assertEquals(expectedGroup, newNci.getGroup());
+        assertEquals(expectedSubGroup, newNci.getSubGroup());
     }
 
 }
