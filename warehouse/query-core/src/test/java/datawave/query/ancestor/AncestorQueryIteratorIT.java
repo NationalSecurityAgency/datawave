@@ -3,7 +3,7 @@ package datawave.query.ancestor;
 import java.io.IOException;
 
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import datawave.query.iterator.QueryIteratorIT;
 import datawave.query.iterator.QueryOptions;
@@ -13,7 +13,7 @@ import datawave.query.iterator.TestWaitWindowObserver;
  * AncestorQueryIterator integration tests. Ancestor Query should find any hits event query finds plus its own unique cases
  */
 public class AncestorQueryIteratorIT extends QueryIteratorIT {
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         super.setup();
 

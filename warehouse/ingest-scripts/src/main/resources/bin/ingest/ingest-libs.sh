@@ -1,8 +1,10 @@
 #!/bin/bash
 
+INGEST_LIBS_BIN_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
 # Get environment
-. ../ingest/ingest-env.sh
-. ../ingest/findJars.sh
+. "$INGEST_LIBS_BIN_DIR/ingest-env.sh"
+. "$INGEST_LIBS_BIN_DIR/findJars.sh"
 
 #
 # Jars
