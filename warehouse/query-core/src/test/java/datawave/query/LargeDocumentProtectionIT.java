@@ -23,8 +23,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcType;
 import datawave.query.attributes.Document;
 import datawave.query.tables.ShardQueryLogic;
@@ -123,7 +123,7 @@ public class LargeDocumentProtectionIT extends AbstractQueryTest {
 
     @BeforeAll
     public static void setupIngest() throws AccumuloSecurityException, AccumuloException {
-        InMemoryInstance instance = new InMemoryInstance(LargeDocumentProtectionIT.class.getName());
+        InMemoryAccumulo instance = new InMemoryAccumulo(LargeDocumentProtectionIT.class.getName());
         client = new InMemoryAccumuloClient("", instance);
 
         AbstractIngest ingest = new AbstractIngest(client, auths);
