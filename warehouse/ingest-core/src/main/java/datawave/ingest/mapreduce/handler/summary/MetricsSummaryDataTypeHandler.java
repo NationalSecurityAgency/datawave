@@ -1,5 +1,6 @@
 package datawave.ingest.mapreduce.handler.summary;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,7 +55,7 @@ public class MetricsSummaryDataTypeHandler<KEYIN> extends SummaryDataTypeHandler
 
     // constants
     private static final int EXPECTED_VALUES_PER_KEY = 1;
-    public static final Value INCREMENT_ONE_VALUE = new Value("1".getBytes());
+    public static final Value INCREMENT_ONE_VALUE = new Value("1".getBytes(StandardCharsets.UTF_8));
 
     private HandlerDelegate delegate = new HandlerDelegate();
 

@@ -1,5 +1,6 @@
 package datawave.ingest.table.aggregator.util;
 
+import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 
 import org.apache.accumulo.core.data.Key;
@@ -31,9 +32,9 @@ public class TruncatedIndexKeyParser extends AbstractIndexKeyParser {
         if (isStandardKey()) {
             // might want to snag the delete flag as well in the future
             // use a byte array constructor to avoid expensive parsing of the ColumnVisibility
-            byte[] row = getValue().getBytes();
-            byte[] cf = getField().getBytes();
-            byte[] cq = (getDate() + NULL_CHAR + getDatatype()).getBytes();
+            byte[] row = getValue().getBytes(StandardCharsets.UTF_8);
+            byte[] cf = getField().getBytes(StandardCharsets.UTF_8);
+            byte[] cq = (getDate() + NULL_CHAR + getDatatype()).getBytes(StandardCharsets.UTF_8);
             byte[] cv = key.getColumnVisibilityData().toArray();
             return new Key(row, cf, cq, cv, key.getTimestamp());
         } else {

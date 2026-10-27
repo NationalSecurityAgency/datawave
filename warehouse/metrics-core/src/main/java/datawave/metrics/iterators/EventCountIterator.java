@@ -1,5 +1,6 @@
 package datawave.metrics.iterators;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,7 +52,7 @@ public class EventCountIterator extends RowIterator {
         }
         row.clear();
         Key newKey = new Key(timestamp, new Text(Long.toString(count)), WritableUtil.EmptyText);
-        row.put(newKey, new Value(collectionToCsv(jobIds).getBytes()));
+        row.put(newKey, new Value(collectionToCsv(jobIds).getBytes(StandardCharsets.UTF_8)));
     }
 
     private String collectionToCsv(Collection<String> cs) {

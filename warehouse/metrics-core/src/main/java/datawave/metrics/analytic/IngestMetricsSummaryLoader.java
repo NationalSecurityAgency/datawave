@@ -3,6 +3,7 @@ package datawave.metrics.analytic;
 import static datawave.metrics.analytic.MetricsDailySummaryReducer.WeightedPair;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -212,7 +213,7 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
         }
 
         private Value makeValue(String value) {
-            return new Value(value.getBytes());
+            return new Value(value.getBytes(StandardCharsets.UTF_8));
         }
 
         private Value makeValue(long value) {

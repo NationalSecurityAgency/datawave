@@ -3,6 +3,7 @@ package datawave.metrics.iterators;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
@@ -76,7 +77,7 @@ public class JsonCountersIterator extends WrappingIterator implements OptionDesc
                 Counters counters = new Counters();
                 counters.readFields(ByteStreams.newDataInput(topValue.get()));
                 String json = gson.toJson(counters);
-                return new Value(json.getBytes());
+                return new Value(json.getBytes(StandardCharsets.UTF_8));
             } catch (IOException e) {
                 log.debug("Unable to parse value for key " + getTopKey() + " as a counters", e);
                 return topValue;

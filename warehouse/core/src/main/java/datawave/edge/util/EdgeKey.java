@@ -1,6 +1,7 @@
 package datawave.edge.util;
 
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -482,7 +483,7 @@ public class EdgeKey {
 
     private static final String STATS_COLF = "STATS";
 
-    static final byte[] STATS_BYTES = STATS_COLF.getBytes();
+    static final byte[] STATS_BYTES = STATS_COLF.getBytes(StandardCharsets.UTF_8);
 
     private static final int SOURCE_INDEX = 0;
     private static final int SINK_INDEX = 1;

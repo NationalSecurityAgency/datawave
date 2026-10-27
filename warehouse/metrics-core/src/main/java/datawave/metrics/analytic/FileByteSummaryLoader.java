@@ -1,6 +1,7 @@
 package datawave.metrics.analytic;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Properties;
@@ -66,7 +67,7 @@ public class FileByteSummaryLoader extends Configured implements Tool {
         }
 
         private Value makeValue(String value) {
-            return new Value(value.getBytes());
+            return new Value(value.getBytes(StandardCharsets.UTF_8));
         }
     }
 

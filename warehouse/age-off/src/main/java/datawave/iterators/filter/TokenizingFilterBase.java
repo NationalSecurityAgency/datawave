@@ -1,5 +1,6 @@
 package datawave.iterators.filter;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 import org.apache.accumulo.core.data.Key;
@@ -72,7 +73,7 @@ public abstract class TokenizingFilterBase extends AppliedRule {
         if (delimiters == null) {
             throw new IllegalArgumentException("A set of delimiters must be specified");
         }
-        return delimiters.getBytes();
+        return delimiters.getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
