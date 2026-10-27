@@ -1,4 +1,4 @@
-package datawave.webservice.query.runner;
+package datawave.query.runner;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createMock;
@@ -14,12 +14,14 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,10 +45,12 @@ import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResponseEnricher;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
+import datawave.marking.MarkingFunctions;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -54,11 +61,11 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnProperties;
-import datawave.webservice.query.logic.TestQueryLogic;
-import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 import datawave.webservice.result.BaseQueryResponse;
 
 public class RunningQueryTest {
+
+    private static final Key keyFailure = new Key("failure", "", "", "auth1");
 
     class SampleGenericQueryConfiguration extends GenericQueryConfiguration {
         // GenericQueryConfiguration is abstract. Looks like we are using the GenericShardQueryConfiguration
@@ -196,7 +203,7 @@ public class RunningQueryTest {
         roles.add("NONTESTROLE");
         logic1.setTableName("thisTable");
         logic1.setRequiredRoles(roles);
-        CompositeQueryLogicTest.TestQueryLogic2 logic2 = new CompositeQueryLogicTest.TestQueryLogic2();
+        TestQueryLogic2 logic2 = new TestQueryLogic2();
         HashSet<String> roles2 = new HashSet<>();
         roles2.add("NONTESTROLE");
         logic2.setTableName("thatTable");
@@ -422,5 +429,186 @@ public class RunningQueryTest {
         public Set<String> getExampleQueries() {
             return Set.of();
         }
+    }
+
+    public static class TestQueryLogic<T> extends BaseQueryLogic<T> {
+
+        @Override
+        public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+            return null;
+        }
+
+        @Override
+        public void setupQuery(GenericQueryConfiguration configuration) throws Exception {}
+
+        @Override
+        public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
+                        throws Exception {
+            return "";
+        }
+
+        @Override
+        public AccumuloConnectionFactory.Priority getConnectionPriority() {
+            return AccumuloConnectionFactory.Priority.LOW;
+        }
+
+        @Override
+        public QueryLogicTransformer getTransformer(Query settings) {
+            return null;
+        }
+
+        @Override
+        public Object clone() throws CloneNotSupportedException {
+            TestQueryLogic<Object> other = new TestQueryLogic<>();
+            other.setTableName(this.getTableName());
+            other.setMaxResults(this.getMaxResults());
+            other.setMaxWork(this.getMaxWork());
+            return other;
+        }
+
+        @Override
+        public Set<String> getOptionalQueryParameters() {
+            return null;
+        }
+
+        @Override
+        public Set<String> getRequiredQueryParameters() {
+            return null;
+        }
+
+        @Override
+        public Set<String> getExampleQueries() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+    }
+
+    public static class TestQueryLogic2<T> extends TestQueryLogic<T> {
+
+        private Map<Key,Value> data = Collections.synchronizedMap(new LinkedHashMap<>());
+
+        public Map<Key,Value> getData() {
+            return data;
+        }
+
+        @Override
+        public Iterator<T> iterator() {
+            return (Iterator<T>) data.entrySet().iterator();
+        }
+
+        @Override
+        public Object clone() throws CloneNotSupportedException {
+            return new TestQueryLogic2();
+        }
+
+        @Override
+        public String getLogicName() {
+            return UUID.randomUUID().toString();
+        }
+
+        @Override
+        public QueryLogicTransformer getTransformer(Query settings) {
+            return new TestQueryLogicTransformer(new MarkingFunctions.Default());
+        }
+
+        @Override
+        public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+            return new TestQueryConfiguration();
+        }
+
+        @Override
+        public boolean isLongRunningQuery() {
+            return true;
+        }
+    }
+
+    public static class TestQueryConfiguration extends GenericQueryConfiguration {
+
+    }
+
+    public static class TestQueryLogicTransformer extends BaseQueryLogicTransformer<Map.Entry<?,?>,TestQueryResponse> {
+
+        public TestQueryLogicTransformer(MarkingFunctions<?> markingFunctions) {
+            super(markingFunctions);
+        }
+
+        @Override
+        public TestQueryResponse transform(Map.Entry<?,?> input) throws EmptyObjectException {
+            if (input instanceof Map.Entry<?,?>) {
+                @SuppressWarnings("unchecked")
+                Map.Entry<Key,Value> entry = (Map.Entry<Key,Value>) input;
+                if (entry.getValue() == null) {
+                    throw new EmptyObjectException();
+                }
+                // first check if we should be failing here
+                if (entry.getKey().equals(keyFailure)) {
+                    throw new RuntimeException(entry.getValue().toString());
+                }
+                TestQueryResponse r = new TestQueryResponse();
+                r.setKey(entry.getKey().toString());
+                r.setValue(entry.getValue().toString());
+                r.setHasResults(true);
+                return r;
+            } else {
+                throw new IllegalArgumentException("Invalid input type: " + input.getClass());
+            }
+        }
+
+        @Override
+        public BaseQueryResponse createResponse(List<Object> resultList) {
+            TestQueryResponseList response = new TestQueryResponseList();
+            for (Object o : resultList) {
+                TestQueryResponse r = (TestQueryResponse) o;
+                response.addResponse(r);
+            }
+            return response;
+        }
+
+    }
+
+    public static class TestQueryResponse extends BaseQueryResponse {
+
+        private static final long serialVersionUID = -8977255842676463890L;
+
+        private String key;
+        private String value;
+
+        public String getKey() {
+            return key;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setKey(String key) {
+            this.key = key;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+    }
+
+    public static class TestQueryResponseList extends BaseQueryResponse {
+
+        private static final long serialVersionUID = 5163411310145179709L;
+
+        private List<TestQueryResponse> responses = new ArrayList<>();
+
+        public List<TestQueryResponse> getResponses() {
+            return responses;
+        }
+
+        public void setResponses(List<TestQueryResponse> responses) {
+            this.responses = responses;
+        }
+
+        public void addResponse(TestQueryResponse response) {
+            this.responses.add(response);
+        }
+
     }
 }

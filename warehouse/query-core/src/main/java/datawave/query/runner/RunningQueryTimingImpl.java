@@ -1,9 +1,8 @@
-package datawave.webservice.query.cache;
+package datawave.query.runner;
 
 import datawave.microservice.query.config.QueryExpirationProperties;
-import datawave.webservice.query.runner.RunningQuery.RunningQueryTiming;
 
-public class RunningQueryTimingImpl implements RunningQueryTiming {
+public class RunningQueryTimingImpl implements RunningQuery.RunningQueryTiming {
 
     // The max time allowed within a call (e.g. next())
     private long maxCallMs = 60 * 60 * 1000; // the default is 60, can be overridden in call

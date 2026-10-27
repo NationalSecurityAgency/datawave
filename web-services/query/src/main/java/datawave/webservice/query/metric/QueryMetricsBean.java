@@ -57,6 +57,7 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.query.runner.QueryMetricUpdater;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -71,7 +72,7 @@ import datawave.webservice.query.exception.QueryException;
 @DependsOn("QueryMetricsWriter")
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
-public class QueryMetricsBean {
+public class QueryMetricsBean implements QueryMetricUpdater {
 
     private static final Logger log = Logger.getLogger(QueryMetricsBean.class);
     @Resource

@@ -1,4 +1,4 @@
-package datawave.webservice.query.runner;
+package datawave.query.runner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -46,8 +46,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnProperties;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,7 +57,7 @@ public class ExtendedRunningQueryTest {
     Query query = mock(Query.class);
     QueryUncaughtExceptionHandler exceptionHandler = mock(QueryUncaughtExceptionHandler.class);
     QueryLogic<?> queryLogic = mock(QueryLogic.class);
-    QueryMetricsBean queryMetrics = mock(QueryMetricsBean.class);
+    QueryMetricUpdater queryMetrics = mock(QueryMetricUpdater.class);
     TransformIterator transformIterator = mock(TransformIterator.class);
 
     private ExecutorService executor;

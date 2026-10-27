@@ -8,6 +8,8 @@ import javax.annotation.PostConstruct;
 
 import com.google.common.cache.Cache;
 
+import datawave.query.runner.AbstractRunningQuery;
+
 /**
  * A Guava-based cache for storing objects in the {@link AbstractRunningQuery} hierarchy.
  */

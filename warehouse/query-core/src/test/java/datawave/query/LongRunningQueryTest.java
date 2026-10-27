@@ -35,6 +35,8 @@ import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.runner.RunningQuery;
+import datawave.query.runner.RunningQueryTimingImpl;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
@@ -43,8 +45,6 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.table.constants.TableName;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.runner.RunningQuery;
 
 /**
  * Controlling the execution order via the @FixMethodOrder. Otherwise, it seems that our accumulo instance "remembers" and executes the query faster than the

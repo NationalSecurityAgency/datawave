@@ -101,6 +101,9 @@ import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.query.runner.QueryMetricUpdater;
+import datawave.query.runner.RunningQuery;
+import datawave.query.runner.RunningQueryTimingImpl;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.user.UserOperationsBean;
@@ -117,7 +120,6 @@ import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.cache.CachedResultsQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -130,10 +132,8 @@ import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.limit.QueryLimiterResponse;
-import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
-import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.CachedResultsDescribeResponse;
@@ -189,7 +189,7 @@ public class CachedResultsBean {
     private QueryLogicFactory queryFactory;
 
     @Inject
-    private QueryMetricsBean metrics;
+    private QueryMetricUpdater metrics;
 
     @Resource(lookup = "java:jboss/datasources/CachedResultsDS")
     protected DataSource ds;

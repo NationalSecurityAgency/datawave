@@ -1,4 +1,4 @@
-package datawave.webservice.query.cache;
+package datawave.query.runner;
 
 import java.io.Serializable;
 

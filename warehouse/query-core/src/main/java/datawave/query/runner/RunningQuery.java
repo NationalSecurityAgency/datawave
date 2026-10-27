@@ -1,4 +1,4 @@
-package datawave.webservice.query.runner;
+package datawave.query.runner;
 
 import java.security.Principal;
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
-import org.jboss.logging.NDC;
+import org.apache.log4j.NDC;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
@@ -31,6 +31,7 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.core.query.predict.QueryPredictor;
+import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
@@ -39,14 +40,10 @@ import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
-import datawave.security.authorization.remote.RemoteUserOperationsImpl;
-import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
-import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
@@ -60,6 +57,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
     private static Logger log = Logger.getLogger(RunningQuery.class);
 
+    public static final String INCLUDE_REMOTE_SERVICES = "includeRemoteServices";
     private transient AccumuloClient client = null;
     private AccumuloConnectionFactory.Priority connectionPriority = null;
     private transient QueryLogic<?> logic = null;
@@ -70,7 +68,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private Set<Authorizations> calculatedAuths = null;
     private volatile boolean finished = false;
     private volatile boolean canceled = false;
-    private transient QueryMetricsBean queryMetrics = null;
+    private transient QueryMetricUpdater queryMetrics = null;
     private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
@@ -99,24 +97,24 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this(null, client, priority, logic, settings, methodAuths, principal, timing, metricFactory);
     }
 
-    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
-                    String methodAuths, Principal principal, QueryMetricFactory metricFactory) throws Exception {
+    public RunningQuery(QueryMetricUpdater queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic,
+                    Query settings, String methodAuths, Principal principal, QueryMetricFactory metricFactory) throws Exception {
         this(queryMetrics, client, priority, logic, settings, methodAuths, principal, null, metricFactory);
     }
 
-    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
-                    String methodAuths, Principal principal, RunningQueryTiming timing, QueryMetricFactory metricFactory) throws Exception {
+    public RunningQuery(QueryMetricUpdater queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic,
+                    Query settings, String methodAuths, Principal principal, RunningQueryTiming timing, QueryMetricFactory metricFactory) throws Exception {
         this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, null, metricFactory);
     }
 
-    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
-                    String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, QueryMetricFactory metricFactory)
-                    throws Exception {
+    public RunningQuery(QueryMetricUpdater queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic,
+                    Query settings, String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor,
+                    QueryMetricFactory metricFactory) throws Exception {
         this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, null, null, metricFactory);
     }
 
-    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
-                    String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, UserOperations userOperations,
+    public RunningQuery(QueryMetricUpdater queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic,
+                    Query settings, String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, UserOperations userOperations,
                     QueryMetricFactory metricFactory) throws Exception {
         super(metricFactory);
         if (logic != null && logic.getCollectQueryMetrics()) {
@@ -128,19 +126,18 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.settings = settings;
         // the query principal is our local principal unless the query logic has a different user operations
         if (methodAuths != null) {
-            logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(WSAuthorizationsUtil.splitAuths(methodAuths))));
+            logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(AuthorizationsUtil.splitAuths(methodAuths))));
         } else {
-            logic.preInitialize(settings, WSAuthorizationsUtil.buildAuthorizations(null));
+            logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
         }
         DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
                         : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal));
         // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
         // don't call remote user operations if it's asked not to
         DatawavePrincipal overallPrincipal = (userOperations == null
-                        || "false".equalsIgnoreCase(settings.findParameter(RemoteUserOperationsImpl.INCLUDE_REMOTE_SERVICES).getParameterValue()))
-                                        ? (DatawavePrincipal) principal
+                        || "false".equalsIgnoreCase(settings.findParameter(INCLUDE_REMOTE_SERVICES).getParameterValue())) ? (DatawavePrincipal) principal
                                         : userOperations.getRemoteUser((DatawavePrincipal) principal);
-        this.calculatedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
+        this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.predictor = predictor;
         // set the metric information
@@ -165,9 +162,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         }
     }
 
-    public static RunningQuery createQueryWithAuthorizations(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority,
-                    QueryLogic<?> logic, Query settings, String methodAuths, RunningQueryTiming timing, QueryPredictor predictor,
-                    QueryMetricFactory metricFactory) throws Exception {
+    public static RunningQuery createQueryWithAuthorizations(QueryMetricUpdater queryMetrics, AccumuloClient client,
+                    AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths, RunningQueryTiming timing,
+                    QueryPredictor predictor, QueryMetricFactory metricFactory) throws Exception {
         RunningQuery runningQuery = new RunningQuery(queryMetrics, client, priority, logic, settings, methodAuths, null, timing, predictor, metricFactory);
         runningQuery.calculatedAuths = Collections.singleton(new Authorizations(methodAuths));
         return runningQuery;
@@ -783,11 +780,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
     }
 
-    public QueryMetricsBean getQueryMetrics() {
+    public QueryMetricUpdater getQueryMetrics() {
         return queryMetrics;
     }
 
-    public void setQueryMetrics(QueryMetricsBean queryMetrics) {
+    public void setQueryMetrics(QueryMetricUpdater queryMetrics) {
         if (logic != null && logic.getCollectQueryMetrics() == true) {
             this.queryMetrics = queryMetrics;
         }
