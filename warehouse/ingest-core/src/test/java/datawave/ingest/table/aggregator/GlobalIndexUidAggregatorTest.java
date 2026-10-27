@@ -7,10 +7,10 @@ import static datawave.ingest.table.aggregator.UidTestUtils.legacyRemoveUidList;
 import static datawave.ingest.table.aggregator.UidTestUtils.removeUidList;
 import static datawave.ingest.table.aggregator.UidTestUtils.uidList;
 import static datawave.ingest.table.aggregator.UidTestUtils.valueToUidList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -31,7 +31,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
