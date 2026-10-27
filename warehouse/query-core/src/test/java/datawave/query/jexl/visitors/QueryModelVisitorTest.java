@@ -1,8 +1,9 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,9 +19,8 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -42,7 +42,7 @@ public class QueryModelVisitorTest {
     private QueryModel model;
     private Set<String> allFields;
 
-    @Before
+    @BeforeEach
     public void setupModel() {
 
         model = new QueryModel();
@@ -108,7 +108,7 @@ public class QueryModelVisitorTest {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
         }
-        Assert.assertTrue(comparison.getReason(), comparison.isEqual());
+        assertTrue(comparison.isEqual(), comparison.getReason());
     }
 
     @Test
@@ -394,11 +394,12 @@ public class QueryModelVisitorTest {
         testWithOptionFunction(original, expected, model, Collections.emptySet(), Collections.emptySet(), Sets.newHashSet("AG"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testStrictAndLenientRegexQuery() {
         String original = "FOO =~ '123' && f:lenient(FOO) && f:strict(FOO)";
         String expected = "(BAR1 =~ '123' || BAR2 =~ '123')";
-        testWithOptionFunction(original, expected, model, Collections.emptySet(), Sets.newHashSet("FOO"), Sets.newHashSet("FOO"));
+        assertThrows(IllegalArgumentException.class,
+                        () -> testWithOptionFunction(original, expected, model, Collections.emptySet(), Sets.newHashSet("FOO"), Sets.newHashSet("FOO")));
     }
 
     @Test
@@ -524,17 +525,17 @@ public class QueryModelVisitorTest {
                 JexlNodeAssert.assertThat(script).isNotEqualTo(newscript);
                 noExpansionFields = new HashSet<>(Arrays.asList(optionsMap.get(QueryParameters.NO_EXPANSION_FIELDS).split(",")));
             }
-            Assert.assertEquals(expectedNoExpansionFields, noExpansionFields);
+            assertEquals(expectedNoExpansionFields, noExpansionFields);
             if (optionsMap.containsKey(QueryParameters.LENIENT_FIELDS)) {
                 JexlNodeAssert.assertThat(script).isNotEqualTo(newscript);
                 lenientFields = new HashSet<>(Arrays.asList(optionsMap.get(QueryParameters.LENIENT_FIELDS).split(",")));
             }
-            Assert.assertEquals(expectedLenientFields, lenientFields);
+            assertEquals(expectedLenientFields, lenientFields);
             if (optionsMap.containsKey(QueryParameters.STRICT_FIELDS)) {
                 JexlNodeAssert.assertThat(script).isNotEqualTo(newscript);
                 strictFields = new HashSet<>(Arrays.asList(optionsMap.get(QueryParameters.STRICT_FIELDS).split(",")));
             }
-            Assert.assertEquals(expectedStrictFields, strictFields);
+            assertEquals(expectedStrictFields, strictFields);
 
             ASTJexlScript applied = QueryModelVisitor.applyModel(newscript, model, allFields, noExpansionFields, lenientFields, strictFields);
 

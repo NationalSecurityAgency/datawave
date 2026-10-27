@@ -1,9 +1,9 @@
 package datawave.core.common.connection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -16,15 +16,15 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.easymock.MockType;
 import org.easymock.TestSubject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -33,7 +33,7 @@ import datawave.core.common.result.ConnectionPoolProperties;
 import datawave.core.common.result.ConnectionPoolsProperties;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class AccumuloConnectionFactoryTest extends EasyMockSupport {
 
     @Mock(type = MockType.STRICT)
@@ -50,7 +50,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     @Mock(type = MockType.STRICT)
     private WrappedAccumuloClient metricsClient;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
 
         MyAccumuloClientPoolFactory warehouseFactory = newInstance(MyAccumuloClientPoolFactory.class);
@@ -98,7 +98,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         setField(factory, "cache", cache);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         System.clearProperty("dw.accumulo.classLoader.context");
     }
@@ -112,7 +112,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseClient, ((WrappedAccumuloClient) con).getReal());
-        assertNull("scannerClassLoaderContext was set when it shouldn't have been", getField(con, "scannerClassLoaderContext"));
+        assertNull(getField(con, "scannerClassLoaderContext"), "scannerClassLoaderContext was set when it shouldn't have been");
     }
 
     @Test

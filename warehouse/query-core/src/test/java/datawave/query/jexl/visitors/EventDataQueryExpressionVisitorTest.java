@@ -3,12 +3,12 @@ package datawave.query.jexl.visitors;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -20,9 +20,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
@@ -48,7 +48,7 @@ public class EventDataQueryExpressionVisitorTest {
     private final MockDateIndexHelper helper2 = new MockDateIndexHelper();
     private final ShardQueryConfiguration config = new ShardQueryConfiguration();
 
-    @Before
+    @BeforeEach
     public void setupTypeMetadata() {
         String lcNoDiacritics = LcNoDiacriticsType.class.getName();
         String number = NumberType.class.getName();
@@ -590,7 +590,7 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     // TODO: will we ever be able to get this to work?
     public void testRangeFunction() throws Exception {
         String originalQuery = "f:between(BAZ,5,12)";
@@ -632,7 +632,7 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     // TODO: This may never happen - e.g: function expansion has happened by now.
     public void testAndSameGroupingOnQuery() throws Exception {
         String originalQuery = "FOO.1 == 'abc' && FOO.2 == 'def'";
@@ -654,7 +654,7 @@ public class EventDataQueryExpressionVisitorTest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     // TODO: This may never happen - e.g: function expansion has happened by now.
     public void testAndSameGroupingOnBoth() throws Exception {
         String originalQuery = "FOO.1 == 'abc' && FOO.2 == 'def'";
@@ -819,7 +819,7 @@ public class EventDataQueryExpressionVisitorTest {
             Key key = (Key) item[1];
             Boolean expected = (Boolean) item[2];
             String message = String.format("Field filter '%s' apply is not %s for key %s", field, expected, key);
-            assertEquals(message, expected, filter.get(field).apply(key));
+            assertEquals(expected, filter.get(field).apply(key), message);
         }
     }
 

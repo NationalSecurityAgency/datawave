@@ -5,6 +5,7 @@ import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.GT_OP;
 import static datawave.query.testframework.RawDataManager.LT_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -18,16 +19,16 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFields;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.FlattenData;
@@ -39,10 +40,10 @@ import datawave.query.testframework.RawMetaData;
 /**
  * Test cases for flatten mode {@link FlattenMode@GROUPED_AND_NORMAL}.
  */
-public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQuery {
+public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(GroupedNormalFlattenQueryTest.class);
 
@@ -61,7 +62,7 @@ public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQuery {
         }
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         accumuloSetup.setData(FileType.JSON, flatten);
         client = accumuloSetup.loadTables(log);
@@ -158,37 +159,37 @@ public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorCity() throws Exception {
         log.info("------  testErrorCity  ------");
         String city = "'auSTin'";
         String query = GroupedNormalField.SMALL_CITY.name() + EQ_OP + city;
-        runTest(query, query);
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorFounded() throws Exception {
         log.info("------  testErrorFounded  ------");
         String date = "1888";
         String query = GroupedNormalField.SMALL_FOUNDED.name() + EQ_OP + date;
-        runTest(query, query);
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorCounty() throws Exception {
         log.info("------  testErrorCounty  ------");
         String county = "'gRant'";
         String query = GroupedNormalField.CAPITAL_COUNTIES.name() + EQ_OP + county;
-        runTest(query, query);
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorCityOrState() throws Exception {
         log.info("------  testErrorCityOrState  ------");
         String city = "'auStin'";
         String state = "'KansAs'";
         String query = GroupedNormalField.STATE + EQ_OP + state + OR_OP + GroupedNormalField.SMALL_CITY.name() + EQ_OP + city;
-        runTest(query, query);
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
 
     // end of unit tests
