@@ -84,7 +84,7 @@ public abstract class BaseIndexExpansionTest {
             client = mac.createAccumuloClient("root", new PasswordToken(PASSWORD));
             client.securityOperations().changeUserAuthorizations("root", AUTHS);
         } else {
-            InMemoryAccumulo instance = InMemoryAccumulo.getInstance();
+            InMemoryAccumulo instance = new InMemoryAccumulo();
             client = new InMemoryAccumuloClient("root", instance);
         }
 

@@ -89,7 +89,7 @@ public class MixedGeoAndGeoWaveTest extends AbstractQueryTest {
     public static void beforeAll() throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
 
-        InMemoryAccumulo instance = InMemoryAccumulo.getInstance();
+        InMemoryAccumulo instance = new InMemoryAccumulo();
         client = new InMemoryAccumuloClient("root", instance);
 
         SecurityOperations sops = client.securityOperations();
