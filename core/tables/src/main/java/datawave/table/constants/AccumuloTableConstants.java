@@ -3,12 +3,7 @@ package datawave.table.constants;
 import org.apache.accumulo.core.data.TableId;
 
 /**
- * Constants for Accumulo system table names and IDs. Replaces non-public classes:
- * <ul>
- * <li>org.apache.accumulo.core.metadata.MetadataTable</li>
- * <li>org.apache.accumulo.core.metadata.RootTable</li>
- * <li>org.apache.accumulo.core.replication.ReplicationTable</li>
- * </ul>
+ * Constants for Accumulo system table names and IDs. Replaces the non-public {@code org.apache.accumulo.core.metadata.SystemTables} enum.
  */
 public final class AccumuloTableConstants {
 
@@ -23,7 +18,4 @@ public final class AccumuloTableConstants {
     // Root table constants
     public static final String ROOT_TABLE_NAME = "accumulo.root";
     public static final TableId ROOT_TABLE_ID = TableId.of("+r");
-
-    // Replication table constants
-    public static final String REPLICATION_TABLE_NAME = "accumulo.replication";
 }
