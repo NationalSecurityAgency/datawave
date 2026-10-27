@@ -1,10 +1,10 @@
 package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Collections;
 
@@ -18,7 +18,7 @@ import org.apache.commons.jexl3.parser.Parser;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.commons.lang.StringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;

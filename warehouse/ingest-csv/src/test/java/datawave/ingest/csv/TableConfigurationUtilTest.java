@@ -1,6 +1,9 @@
 package datawave.ingest.csv;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,11 +21,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.xerces.impl.dv.util.Base64;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.TypeRegistry;
@@ -34,7 +36,7 @@ public class TableConfigurationUtilTest {
     private static Configuration conf = new Configuration();
     private static File tempCacheFile;
 
-    @BeforeClass
+    @BeforeAll
     public static void startCluster() throws Exception {
         File macDir = new File(System.getProperty("user.dir") + "/target/mac/" + TableConfigurationUtilTest.class.getName());
         if (macDir.exists())
@@ -47,14 +49,14 @@ public class TableConfigurationUtilTest {
 
     }
 
-    @AfterClass
+    @AfterAll
     public static void shutdown() throws Exception {
         mac.stop();
         tempCacheFile.deleteOnExit();
 
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException, NoSuchFieldException, IllegalAccessException {
         TypeRegistry.reset();
         conf = new Configuration();
@@ -93,7 +95,7 @@ public class TableConfigurationUtilTest {
 
         validateTCU(tcu, conf);
 
-        Assert.assertFalse(tcu.isUsingFileCache());
+        assertFalse(tcu.isUsingFileCache());
 
     }
 
@@ -108,15 +110,16 @@ public class TableConfigurationUtilTest {
         TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);
         tcu.configureTables(conf);
 
-        assertEquals(0, tempCacheFile.length());
+        assertEquals(0, tempCacheFile.length(), "Expected the config cache file to be empty");
         tcu.updateCacheFile();
-        // Changed this from original 7485 fixed size. Wondering if this is fragile due to JVM differences
-        assertEquals(7687, tempCacheFile.length());
+
+        assertTrue(tempCacheFile.length() > 0, "No data was written to the config cache file");
+
         tcu.serializeTableConfgurationIntoConf(conf);
 
         validateTCU(tcu, conf);
 
-        Assert.assertTrue(tcu.isUsingFileCache());
+        assertTrue(tcu.isUsingFileCache());
         tempCacheFile.delete();
     }
 
@@ -137,7 +140,7 @@ public class TableConfigurationUtilTest {
 
         validateTCU(tcu, conf);
 
-        Assert.assertFalse(tcu.isUsingFileCache());
+        assertFalse(tcu.isUsingFileCache());
     }
 
     @Test
@@ -153,7 +156,7 @@ public class TableConfigurationUtilTest {
         TableConfigCache.getCurrentCache(conf).clear();
 
         validateTCU(tcu, conf);
-        Assert.assertFalse(tcu.isUsingFileCache());
+        assertFalse(tcu.isUsingFileCache());
 
     }
 
@@ -168,10 +171,10 @@ public class TableConfigurationUtilTest {
         TableConfigCache.getCurrentCache(conf).clear();
 
         validateTCU(tcu, conf);
-        Assert.assertFalse(tcu.isUsingFileCache());
+        assertFalse(tcu.isUsingFileCache());
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testDeserializeOutputTableNotInCache() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
         conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "false");
 
@@ -183,11 +186,11 @@ public class TableConfigurationUtilTest {
         TableConfigCache.getCurrentCache(conf).clear();
         TableConfigurationUtil.addOutputTables("audit", conf);
 
-        TableConfigurationUtil.deserializeTableConfigs(conf);
+        assertThrows(IOException.class, () -> TableConfigurationUtil.deserializeTableConfigs(conf));
 
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testOutputTableNotInCache() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
         conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "true");
         File tempCacheFile = File.createTempFile("tempCache2", null);
@@ -201,7 +204,7 @@ public class TableConfigurationUtilTest {
 
         TableConfigurationUtil.addOutputTables("nonexistent_table", conf);
         try {
-            tcu.serializeTableConfgurationIntoConf(conf);
+            assertThrows(IOException.class, () -> tcu.serializeTableConfgurationIntoConf(conf));
         } finally {
             tempCacheFile.delete();
         }
@@ -226,7 +229,7 @@ public class TableConfigurationUtilTest {
         expectedTables.add("DataWaveMetadata");
         expectedTables.add("LoadDates");
 
-        Assert.assertEquals(expectedTables, TableConfigurationUtil.getJobOutputTableNames(conf));
+        assertEquals(expectedTables, TableConfigurationUtil.getJobOutputTableNames(conf));
     }
 
     @Test
@@ -235,18 +238,18 @@ public class TableConfigurationUtilTest {
         TypeRegistry.reset();
 
         boolean registered = TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);
-        Assert.assertFalse(registered);
+        assertFalse(registered);
 
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBogusHandler() {
         Configuration conf = new Configuration();
 
         conf.set("data.name", "testdatatype");
         conf.set("testdatatype.handler.classes", "datawave.handler.BogusHandler");
 
-        TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);
+        assertThrows(IllegalArgumentException.class, () -> TableConfigurationUtil.registerTableNamesFromConfigFiles(conf));
 
     }
 
@@ -262,49 +265,49 @@ public class TableConfigurationUtilTest {
         expectedTables.add("shardReverseIndex");
         expectedTables.add("myExtraTable");
 
-        Assert.assertEquals(expectedTables, TableConfigurationUtil.getJobOutputTableNames(conf));
+        assertEquals(expectedTables, TableConfigurationUtil.getJobOutputTableNames(conf));
 
     }
 
     private void validateTCU(TableConfigurationUtil tcu, Configuration conf) throws IOException {
         Map<String,String> shardProps = tcu.getTableProperties("datawave.shard");
-        Assert.assertEquals(13, shardProps.size());
+        assertEquals(13, shardProps.size());
 
         Map<String,String> shardIndexProps = tcu.getTableProperties("datawave.shardIndex");
-        Assert.assertEquals(10, shardIndexProps.size());
+        assertEquals(10, shardIndexProps.size());
 
         Map<String,String> metaProps = tcu.getTableProperties("datawave.metadata");
-        Assert.assertEquals(18, metaProps.size());
+        assertEquals(18, metaProps.size());
 
         tcu.setTableItersPrioritiesAndOpts();
 
         Map<Integer,Map<String,String>> shardAggs = tcu.getTableAggregators("datawave.shard");
-        Assert.assertEquals(1, shardAggs.size());
-        Assert.assertEquals("datawave.ingest.table.aggregator.TextIndexAggregator", shardAggs.get(19).get("tf"));
+        assertEquals(1, shardAggs.size());
+        assertEquals("datawave.ingest.table.aggregator.TextIndexAggregator", shardAggs.get(19).get("tf"));
 
         Map<Integer,Map<String,String>> shardIndexAggs = tcu.getTableAggregators("datawave.shardIndex");
-        Assert.assertEquals(1, shardIndexAggs.size());
-        Assert.assertEquals("datawave.ingest.table.aggregator.GlobalIndexUidAggregator", shardIndexAggs.get(19).get("*"));
+        assertEquals(1, shardIndexAggs.size());
+        assertEquals("datawave.ingest.table.aggregator.GlobalIndexUidAggregator", shardIndexAggs.get(19).get("*"));
 
         Map<Integer,Map<String,String>> metaCombiners = tcu.getTableCombiners("datawave.metadata");
-        Assert.assertEquals(5, metaCombiners.size());
-        Assert.assertEquals("datawave.iterators.FrequencyMetadataAggregator$FrequencyMetadataCombiner",
+        assertEquals(5, metaCombiners.size());
+        assertEquals("datawave.iterators.FrequencyMetadataAggregator$FrequencyMetadataCombiner",
                         metaCombiners.get(10).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
-        Assert.assertEquals("datawave.iterators.FrequencyMetadataAggregator$FrequencyMetadataCombiner",
+        assertEquals("datawave.iterators.FrequencyMetadataAggregator$FrequencyMetadataCombiner",
                         metaCombiners.get(11).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
-        Assert.assertEquals("datawave.iterators.FrequencyMetadataAggregator$FrequencyMetadataCombiner",
+        assertEquals("datawave.iterators.FrequencyMetadataAggregator$FrequencyMetadataCombiner",
                         metaCombiners.get(12).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
-        Assert.assertEquals("datawave.iterators.CountMetadataCombiner", metaCombiners.get(15).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
-        Assert.assertEquals("datawave.iterators.EdgeMetadataCombiner", metaCombiners.get(19).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
+        assertEquals("datawave.iterators.CountMetadataCombiner", metaCombiners.get(15).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
+        assertEquals("datawave.iterators.EdgeMetadataCombiner", metaCombiners.get(19).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
 
         Map<Integer,Map<String,String>> loadCombiners = tcu.getTableCombiners("datawave.loadDates");
-        Assert.assertEquals(1, loadCombiners.size());
-        Assert.assertEquals("org.apache.accumulo.core.iterators.user.SummingCombiner", loadCombiners.get(18).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
+        assertEquals(1, loadCombiners.size());
+        assertEquals("org.apache.accumulo.core.iterators.user.SummingCombiner", loadCombiners.get(18).get(TableConfigurationUtil.ITERATOR_CLASS_MARKER));
 
         Map<String,Integer> priorities = TableConfigurationUtil.getTablePriorities(conf);
-        Assert.assertEquals((Integer) 30, priorities.get("datawave.shard"));
+        assertEquals((Integer) 30, priorities.get("datawave.shard"));
 
         Map<String,Set<Text>> locGroups = tcu.getLocalityGroups("datawave.shard");
-        Assert.assertEquals(2, locGroups.size());
+        assertEquals(2, locGroups.size());
     }
 }

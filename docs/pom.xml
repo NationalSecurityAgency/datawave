@@ -173,7 +173,6 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <version>7.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
@@ -243,6 +242,11 @@
         <dependency>
             <groupId>org.jboss.spec.javax.websocket</groupId>
             <artifactId>jboss-websocket-api_1.1_spec</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -13,9 +13,9 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
@@ -46,14 +46,14 @@ public class DateIndexQueryExpansionVisitorTest {
     private DateIndexHelper dateIndexHelperScanner;
     private DateIndexHelper dateIndexHelperIterator;
 
-    @BeforeClass
+    @BeforeAll
     public static void before() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         InMemoryAccumulo i = new InMemoryAccumulo(DateIndexQueryExpansionVisitorTest.class.getName());
         client = new InMemoryAccumuloClient("root", i);
     }
 
-    @Before
+    @BeforeEach
     public void setupTests() throws Exception {
         this.metadataHelper = new MetadataHelperFactory().createMetadataHelper(client, TableName.DATE_INDEX, Collections.singleton(auths));
         this.deleteAndCreateTable();

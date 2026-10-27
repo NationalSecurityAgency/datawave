@@ -80,7 +80,6 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     @Override
     public void setApplicationStartup(ApplicationStartup applicationStartup) {
         lockAndWrite(() -> configurableApplicationContext.setApplicationStartup(applicationStartup));
-
     }
 
     @Override
@@ -131,7 +130,6 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     @Override
     public void setClassLoader(ClassLoader classLoader) {
         lockAndWrite(() -> configurableApplicationContext.setClassLoader(classLoader));
-
     }
 
     @Override
@@ -255,8 +253,8 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
 
     @Override
-    public <T> ObjectProvider<T> getBeanProvider(ResolvableType requiredType, boolean allowEagerInit) {
-        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(requiredType, allowEagerInit));
+    public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType, boolean allowEagerInit) {
+        return lockAndRead(() -> configurableApplicationContext.getBeanProvider(resolvableType, allowEagerInit));
     }
 
     @Override

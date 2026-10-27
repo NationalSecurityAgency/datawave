@@ -466,7 +466,7 @@ services:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5959","-jar","app.jar" ]
     profiles:
       - annotation
-    image: nationalsecurityagency/datawave/annotation-service:1.0.0-SNAPSHOT
+    image: nationalsecurityagency/datawave/annotation-service:9.0.0-SNAPSHOT
     scale: 1
     command:
       - --spring.profiles.active=consul,compose,remoteauth,log-disabled
