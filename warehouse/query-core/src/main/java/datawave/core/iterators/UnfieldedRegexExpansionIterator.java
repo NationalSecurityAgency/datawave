@@ -110,8 +110,8 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
 
     @Override
     public FilterResult filter(Key k, Value v) {
-        if (log.isDebugEnabled()) {
-            log.debug("tk: {}", k.toStringNoTime());
+        if (log.isTraceEnabled()) {
+            log.trace("tk: {}", k.toStringNoTime());
         }
 
         // parse key and reset hint
@@ -131,7 +131,7 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
 
             if (!matcher.matches()) {
                 // advance to next row
-                log.debug("pattern does not match, advance to next row");
+                log.trace("pattern does not match, advance to next row");
                 return new FilterResult(false, AdvanceResult.NEXT_ROW);
             }
             previousMatch = parser.getValue();
@@ -140,21 +140,21 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
         String date = parser.getShard();
         if (date.compareTo(startDate) < 0) {
             // advance to start date
-            log.debug("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
+            log.trace("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
             hint = HINT_TYPE.DATE;
             return new FilterResult(false, AdvanceResult.USE_HINT);
         } else if (date.compareTo(endDate) > 0) {
             // advance to next row
-            log.debug("date {} sorts after end date {}, advance to next column family", date, endDate);
+            log.trace("date {} sorts after end date {}, advance to next column family", date, endDate);
             return new FilterResult(false, AdvanceResult.NEXT_CF);
         }
 
         if (datatypes != null && !datatypes.contains(parser.getDatatype())) {
-            log.debug("datatype {} does not match, advance to next key", parser.getDatatype());
+            log.trace("datatype {} does not match, advance to next key", parser.getDatatype());
             return new FilterResult(false, AdvanceResult.NEXT);
         }
 
-        log.debug("key accepted, advancing to next column family");
+        log.trace("key accepted, advancing to next column family");
         return new FilterResult(true, AdvanceResult.NEXT_CF);
     }
 
