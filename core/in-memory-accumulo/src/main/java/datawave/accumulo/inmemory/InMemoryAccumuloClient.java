@@ -32,6 +32,7 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.InstanceOperations;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
+import org.apache.accumulo.core.client.admin.ResourceGroupOperations;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -181,6 +182,14 @@ public class InMemoryAccumuloClient implements AccumuloClient {
     @Override
     public NamespaceOperations namespaceOperations() {
         return new InMemoryNamespaceOperations(acu, username);
+    }
+
+    /**
+     * Not supported by the in-memory implementation.
+     */
+    @Override
+    public ResourceGroupOperations resourceGroupOperations() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
