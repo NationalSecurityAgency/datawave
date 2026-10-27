@@ -277,7 +277,7 @@ public class TableConfigurationUtilTest {
         assertEquals(10, shardIndexProps.size());
 
         Map<String,String> metaProps = tcu.getTableProperties("datawave.metadata");
-        assertEquals(18, metaProps.size());
+        assertEquals(19, metaProps.size());
 
         tcu.setTableItersPrioritiesAndOpts();
 
