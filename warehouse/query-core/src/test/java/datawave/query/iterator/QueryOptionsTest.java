@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -316,7 +317,7 @@ public class QueryOptionsTest {
             QueryOptions.addOption(iteratorSetting, k, v, false);
         });
 
-        Assert.assertEquals(0, iteratorSetting.getOptions().size());
+        assertEquals(0, iteratorSetting.getOptions().size());
 
         // Test non-defaults added after all defaults added
         iteratorSetting.clearOptions();
@@ -349,7 +350,7 @@ public class QueryOptionsTest {
 
         QueryOptions.addOption(iteratorSetting, QueryOptions.LIMIT_FIELDS, limitFields, false);
 
-        Assert.assertTrue(QueryOptions.getDefaultOptions(QueryOptionsWithNonEmptyCollectionsAsDefaultValues.class.getName())
+        assertTrue(QueryOptions.getDefaultOptions(QueryOptionsWithNonEmptyCollectionsAsDefaultValues.class.getName())
                         .equalsDefaultValue(QueryOptions.LIMIT_FIELDS, limitFields));
 
     }
@@ -502,11 +503,11 @@ public class QueryOptionsTest {
         }
 
         if (!optionsMissingDefault.isEmpty()) {
-            Assert.fail("The following options do not have default values configured: " + optionsMissingDefault);
+            fail("The following options do not have default values configured: " + optionsMissingDefault);
         }
 
         if (!unmappedProperties.isEmpty()) {
-            Assert.fail("The following properties do not have a mapped option. Add them to the propertiesToOptions map, or mark with @JsonIgnore: "
+            fail("The following properties do not have a mapped option. Add them to the propertiesToOptions map, or mark with @JsonIgnore: "
                             + unmappedProperties);
         }
     }
