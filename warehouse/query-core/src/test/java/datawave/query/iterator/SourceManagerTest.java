@@ -31,12 +31,13 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
+import datawave.accumulo.core.util.AccumuloConfigurationWrapper;
 
 public class SourceManagerTest {
     private static final SimpleDateFormat shardFormatter = new SimpleDateFormat("yyyyMMdd HHmmss");
@@ -404,12 +405,12 @@ public class SourceManagerTest {
         public class MockPluginEnvironment implements PluginEnvironment {
             @Override
             public Configuration getConfiguration() {
-                return new ConfigurationImpl(conf);
+                return new AccumuloConfigurationWrapper(conf);
             }
 
             @Override
             public Configuration getConfiguration(TableId tableId) {
-                return new ConfigurationImpl(conf);
+                return new AccumuloConfigurationWrapper(conf);
             }
 
             @Override
