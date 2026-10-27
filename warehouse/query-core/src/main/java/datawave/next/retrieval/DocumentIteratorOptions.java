@@ -11,6 +11,7 @@ import static datawave.query.iterator.QueryOptions.QUERY_MAPPING_COMPRESS;
 import static datawave.query.iterator.QueryOptions.START_TIME;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
 import static datawave.query.iterator.QueryOptions.TYPE_METADATA;
+import static datawave.query.iterator.QueryOptions.TYPE_METADATA_KRYO;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -56,6 +57,7 @@ import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 
 /**
  * Similar to {@link QueryOptions}, a class that handles the busy work of parsing options to clean up the implementation of the {@link DocumentIterator}.
@@ -75,6 +77,8 @@ public class DocumentIteratorOptions implements OptionDescriber {
     // variables set from options
     protected String query;
     protected boolean compressedOptions = false;
+    // not thread-safe; consistent with the rest of this class's per-instance state
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
     protected TypeMetadata typeMetadata;
     protected CompositeMetadata compositeMetadata;
     protected LongRange timeFilter;
@@ -111,6 +115,7 @@ public class DocumentIteratorOptions implements OptionDescriber {
             START_TIME,
             END_TIME,
             TYPE_METADATA,
+            TYPE_METADATA_KRYO,
             COMPOSITE_METADATA,
             PROJECTION_FIELDS,
             DISALLOWLISTED_FIELDS,
@@ -150,6 +155,7 @@ public class DocumentIteratorOptions implements OptionDescriber {
         options.put(QUERY, "the query string");
         options.put(QUERY_MAPPING_COMPRESS, "true if the type metadata is base64 encoded");
         options.put(TYPE_METADATA, "TypeMetadata");
+        options.put(TYPE_METADATA_KRYO, "Boolean value to indicate TYPE_METADATA is a Base64-encoded Kryo stream rather than the native toString() format");
         options.put(COMPOSITE_METADATA, "CompositeMetadata");
         options.put(START_TIME, "the start time");
         options.put(END_TIME, "the end time");
@@ -187,11 +193,15 @@ public class DocumentIteratorOptions implements OptionDescriber {
         if (options.containsKey(TYPE_METADATA)) {
             String option = options.get(TYPE_METADATA);
             try {
-                if (compressedOptions) {
-                    option = decompressOption(option, QueryOptions.UTF8);
-                }
+                if (Boolean.parseBoolean(options.get(TYPE_METADATA_KRYO))) {
+                    this.typeMetadata = typeMetadataSerializer.deserialize(option);
+                } else {
+                    if (compressedOptions) {
+                        option = decompressOption(option, QueryOptions.UTF8);
+                    }
 
-                this.typeMetadata = new TypeMetadata(option);
+                    this.typeMetadata = new TypeMetadata(option);
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

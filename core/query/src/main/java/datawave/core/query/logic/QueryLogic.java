@@ -317,9 +317,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
 
     Set<String> getRequiredRoles();
 
-    MarkingFunctions getMarkingFunctions();
+    MarkingFunctions<?> getMarkingFunctions();
 
-    void setMarkingFunctions(MarkingFunctions markingFunctions);
+    void setMarkingFunctions(MarkingFunctions<?> markingFunctions);
 
     ResponseObjectFactory getResponseObjectFactory();
 

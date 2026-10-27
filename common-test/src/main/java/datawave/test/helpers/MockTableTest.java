@@ -18,6 +18,10 @@ import org.junit.Before;
 import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 
+/**
+ * @deprecated Use {@link MockTableTestJUnit5} for JUnit 5 tests.
+ */
+@Deprecated
 public abstract class MockTableTest {
     public static final String TABLE_NAME = "test";
     protected AccumuloClient client;

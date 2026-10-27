@@ -15,8 +15,10 @@ import datawave.query.jexl.visitors.FetchFunctionFieldsVisitor;
 import datawave.query.util.MetadataHelper;
 
 /**
- * @deprecated use IncludeExcludeIndexOnlyFieldsRule instead A {@link QueryRule} implementation that will check if any indexed fields are used within the
- *             functions {@code filter:includeRegex} or {@code filter:excludeRegex} in a query.
+ * A {@link QueryRule} implementation that will check if any indexed fields are used within the functions {@code filter:includeRegex} or
+ * {@code filter:excludeRegex} in a query.
+ *
+ * @deprecated use {@link IncludeExcludeIndexOnlyFieldsRule} instead
  */
 @Deprecated
 public class IncludeExcludeIndexFieldsRule extends ShardQueryRule {

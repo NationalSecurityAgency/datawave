@@ -8,10 +8,11 @@ import static org.mockito.Mockito.when;
 import java.util.Set;
 import java.util.UUID;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.QueryLogic;
@@ -35,7 +36,7 @@ public class QueryExpirationBeanTest {
     private QueryMetricsBean metricsBean;
     private QueryLimiter queryLimiter;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         queryCache = new QueryCache();
         queryCache.init();
@@ -49,12 +50,12 @@ public class QueryExpirationBeanTest {
         queryLimiter = Mockito.mock(QueryLimiter.class);
 
         this.bean = new QueryExpirationBean();
-        bean.setQueryCache(queryCache);
-        bean.setQueryExpirationProperties(properties);
-        bean.setConnectionFactory(connectionFactory);
-        bean.setCreatedQueryLogicCacheBean(queryLogicCache);
-        bean.setQueryMetricsBean(metricsBean);
-        bean.setQueryLimiter(queryLimiter);
+        ReflectionTestUtils.setField(bean, "queryCache", queryCache);
+        ReflectionTestUtils.setField(bean, "config", properties);
+        ReflectionTestUtils.setField(bean, "connectionFactory", connectionFactory);
+        ReflectionTestUtils.setField(bean, "queryLogicCacheBean", queryLogicCache);
+        ReflectionTestUtils.setField(bean, "metricsBean", metricsBean);
+        ReflectionTestUtils.setField(bean, "queryLimiter", queryLimiter);
 
         bean.init();
     }
@@ -306,7 +307,7 @@ public class QueryExpirationBeanTest {
         assertThat(queryCache.get(queryId)).isNull();
 
         // Verify that a timeout exception was recorded in the exception handler.
-        Throwable throwable = query.getSettings().getUncaughtExceptionHandler().getThrowable();
+        Throwable throwable = query.getSettings().getUncaughtExceptionHandler().getUncaughtException().getLeft();
         assertThat(throwable).isInstanceOf(QueryException.class);
         assertThat(throwable.getMessage()).isEqualTo(errorCode.toString());
     }

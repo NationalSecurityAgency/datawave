@@ -1,8 +1,8 @@
 package datawave.ingest.csv;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 import org.apache.hadoop.conf.Configuration;
@@ -11,9 +11,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +28,8 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import datawave.marking.ColumnVisibilitySecurityMarking;
+import datawave.marking.Markings;
 
 public class NormalizedContentInterfaceTest {
     private static final Logger log = LoggerFactory.getLogger(NormalizedContentInterfaceTest.class);
@@ -44,7 +45,7 @@ public class NormalizedContentInterfaceTest {
     private Configuration conf;
     private FileSplit split;
 
-    @Before
+    @BeforeEach
     public void setup() {
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource(CONFIG_FILE));
@@ -178,10 +179,10 @@ public class NormalizedContentInterfaceTest {
         return fieldAndValue;
     }
 
-    private Map<String,String> createDefaultMarkings() {
-        Map<String,String> defaultMarkings = new HashMap<>(1);
-        defaultMarkings.put("columnVisibility", "PRIVATE");
-        return defaultMarkings;
+    private Markings<?> createDefaultMarkings() {
+        ColumnVisibilitySecurityMarking sm = new ColumnVisibilitySecurityMarking();
+        sm.setColumnVisibility("PRIVATE");
+        return sm.toMarkings();
     }
 
     private void compare(Multimap<String,NormalizedContentInterface> actualValues, Multimap<String,NormalizedContentInterface> expectedValues) {
@@ -213,7 +214,7 @@ public class NormalizedContentInterfaceTest {
             logDiffs(expectedToActualDiff);
         }
 
-        Assert.assertFalse("The actual normalized results do not mach expected results.", !actualToExpectedDiff.isEmpty() || !expectedToActualDiff.isEmpty());
+        assertFalse(!actualToExpectedDiff.isEmpty() || !expectedToActualDiff.isEmpty(), "The actual normalized results do not mach expected results.");
     }
 
     private void logDiffs(Multimap<String,NormalizedContentInterface> diff) {

@@ -1533,7 +1533,6 @@ public class RangeStreamTest {
     }
 
     private RangeStream getRangeStream(MetadataHelper helper) {
-        ScannerFactory scannerFactory = new ScannerFactory(config);
-        return new RangeStream(config, scannerFactory, helper);
+        return new RangeStream(config, helper);
     }
 }

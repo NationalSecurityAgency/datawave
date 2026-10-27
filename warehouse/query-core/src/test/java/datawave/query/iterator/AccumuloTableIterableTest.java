@@ -1,7 +1,7 @@
 package datawave.query.iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -13,8 +13,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Predicates;
 
@@ -30,7 +30,7 @@ public class AccumuloTableIterableTest {
 
     private SortedMapIterator source;
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         TreeMap<Key,Value> data = new TreeMap<>();
         for (int i = 0; i < numEvents; i++) {

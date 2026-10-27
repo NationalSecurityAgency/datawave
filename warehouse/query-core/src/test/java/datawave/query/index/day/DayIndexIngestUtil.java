@@ -9,9 +9,9 @@ import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 
-import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.util.TableName;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.table.constants.TableName;
 
 /**
  * Test util for ingesting day index data

@@ -72,7 +72,7 @@ public class ModificationRequestBase implements Serializable {
 
         @Override
         public Map<String,String> unmarshal(DefaultFieldMarking value) throws Exception {
-            HashMap<String,String> fieldMarkings = new HashMap<String,String>();
+            HashMap<String,String> fieldMarkings = new HashMap<>();
             fieldMarkings.put(COLUMN_VISIBILITY, value.fieldColumnVisibility);
             return fieldMarkings;
         }

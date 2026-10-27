@@ -18,6 +18,7 @@ import org.apache.hadoop.io.Text;
  * <li>Builds parent keys for seeking</li>
  * </ul>
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public class TLD {
     private static final char NULL_BYTE = '\u0000';
     private static final char DOT = '.';

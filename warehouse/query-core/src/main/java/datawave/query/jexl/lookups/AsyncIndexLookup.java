@@ -13,8 +13,8 @@ import org.apache.log4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.scan.ScannerBuilder;
 import datawave.query.tables.ScannerFactory;
+import datawave.scan.ScannerBuilder;
 
 /**
  * Abstract index lookup which provides a framework for creating and populating the {@link IndexLookupMap} asynchronously in a separate thread. Async index

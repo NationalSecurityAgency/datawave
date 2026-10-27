@@ -117,7 +117,7 @@ public class ShardSpecificIndexIteratorTest {
     private static class MockNumShardFinder extends NumShardFinder {
 
         public MockNumShardFinder(TreeMap<String,Integer> data) {
-            super(null);
+            super(null, null, null);
             this.cache.putAll(data);
         }
     }

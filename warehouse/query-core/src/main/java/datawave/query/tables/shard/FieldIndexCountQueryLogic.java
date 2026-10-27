@@ -476,13 +476,13 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
 
     public static class Tuple {
 
-        private final MarkingFunctions tupleMarkingFunctions;
+        private MarkingFunctions<?> markingFunctions;
         private long count = 0L;
         private long maxTimestamp = 0L;
         Set<Text> uniqueVisibilities = new HashSet<>();
 
-        public Tuple(MarkingFunctions mf) {
-            tupleMarkingFunctions = mf;
+        public Tuple(MarkingFunctions<?> markingFunctions) {
+            this.markingFunctions = markingFunctions;
         }
 
         public void aggregate(Key key, Value val) {
@@ -502,17 +502,20 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         }
 
         public ColumnVisibility getColumnVisibility() {
+            Set<ColumnVisibility> columnVisibilities = new HashSet<>();
+            for (Text t : this.uniqueVisibilities) {
+                columnVisibilities.add(new ColumnVisibility(t));
+            }
             try {
-                Set<ColumnVisibility> columnVisibilities = new HashSet<>();
-                for (Text t : this.uniqueVisibilities) {
-                    columnVisibilities.add(new ColumnVisibility(t));
+                if (null == markingFunctions) {
+                    markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
                 }
-                return tupleMarkingFunctions.combine(columnVisibilities);
-
-            } catch (MarkingFunctions.Exception e) {
-                logger.error("Could not create combined column visibility for the count", e);
+                return markingFunctions.combineVisibilities(columnVisibilities);
+            } catch (Exception e) {
+                log.warn("Invalid columnvisibility after combining!", e);
                 return null;
             }
+
         }
     }
 

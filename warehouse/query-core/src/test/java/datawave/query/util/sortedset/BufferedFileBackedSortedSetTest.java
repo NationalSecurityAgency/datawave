@@ -65,7 +65,7 @@ public class BufferedFileBackedSortedSetTest {
 
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
-        for (int d = 0; d < 11; d++) {
+        for (int d = 0; d < 4; d++) {
             Collections.addAll(set, data);
         }
     }
@@ -377,6 +377,12 @@ public class BufferedFileBackedSortedSetTest {
 
     @Test
     public void testCompaction() throws IOException {
+        // only this test needs enough underlying sets to reach the compaction threshold, so top up here rather than
+        // making every other test in the class pay for the extra rounds in setUp. The round cap keeps a change in
+        // persist/compact behavior from spinning here forever -- the assertion below reports it instead.
+        for (int d = 0; set.getSets().size() <= 7 && d < 20; d++) {
+            Collections.addAll(set, data);
+        }
         assertEquals(8, set.getSets().size());
         set.persist();
         assertEquals(3, set.getSets().size());

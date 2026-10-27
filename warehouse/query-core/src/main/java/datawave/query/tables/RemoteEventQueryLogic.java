@@ -23,7 +23,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.EventQueryResponseBase;
 
 /**
- * <h1>Overview</h1> This is a query logic implementation that can handle delegating to a remote event query logic (i.e. one that returns an extension of
+ * <h2>Overview</h2> This is a query logic implementation that can handle delegating to a remote event query logic (i.e. one that returns an extension of
  * EventQueryResponseBase).
  */
 public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
@@ -56,7 +56,7 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
     }
 
     @Override
-    public QueryLogicTransformer<EventBase,EventBase> createTransformer(Query settings, MarkingFunctions markingFunctions,
+    public QueryLogicTransformer<EventBase,EventBase> createTransformer(Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         return new EventBaseTransformer(settings, markingFunctions, responseObjectFactory);
     }
@@ -124,11 +124,11 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
 
     private class EventBaseTransformer extends EventQueryTransformerSupport<EventBase,EventBase> {
 
-        public EventBaseTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+        public EventBaseTransformer(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
             super("notable", settings, markingFunctions, responseObjectFactory);
         }
 
-        public EventBaseTransformer(BaseQueryLogic<Map.Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+        public EventBaseTransformer(BaseQueryLogic<Map.Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                         ResponseObjectFactory responseObjectFactory) {
             super(logic, settings, markingFunctions, responseObjectFactory);
         }

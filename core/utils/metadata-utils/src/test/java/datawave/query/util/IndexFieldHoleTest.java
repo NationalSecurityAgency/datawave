@@ -1,8 +1,8 @@
 package datawave.query.util;
 
-import static datawave.data.ColumnFamilyConstants.COLF_F;
 import static datawave.query.util.TestUtils.createDateFrequencyMap;
 import static datawave.query.util.TestUtils.createRangedDateFrequencyMap;
+import static datawave.table.constants.MetadataColumnFamilyConstants.COLF_F;
 import static org.apache.accumulo.core.iterators.LongCombiner.VAR_LEN_ENCODER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

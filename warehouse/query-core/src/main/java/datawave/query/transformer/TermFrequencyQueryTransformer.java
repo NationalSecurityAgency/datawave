@@ -28,7 +28,7 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
     private final Authorizations auths;
     private final ResponseObjectFactory responseObjectFactory;
 
-    public TermFrequencyQueryTransformer(Query query, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+    public TermFrequencyQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.query = query;
         this.responseObjectFactory = responseObjectFactory;

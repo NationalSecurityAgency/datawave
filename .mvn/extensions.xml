@@ -6,11 +6,6 @@
         <version>1.0.2</version>
     </extension>
     <extension>
-        <groupId>io.takari.aether</groupId>
-        <artifactId>takari-local-repository</artifactId>
-        <version>0.11.3</version>
-    </extension>
-    <extension>
         <groupId>co.leantechniques</groupId>
         <artifactId>maven-buildtime-extension</artifactId>
         <version>3.0.0</version>

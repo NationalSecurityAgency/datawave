@@ -1,20 +1,22 @@
 #!/bin/bash
 
+FIND_JARS_BIN_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+FIND_JARS_INSTALL_DIR=$(cd -- "$FIND_JARS_BIN_DIR/../.." && pwd)
 
 findJar (){
-  ls -1 ../../lib/$1-[0-9]*.jar | sort | tail -1
+  ls -1 "$FIND_JARS_INSTALL_DIR"/lib/$1-[0-9]*.jar | sort | tail -1
 }
 findFirstJar (){
-  ls -1 ../../lib/$1-[0-9]*.jar | sort | head -1
+  ls -1 "$FIND_JARS_INSTALL_DIR"/lib/$1-[0-9]*.jar | sort | head -1
 }
 findAllJars (){
-  ls -1 ../../lib/$1-[0-9]*.jar | sort | paste -sd ':' -
+  ls -1 "$FIND_JARS_INSTALL_DIR"/lib/$1-[0-9]*.jar | sort | paste -sd ':' -
 }
 findWebserviceJar (){
-  ls -1 ../../lib/$1[-0-9.]*jar | sort | head -1
+  ls -1 "$FIND_JARS_INSTALL_DIR"/lib/$1[-0-9.]*jar | sort | head -1
 }
 findProvenanceJar (){
-  ls -1 ../../lib/$1-[0-9.]*.*.jar |  grep -v with-dependencies | sort | tail -1
+  ls -1 "$FIND_JARS_INSTALL_DIR"/lib/$1-[0-9.]*.*.jar | grep -v with-dependencies | sort | tail -1
 }
 findAccumuloJar (){
   ls -1 $WAREHOUSE_ACCUMULO_LIB/$1-[0-9]*.jar | sort | tail -1
@@ -25,7 +27,7 @@ findZookeeperJar(){
   echo $result
 }
 
-CONF_DIR=../../config
+CONF_DIR="$FIND_JARS_INSTALL_DIR/config"
 DATAWAVE_INDEX_STATS_JAR=$(findJar datawave-index-stats)
 DATAWAVE_INGEST_CSV_JAR=$(findJar datawave-ingest-csv)
 DATAWAVE_INGEST_JSON_JAR=$(findJar datawave-ingest-json)
@@ -53,6 +55,7 @@ DATAWAVE_BASE_REST_RESPONSES_JAR=$(findJar base-rest-responses)
 DATAWAVE_COMMON_UTILS_JAR=$(findJar common-utils)
 DATAWAVE_CORE_JAR=$(findJar datawave-core)
 DATAWAVE_CORE_QUERY_JAR=$(findJar datawave-core-query)
+DATAWAVE_CORE_TABLES_JAR=$(findJar datawave-core-tables)
 DATAWAVE_WS_QUERY_JAR=$(findWebserviceJar datawave-ws-query)
 DATAWAVE_WS_CLIENT_JAR=$(findWebserviceJar datawave-ws-client)
 CURATOR_FRAMEWORK_JAR=$(findJar curator-framework)
@@ -84,6 +87,7 @@ LUCENE_JAR=$LUCENE_JAR:$(findJar lucene-queryparser)
 LUCENE_JAR=$LUCENE_JAR:$(findJar lucene-analyzers-common)
 THRIFT_JAR=$(findJar libthrift)
 AC_CORE_JAR=$(findAccumuloJar accumulo-core)
+AC_ACCESS_JAR=$(findJar accumulo-access-core)
 AC_SERVER_JAR=$(findAccumuloJar accumulo-server-base)
 AC_START_JAR=$(findAccumuloJar accumulo-start)
 AC_MAPRED_JAR=$(findAccumuloJar accumulo-hadoop-mapreduce)

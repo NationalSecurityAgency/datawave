@@ -1,5 +1,9 @@
 package datawave.query.tables.edge;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -29,7 +33,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
@@ -47,7 +50,12 @@ import datawave.webservice.query.exception.QueryException;
 
 /**
  * A base test class to encapsulate everything needed to run query tests against an edge query logic.
+ *
+ * @deprecated this fixture is bound to JUnit 4, and JUnit 5 does not honor the {@code @BeforeClass} setup it declares when that setup is inherited by a
+ *             subclass. Extend {@link BaseEdgeQueryTestJUnit5} instead, which is an otherwise identical copy. This class remains only for subclasses that have
+ *             not yet been migrated, and should be deleted once there are none.
  */
+@Deprecated
 public abstract class BaseEdgeQueryTest {
 
     public static final Logger log = Logger.getLogger(BaseEdgeQueryTest.class);
@@ -68,7 +76,7 @@ public abstract class BaseEdgeQueryTest {
     protected static final String UNEXPECTED_RECORD = "Found an unexpected record.";
 
     private String serializeAuths(Set<Authorizations> sentAuths) {
-        Assert.assertEquals(1, sentAuths.size());
+        assertEquals(1, sentAuths.size());
         return sentAuths.iterator().next().serialize();
     }
 
@@ -163,21 +171,21 @@ public abstract class BaseEdgeQueryTest {
 
                     logic = (BaseQueryLogic<Map.Entry<Key,Value>>) factory.getQueryLogic(logic.getLogicName());
                 } catch (CloneNotSupportedException | QueryException e) {
-                    Assert.fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
+                    fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
                 }
                 // now reset the logic given the checkpoint
                 try {
                     ((CheckpointableQueryLogic) logic).setupQuery(client, config, cp);
                 } catch (Exception e) {
                     log.error("Failed to setup query given last checkpoint", e);
-                    Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());
+                    fail("Failed to setup query given last checkpoint: " + e.getMessage());
                 }
                 Iterator<Map.Entry<Key,Value>> iter = logic.iterator();
                 if (iter.hasNext()) {
                     Map.Entry<Key,Value> next = iter.next();
                     Key k = next.getKey();
                     System.out.println("key = " + k.toStringNoTime());
-                    Assert.assertTrue(UNEXPECTED_RECORD + " : " + k.toStringNoTime(), expected.contains(k.toStringNoTime()));
+                    assertTrue(UNEXPECTED_RECORD + " : " + k.toStringNoTime(), expected.contains(k.toStringNoTime()));
                     recordsFound++;
                     cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
                 }
@@ -187,12 +195,12 @@ public abstract class BaseEdgeQueryTest {
                 foundKeys.add(entry.getKey());
                 Key k = entry.getKey();
                 System.out.println("key = " + k.toStringNoTime());
-                Assert.assertTrue(UNEXPECTED_RECORD + " : " + k.toStringNoTime(), expected.contains(k.toStringNoTime()));
+                assertTrue(UNEXPECTED_RECORD + " : " + k.toStringNoTime(), expected.contains(k.toStringNoTime()));
                 recordsFound++;
             }
         }
 
-        Assert.assertEquals(UNEXPECTED_NUM_RECORDS, expected.size(), recordsFound);
+        assertEquals(UNEXPECTED_NUM_RECORDS, expected.size(), recordsFound);
     }
 
     public static void addEdges() throws IOException, InterruptedException {

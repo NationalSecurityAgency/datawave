@@ -19,7 +19,7 @@ import datawave.query.jexl.visitors.FetchFunctionFieldsVisitor;
 import datawave.query.util.TypeMetadata;
 
 /**
- * A {@link QueryRule} implementation that will check if any time-based functions are used with non-date fields in a query.
+ * A {@link QueryRule} implementation that will check a JEXL query for the usage of any non-date field arguments for the function {@code filter:timeFunction}.
  */
 public class TimeFunctionRule extends ShardQueryRule {
 

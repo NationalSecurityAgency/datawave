@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 
+import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
 
 public class TermInfoAggregation implements Function<Collection<TermInfo>,DiscoveredThing> {
@@ -24,6 +25,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
     private final boolean separateCountsByColumnVisibility;
     private boolean showReferenceCountInsteadOfTermCount = false;
     private boolean reverseIndex = false;
+    private MarkingFunctions<?> markingFunctions;
 
     public TermInfoAggregation() {
         this.separateCountsByColumnVisibility = false;
@@ -73,7 +75,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                 chosenCount = showReferenceCountInsteadOfTermCount ? referenceCount : termCount;
 
                 try {
-                    MarkingFunctions.Factory.createMarkingFunctions().translateFromColumnVisibility(ti.vis); // just to test parsing
+                    markingFunctions.translateFromColumnVisibility(ti.vis); // just to test parsing
                     columnVisibilities.add(ti.vis);
 
                     // Keep track of counts for individual vis
@@ -104,11 +106,12 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                     log.trace("Did not aggregate any counts for [" + term + "][" + field + "][" + type + "][" + date + "]. Returning null.");
                 return null;
             } else {
-                ColumnVisibility columnVisibility = null;
+                ColumnVisibility columnVisibility;
                 try {
-
-                    columnVisibility = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
-
+                    if (null == markingFunctions) {
+                        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+                    }
+                    columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
                 } catch (Exception e) {
                     log.warn("Invalid columnvisibility after combining!", e);
                     return null;
@@ -119,7 +122,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                     countsByVis.put(new Text(entry.getKey()), new VLongWritable(entry.getValue()));
                 }
 
-                return new DiscoveredThing(term, field, type, date, new String(columnVisibility.flatten()), count, countsByVis);
+                return new DiscoveredThing(term, field, type, date, AccessExpressionUtil.normalize(columnVisibility).getExpression(), count, countsByVis);
             }
         }
     }

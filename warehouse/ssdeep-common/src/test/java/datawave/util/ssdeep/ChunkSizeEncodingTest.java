@@ -1,11 +1,11 @@
 package datawave.util.ssdeep;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +41,6 @@ public class ChunkSizeEncodingTest {
             log.info(output);
             index++;
         }
-        assertTrue("Observed mismatches in calculated index for chunksize: " + mismatches, mismatches.isEmpty());
+        assertTrue(mismatches.isEmpty(), "Observed mismatches in calculated index for chunksize: " + mismatches);
     }
 }

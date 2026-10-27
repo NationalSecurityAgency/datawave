@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 
-import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.util.TableName;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.table.constants.TableName;
 
 public class FieldExpansionIteratorTest {
 

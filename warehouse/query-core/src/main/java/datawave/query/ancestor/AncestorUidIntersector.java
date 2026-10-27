@@ -16,8 +16,8 @@ import datawave.query.index.lookup.IndexMatch;
 import datawave.query.index.lookup.IndexMatchType;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.language.parser.jexl.JexlNodeSet;
-import datawave.query.tld.TLD;
 import datawave.query.util.Tuple2;
+import datawave.table.util.TLD;
 
 /**
  * This is a uid intersection class that handles the concept of the ancestor query logic.

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import datawave.ingest.mapreduce.job.TableConfigHelperFactory;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Test uses mini accumulo cluster. Files are stored in warehouse/ingest-core/target/mac/datawave.ingest.mapreduce.TableConfigHelperFactoryTest
@@ -88,7 +88,7 @@ public class TableConfigHelperFactoryTest {
         helper.configure(tops);
 
         TablePropertiesMap testShardProperties = new TablePropertiesMap(tops, TEST_SHARD_TABLE_NAME);
-        assertEquals("10,datawave.iterators.PropogatingIterator", testShardProperties.get("table.iterator.majc.agg"));
+        assertEquals("19,datawave.iterators.PropogatingIterator", testShardProperties.get("table.iterator.majc.agg"));
 
         TablePropertiesMap shardProperties = new TablePropertiesMap(tops, TableName.SHARD);
         assertNull(shardProperties.get("table.iterator.majc.agg"));
@@ -103,6 +103,6 @@ public class TableConfigHelperFactoryTest {
         assertNull(testShardProperties.get("table.iterator.majc.agg"));
 
         TablePropertiesMap shardProperties = new TablePropertiesMap(tops, TableName.SHARD);
-        assertEquals("10,datawave.iterators.PropogatingIterator", shardProperties.get("table.iterator.majc.agg"));
+        assertEquals("19,datawave.iterators.PropogatingIterator", shardProperties.get("table.iterator.majc.agg"));
     }
 }
