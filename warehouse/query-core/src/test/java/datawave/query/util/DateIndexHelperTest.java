@@ -45,7 +45,7 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.MockAccumuloRecordWriter;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/MetadataHelperContext.xml", "classpath:/CacheContext.xml"})

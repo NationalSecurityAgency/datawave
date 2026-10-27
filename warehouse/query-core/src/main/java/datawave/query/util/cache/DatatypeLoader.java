@@ -17,10 +17,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.query.Constants;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 
 public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?>>> {
 
@@ -92,7 +92,7 @@ public class DatatypeLoader extends AccumuloLoader<String,Multimap<String,Type<?
             String colq = key.getColumnQualifier().toString();
             int idx = colq.indexOf(Constants.NULL);
 
-            if (key.getColumnFamily().equals(ColumnFamilyConstants.COLF_RI)) {
+            if (key.getColumnFamily().equals(MetadataColumnFamilyConstants.COLF_RI)) {
                 reverse = true;
             }
 

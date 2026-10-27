@@ -34,7 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.ingest.protobuf.Uid;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * A series of integration tests using {@link MiniAccumuloCluster} to exercise various global index aggregators

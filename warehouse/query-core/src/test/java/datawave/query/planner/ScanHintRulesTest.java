@@ -2,7 +2,7 @@ package datawave.query.planner;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,8 +18,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ArrayListMultimap;
@@ -43,7 +43,7 @@ public class ScanHintRulesTest extends EasyMockSupport {
     private DefaultQueryPlanner planner;
     private ShardQueryConfiguration config;
 
-    @Before
+    @BeforeEach
     public void setup() {
         metadataHelper = mock(MetadataHelper.class);
         planner = new DefaultQueryPlanner();

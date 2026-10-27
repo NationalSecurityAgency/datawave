@@ -70,7 +70,6 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.Type;
 import datawave.iterators.EdgeMetadataCombiner;
@@ -86,8 +85,10 @@ import datawave.query.model.Frequency;
 import datawave.query.model.IndexFieldHole;
 import datawave.query.model.ModelKeyParser;
 import datawave.query.model.QueryModel;
+import datawave.scan.ScannerBuilder;
 import datawave.security.util.AuthorizationsMinimizer;
 import datawave.security.util.ScannerHelper;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.util.time.TraceStopwatch;
@@ -100,7 +101,7 @@ import datawave.webservice.common.connection.WrappedAccumuloClient;
  *
  * <p>
  * This set would normally includes all tokenized content fields. In terms of keys in the DatawaveMetadata table, this set would contain all rows in the
- * {@code DatawaveMetadata} table which have a {@link ColumnFamilyConstants#COLF_I} but not a {@link ColumnFamilyConstants#COLF_E}
+ * {@code DatawaveMetadata} table which have a {@link MetadataColumnFamilyConstants#COLF_I} but not a {@link MetadataColumnFamilyConstants#COLF_E}
  * </p>
  *
  *
@@ -131,11 +132,11 @@ public class MetadataHelper {
 
     protected final Metadata metadata = new Metadata();
 
-    protected final List<Text> metadataIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_I, ColumnFamilyConstants.COLF_RI);
-    protected final List<Text> metadataNormalizedColfs = Arrays.asList(ColumnFamilyConstants.COLF_N);
-    protected final List<Text> metadataTypeColfs = Arrays.asList(ColumnFamilyConstants.COLF_T);
-    protected final List<Text> metadataCompositeIndexColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI);
-    protected final List<Text> metadataCardinalityColfs = Arrays.asList(ColumnFamilyConstants.COLF_COUNT);
+    protected final List<Text> metadataIndexColfs = Arrays.asList(MetadataColumnFamilyConstants.COLF_I, MetadataColumnFamilyConstants.COLF_RI);
+    protected final List<Text> metadataNormalizedColfs = Arrays.asList(MetadataColumnFamilyConstants.COLF_N);
+    protected final List<Text> metadataTypeColfs = Arrays.asList(MetadataColumnFamilyConstants.COLF_T);
+    protected final List<Text> metadataCompositeIndexColfs = Arrays.asList(MetadataColumnFamilyConstants.COLF_CI);
+    protected final List<Text> metadataCardinalityColfs = Arrays.asList(MetadataColumnFamilyConstants.COLF_COUNT);
 
     protected final AccumuloClient accumuloClient;
     protected final String metadataTableName;
@@ -635,15 +636,15 @@ public class MetadataHelper {
             ignoreColfs.addAll(metadataTypeColfs);
             ignoreColfs.addAll(metadataCompositeIndexColfs);
             ignoreColfs.addAll(metadataCardinalityColfs);
-            ignoreColfs.add(ColumnFamilyConstants.COLF_E);
-            ignoreColfs.add(ColumnFamilyConstants.COLF_DESC);
-            ignoreColfs.add(ColumnFamilyConstants.COLF_EDGE);
-            ignoreColfs.add(ColumnFamilyConstants.COLF_F);
-            ignoreColfs.add(ColumnFamilyConstants.COLF_H);
-            ignoreColfs.add(ColumnFamilyConstants.COLF_VI);
-            ignoreColfs.add(ColumnFamilyConstants.COLF_TF);
-            ignoreColfs.add(ColumnFamilyConstants.COLF_VERSION);
-            ignoreColfs.add(ColumnFamilyConstants.COLF_EXP);
+            ignoreColfs.add(MetadataColumnFamilyConstants.COLF_E);
+            ignoreColfs.add(MetadataColumnFamilyConstants.COLF_DESC);
+            ignoreColfs.add(MetadataColumnFamilyConstants.COLF_EDGE);
+            ignoreColfs.add(MetadataColumnFamilyConstants.COLF_F);
+            ignoreColfs.add(MetadataColumnFamilyConstants.COLF_H);
+            ignoreColfs.add(MetadataColumnFamilyConstants.COLF_VI);
+            ignoreColfs.add(MetadataColumnFamilyConstants.COLF_TF);
+            ignoreColfs.add(MetadataColumnFamilyConstants.COLF_VERSION);
+            ignoreColfs.add(MetadataColumnFamilyConstants.COLF_EXP);
 
             for (Entry<Key,Value> entry : scan) {
                 Text cf = entry.getKey().getColumnFamily();
@@ -679,7 +680,7 @@ public class MetadataHelper {
         Entry<String,Entry<String,Set<String>>> entry = Maps.immutableEntry(metadataTableName, Maps.immutableEntry(fieldName, ingestTypeFilter));
 
         try {
-            return this.allFieldMetadataHelper.isIndexed(ColumnFamilyConstants.COLF_RI, entry);
+            return this.allFieldMetadataHelper.isIndexed(MetadataColumnFamilyConstants.COLF_RI, entry);
         } catch (InstantiationException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -703,7 +704,7 @@ public class MetadataHelper {
         Entry<String,Entry<String,Set<String>>> entry = Maps.immutableEntry(metadataTableName, Maps.immutableEntry(fieldName, ingestTypeFilter));
 
         try {
-            return this.allFieldMetadataHelper.isIndexed(ColumnFamilyConstants.COLF_I, entry);
+            return this.allFieldMetadataHelper.isIndexed(MetadataColumnFamilyConstants.COLF_I, entry);
         } catch (InstantiationException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -728,7 +729,7 @@ public class MetadataHelper {
         Entry<String,Entry<String,Set<String>>> entry = Maps.immutableEntry(metadataTableName, Maps.immutableEntry(fieldName, ingestTypeFilter));
 
         try {
-            return this.allFieldMetadataHelper.isIndexed(ColumnFamilyConstants.COLF_TF, entry);
+            return this.allFieldMetadataHelper.isIndexed(MetadataColumnFamilyConstants.COLF_TF, entry);
         } catch (InstantiationException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -793,7 +794,7 @@ public class MetadataHelper {
                         fieldPivots.put(parts[0], parts[0]);
                     }
                 } else {
-                    log.warn("Row null in ColumnFamilyConstants for key: {}", key);
+                    log.warn("Row null in MetadataColumnFamilyConstants for key: {}", key);
                 }
             }
         }
@@ -823,7 +824,7 @@ public class MetadataHelper {
 
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
             bs.setRange(new Range());
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_COUNT);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_COUNT);
 
             for (Entry<Key,Value> entry : bs) {
                 Key key = entry.getKey();
@@ -833,7 +834,7 @@ public class MetadataHelper {
                     Map<String,MetadataCardinalityCounts> values = allCounts.computeIfAbsent(counts.getField(), k -> Maps.newHashMapWithExpectedSize(5));
                     values.put(counts.getFieldValue(), counts);
                 } else {
-                    log.warn("Row null in ColumnFamilyConstants for key: {}", key);
+                    log.warn("Row null in MetadataColumnFamilyConstants for key: {}", key);
                 }
             }
         }
@@ -865,7 +866,7 @@ public class MetadataHelper {
 
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, Collections.singleton(rootAuths))) {
             bs.setRange(new Range());
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_COUNT);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_COUNT);
 
             for (Entry<Key,Value> entry : bs) {
                 Key key = entry.getKey();
@@ -875,7 +876,7 @@ public class MetadataHelper {
                     Map<String,MetadataCardinalityCounts> values = allCounts.computeIfAbsent(counts.getField(), k -> Maps.newHashMapWithExpectedSize(5));
                     values.put(counts.getFieldValue(), counts);
                 } else {
-                    log.warn("Row null in ColumnFamilyConstants for key: {}", key);
+                    log.warn("Row null in MetadataColumnFamilyConstants for key: {}", key);
                 }
             }
         }
@@ -906,7 +907,7 @@ public class MetadataHelper {
         try (Scanner bs = ScannerHelper.createScanner(accumuloClient, metadataTableName, auths)) {
 
             bs.setRange(new Range());
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_N);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_N);
 
             for (Entry<Key,Value> entry : bs) {
                 Key key = entry.getKey();
@@ -914,7 +915,7 @@ public class MetadataHelper {
                 if (null != key.getRow()) {
                     normalizedFields.add(key.getRow().toString());
                 } else {
-                    log.warn("Row null in ColumnFamilyConstants for key: {}", key);
+                    log.warn("Row null in MetadataColumnFamilyConstants for key: {}", key);
                 }
             }
         }
@@ -1071,7 +1072,7 @@ public class MetadataHelper {
     }
 
     /**
-     * Fetch the Set of all fields marked as containing term frequency information, {@link ColumnFamilyConstants#COLF_TF}.
+     * Fetch the Set of all fields marked as containing term frequency information, {@link MetadataColumnFamilyConstants#COLF_TF}.
      * <p>
      * These docs are very wrong, update them
      *
@@ -1094,13 +1095,13 @@ public class MetadataHelper {
         try (Scanner scanner = ScannerHelper.createScanner(accumuloClient, metadataTableName, fullUserAuths)) {
 
             scanner.setRange(new Range());
-            scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_EDGE);
+            scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_EDGE);
 
             // First iterator strips the optional attribute2 and attribute3 off the cq, second one
             // combines the protocol buffer data.
             IteratorSetting stripConfig = new IteratorSetting(50, EdgeMetadataCQStrippingIterator.class);
             IteratorSetting combineConfig = new IteratorSetting(51, EdgeMetadataCombiner.class);
-            combineConfig.addOption("columns", ColumnFamilyConstants.COLF_EDGE.toString());
+            combineConfig.addOption("columns", MetadataColumnFamilyConstants.COLF_EDGE.toString());
             scanner.addScanIterator(stripConfig);
             scanner.addScanIterator(combineConfig);
 
@@ -1183,7 +1184,7 @@ public class MetadataHelper {
     }
 
     /**
-     * Fetch the Set of all fields marked as containing term frequency information, {@link ColumnFamilyConstants#COLF_TF}.
+     * Fetch the Set of all fields marked as containing term frequency information, {@link MetadataColumnFamilyConstants#COLF_TF}.
      *
      * @return the set of term frequency fields given the ingest type filter
      * @throws TableNotFoundException
@@ -1344,7 +1345,7 @@ public class MetadataHelper {
 
             Key startKey = new Key(row);
             bs.setRange(new Range(startKey, startKey.followingKey(PartialKey.ROW)));
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_F);
 
             // If a datatype was specified, add a regex filter to only include entries with the datatype.
             if (datatype != null) {
@@ -1479,7 +1480,7 @@ public class MetadataHelper {
     }
 
     /**
-     * Return the sum across all datatypes of the {@link ColumnFamilyConstants#COLF_F} on the given day.
+     * Return the sum across all datatypes of the {@link MetadataColumnFamilyConstants#COLF_F} on the given day.
      *
      * @param fieldName
      *            the field
@@ -1492,7 +1493,7 @@ public class MetadataHelper {
     }
 
     /**
-     * Return the sum across all datatypes of the {@link ColumnFamilyConstants#COLF_F} on the given day in the provided types
+     * Return the sum across all datatypes of the {@link MetadataColumnFamilyConstants#COLF_F} on the given day in the provided types
      *
      * @param fieldName
      *            the field name
@@ -1583,7 +1584,7 @@ public class MetadataHelper {
 
         // we have to use the real connector since the f column is not cached
         try (Scanner scanner = ScannerHelper.createScanner(client, metadataTableName, auths)) {
-            scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
+            scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_F);
             scanner.setRange(Range.exact(fieldName));
 
             // It's possible to find rows with column qualifiers in the format <datatype>\0AGGREGATED (aggregated entries) and/or <datatype>\0<date>
@@ -1707,7 +1708,7 @@ public class MetadataHelper {
         try (BatchScanner bs = ScannerHelper.createBatchScanner(client, getMetadataTableName(), getAuths(), fields.size())) {
 
             bs.setRanges(ranges);
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_F);
 
             IteratorSetting setting = new IteratorSetting(50, "MetadataFrequencySeekingIterator", MetadataFColumnSeekingFilter.class);
             setting.addOption(MetadataFColumnSeekingFilter.DATATYPES_OPT, Joiner.on(',').join(sortedDatatypes));
@@ -1785,7 +1786,7 @@ public class MetadataHelper {
             }
 
             settings.add(new IteratorSetting(51, "firstEntryInRow", FirstEntryInRowIterator.class));
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_F);
             bs.setRanges(ranges);
 
             for (IteratorSetting setting : settings) {
@@ -1952,7 +1953,7 @@ public class MetadataHelper {
         BatchWriter writer = null;
 
         try (Scanner scanner = ScannerHelper.createScanner(client, metadataTableName, auths)) {
-            scanner.fetchColumnFamily(ColumnFamilyConstants.COLF_F);
+            scanner.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_F);
             scanner.setRange(Range.exact(fieldName));
 
             // if a type was specified, add a regex filter for it
@@ -2053,7 +2054,7 @@ public class MetadataHelper {
      */
     public Map<String,Map<String,IndexFieldHole>> getFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
-        Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(ColumnFamilyConstants.COLF_I, minThreshold);
+        Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(MetadataColumnFamilyConstants.COLF_I, minThreshold);
         return filteredFieldIndexHoles(allHoles, fields, datatypes);
     }
 
@@ -2095,7 +2096,7 @@ public class MetadataHelper {
      */
     public Map<String,Map<String,IndexFieldHole>> getReversedFieldIndexHoles(Set<String> fields, Set<String> datatypes, double minThreshold)
                     throws TableNotFoundException, IOException {
-        Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(ColumnFamilyConstants.COLF_RI, minThreshold);
+        Map<String,Map<String,IndexFieldHole>> allHoles = allFieldMetadataHelper.getFieldIndexHoles(MetadataColumnFamilyConstants.COLF_RI, minThreshold);
         return filteredFieldIndexHoles(allHoles, fields, datatypes);
     }
 
@@ -2197,12 +2198,12 @@ public class MetadataHelper {
 
             // We don't want to fetch all columns because that could include model
             // field names
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_T);
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_I);
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_E);
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_RI);
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_TF);
-            bs.fetchColumnFamily(ColumnFamilyConstants.COLF_CI);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_T);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_I);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_E);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_RI);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_TF);
+            bs.fetchColumnFamily(MetadataColumnFamilyConstants.COLF_CI);
 
             for (Entry<Key,Value> entry : bs) {
                 Key k = entry.getKey();
@@ -2226,8 +2227,8 @@ public class MetadataHelper {
     }
 
     /**
-     * Fetch the Set of all fields marked as containing term frequency information, {@link ColumnFamilyConstants#COLF_TF}. Returns a multimap of datatype to
-     * field
+     * Fetch the Set of all fields marked as containing term frequency information, {@link MetadataColumnFamilyConstants#COLF_TF}. Returns a multimap of
+     * datatype to field
      *
      * @return a multimap of datatype to term frequency fields
      * @throws TableNotFoundException
@@ -2274,7 +2275,7 @@ public class MetadataHelper {
             log.trace("--- basicIterator --- {}", tableName);
         }
 
-        try (Scanner scanner = client.createScanner(tableName, auths.iterator().next())) {
+        try (Scanner scanner = ScannerBuilder.create(client).setTableName(tableName).setAuthorizations(auths.iterator().next()).build()) {
             Range range = new Range();
             scanner.setRange(range);
             for (Entry<Key,Value> entry : scanner) {

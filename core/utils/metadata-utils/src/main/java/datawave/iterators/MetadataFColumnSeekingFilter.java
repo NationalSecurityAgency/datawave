@@ -18,10 +18,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 
-import datawave.data.ColumnFamilyConstants;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 
 /**
- * A {@link SeekingFilter} that operates on the metadata table's {@link ColumnFamilyConstants#COLF_F} column.
+ * A {@link SeekingFilter} that operates on the metadata table's {@link MetadataColumnFamilyConstants#COLF_F} column.
  * <p>
  * This filter solves the problem of calculating field cardinality for a small date range on a system that contains many days worth of data, i.e., it is not
  * practical to simply filter based on date and/or datatype.

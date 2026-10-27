@@ -14,7 +14,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Assert;
 import org.junit.Before;
 
 import com.google.common.collect.HashMultimap;
@@ -27,11 +26,12 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIndexingColumnBasedHandler;
 import datawave.policy.ExampleIngestPolicyEnforcer;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  *
  */
+@Deprecated
 public class WikipediaTestBed {
     protected Configuration conf = null;
     protected TaskAttemptContext ctx = null;
@@ -46,11 +46,11 @@ public class WikipediaTestBed {
         conf.set("all" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, ExampleIngestPolicyEnforcer.class.getName());
 
         URL url = ClassLoader.getSystemResource("config/ingest/wikipedia-config.xml");
-        Assert.assertNotNull("URL to wikipedia-config.xml was null", url);
+        assertNotNull("URL to wikipedia-config.xml was null", url);
         conf.addResource(url);
 
         url = ClassLoader.getSystemResource("config/ingest/metadata-config.xml");
-        Assert.assertNotNull("URL to metadata-config.xml was null", url);
+        assertNotNull("URL to metadata-config.xml was null", url);
         conf.addResource(url);
 
         conf.setInt(ShardedDataTypeHandler.NUM_SHARDS, 1);

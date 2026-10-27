@@ -1,5 +1,6 @@
 package datawave.query.transformer;
 
+import java.time.Clock;
 import java.util.Map;
 
 import javax.annotation.Nullable;
@@ -32,12 +33,13 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
         protected Query settings;
         protected MarkingFunctions<?> markingFunctions;
         protected long queryExecutionForPageStartTime;
+        protected Clock clock = Clock.systemUTC();
 
         @Override
         public void initialize(Query settings, MarkingFunctions<?> markingFunctions) {
             this.settings = settings;
             this.markingFunctions = markingFunctions;
-            this.queryExecutionForPageStartTime = System.currentTimeMillis();
+            this.queryExecutionForPageStartTime = clock.millis();
         }
 
         @Override

@@ -33,7 +33,13 @@ public class KeyWithContext implements Comparable<KeyWithContext> {
             // the ColumnFamily is datatype \0 uid, invert this for priority queue
             String cf = key.getColumnFamily().toString();
             int index = cf.indexOf('\u0000');
-            compareKey = cf.substring(index + 1) + cf.substring(0, index);
+            if (index < 0) {
+                // no separator present, so there is nothing to invert. Ordering on the column family as-is is the
+                // best available approximation and beats throwing while building a queue entry
+                compareKey = cf;
+            } else {
+                compareKey = cf.substring(index + 1) + cf.substring(0, index);
+            }
         } else {
             compareKey = null;
         }
