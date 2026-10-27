@@ -24,7 +24,6 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
@@ -49,11 +48,6 @@ public class WhindexCreationDateFilterTest {
         }
 
         @Override
-        public AccumuloConfiguration getConfig() {
-            return conf;
-        }
-
-        @Override
         public IteratorUtil.IteratorScope getIteratorScope() {
             if (major) {
                 return IteratorUtil.IteratorScope.majc;
@@ -72,11 +66,6 @@ public class WhindexCreationDateFilterTest {
         }
 
         @Override
-        public ServiceEnvironment getServiceEnv() {
-            return null;
-        }
-
-        @Override
         public PluginEnvironment getPluginEnv() {
             return null;
         }
@@ -87,8 +76,8 @@ public class WhindexCreationDateFilterTest {
         }
 
         @Override
-        public void registerSideChannel(SortedKeyValueIterator<Key,Value> iter) {
-            throw new UnsupportedOperationException();
+        public boolean isRunningLowOnMemory() {
+            return false;
         }
 
         @Override
@@ -108,11 +97,6 @@ public class WhindexCreationDateFilterTest {
 
         @Override
         public SamplerConfiguration getSamplerConfiguration() {
-            return null;
-        }
-
-        @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String arg0) {
             return null;
         }
     }
