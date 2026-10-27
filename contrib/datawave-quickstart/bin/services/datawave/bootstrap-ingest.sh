@@ -355,8 +355,8 @@ function datawaveIngestCreateTableSplits() {
 
    # Create the shard table splits
    # create-shards-since.sh takes the table list as its fifth argument; the third
-   # and fourth are shardsPerSplit and the balancer delay. Pass those empty so
-   # they keep the script's own defaults.
+   # is shardsPerSplit and the fourth, once the balancer delay, is now unused.
+   # Pass those empty so shardsPerSplit keeps the script's own default.
    ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-shards-since.sh ${shardDateYYYYMMDD} ${numDays} "" "" "${shardTables}"
 
    # Go ahead and pre-split the global index and reverse index tables
