@@ -33,7 +33,7 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
 
     private static final long serialVersionUID = 6614332701390895105L;
 
-    @XmlElement(name = "markings")
+    @XmlElement(name = "markings", type = AccessExpressionMarkings.class)
     private Markings<?> markings;
 
     @XmlElement(name = "language")

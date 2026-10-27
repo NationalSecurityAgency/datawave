@@ -71,19 +71,54 @@ public class AnnotationHelperTest {
 
     @Test
     public void testGetTableNamesAndPriorities() {
-        String[] expectedTableNames = new String[] {conf.get(AnnotationHelper.ANNOTATION_TNAME), conf.get(AnnotationHelper.ANNOTATION_SOURCE_TNAME)};
+
+        //@formatter:off
+        String[] expectedTableNames = new String[] {
+                conf.get(AnnotationHelper.ANNOTATION_TNAME),
+                conf.get(AnnotationHelper.ANNOTATION_SOURCE_TNAME),
+                conf.get(AnnotationHelper.TRUTHMARK_TNAME),
+                conf.get(AnnotationHelper.TRUTHMARK_SOURCE_TNAME)
+        };
+        //@formatter:on
 
         assertArrayEquals(expectedTableNames, annotationHelper.getAnnotationTableNames(null));
         assertArrayEquals(expectedTableNames, annotationHelper.getAnnotationTableNames(new String[] {}));
-        assertArrayEquals(new String[] {"test", expectedTableNames[0], expectedTableNames[1]}, annotationHelper.getAnnotationTableNames(new String[] {"test"}));
 
-        int[] expectedTablePriorities = new int[] {conf.getInt(AnnotationHelper.ANNOTATION_TABLE_LOAD_PRIORITY, -10),
-                conf.getInt(AnnotationHelper.ANNOTATION_SOURCE_TABLE_LOAD_PRIORITY, -10)};
+        //@formatter:off
+        String[] expectedTableNamesWithTest = new String[] {
+                "test",
+                expectedTableNames[0],
+                expectedTableNames[1],
+                expectedTableNames[2],
+                expectedTableNames[3]
+        };
+        //@formatter:on
+
+        assertArrayEquals(expectedTableNamesWithTest, annotationHelper.getAnnotationTableNames(new String[] {"test"}));
+
+        //@formatter:off
+        int[] expectedTablePriorities = new int[] {
+                conf.getInt(AnnotationHelper.ANNOTATION_TABLE_LOAD_PRIORITY, -10),
+                conf.getInt(AnnotationHelper.ANNOTATION_SOURCE_TABLE_LOAD_PRIORITY, -10),
+                conf.getInt(AnnotationHelper.TRUTHMARK_TABLE_LOAD_PRIORITY, -10),
+                conf.getInt(AnnotationHelper.TRUTHMARK_SOURCE_TABLE_LOAD_PRIORITY, -10)
+        };
+        //@formatter:on
 
         assertArrayEquals(expectedTablePriorities, annotationHelper.getAnnotationTableLoaderPriorities(null));
         assertArrayEquals(expectedTablePriorities, annotationHelper.getAnnotationTableLoaderPriorities(new int[] {}));
-        assertArrayEquals(new int[] {1, expectedTablePriorities[0], expectedTablePriorities[1]},
-                        annotationHelper.getAnnotationTableLoaderPriorities(new int[] {1}));
+
+        //@formatter:off
+        int[] expectedTablePrioritiesWithTest = new int[] {
+                1,
+                expectedTablePriorities[0],
+                expectedTablePriorities[1],
+                expectedTablePriorities[2],
+                expectedTablePriorities[3]
+        };
+        //@formatter:on
+
+        assertArrayEquals(expectedTablePrioritiesWithTest, annotationHelper.getAnnotationTableLoaderPriorities(new int[] {1}));
     }
 
     @Test
@@ -106,7 +141,7 @@ public class AnnotationHelperTest {
         contextWriter.commit(ctx);
 
         BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
-                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "87C7ABE2\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
+                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "BAB72CC7\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
 
         BulkIngestKey expectedSourceKey = new BulkIngestKey(new Text("datawave.annotationSource"),
                         new Key("F1A0463C207B3778B472B506F3F8351A", "d", "testEngine\u00006.7\u0000testAnalyticHash", new ColumnVisibility("PRIVATE"), time));
@@ -164,7 +199,7 @@ public class AnnotationHelperTest {
                         .processBulk(ClassLoader.getSystemResource("input/singleAnnotation.json").openStream().readAllBytes(), event, fields);
 
         BulkIngestKey expectedKey = new BulkIngestKey(new Text("datawave.annotation"),
-                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "87C7ABE2\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
+                        new Key("20251107_1", "myannotation\0a.b.c\0testAnnotationType", "BAB72CC7\0seg\0testSegmentId1", "TEST_VISIBILITY", time));
         // checking to make sure the first segment BulkIngestKey is created
         assertTrue(bulkKeys.containsKey(expectedKey), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
 

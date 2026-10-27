@@ -146,14 +146,10 @@ public class RegexIndexExpansionVisitorIT extends BaseIndexExpansionTest {
         write("baz", "FIELD_A");
         String query = "FIELD_A =~ 'ba.*'";
         config.setMaxIndexScanTimeMillis(0L);
-        if (config.isUseNewIndexLookups()) {
-            // new index lookups treat zero timeout as 'don't even run the scan'
-            String expected = "((_Value_ = true) && (FIELD_A =~ 'ba.*'))";
-            driveExpansion(query, expected);
-        } else {
-            String expected = "FIELD_A == 'bar' || FIELD_A == 'bat' || FIELD_A == 'baz'";
-            driveExpansion(query, expected);
-        }
+
+        // new index lookups treat zero timeout as 'don't even run the scan'
+        String expected = "((_Value_ = true) && (FIELD_A =~ 'ba.*'))";
+        driveExpansion(query, expected);
     }
 
     @Test
@@ -200,6 +196,9 @@ public class RegexIndexExpansionVisitorIT extends BaseIndexExpansionTest {
         dataTypes.put("FIELD_C", new LcNoDiacriticsType());
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
+        config.setExpandAllTerms(false);
+        config.setExpandFields(false);
+        config.setExpandValues(false);
 
         write("bar", "FIELD_A");
         write("baz", "FIELD_A");

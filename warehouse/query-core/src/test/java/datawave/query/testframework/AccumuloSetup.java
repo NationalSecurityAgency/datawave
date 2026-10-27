@@ -1,5 +1,8 @@
 package datawave.query.testframework;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -38,7 +41,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -49,8 +51,13 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
-import datawave.table.constants.TableName;
 
+/**
+ * JUnit 4 rule for loading Accumulo test data.
+ *
+ * @deprecated Use {@link AccumuloSetupJUnit5} for Jupiter tests.
+ */
+@Deprecated
 public class AccumuloSetup extends ExternalResource {
 
     private static final Logger log = Logger.getLogger(AccumuloSetup.class);
@@ -84,11 +91,11 @@ public class AccumuloSetup extends ExternalResource {
         createTempFolder();
     }
 
-    private void createTempFolder() {
+    protected void createTempFolder() {
         File tmpDir = new File(System.getProperty("java.io.tmpdir"));
         tempFolder = new File(tmpDir, UUID.randomUUID().toString());
         if (!tempFolder.mkdir()) {
-            Assert.fail("Failed to create temporary folder " + tempFolder);
+            fail("Failed to create temporary folder " + tempFolder);
         }
     }
 
@@ -97,10 +104,10 @@ public class AccumuloSetup extends ExternalResource {
         deleteTempFolder();
     }
 
-    private void deleteTempFolder() {
+    protected void deleteTempFolder() {
         if (!tryDelete()) {
             if (assureTempFolderDeletion) {
-                Assert.fail("Failed to delete temp folder " + tempFolder);
+                fail("Failed to delete temp folder " + tempFolder);
             }
         }
     }
@@ -211,8 +218,8 @@ public class AccumuloSetup extends ExternalResource {
         log.debug("------------- loadTables -------------");
 
         if (this.fileFormat != FileType.GROUPING) {
-            Assert.assertFalse("shard ids have not been specified", this.shardIds.isEmpty());
-            Assert.assertFalse("data types have not been specified", this.dataTypes.isEmpty());
+            assertFalse("shard ids have not been specified", this.shardIds.isEmpty());
+            assertFalse("data types have not been specified", this.dataTypes.isEmpty());
         }
 
         final AccumuloClient client = tableHelper.client;
@@ -227,7 +234,9 @@ public class AccumuloSetup extends ExternalResource {
             }
         }
 
-        try (BatchWriter bw = client.createBatchWriter(TableName.METADATA)) {
+        // The metadata table the query logic is configured with, not the model table that happens to
+        // carry TableName.METADATA's name here. Shards per day matches ShardedDataTypeHandler.NUM_SHARDS.
+        try (BatchWriter bw = client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME)) {
             Mutation m = new Mutation("num_shards");
             m.put("ns", "20000101_1", new Value());
             bw.addMutation(m);

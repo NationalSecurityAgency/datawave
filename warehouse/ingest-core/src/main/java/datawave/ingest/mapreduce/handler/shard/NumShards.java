@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.scan.ScannerBuilder;
 import datawave.util.time.DateHelper;
 
 public class NumShards {
@@ -225,7 +226,7 @@ public class NumShards {
         try (AccumuloClient client = aHelper.newClient()) {
             ensureTableExists(client, metadataTableName);
 
-            try (Scanner scanner = client.createScanner(metadataTableName, new Authorizations())) {
+            try (Scanner scanner = ScannerBuilder.create(client).setTableName(metadataTableName).setAuthorizations(new Authorizations()).build()) {
                 scanner.setRange(Range.exact(NUM_SHARDS, NUM_SHARDS_CF));
 
                 for (Map.Entry<Key,Value> entry : scanner) {

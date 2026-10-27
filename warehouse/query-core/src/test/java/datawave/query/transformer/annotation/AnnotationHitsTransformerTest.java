@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.net.URLEncoder;
@@ -24,10 +26,14 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -50,6 +56,9 @@ import datawave.query.QueryParameters;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.transformer.annotation.model.AllHits;
 
@@ -1067,6 +1076,419 @@ public class AnnotationHitsTransformerTest {
         source.put("EVENT_FIELD.abc.345.456", new Content("data", HIT_KEY, true), true);
 
         enrichmentFieldMapTest(source, expected);
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"true,false", "true,true"})
+    public void forceGrouping_null_test(boolean forceGrouping, boolean stripFields) {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+
+        if (forceGrouping) {
+            // force population of the enrichment field map, this is what forces grouping notation
+            enrichmentFieldMap.put("EVENT_FIELD", "all-hits-field");
+        }
+        if (stripFields) {
+            withParameter(QueryParameters.RETURN_FIELDS, "field1");
+        }
+
+        test(null, null);
+    }
+
+    private void applyGroupingParameters(boolean forceGrouping, boolean stripFields) {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        if (forceGrouping) {
+            // force population of the enrichment field map, this is what forces grouping notation
+            enrichmentFieldMap.put("EVENT_FIELD", "all-hits-field");
+        }
+        if (stripFields) {
+            withParameter(QueryParameters.RETURN_FIELDS, "SOME_FIELD");
+        }
+    }
+
+    private Document getGroupingTestSourceDoc() {
+        Document doc = new Document();
+        doc.put("MY.GROUPED.FIELD", new Content("abc", new Key(), true), true);
+        doc.put("EVENT_FIELD", new Content("remove me if stripping fields", new Key(), true));
+
+        return doc;
+    }
+
+    private Document getGroupingTestExpectedDoc(boolean forceGrouping, boolean stripFields) {
+        Document returnDoc = new Document();
+        if (forceGrouping) {
+            returnDoc.put("MY", new Content("abc", new Key(), true));
+        } else {
+            returnDoc.put("MY.GROUPED.FIELD", new Content("abc", new Key(), true), true);
+        }
+        if (!stripFields) {
+            returnDoc.put("EVENT_FIELD", new Content("remove me if stripping fields", new Key(), true));
+        }
+
+        return returnDoc;
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGrouping_noSearchTerms_test(boolean forceGrouping, boolean stripFields) {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+
+        test(Map.entry(new Key(), doc), Map.entry(new Key(), returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_nullKey_test(boolean forceGrouping, boolean stripFields) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        Map<Key,Document> input = new HashMap<>();
+        input.put(null, doc);
+
+        Map<Key,Document> expected = new HashMap<>();
+        expected.put(null, returnDoc);
+
+        test(input.entrySet().iterator().next(), expected.entrySet().iterator().next());
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_nullDocument_test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        Map<Key,Document> input = new HashMap<>();
+        input.put(new Key("a"), null);
+
+        Map<Key,Document> expected = new HashMap<>();
+        expected.put(new Key("a"), null);
+
+        test(input.entrySet().iterator().next(), expected.entrySet().iterator().next());
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_notKeepDocument_test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document groupedDocument = getGroupingTestSourceDoc();
+        groupedDocument.setToKeep(false);
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+        returnDoc.setToKeep(false);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        test(Map.entry(new Key(), groupedDocument), Map.entry(new Key(), returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_targetFieldConflict_Test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        doc.put("TARGET_FIELD", new Content("conflicting", new Key(), true));
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+        returnDoc.put("TARGET_FIELD", new Content("conflicting", new Key(), true));
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        // set the target field to match the existing field
+        targetField = "TARGET_FIELD";
+
+        test(Map.entry(new Key(), doc), Map.entry(new Key(), returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_unexpectedKey_test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        // set the target field to match the existing field
+        targetField = "TARGET_FIELD";
+
+        test(Map.entry(new Key("unexpected"), doc), Map.entry(new Key("unexpected"), returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_noAnnotations_Test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        // set the target field to match the existing field
+        targetField = "TARGET_FIELD";
+
+        // no matching annotations
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+
+        test(Map.entry(HIT_KEY, doc), Map.entry(HIT_KEY, returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_noMatchingTypes_Test(boolean forceGrouping, boolean stripFields)
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        // set the target field to match the existing field
+        targetField = "TARGET_FIELD";
+
+        // get some annotations
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+
+        // set the types to not include the annotation found
+        validTypes = Set.of("ANNO2");
+
+        test(Map.entry(HIT_KEY, doc), Map.entry(HIT_KEY, returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceGrouping={0} forceStripFields={1}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void forceGroupingStrip_unmatched_Test(boolean forceGrouping, boolean stripFields) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException {
+        applyGroupingParameters(forceGrouping, stripFields);
+        Document doc = getGroupingTestSourceDoc();
+        Document returnDoc = getGroupingTestExpectedDoc(forceGrouping, stripFields);
+        returnDoc.put("TARGET_FIELD", new Content("[]", HIT_KEY, true));
+
+        // add some search terms otherwise we don't process far enough to see nullKey checked
+        when(termExtractor.extract(query, normalizer)).thenReturn(Set.of("t1"));
+
+        // set the target field to match the existing field
+        targetField = "TARGET_FIELD";
+
+        // get some annotations
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+
+        // set the types to not include the annotation found
+        validTypes = Set.of("ANNO1");
+
+        withNormalizers();
+
+        test(Map.entry(HIT_KEY, doc), Map.entry(HIT_KEY, returnDoc));
+    }
+
+    @ParameterizedTest(name = "forceStripFields={0}")
+    @CsvSource({"false,false", "true,false", "true,true"})
+    public void verifyForcedGroupingTest(boolean forceGrouping, boolean stripFields) {
+        applyGroupingParameters(forceGrouping, stripFields);
+
+        // the query config already forced grouping notation
+        shardQueryConfiguration.setIncludeGroupingContext(true);
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+
+        Document doc = getGroupingTestSourceDoc();
+        // this is forced false because we shouldn't actually be in a forced mode
+        Document returnDoc = getGroupingTestExpectedDoc(false, stripFields);
+
+        test(Map.entry(HIT_KEY, doc), Map.entry(HIT_KEY, returnDoc));
+    }
+
+    @Test
+    public void forcedGroupingStrippedAcrossMultiplePageApplyCallsTest() {
+        // ShardQueryLogic constructs a single AnnotationHitsTransformer instance per query (initialize() is only
+        // called once) and reuses that same instance -- and its shardQueryConfiguration -- across every
+        // page/next() call. Verify that grouping notation forced on the first page/apply() call is still
+        // correctly stripped on subsequent pages/apply() calls using that same instance.
+        applyGroupingParameters(true, false);
+
+        Document expected = getGroupingTestExpectedDoc(true, false);
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+        assertTrue(shardQueryConfiguration.getIncludeGroupingContext(), "grouping context should be forced on for the life of the query");
+
+        // page 1
+        Entry<Key,Document> page1 = transformer.apply(Map.entry(new Key(), getGroupingTestSourceDoc()));
+        assertEquals(expected, page1.getValue());
+
+        // page 2: same transformer instance, same shardQueryConfiguration, reused as ShardQueryLogic now does
+        Entry<Key,Document> page2 = transformer.apply(Map.entry(new Key(), getGroupingTestSourceDoc()));
+        assertEquals(expected, page2.getValue());
+
+        // page 3: verify it continues to work beyond just a second call
+        Entry<Key,Document> page3 = transformer.apply(Map.entry(new Key(), getGroupingTestSourceDoc()));
+        assertEquals(expected, page3.getValue());
+    }
+
+    @Test
+    public void updateConfigPicksUpChangedParametersOnSubsequentPageTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
+        // ShardQueryLogic now follows the initialize()/updateConfig() lifecycle contract used by the other
+        // config-based transforms: construct once (calling initialize()), then call updateConfig() on later
+        // pages so that any query parameters which legitimately change across pages (e.g. after a
+        // checkpoint/resume) are picked up, without re-running the full constructor.
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(AnnotationHitsTransformer.MIN_SCORE_PARAMETER, ".9");
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1", "ANNO2");
+
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+
+        // simulate settings changing on a later page/next() call and ShardQueryLogic invoking updateConfig()
+        // (rather than reconstructing the transformer) on the existing instance
+        withParameter(AnnotationHitsTransformer.MIN_SCORE_PARAMETER, "0");
+        transformer.updateConfig(settings);
+
+        Set<String> queryTerms = Set.of("bbbbbbb", "v2", "v3");
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        when(termExtractor.extract(query, normalizer)).thenReturn(queryTerms);
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        withNormalizers();
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 0);
+        hit1.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit1));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
+
+        // bbbbbbb scores .5, which would have been filtered out by the original min.score of .9, but should now
+        // pass now that updateConfig() lowered min.score to 0
+        Entry<Key,Document> result = transformer.apply(Map.entry(HIT_KEY, new Document()));
+        assertEquals(expected, result.getValue());
+    }
+
+    @Test
+    public void jexlQueryStringReadLiveFromConfigOnFirstApplyTest()
+                    throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException, JsonProcessingException {
+        // AnnotationHitsTransformer may be constructed by ShardQueryLogic before the shared config's original
+        // jexl query string has been populated (see ShardQueryLogic#loadQueryParameters() calling
+        // getTransformer() before setOriginalJexlQuery() is called). Verify that if the config's jexl query is
+        // set (live) between construction and the first apply() call, the live value is used rather than the
+        // (null) value captured at construction time.
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+
+        Set<String> queryTerms = Set.of("aaaaaaa", "v2", "v3");
+        givenAnnotation(buildAnnotation("ANNO1", "20260112_0", "test", "123.345.456", "hash", S7, S1, S6, S2, S5, S3, S4));
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1", "ANNO2");
+        when(annotationDao.getAnnotations("20260112_0", "test", "123.345.456")).thenReturn(annotations);
+        withNormalizers();
+
+        // construct with a null jexlQueryString, simulating the premature getTransformer() call
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, null, termExtractor, normalizer, annotationDao, allHitsFactory, maxContextBoundary,
+                        validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+
+        // the config's jexl query is populated afterward, as it would be later in ShardQueryLogic#initialize()
+        String liveJexlQuery = "abc";
+        shardQueryConfiguration.setOriginalJexlQuery(liveJexlQuery);
+        when(termExtractor.extract(liveJexlQuery, normalizer)).thenReturn(queryTerms);
+
+        AnnotationHitsTransformer.SegmentHit hit1 = new AnnotationHitsTransformer.SegmentHit(S1.getBoundary(), S1.getBoundary(), 1);
+        hit1.setContextEnd(S1.getBoundary());
+        withHits("my-annotation", List.of(hit1));
+
+        Document expected = new Document();
+        expected.put("TARGET_FIELD", new Content(allHitsToString(allHitsResult), HIT_KEY, true));
+
+        Entry<Key,Document> result = transformer.apply(Map.entry(HIT_KEY, new Document()));
+        assertEquals(expected, result.getValue());
+    }
+
+    @Test
+    public void finalDocumentKeyTest() {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        withParameter(AnnotationHitsTransformer.KEYWORDS_PARAMETER, "keyword");
+
+        targetField = "TARGET_FIELD";
+        when(normalizer.normalize("keyword")).thenReturn("keyword");
+
+        QuerySpanCollector collector = mock(QuerySpanCollector.class);
+        QuerySpan querySpan = mock(QuerySpan.class);
+        Range range = new Range("begin", "end");
+        YieldCallback yieldCallback = mock(YieldCallback.class);
+
+        // force a final document to return
+        when(querySpan.hasEntries()).thenReturn(true);
+        // give something to return
+        when(collector.getCombinedQuerySpan(querySpan, true)).thenReturn(querySpan);
+
+        List<Entry<Key,Document>> entryList = List.of();
+        FinalDocumentTrackingIterator fdti = new FinalDocumentTrackingIterator(collector, querySpan, range, entryList.iterator(), yieldCallback);
+        // will the stats be returned?
+        assertTrue(fdti.hasNext());
+
+        Entry<Key,Document> finalDoc = fdti.next();
+        transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
+                        maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
+        transformer.initialize(settings, markingFunctions);
+
+        assertEquals(finalDoc, transformer.apply(finalDoc));
+
+        verifyNoInteractions(termExtractor);
+        verifyNoInteractions(annotationDao);
+        verifyNoInteractions(allHitsFactory);
+    }
+
+    /**
+     * Simulates what happens after the last document is returned
+     */
+    @Test
+    public void finalDocumentWithDocumentRangeTest() {
+        withParameter(AnnotationHitsTransformer.ENABLED_PARAMETER, "true");
+        query = "abc";
+        targetField = "TARGET_FIELD";
+        validTypes = Set.of("ANNO1", "ANNO2");
+
+        QuerySpanCollector collector = mock(QuerySpanCollector.class);
+        QuerySpan querySpan = mock(QuerySpan.class);
+        Range range = new Range(HIT_KEY, true, null, true);
+        YieldCallback yieldCallback = mock(YieldCallback.class);
+
+        // force a final document to return
+        when(querySpan.hasEntries()).thenReturn(true);
+        // give something to return
+        when(collector.getCombinedQuerySpan(querySpan, true)).thenReturn(querySpan);
+
+        List<Entry<Key,Document>> entryList = List.of();
+        FinalDocumentTrackingIterator fdti = new FinalDocumentTrackingIterator(collector, querySpan, range, entryList.iterator(), yieldCallback);
+        // will the stats be returned?
+        assertTrue(fdti.hasNext());
+        Entry<Key,Document> finalDocumentEntry = fdti.next();
+        Document originalDoc = finalDocumentEntry.getValue().copy();
+        test(finalDocumentEntry, Map.entry(finalDocumentEntry.getKey(), originalDoc));
+
+        verifyNoInteractions(termExtractor);
+        verifyNoInteractions(annotationDao);
+        verifyNoInteractions(normalizer);
+        verifyNoInteractions(allHitsFactory);
     }
 
     private void enrichmentFieldMapTest(Document input, Document output) throws ParseException, JavaRegexAnalyzer.JavaRegexParseException, AllHitsException {

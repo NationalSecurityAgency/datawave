@@ -188,7 +188,7 @@ public class TruncatedIndexScannerTest {
     }
 
     private void scan() {
-        TruncatedIndexScanner scanner = new TruncatedIndexScanner(client, startDate, endDate);
+        TruncatedIndexScanner scanner = new TruncatedIndexScanner(client, startDate, endDate, null, null);
         scanner.setFieldValue(field, value);
         scanner.setAuths(auths);
         scanner.setTableName(indexTableName);

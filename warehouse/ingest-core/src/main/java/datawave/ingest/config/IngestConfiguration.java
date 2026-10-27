@@ -22,7 +22,7 @@ public interface IngestConfiguration {
         if (fieldConfigFile == null) {
             return null;
         }
-        return XMLFieldConfigHelper.load(fieldConfigFile, helper);
+        return XMLFieldConfigHelper.load(fieldConfigFile, helper, config);
     }
 
     MarkingsHelper getMarkingsHelper(Configuration config, Type dataType);

@@ -25,8 +25,8 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.base.Preconditions;
 
-import datawave.data.ColumnFamilyConstants;
 import datawave.security.util.ScannerHelper;
+import datawave.table.constants.MetadataColumnFamilyConstants;
 
 @EnableCaching
 @Component("compositeMetadataHelper")
@@ -37,8 +37,8 @@ public class CompositeMetadataHelper {
     public static final String transitionDateFormat = "yyyyMMdd HHmmss.SSS";
     public static final String NULL_BYTE = "\0";
 
-    protected final List<Text> metadataCompositeColfs = Arrays.asList(ColumnFamilyConstants.COLF_CI, ColumnFamilyConstants.COLF_CITD,
-                    ColumnFamilyConstants.COLF_CISEP);
+    protected final List<Text> metadataCompositeColfs = Arrays.asList(MetadataColumnFamilyConstants.COLF_CI, MetadataColumnFamilyConstants.COLF_CITD,
+                    MetadataColumnFamilyConstants.COLF_CISEP);
 
     protected final AccumuloClient accumuloClient;
     protected final String metadataTableName;
@@ -113,7 +113,7 @@ public class CompositeMetadataHelper {
 
             if (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(type)) {
                 String fieldName = entry.getKey().getRow().toString();
-                if (colFam.equals(ColumnFamilyConstants.COLF_CITD)) {
+                if (colFam.equals(MetadataColumnFamilyConstants.COLF_CITD)) {
                     if (null != entry.getKey().getColumnQualifier()) {
                         if (idx != -1) {
                             try {
@@ -128,7 +128,7 @@ public class CompositeMetadataHelper {
                     } else {
                         log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey());
                     }
-                } else if (colFam.equals(ColumnFamilyConstants.COLF_CI)) {
+                } else if (colFam.equals(MetadataColumnFamilyConstants.COLF_CI)) {
                     // Get the column qualifier from the key. It contains the datatype
                     // and composite name,idx
                     if (null != entry.getKey().getColumnQualifier()) {
@@ -141,7 +141,7 @@ public class CompositeMetadataHelper {
                     } else {
                         log.warn("ColumnQualifier null in EventMetadata for key: " + entry.getKey());
                     }
-                } else if (colFam.equals(ColumnFamilyConstants.COLF_CISEP)) {
+                } else if (colFam.equals(MetadataColumnFamilyConstants.COLF_CISEP)) {
                     if (null != entry.getKey().getColumnQualifier()) {
                         if (idx != -1) {
                             String separator = colq.substring(idx + 1);

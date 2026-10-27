@@ -1,5 +1,7 @@
 package datawave.springframework.integration;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -9,14 +11,12 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.security.JSSESecurityDomain;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.context.ApplicationContext;
 
 import datawave.core.query.logic.QueryLogic;
@@ -38,6 +38,7 @@ import datawave.query.tables.shard.FieldIndexCountQueryLogic;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.cert.SSLStores;
 import datawave.security.system.CallerPrincipal;
 import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.json.DefaultMapperDecorator;
@@ -48,7 +49,7 @@ import datawave.webservice.results.cached.CachedResultsConfiguration;
 /**
  * this test ensures that our various spring contexts can be deployed successfully to Wildfly
  */
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class WiredQueryExecutorBeanTest {
 
     private Logger log = Logger.getLogger(WiredQueryExecutorBeanTest.class);
@@ -87,7 +88,7 @@ public class WiredQueryExecutorBeanTest {
     @Test
     public void testCreatingContext() throws Exception {
         DefaultQueryPlanner defaultQueryPlanner = ctx.getBean("DefaultQueryPlanner", DefaultQueryPlanner.class);
-        Assert.assertNotNull(defaultQueryPlanner);
+        assertNotNull(defaultQueryPlanner);
     }
 
     // This test ensures that we can
@@ -101,20 +102,20 @@ public class WiredQueryExecutorBeanTest {
             if (ql.getResponseObjectFactory() == null) {
                 log.error("response object factory is null for " + name + " and " + ql + " named " + ql.getLogicName() + " and " + ql.getClass());
             }
-            Assert.assertNotNull(ql.getResponseObjectFactory());
+            assertNotNull(ql.getResponseObjectFactory());
             log.debug("got " + ql);
         }
     }
 
-    private static JSSESecurityDomain mockJsseSecurityDomain = EasyMock.createMock(JSSESecurityDomain.class);
+    private static SSLStores mockSSLStores = EasyMock.createMock(SSLStores.class);
     private static DatawavePrincipal mockDatawavePrincipal = EasyMock.createMock(DatawavePrincipal.class);
 
     private static RemoteEdgeDictionary mockRemoteEdgeDictionary = EasyMock.createMock(RemoteEdgeDictionary.class);
 
     public static class Producer {
         @Produces
-        public static JSSESecurityDomain produceSecurityDomain() {
-            return mockJsseSecurityDomain;
+        public static SSLStores produceSSLStores() {
+            return mockSSLStores;
         }
 
         @Produces

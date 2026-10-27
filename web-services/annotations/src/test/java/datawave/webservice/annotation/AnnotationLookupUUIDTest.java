@@ -1,5 +1,7 @@
 package datawave.webservice.annotation;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,17 +24,16 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.container.test.api.RunAsClient;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.google.common.collect.Sets;
 
@@ -62,7 +63,8 @@ import datawave.webservice.result.DefaultEventQueryResponse;
  * structure and should be addressed.
  */
 @SuppressWarnings("SameParameterValue")
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
+@RunAsClient
 public class AnnotationLookupUUIDTest {
     private static final Logger log = Logger.getLogger(AnnotationLookupUUIDTest.class);
 
@@ -108,29 +110,20 @@ public class AnnotationLookupUUIDTest {
         //@formatter:on
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         TypeRegistry.reset();
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         this.logic.setFullTableScanEnabled(true);
         this.deserializer = new KryoDocumentDeserializer();
-    }
-
-    @After
-    public void tearDown() {
-        this.logic = null;
-        this.query = null;
-        this.queryParameters.clear();
-        this.startDate = null;
-        this.endDate = null;
     }
 
     protected String getRange() {
@@ -185,11 +178,11 @@ public class AnnotationLookupUUIDTest {
 
         BaseQueryResponse response = transformer.createResponse(eventList);
 
-        Assert.assertTrue(response instanceof DefaultEventQueryResponse);
+        assertTrue(response instanceof DefaultEventQueryResponse);
         DefaultEventQueryResponse eventQueryResponse = (DefaultEventQueryResponse) response;
 
         if (expected.isEmpty()) {
-            Assert.assertTrue(eventQueryResponse.getEvents() == null || eventQueryResponse.getEvents().isEmpty());
+            assertTrue(eventQueryResponse.getEvents() == null || eventQueryResponse.getEvents().isEmpty());
         } else {
             for (Iterator<Set<String>> it = expected.iterator(); it.hasNext();) {
                 Set<String> expectedSet = it.next();
@@ -207,7 +200,7 @@ public class AnnotationLookupUUIDTest {
                         break;
                     }
                 }
-                Assert.assertTrue("field not found " + expectedSet, found);
+                assertTrue(found, "field not found " + expectedSet);
             }
         }
     }

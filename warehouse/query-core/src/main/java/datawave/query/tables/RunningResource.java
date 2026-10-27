@@ -155,11 +155,16 @@ public class RunningResource extends AccumuloResource {
             baseScanner.addScanIterator(setting);
         }
 
-        if (baseScanner instanceof SessionOptions) {
-            SessionOptionsDelegate delegate = new SessionOptionsDelegate(options);
+        // The consistency level and execution hints are carried by the SessionOptions and have to be copied onto the scanner. This used to be guarded by a
+        // 'baseScanner instanceof SessionOptions' check, but baseScanner is always an Accumulo scanner and SessionOptions is a standalone options holder, so
+        // the guard was never true and both settings were silently dropped for every scanner session.
+        SessionOptionsDelegate delegate = new SessionOptionsDelegate(options);
 
-            baseScanner.setConsistencyLevel(delegate.getConsistencyLevel());
-            baseScanner.setExecutionHints(delegate.getExecutionHints());
+        baseScanner.setConsistencyLevel(delegate.getConsistencyLevel());
+
+        Map<String,String> executionHints = delegate.getExecutionHints();
+        if (executionHints != null && !executionHints.isEmpty()) {
+            baseScanner.setExecutionHints(executionHints);
         }
 
         return this;
