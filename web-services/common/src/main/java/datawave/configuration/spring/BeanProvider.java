@@ -1,5 +1,8 @@
 package datawave.configuration.spring;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeanManager;
@@ -16,8 +19,7 @@ import org.slf4j.LoggerFactory;
  */
 public class BeanProvider {
     private static Logger log = LoggerFactory.getLogger(BeanProvider.class);
-    private static BeanProvider instance = null;
-    private BeanManager beanManager;
+    private static Map<String,BeanManager> beanManagerMap = new HashMap<>();
 
     /**
      * Perform CDI injection on the non-managed object {@code bean}.
@@ -25,12 +27,21 @@ public class BeanProvider {
      * @param bean
      *            - a bean
      */
-    public static void injectFields(Object bean) {
-        if (instance == null) {
-            throw new IllegalStateException("BeanManager is null. Cannot perform injection.");
+    public static InjectionTarget injectFields(String id, Object bean) {
+        BeanManager beanManager;
+        if (id == null) {
+            if (beanManagerMap.size() == 1) {
+                beanManager = beanManagerMap.values().iterator().next();
+            } else {
+                throw new IllegalArgumentException("Requested default BeanManager, but there are " + beanManagerMap.size() + " BeanManagers available.");
+            }
+        }
+        if (beanManagerMap.containsKey(id)) {
+            beanManager = beanManagerMap.get(id);
+        } else {
+            throw new IllegalArgumentException("BeanManager with id " + id + " not found.");
         }
 
-        BeanManager beanManager = instance.getBeanManager();
         CreationalContext creationalContext = beanManager.createCreationalContext(null);
         AnnotatedType annotatedType = beanManager.createAnnotatedType(bean.getClass());
         InjectionTarget injectionTarget = beanManager.createInjectionTarget(annotatedType);
@@ -39,21 +50,16 @@ public class BeanProvider {
         }
         // noinspection unchecked
         injectionTarget.inject(bean, creationalContext);
+        return injectionTarget;
     }
 
-    public static boolean isActive() {
-        return instance != null;
+    public static boolean isActive(String id) {
+        return beanManagerMap.containsKey(id);
     }
 
-    static void initializeBeanProvider(BeanManager beanManager) {
-        instance = new BeanProvider(beanManager);
-    }
-
-    private BeanProvider(BeanManager beanManager) {
-        this.beanManager = beanManager;
-    }
-
-    public BeanManager getBeanManager() {
-        return beanManager;
+    public static void registerBeanManager(String id, BeanManager beanManager) {
+        if (beanManager != null) {
+            beanManagerMap.put(id, beanManager);
+        }
     }
 }

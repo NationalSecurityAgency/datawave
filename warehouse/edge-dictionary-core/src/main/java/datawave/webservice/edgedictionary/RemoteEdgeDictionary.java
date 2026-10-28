@@ -1,12 +1,10 @@
 package datawave.webservice.edgedictionary;
 
 import java.net.URI;
-import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.client.utils.URIBuilder;
 import org.xbill.DNS.TextParseException;
 
@@ -15,7 +13,6 @@ import com.codahale.metrics.annotation.Metric;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectReader;
 
-import datawave.configuration.RefreshableScope;
 import datawave.microservice.query.Query;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
@@ -26,57 +23,11 @@ import datawave.webservice.dictionary.edge.MetadataBase;
 /**
  * Retrieves an {@link EdgeDictionaryBase} from the remote edge dictionary service.
  */
-@RefreshableScope
 public class RemoteEdgeDictionary extends RemoteHttpService {
     private ObjectReader edgeDictReader;
 
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.useSrvDnsLookup", defaultValue = "false")
-    private boolean useSrvDNS;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.srvDnsServers", defaultValue = "127.0.0.1")
-    private List<String> srvDnsServers;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.srvDnsPort", defaultValue = "8600")
-    private int srvDnsPort;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.scheme", defaultValue = "https")
-    private String dictServiceScheme;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.host", defaultValue = "localhost")
-    private String dictServiceHost;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.port", defaultValue = "8843")
-    private int dictServicePort;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.useConfiguredURIForRedirect", defaultValue = "false")
-    private boolean useConfiguredURIForRedirect;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.edge.uri", defaultValue = "/dictionary/edge/v1/")
-    private String dictServiceURI;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.maxConnections", defaultValue = "100")
-    private int maxConnections;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.retryCount", defaultValue = "5")
-    private int retryCount;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.unavailableRetryCount", defaultValue = "15")
-    private int unavailableRetryCount;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteDictionary.unavailableRetryDelayMS", defaultValue = "2000")
-    private int unavailableRetryDelay;
+    private boolean useConfiguredURIForRedirect = false;
+    private String dictServiceURI = "/dictionary/edge/v1/";
 
     @Inject
     @Metric(name = "dw.remoteDictionary.retries", absolute = true)
@@ -120,59 +71,13 @@ public class RemoteEdgeDictionary extends RemoteHttpService {
         return buildRedirectURI(suffix, baseURI, useConfiguredURIForRedirect);
     }
 
-    @Override
-    protected String serviceHost() {
-        return dictServiceHost;
-    }
-
-    @Override
-    protected int servicePort() {
-        return dictServicePort;
+    public void setUseConfiguredURIForRedirect(boolean useConfiguredURIForRedirect) {
+        this.useConfiguredURIForRedirect = useConfiguredURIForRedirect;
     }
 
     @Override
     protected String serviceURI() {
         return dictServiceURI;
-    }
-
-    @Override
-    protected boolean useSrvDns() {
-        return useSrvDNS;
-    }
-
-    @Override
-    protected List<String> srvDnsServers() {
-        return srvDnsServers;
-    }
-
-    @Override
-    protected int srvDnsPort() {
-        return srvDnsPort;
-    }
-
-    @Override
-    protected String serviceScheme() {
-        return dictServiceScheme;
-    }
-
-    @Override
-    protected int maxConnections() {
-        return maxConnections;
-    }
-
-    @Override
-    protected int retryCount() {
-        return retryCount;
-    }
-
-    @Override
-    protected int unavailableRetryCount() {
-        return unavailableRetryCount;
-    }
-
-    @Override
-    protected int unavailableRetryDelay() {
-        return unavailableRetryDelay;
     }
 
     @Override

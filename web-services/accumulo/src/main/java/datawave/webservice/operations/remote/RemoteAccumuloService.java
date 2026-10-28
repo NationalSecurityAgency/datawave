@@ -1,6 +1,5 @@
 package datawave.webservice.operations.remote;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
@@ -9,7 +8,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.HttpEntity;
 
 import com.codahale.metrics.Counter;
@@ -24,49 +22,7 @@ public abstract class RemoteAccumuloService extends RemoteHttpService {
 
     protected static final String AUTH_HEADER_NAME = "Authorization";
 
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.uri", defaultValue = "/accumulo/v1/")
-    private String serviceURI;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.useSrvDnsLookup", defaultValue = "false")
-    private boolean useSrvDNS;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.srvDnsServers", defaultValue = "127.0.0.1")
-    private List<String> srvDnsServers;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.srvDnsPort", defaultValue = "8600")
-    private int srvDnsPort;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.scheme", defaultValue = "https")
-    private String serviceScheme;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.host", defaultValue = "localhost")
-    private String serviceHost;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.port", defaultValue = "8843")
-    private int servicePort;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.maxConnections", defaultValue = "100")
-    private int maxConnections;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.retryCount", defaultValue = "5")
-    private int retryCount;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.unavailableRetryCount", defaultValue = "15")
-    private int unavailableRetryCount;
-
-    @Inject
-    @ConfigProperty(name = "dw.remoteAccumuloService.unavailableRetryDelayMS", defaultValue = "2000")
-    private int unavailableRetryDelay;
+    private String serviceURI = "/accumulo/v1/";
 
     @Inject
     @Metric(name = "dw.remoteAccumuloService.retries", absolute = true)
@@ -127,56 +83,6 @@ public abstract class RemoteAccumuloService extends RemoteHttpService {
                 errorSupplier
         );
         // @formatter:on
-    }
-
-    @Override
-    protected String serviceHost() {
-        return serviceHost;
-    }
-
-    @Override
-    protected int servicePort() {
-        return servicePort;
-    }
-
-    @Override
-    protected boolean useSrvDns() {
-        return useSrvDNS;
-    }
-
-    @Override
-    protected List<String> srvDnsServers() {
-        return srvDnsServers;
-    }
-
-    @Override
-    protected int srvDnsPort() {
-        return srvDnsPort;
-    }
-
-    @Override
-    protected String serviceScheme() {
-        return serviceScheme;
-    }
-
-    @Override
-    protected int maxConnections() {
-        return maxConnections;
-    }
-
-    @Override
-    protected int retryCount() {
-        return retryCount;
-    }
-
-    @Override
-    protected int unavailableRetryCount() {
-        return unavailableRetryCount;
-    }
-
-    @Override
-    protected int unavailableRetryDelay() {
-        return unavailableRetryDelay;
     }
 
     @Override

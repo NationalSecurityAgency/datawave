@@ -110,13 +110,14 @@ datawave:
 
 ---
 
-spring.config.activate.on-profile: federatedQueryServiceTest
+spring.config.activate.on-profile: remoteQueryServiceTest
 
 datawave:
   query:
-    federation:
+    remote:
       services:
-        FederatedQueryService:
+        RemoteQueryService:
+          serviceClass: datawave.microservice.query.remote.MSRemoteQueryService
           queryServiceUri: 'https://query:8443/query/v1'
           queryMetricServiceUri: 'https://querymetric:8443/querymetric/v1/id'
 

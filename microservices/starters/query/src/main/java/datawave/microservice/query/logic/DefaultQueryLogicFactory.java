@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
 
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
-import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.query.logic.config.QueryLogicFactoryProperties;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -40,10 +39,10 @@ public class DefaultQueryLogicFactory implements QueryLogicFactory, ApplicationC
 
     private ApplicationContext applicationContext;
 
-    private final Supplier<DatawaveUserDetails> serverUserDetailsSupplier;
+    private final Supplier<ProxiedUserDetails> serverUserDetailsSupplier;
 
     public DefaultQueryLogicFactory(QueryLogicFactoryProperties queryLogicFactoryProperties,
-                    @Autowired(required = false) @Qualifier("serverUserDetailsSupplier") Supplier<DatawaveUserDetails> serverUserDetailsSupplier) {
+                    @Autowired(required = false) @Qualifier("serverUserDetailsSupplier") Supplier<ProxiedUserDetails> serverUserDetailsSupplier) {
         this.queryLogicFactoryProperties = queryLogicFactoryProperties;
         this.serverUserDetailsSupplier = serverUserDetailsSupplier;
     }
@@ -58,25 +57,26 @@ public class DefaultQueryLogicFactory implements QueryLogicFactory, ApplicationC
         return getQueryLogic(name, null, false);
     }
 
-    private QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser, boolean checkRoles) throws QueryException {
-        String queryLogic = name;
+    private QueryLogic<?> getQueryLogic(String queryLogic, ProxiedUserDetails currentUser, boolean checkRoles) throws QueryException {
+        String beanName = queryLogic;
+        ;
 
         if (!queryLogicFactoryProperties.getQueryLogicsByName().isEmpty()) {
-            queryLogic = queryLogicFactoryProperties.getQueryLogicsByName().get(name);
+            beanName = queryLogicFactoryProperties.getQueryLogicsByName().get(queryLogic);
         }
 
-        if (queryLogic == null) {
-            throw new IllegalArgumentException("Logic name '" + name + "' is not configured for this system");
+        if (beanName == null) {
+            throw new IllegalArgumentException("Logic name '" + queryLogic + "' is not configured for this system");
         }
 
         QueryLogic<?> logic;
         try {
-            logic = (QueryLogic<?>) applicationContext.getBean(name);
+            logic = (QueryLogic<?>) applicationContext.getBean(beanName);
         } catch (ClassCastException | NoSuchBeanDefinitionException cce) {
-            if (queryLogic.equals(name)) {
-                throw new IllegalArgumentException("Logic name '" + name + "' does not exist in the configuration");
+            if (beanName.equals(queryLogic)) {
+                throw new IllegalArgumentException("Logic name '" + queryLogic + "' does not exist in the configuration");
             } else {
-                throw new IllegalArgumentException("Logic name '" + name + "' which maps to '" + queryLogic + "' does not exist in the configuration");
+                throw new IllegalArgumentException("Logic name '" + queryLogic + "' which maps to '" + beanName + "' does not exist in the configuration");
             }
         }
 
@@ -90,7 +90,7 @@ public class DefaultQueryLogicFactory implements QueryLogicFactory, ApplicationC
                             new IllegalAccessException("User does not have required role(s): " + logic.getRequiredRoles()));
         }
 
-        logic.setLogicName(name);
+        logic.setLogicName(queryLogic);
         if (logic.getMaxPageSize() == 0) {
             logic.setMaxPageSize(queryLogicFactoryProperties.getMaxPageSize());
         }

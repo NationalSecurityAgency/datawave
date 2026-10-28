@@ -51,4 +51,4 @@ datawave:
 
 logging:
   level:
-    root: FATAL
+    root: TRACE

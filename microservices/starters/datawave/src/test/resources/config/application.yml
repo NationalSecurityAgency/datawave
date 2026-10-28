@@ -51,7 +51,7 @@ spring:
 
 datawave:
   authorization:
-    federation:
+    remote:
       services:
-        FederatedAuthorizationService:
-          federatedAuthorizationUri: "https://authorization:8443/authorization/v2"
+        MSRemoteUserOperations:
+          authorizationServiceUri: "https://authorization:8443/authorization/v2"

@@ -34,7 +34,8 @@ import datawave.webservice.result.QueryLogicResponse;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
+@ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", "federation",
+        RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 @ContextConfiguration(classes = {QueryService.class})
 public class QueryServiceListTest extends AbstractQueryServiceTest {
 
