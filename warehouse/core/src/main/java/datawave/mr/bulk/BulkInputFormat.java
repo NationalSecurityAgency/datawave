@@ -1101,11 +1101,12 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     ClientContext context = new ClientContext(info, ClientConfConverter.toAccumuloConf(info.getClientProperties()), Threads.UEH);
                     while (!clientTabletCache.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
+                            var tops = client.tableOperations();
                             if (tableId == null)
-                                tableId = TableId.of(client.tableOperations().tableIdMap().get(tableName));// TABLE ID todo:ensure this is correct
-                            if (!client.tableOperations().tableIdMap().containsKey(tableName))// CHECK IF TABLE ID EXISTS //todo same
+                                tableId = TableId.of(tops.tableIdMap().get(tableName));
+                            if (!tops.tableIdMap().containsKey(tableName))
                                 throw new TableDeletedException(tableId.canonical());
-                            if (!client.tableOperations().isOnline(tableName)) // CHECK IF TABLE ID OFFLInE //todo same
+                            if (!tops.isOnline(tableName))
                                 throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
                         }
                         binnedRanges.clear();

@@ -39,9 +39,6 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.SystemPermission;
 
-// Remove `extends ClientContext` since it's deprecated.
-// Need a workaround for the features that are no longer supported. Not sure if we can just throw them away atm.
-
 public class InMemoryAccumuloClient implements AccumuloClient {
 
     String username;
