@@ -6,6 +6,7 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -19,7 +20,6 @@ import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import datawave.configuration.ConfigurationEvent;
 import datawave.configuration.RefreshLifecycle;
+import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.security.DnList;
 import datawave.security.authorization.CachedDatawaveUserService;
@@ -68,8 +69,12 @@ public class CredentialsCacheBean {
 
     private ElytronCacheManager elytronCacheManager;
 
-    private Instance<CachedDatawaveUserService> cachedDatawaveUserServiceInstance;
+    @Inject
+    @SpringBean
+    private Optional<CachedDatawaveUserService> cachedDatawaveUserService;
 
+    @Inject
+    @SpringBean
     private AccumuloConnectionFactory accumuloConnectionFactory;
 
     private Set<String> accumuloUserAuths = new HashSet<>();
@@ -90,12 +95,10 @@ public class CredentialsCacheBean {
         this.elytronCacheManager = elytronCacheManager;
     }
 
-    @Inject
-    public void setCachedDatawaveUserServiceInstance(Instance<CachedDatawaveUserService> cachedDatawaveUserServiceInstance) {
-        this.cachedDatawaveUserServiceInstance = cachedDatawaveUserServiceInstance;
+    public void setCachedDatawaveUserService(CachedDatawaveUserService cachedDatawaveUserService) {
+        this.cachedDatawaveUserService = Optional.ofNullable(cachedDatawaveUserService);
     }
 
-    @Inject
     public void setAccumuloConnectionFactory(AccumuloConnectionFactory accumuloConnectionFactory) {
         this.accumuloConnectionFactory = accumuloConnectionFactory;
     }
@@ -116,9 +119,9 @@ public class CredentialsCacheBean {
             // Remove principals from the Wildfly cache if we have one in use.
             log.trace("Flushing from the elytron cache");
             elytronCacheManager.clear();
-            if (!cachedDatawaveUserServiceInstance.isUnsatisfied()) {
+            if (cachedDatawaveUserService.isPresent()) {
                 log.trace("Flushing from the cached datawave user service");
-                cachedDatawaveUserServiceInstance.get().evictAll();
+                cachedDatawaveUserService.get().evictAll();
             }
             return "All credentials caches cleared.";
         } catch (Exception e) {
@@ -144,9 +147,9 @@ public class CredentialsCacheBean {
     @JmxManaged
     public String evict(@PathParam("dn") String dn) {
         String result = "Evicted " + dn + " from the credentials cache.";
-        if (!cachedDatawaveUserServiceInstance.isUnsatisfied()) {
+        if (cachedDatawaveUserService.isPresent()) {
             log.trace("Flushing {} from the cached datawave user service", dn);
-            result = cachedDatawaveUserServiceInstance.get().evictMatching(dn);
+            result = cachedDatawaveUserService.get().evictMatching(dn);
         }
 
         log.trace("Flushing {} from the elytron cache", dn);
@@ -170,9 +173,9 @@ public class CredentialsCacheBean {
     @JmxManaged
     public DnList listDNs(@QueryParam("localOnly") boolean localOnly) {
         DnList result;
-        if (!cachedDatawaveUserServiceInstance.isUnsatisfied() && !localOnly) {
+        if (cachedDatawaveUserService.isPresent() && !localOnly) {
             log.trace("Fetching users from cached datawave user service");
-            result = new DnList(cachedDatawaveUserServiceInstance.get().listAll());
+            result = new DnList(cachedDatawaveUserService.get().listAll());
         } else {
             log.trace("Fetching users from the elytron cache");
             // @formatter:off
@@ -198,9 +201,9 @@ public class CredentialsCacheBean {
     @JmxManaged
     public DnList listDNsMatching(@QueryParam("substring") final String substr) {
         DnList result;
-        if (!cachedDatawaveUserServiceInstance.isUnsatisfied()) {
+        if (cachedDatawaveUserService.isPresent()) {
             log.trace("Fetching users from cached datawave user service");
-            result = new DnList(cachedDatawaveUserServiceInstance.get().listMatching(substr));
+            result = new DnList(cachedDatawaveUserService.get().listMatching(substr));
         } else {
             log.trace("Fetching users from the elytron cache");
             // @formatter:off
@@ -227,9 +230,9 @@ public class CredentialsCacheBean {
     @JmxManaged
     public DatawaveUser list(@PathParam("dn") String dn) {
         DatawaveUser user;
-        if (!cachedDatawaveUserServiceInstance.isUnsatisfied()) {
+        if (cachedDatawaveUserService.isPresent()) {
             log.trace("Fetching user from cached datawave user service");
-            user = cachedDatawaveUserServiceInstance.get().list(dn);
+            user = cachedDatawaveUserService.get().list(dn);
         } else {
             log.trace("Fetching users from the elytron cache");
             // @formatter:off

@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: wildfly
+  cloud:
+    config:
+      # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.
+      discovery:
+        enabled: false
+      # Always fail fast so we can retry if the config server is not up yet
+      failFast: true
+      # Give the config server time to start up if it hasn't already
+      retry:
+        max-attempts: 60
+      uri: '${CONFIG_SERVER_URL:http://configuration:8888/configserver}'
+      allow-override: true
+  # Starting with spring-boot 2.6, circular references are disabled by default
+  # This is still needed for the evaluation-only function
+  main:
+    allow-circular-references: true
+  profiles:
+    include: query
+
+datawave:
+  query:
+    executor:
+      status:
+        cache:
+          enabled: false
+    messaging:
+      backend: NONE
+    storage:
+      cache:
+        enabled: false

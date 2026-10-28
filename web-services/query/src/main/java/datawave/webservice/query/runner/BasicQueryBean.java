@@ -41,6 +41,7 @@ import com.codahale.metrics.annotation.Timed;
 
 import datawave.annotation.GenerateQuerySessionId;
 import datawave.annotation.Required;
+import datawave.configuration.spring.SpringBean;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
@@ -84,6 +85,7 @@ public class BasicQueryBean {
     private final Logger log = Logger.getLogger(BasicQueryBean.class);
 
     @Inject
+    @SpringBean
     private QueryLogicFactory queryLogicFactory;
 
     @Inject

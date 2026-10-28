@@ -3,7 +3,7 @@
 Datawave supports the ability to pre-validate a query and check for common issues. Typically, a query is validated by submitting it to the `/<logicName>/validate` REST endpoint, which will return a [QueryValidationResponse](../../../../../../../../web-services/client/src/main/java/datawave/webservice/result/QueryValidationResponse.java).
 
 ## Activating Rules
-To activate a new validation rule for use with [ShardQueryLogic](../tables/ShardQueryLogic.java), you must define beans for each [QueryRule](QueryRule.java) instance you want to have available, and then add the bean to list of rules configured for the `validationRules` property of the bean for the logic you want the rules activated for. See the [QueryLogicFactory.xml](../../../../../../../../web-services/deploy/configuration/src/main/resources/datawave/query/QueryLogicFactory.xml) for examples.
+To activate a new validation rule for use with [ShardQueryLogic](../tables/ShardQueryLogic.java), you must define beans for each [QueryRule](QueryRule.java) instance you want to have available, and then add the bean to list of rules configured for the `validationRules` property of the bean for the logic you want the rules activated for. See the [QueryLogicFactory.xml](../../../../../../../../web-services/deploy/configuration/src/main/resources/datawave-new/query/QueryLogicFactory.xml) for examples.
 
 ## Adding New Rules
 Adding a new rule is simple. 

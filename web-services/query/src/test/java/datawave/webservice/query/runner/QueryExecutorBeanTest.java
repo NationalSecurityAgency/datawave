@@ -78,11 +78,14 @@ import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.query.logic.DefaultQueryLogicFactory;
+import datawave.microservice.query.lookup.LookupProperties;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.query.runner.RunningQuery;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -100,13 +103,11 @@ import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.cache.QueryTraceCache;
-import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.limit.QueryLimiterResponse;
-import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.MapUtils;
@@ -140,7 +141,7 @@ public class QueryExecutorBeanTest {
     private AuditBean auditor;
     private AuditService auditService;
     private QueryMetricsBean metrics;
-    private QueryLogicFactoryImpl queryLogicFactory;
+    private DefaultQueryLogicFactory queryLogicFactory;
     private QueryExpirationProperties queryExpirationConf;
     private Persister persister;
     private QueryPredictor predictor;
@@ -171,7 +172,7 @@ public class QueryExecutorBeanTest {
         auditor = new AuditBean();
         auditService = mock(AuditService.class);
         metrics = mock(QueryMetricsBean.class);
-        queryLogicFactory = mock(QueryLogicFactoryImpl.class);
+        queryLogicFactory = mock(DefaultQueryLogicFactory.class);
         persister = mock(Persister.class);
         predictor = mock(QueryPredictor.class);
         ctx = mock(EJBContext.class);
@@ -200,7 +201,7 @@ public class QueryExecutorBeanTest {
         ReflectionTestUtils.setField(bean, "qlCache", qlCache);
         ReflectionTestUtils.setField(bean, "queryTraceCache", traceCache);
         ReflectionTestUtils.setField(bean, "traceInfos", HashMultimap.create());
-        ReflectionTestUtils.setField(bean, "lookupUUIDConfiguration", new LookupUUIDConfiguration());
+        ReflectionTestUtils.setField(bean, "lookupProperties", new LookupProperties());
         ReflectionTestUtils.setField(bean, "marking", new ColumnVisibilitySecurityMarking());
         ReflectionTestUtils.setField(bean, "qp", new DefaultQueryParameters());
         ReflectionTestUtils.setField(bean, "metricFactory", new QueryMetricFactoryImpl());
@@ -455,7 +456,8 @@ public class QueryExecutorBeanTest {
 
     // @Test
     @SuppressWarnings("unchecked")
-    public void testGoodListWithGet() throws URISyntaxException, CloneNotSupportedException, ParserConfigurationException, IOException, SAXException {
+    public void testGoodListWithGet()
+                    throws URISyntaxException, CloneNotSupportedException, ParserConfigurationException, IOException, SAXException, QueryException {
         String queryName = "Something";
         // need to call the getQueryByName() method. Maybe a partial mock of QueryExecutorBean would be better
         // setup principal mock

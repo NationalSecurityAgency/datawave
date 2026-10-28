@@ -1,0 +1,66 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+       http://www.springframework.org/schema/util
+       http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <bean id="accumuloConnectionFactory" class="datawave.core.common.connection.AccumuloConnectionFactoryImpl">
+        <constructor-arg ref="accumuloTableCache"/>
+        <constructor-arg ref="connectionPoolsProperties"/>
+    </bean>
+
+    <bean id="accumuloTableCache" class="datawave.core.common.cache.AccumuloTableCacheImpl">
+        <constructor-arg ref="accumuloTableCacheProperties"/>
+    </bean>
+
+    <bean id="accumuloTableCacheProperties" class="datawave.core.common.cache.AccumuloTableCacheProperties">
+        <property name="zookeepers" value="${zookeeper.hosts}"/>
+        <property name="tableNames">
+            <util:list>
+                <value>${table.name.metadata}</value>
+                <value>${table.name.errors.metadata}</value>
+                <value>${table.name.queryMetrics.metadata}</value>
+            </util:list>
+        </property>
+        <property name="poolName" value="WAREHOUSE"/>
+        <property name="reloadInterval" value="${cache.reloadInterval}"/>
+        <property name="evictionReaperIntervalInSeconds" value="30"/>
+        <property name="numLocks" value="300"/>
+        <property name="maxRetries" value="10"/>
+        <property name="tableCacheReloadTaskLease" value="10"/>
+        <property name="tableCacheReloadTaskLeaseTimeUnit" value="MINUTES"/>
+    </bean>
+
+    <bean id="connectionPoolsProperties" class="datawave.core.common.result.ConnectionPoolsProperties">
+        <property name="defaultPool" value="WAREHOUSE"/>
+        <property name="pools">
+            <util:map>
+                <entry key="WAREHOUSE">
+                    <bean class="datawave.core.common.result.ConnectionPoolProperties">
+                        <property name="zookeepers" value="${zookeeper.hosts}"/>
+                        <property name="instance" value="${accumulo.instance.name}"/>
+                        <property name="username" value="${accumulo.user.name}"/>
+                        <property name="password" value="${accumulo.user.password}"/>
+                        <property name="lowPriorityPoolSize" value="${accumulo.low.defaultpool.size}"/>
+                        <property name="normalPriorityPoolSize" value="${accumulo.normal.defaultpool.size}"/>
+                        <property name="highPriorityPoolSize" value="${accumulo.high.defaultpool.size}"/>
+                        <property name="adminPriorityPoolSize" value="${accumulo.admin.defaultpool.size}"/>
+                    </bean>
+                </entry>
+                <entry key="METRICS">
+                    <bean class="datawave.core.common.result.ConnectionPoolProperties">
+                        <property name="zookeepers" value="${zookeeper.hosts}"/>
+                        <property name="instance" value="${accumulo.instance.name}"/>
+                        <property name="username" value="${accumulo.user.name}"/>
+                        <property name="password" value="${accumulo.user.password}"/>
+                        <property name="lowPriorityPoolSize" value="${accumulo.low.defaultpool.size}"/>
+                        <property name="normalPriorityPoolSize" value="${accumulo.normal.defaultpool.size}"/>
+                        <property name="highPriorityPoolSize" value="${accumulo.high.defaultpool.size}"/>
+                        <property name="adminPriorityPoolSize" value="${accumulo.admin.defaultpool.size}"/>
+                    </bean>
+                </entry>
+            </util:map>
+        </property>
+    </bean>
+</beans>

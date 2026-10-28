@@ -130,6 +130,7 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         }
 
         @Bean
+        @SpringBean
         public AccumuloConnectionFactory accumuloConnectionFactory() {
             return mockAccumuloConnectionFactory;
         }

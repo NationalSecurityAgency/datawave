@@ -13,13 +13,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.data.UUIDType;
+import datawave.microservice.query.lookup.LookupProperties;
 import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.QueryExecutor;
 
@@ -27,7 +28,7 @@ import datawave.webservice.query.runner.QueryExecutor;
 public class LookupUUIDUtilTest {
 
     @Mock
-    LookupUUIDConfiguration configuration;
+    LookupProperties lookupProperties;
     @Mock
     QueryExecutor queryExecutor;
     @Mock
@@ -41,18 +42,18 @@ public class LookupUUIDUtilTest {
 
     @Test
     public void testCreateSettings() {
-        when(configuration.getContentLookupTypes()).thenReturn(Collections.emptyMap());
-        when(configuration.getUuidTypes()).thenReturn(Collections.singletonList(new UUIDType("ID", "LuceneUUIDEventQuery", 28)));
-        when(configuration.getBeginDate()).thenReturn("20230101");
-        when(configuration.getBatchLookupUpperLimit()).thenReturn(10);
-        when(configuration.getTagCloudLookupUpperLimit()).thenReturn(50);
-        MultivaluedMap<String,String> defaultParams = new MultivaluedMapImpl<>();
-        defaultParams.putSingle("foo", "bar");
-        defaultParams.putSingle("foo2", "default");
-        when(configuration.optionalParamsToMap()).thenReturn(defaultParams);
+        when(lookupProperties.getContentLookupTypes()).thenReturn(Collections.emptyMap());
+        when(lookupProperties.getUuidTypes()).thenReturn(null);
+        when(lookupProperties.getBeginDate()).thenReturn("20230101");
+        when(lookupProperties.getBatchLookupUpperLimit()).thenReturn(10);
+        when(lookupProperties.getTagCloudLookupUpperLimit()).thenReturn(50);
+        MultiValueMap<String,String> defaultParams = new LinkedMultiValueMap<>();
+        defaultParams.put("foo", Collections.singletonList("bar"));
+        defaultParams.put("foo2", Collections.singletonList("default"));
+        when(lookupProperties.optionalParamsToMap()).thenReturn(defaultParams);
         when(responseObjectFactory.getQueryImpl()).thenReturn(new QueryImpl());
 
-        LookupUUIDUtil utils = new LookupUUIDUtil(configuration, queryExecutor, context, responseObjectFactory, queryLogicFactory, userOperations);
+        LookupUUIDUtil utils = new LookupUUIDUtil(lookupProperties, queryExecutor, context, responseObjectFactory, queryLogicFactory, userOperations);
 
         MultivaluedMap<String,String> properties = new MultivaluedMapImpl<>();
         properties.putSingle("foo2", "bar2");

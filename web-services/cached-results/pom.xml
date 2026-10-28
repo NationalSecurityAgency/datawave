@@ -27,6 +27,10 @@
             <artifactId>datawave-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-query-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.commons</groupId>
             <artifactId>datawave-commons-security</artifactId>
         </dependency>

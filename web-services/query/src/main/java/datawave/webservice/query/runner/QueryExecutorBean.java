@@ -116,12 +116,15 @@ import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.query.lookup.LookupProperties;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.query.data.UUIDType;
+import datawave.query.runner.RunningQuery;
+import datawave.query.runner.RunningQueryTimingImpl;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.user.UserOperationsBean;
@@ -141,8 +144,6 @@ import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.cache.QueryTraceCache;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NoResultsQueryException;
@@ -217,6 +218,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private ManagedExecutorService executor;
 
     @Inject
+    @SpringBean
     private QueryLogicFactory queryLogicFactory;
 
     @Inject
@@ -234,7 +236,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
     @Inject
     @SpringBean(refreshable = true)
-    private LookupUUIDConfiguration lookupUUIDConfiguration;
+    private LookupProperties lookupProperties;
 
     @Inject
     private SecurityMarking marking;
@@ -301,7 +303,7 @@ public class QueryExecutorBean implements QueryExecutor {
         };
         queryTraceCache.addListener(traceCacheListener);
 
-        this.lookupUUIDUtil = new LookupUUIDUtil(this.lookupUUIDConfiguration, this, this.ctx, this.responseObjectFactory, this.queryLogicFactory,
+        this.lookupUUIDUtil = new LookupUUIDUtil(this.lookupProperties, this, this.ctx, this.responseObjectFactory, this.queryLogicFactory,
                         this.userOperationsBean);
     }
 

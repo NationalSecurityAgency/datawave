@@ -178,8 +178,9 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
             if (null != ref)
                 ref.cancel(true);
         }
-        for (SharedCacheCoordinator cacheCoordinator : cacheCoordinators)
+        for (SharedCacheCoordinator cacheCoordinator : cacheCoordinators) {
             cacheCoordinator.stop();
+        }
         cacheCoordinators.clear();
     }
 

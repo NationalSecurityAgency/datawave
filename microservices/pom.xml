@@ -16,17 +16,4 @@
         <module>services</module>
         <module>starters</module>
     </modules>
-    <profiles>
-        <profile>
-            <id>configcheck</id>
-            <activation>
-                <property>
-                    <name>configcheck</name>
-                </property>
-            </activation>
-            <modules>
-                <module>configcheck</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

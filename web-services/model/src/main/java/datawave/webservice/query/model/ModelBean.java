@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJB;
 import javax.ejb.EJBContext;
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
@@ -105,10 +104,10 @@ public class ModelBean {
     @ConfigProperty(name = "cluster.name", defaultValue = "unknown")
     private String systemName;
 
-    @EJB
+    @Inject
     private AccumuloConnectionFactory connectionFactory;
 
-    @EJB
+    @Inject
     private AccumuloTableCache cache;
 
     @Resource

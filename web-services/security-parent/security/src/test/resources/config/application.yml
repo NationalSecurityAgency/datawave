@@ -1,0 +1,46 @@
+datawave:
+  active-implementation:
+    datawave-user-service: AltDatawaveUserService1
+  modification:
+    enabled: false
+  security:
+    test-datawave-user-service:
+      test-users:
+        - subjectDn: "cn=user1, ou=my department, o=my company, st=some-state, c=us"
+          issuerDn: "cn=my company ca, o=my company, st=some-state, c=us"
+          userType: USER
+          roles:
+            - "PRIVATE"
+            - "PUBLIC"
+            - "Administrator"
+            - "AuthorizedUser"
+          auths:
+            - "PVT"
+            - "PUB"
+          roleToAuthMapping:
+            "PRIVATE": "PVT"
+            "PUBLIC": "PUB"
+
+        - subjectDn: "cn=server1, ou=my department, o=my company, st=some-state, c=us"
+          issuerDn: "cn=my company ca, o=my company, st=some-state, c=us"
+          userType: SERVER
+          roles:
+            - "PRIVATE"
+            - "PUBLIC"
+            - "AuthorizedServer"
+          auths:
+            - "PVT"
+            - "PUB"
+          roleToAuthMapping:
+            "PRIVATE": "PVT"
+            "PUBLIC": "PUB"
+
+server:
+  ssl:
+    client-auth: need
+    key-store-type: PKCS12
+    key-store: '${pki.dir}/testServer.p12'
+    key-store-password: 'ChangeIt'
+    trust-store-type: JKS
+    trust-store: '${pki.dir}/testKeystore.jks'
+    trust-store-password: 'ChangeIt'

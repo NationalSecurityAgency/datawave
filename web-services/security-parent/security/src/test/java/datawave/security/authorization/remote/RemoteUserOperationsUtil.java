@@ -23,6 +23,7 @@ import org.wildfly.security.x500.cert.X509CertificateBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpHandler;
 
+import datawave.security.authorization.RemoteUserOperationsProperties;
 import datawave.security.cert.SSLStores;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.json.DefaultMapperDecorator;
@@ -50,18 +51,15 @@ public class RemoteUserOperationsUtil extends RemoteServiceUtil {
         super.stop();
     }
 
-    public RemoteUserOperationsImpl getUserOperations() throws CertificateException, NoSuchAlgorithmException {
-        RemoteUserOperationsImpl remote = new RemoteUserOperationsImpl();
-        remote.setQueryServiceURI("/Security/User/");
-        remote.setQueryServiceScheme("http");
-        remote.setQueryServiceHost("localhost");
-        remote.setQueryServicePort(getPort());
+    public WSRemoteUserOperations getUserOperations() throws CertificateException, NoSuchAlgorithmException {
+        RemoteUserOperationsProperties properties = new RemoteUserOperationsProperties();
+        properties.setAuthorizationServiceUri("http://localhost:" + getPort() + "/Security/User/");
+        WSRemoteUserOperations remote = new WSRemoteUserOperations();
+        remote.setRemoteUserOperationsProperties(properties);
         remote.setExecutorService(null);
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
-        remote.setResponseObjectFactory(new RemoteUserOperationsImplHttpTest.MockResponseObjectFactory());
-
+        remote.setResponseObjectFactory(new WSRemoteUserOperationsHttpTest.MockResponseObjectFactory());
         remote.setSslStores(sslStores());
-
         return remote;
     }
 

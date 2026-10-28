@@ -24,8 +24,8 @@ public class AuthorizationOperationsV2 extends AuthorizationOperationsV1 {
 
     public AuthorizationOperationsV2(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, ApplicationContext appCtx,
                     BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, DnProperties dnProperties,
-                    Set<UserOperations> registeredFederatedUserOperations, DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
-        super(tokenHandler, cachedDatawaveUserService, appCtx, busProperties, authorizationsListSupplier, dnProperties, registeredFederatedUserOperations,
+                    Set<UserOperations> registeredRemoteUserOperations, DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
+        super(tokenHandler, cachedDatawaveUserService, appCtx, busProperties, authorizationsListSupplier, dnProperties, registeredRemoteUserOperations,
                         datawaveUserDetailsFactory);
     }
 

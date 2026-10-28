@@ -35,6 +35,8 @@ import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.runner.RunningQuery;
+import datawave.query.runner.RunningQueryTimingImpl;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
@@ -43,8 +45,6 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.table.constants.TableName;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.runner.RunningQuery;
 
 /**
  * Controlling the execution order via the @FixMethodOrder. Otherwise, it seems that our accumulo instance "remembers" and executes the query faster than the
@@ -206,6 +206,7 @@ public class LongRunningQueryTest {
 
         // Set a very low pageShortCircuitTimeoutMs to force timeouts and partial results with zero results
         RunningQueryTimingImpl timing = new RunningQueryTimingImpl(60000, 30000, 10, 1000);
+
         RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing, null,
                         new QueryMetricFactoryImpl());
         runningQuery.setExecutor(executor);
@@ -215,6 +216,10 @@ public class LongRunningQueryTest {
         while (page.getStatus() != ResultsPage.Status.NONE) {
             pages.add(page);
             page = runningQuery.next();
+        }
+
+        for (int i = 0; i < pages.size(); ++i) {
+            System.out.println(pages.get(i).getResults().size() + " -- " + pages.get(i).getStatus());
         }
 
         // There should be at least 2 pages, more depending on cpu speed.

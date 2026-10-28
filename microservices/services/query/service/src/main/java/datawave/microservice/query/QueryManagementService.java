@@ -59,7 +59,7 @@ import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.util.QueryUtil;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.audit.AuditClient;
-import datawave.microservice.authorization.federation.FederatedAuthorizationService;
+import datawave.microservice.authorization.remote.MSRemoteUserOperations;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.config.RequestScopeBeanSupplier;
@@ -547,7 +547,7 @@ public class QueryManagementService implements QueryRequestHandler {
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
             // don't call remote user operations if it's asked not to
             DatawaveUserDetails overallUserDetails = (queryLogic.getUserOperations() == null
-                            || "false".equalsIgnoreCase(parameters.getFirst(FederatedAuthorizationService.INCLUDE_REMOTE_SERVICES))) ? queryUserDetails
+                            || "false".equalsIgnoreCase(parameters.getFirst(MSRemoteUserOperations.INCLUDE_REMOTE_SERVICES))) ? queryUserDetails
                                             : queryLogic.getUserOperations().getRemoteUser(queryUserDetails);
             downgradedAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(requestQueryParameters.getAuths(), overallUserDetails, queryUserDetails);
         } catch (Exception e) {
