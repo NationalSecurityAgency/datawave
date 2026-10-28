@@ -85,12 +85,12 @@ class GenerateShardSplitsTest {
     private static List<String> run(String... args) throws Exception {
         PrintStream original = System.out;
         ByteArrayOutputStream captured = new ByteArrayOutputStream();
-        try (PrintStream out = new PrintStream(captured, true, StandardCharsets.UTF_8.name())) {
+        try (PrintStream out = new PrintStream(captured, true, StandardCharsets.UTF_8)) {
             System.setOut(out);
             GenerateShardSplits.main(args);
         } finally {
             System.setOut(original);
         }
-        return Arrays.stream(captured.toString(StandardCharsets.UTF_8.name()).split("\\R")).filter(line -> !line.isEmpty()).collect(Collectors.toList());
+        return Arrays.stream(captured.toString(StandardCharsets.UTF_8).split("\\R")).filter(line -> !line.isEmpty()).collect(Collectors.toList());
     }
 }
