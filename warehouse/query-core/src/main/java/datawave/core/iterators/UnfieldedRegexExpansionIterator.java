@@ -140,17 +140,23 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
         String date = parser.getShard();
         if (date.compareTo(startDate) < 0) {
             // advance to start date
-            log.trace("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
+            if (log.isTraceEnabled()) {
+                log.trace("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
+            }
             hint = HINT_TYPE.DATE;
             return new FilterResult(false, AdvanceResult.USE_HINT);
         } else if (date.compareTo(endDate) > 0) {
             // advance to next row
-            log.trace("date {} sorts after end date {}, advance to next column family", date, endDate);
+            if (log.isTraceEnabled()) {
+                log.trace("date {} sorts after end date {}, advance to next column family", date, endDate);
+            }
             return new FilterResult(false, AdvanceResult.NEXT_CF);
         }
 
         if (datatypes != null && !datatypes.contains(parser.getDatatype())) {
-            log.trace("datatype {} does not match, advance to next key", parser.getDatatype());
+            if (log.isTraceEnabled()) {
+                log.trace("datatype {} does not match, advance to next key", parser.getDatatype());
+            }
             return new FilterResult(false, AdvanceResult.NEXT);
         }
 
