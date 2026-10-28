@@ -1,9 +1,9 @@
 package datawave.ingest.mapreduce.job;
 
 import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,21 +32,21 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.JobContextImpl;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SplittableRFileInputFormatTest {
     private Configuration config;
     private File tmpFile;
 
-    @Before
+    @BeforeEach
     public void setup() {
         Logger.getRootLogger().setLevel(Level.WARN);
         config = new Configuration();
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         if (tmpFile != null && tmpFile.exists()) {
             tmpFile.delete();
@@ -210,9 +210,9 @@ public class SplittableRFileInputFormatTest {
      */
     private void verifySplit(RFileSplit split, int startBlk, int blkCount, Key first, Key last, int keyCount) throws IOException {
         // beginning of the file
-        assertEquals("unexpected start block", startBlk, split.getStartBlock());
+        assertEquals(startBlk, split.getStartBlock(), "unexpected start block");
         // 2 blocks (1 real block + 1 to the end of the file)
-        assertEquals("unexpected num blocks", blkCount, split.getNumBlocks());
+        assertEquals(blkCount, split.getNumBlocks(), "unexpected num blocks");
 
         // verify the key is the same key written in
         FileSKVIterator i = SplittableRFileRecordReader.getIterator(config, split);
@@ -223,7 +223,7 @@ public class SplittableRFileInputFormatTest {
             assertTrue(i.hasTop());
             top = i.getTopKey();
             if (!verifiedFirst) {
-                assertEquals("unexpected first key", first, top);
+                assertEquals(first, top, "unexpected first key");
                 verifiedFirst = true;
             }
             Value v = i.getTopValue();
@@ -231,8 +231,8 @@ public class SplittableRFileInputFormatTest {
             i.next();
             count++;
         }
-        assertEquals("unexpected last key", last, top);
-        assertFalse("unexpected key count", i.hasTop());
+        assertEquals(last, top, "unexpected last key");
+        assertFalse(i.hasTop(), "unexpected key count");
     }
 
     private File createRFile(List<Map.Entry<Key,Value>> data) throws IOException {

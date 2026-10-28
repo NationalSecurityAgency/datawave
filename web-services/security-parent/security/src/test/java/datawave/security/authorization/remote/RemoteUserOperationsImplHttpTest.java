@@ -1,7 +1,7 @@
 package datawave.security.authorization.remote;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -27,10 +27,10 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
@@ -41,7 +41,7 @@ import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -83,7 +83,7 @@ import datawave.webservice.result.keyword.TagCloudBase;
 import datawave.webservice.result.keyword.TagCloudEntryBase;
 import datawave.webservice.result.keyword.TagCloudResponseBase;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration
 public class RemoteUserOperationsImplHttpTest {
 
@@ -176,7 +176,7 @@ public class RemoteUserOperationsImplHttpTest {
 
     private DefaultAuthorizationsList listEffectiveAuthResponse;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
         System.setProperty(DnProperties.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
@@ -212,7 +212,7 @@ public class RemoteUserOperationsImplHttpTest {
         server.createContext("/Security/User/flushCachedCredentials", flushHandler);
     }
 
-    @After
+    @AfterEach
     public void after() {
         if (server != null) {
             server.stop(0);
