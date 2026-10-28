@@ -32,8 +32,8 @@ import org.junit.rules.TemporaryFolder;
 
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.AbstractQueryLogicTransformer;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
@@ -56,7 +56,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 
 public class TestCardinalityWithQuery {
 
-    static InMemoryInstance instance;
+    static InMemoryAccumulo instance;
     private static AccumuloClient client;
     private static ShardQueryLogic logic;
     static BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1000L).setMaxWriteThreads(1);
@@ -78,7 +78,7 @@ public class TestCardinalityWithQuery {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        instance = new InMemoryInstance();
+        instance = new InMemoryAccumulo();
         client = new InMemoryAccumuloClient("root", instance);
 
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");

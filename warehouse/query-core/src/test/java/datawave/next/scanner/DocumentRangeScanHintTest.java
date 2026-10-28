@@ -17,8 +17,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.QueryData;
 
 /**
@@ -115,7 +115,7 @@ public class DocumentRangeScanHintTest {
     }
 
     private DocumentScannerConfig createConfig() throws Exception {
-        AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance());
+        AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryAccumulo());
         client.tableOperations().create(TABLE);
 
         DocumentScannerConfig config = new DocumentScannerConfig();

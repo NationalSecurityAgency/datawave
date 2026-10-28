@@ -21,7 +21,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.ConnectionPool;
 import datawave.microservice.annotation.common.AnnotationConsumer;
@@ -91,7 +91,7 @@ public class WriterTopologyBothEnabledTest {
         private final org.apache.accumulo.core.client.AccumuloClient accumuloClient;
 
         public MockInMemoryAccumuloConnectionFactory(String username, String instanceName) throws Exception {
-            InMemoryInstance inMemoryInstance = new InMemoryInstance(instanceName);
+            InMemoryAccumulo inMemoryInstance = InMemoryAccumulo.getInstance(instanceName);
             this.accumuloClient = new InMemoryAccumuloClient(username, inMemoryInstance);
             accumuloClient.securityOperations().changeUserAuthorizations(username, new org.apache.accumulo.core.security.Authorizations("PUBLIC", "PRIVATE"));
         }

@@ -48,8 +48,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.iterators.FrequencyMetadataAggregator;
 import datawave.query.composite.CompositeMetadataHelper;
@@ -79,7 +79,7 @@ class IndexFieldHoleTest {
      */
     @BeforeEach
     void setUp() throws AccumuloSecurityException, AccumuloException, TableExistsException {
-        accumuloClient = new InMemoryAccumuloClient("root", new InMemoryInstance(AllFieldMetadataHelper.class.toString()));
+        accumuloClient = new InMemoryAccumuloClient("root", InMemoryAccumulo.getInstance(AllFieldMetadataHelper.class.toString()));
         if (!accumuloClient.tableOperations().exists(TABLE_METADATA)) {
             accumuloClient.tableOperations().create(TABLE_METADATA);
         }

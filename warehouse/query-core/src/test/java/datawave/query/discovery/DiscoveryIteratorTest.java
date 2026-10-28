@@ -34,15 +34,15 @@ import org.junit.Test;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
 
 public class DiscoveryIteratorTest {
 
     @Test
     public void testHappyPath() throws Throwable {
-        InMemoryInstance instance = new InMemoryInstance("DiscoveryIteratorTest");
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance("DiscoveryIteratorTest");
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
 
         client.tableOperations().create("index");
@@ -202,7 +202,7 @@ public class DiscoveryIteratorTest {
 
     @Test
     public void testReverseIndex() throws Throwable {
-        InMemoryInstance instance = new InMemoryInstance("DiscoveryIteratorTest");
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance("DiscoveryIteratorTest");
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
 
         client.tableOperations().create("reverseIndex");

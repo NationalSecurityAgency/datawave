@@ -30,8 +30,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 
 public class ShardReindexVerificationMapperTest extends EasyMockSupport {
@@ -42,7 +42,7 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
     private ShardReindexVerificationMapper mapper;
     private Mapper.Context context;
     private Configuration config;
-    private InMemoryInstance instance;
+    private InMemoryAccumulo instance;
     private InMemoryAccumuloClient accumuloClient;
 
     private List<String> dataOptions;
@@ -56,7 +56,7 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         config = new Configuration();
         context = createMock(Mapper.Context.class);
 
-        instance = new InMemoryInstance(this.getClass().toString());
+        instance = InMemoryAccumulo.getInstance(this.getClass().toString());
         accumuloClient = new InMemoryAccumuloClient("root", instance);
 
         expect(context.getConfiguration()).andReturn(config).anyTimes();

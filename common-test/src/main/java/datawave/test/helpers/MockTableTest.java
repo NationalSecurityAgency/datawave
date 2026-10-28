@@ -15,8 +15,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.After;
 import org.junit.Before;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 
 /**
  * @deprecated Use {@link MockTableTestJUnit5} for JUnit 5 tests.
@@ -30,7 +30,7 @@ public abstract class MockTableTest {
 
     @Before
     public void setup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
-        InMemoryInstance i = new InMemoryInstance(this.getClass().toString());
+        InMemoryAccumulo i = InMemoryAccumulo.getInstance(this.getClass().toString());
         client = new InMemoryAccumuloClient("root", i);
         if (client.tableOperations().exists(TABLE_NAME))
             client.tableOperations().delete(TABLE_NAME);

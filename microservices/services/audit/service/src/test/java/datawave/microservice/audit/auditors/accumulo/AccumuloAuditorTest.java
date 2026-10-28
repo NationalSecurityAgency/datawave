@@ -30,7 +30,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.microservice.audit.auditors.accumulo.config.AccumuloAuditProperties;
 import datawave.microservice.audit.auditors.accumulo.config.AccumuloAuditProperties.Accumulo;
 import datawave.webservice.common.audit.AuditParameters;
@@ -163,7 +162,7 @@ public class AccumuloAuditorTest {
         @Bean
         public AccumuloClient accumuloClient(AccumuloAuditProperties accumuloAuditProperties) throws AccumuloSecurityException {
             Accumulo accumulo = accumuloAuditProperties.getAccumuloConfig();
-            return new InMemoryAccumuloClient(accumulo.getUsername(), new InMemoryInstance(accumulo.getInstanceName()));
+            return new InMemoryAccumuloClient(accumulo.getUsername(), InMemoryAccumulo.getInstance(accumulo.getInstanceName()));
         }
     }
 }

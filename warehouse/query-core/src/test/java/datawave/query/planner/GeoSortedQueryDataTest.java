@@ -54,8 +54,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.QueryData;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -150,7 +150,7 @@ public class GeoSortedQueryDataTest {
     @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
 
-    private static InMemoryInstance instance;
+    private static InMemoryAccumulo instance;
 
     @BeforeAll
     public static void setupClass() throws Exception {
@@ -194,7 +194,7 @@ public class GeoSortedQueryDataTest {
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
 
         // write these values to their respective tables
-        instance = new InMemoryInstance();
+        instance = new InMemoryAccumulo();
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
 
