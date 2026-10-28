@@ -83,8 +83,8 @@ public final class AccumuloTableUtils {
     // This is required for compatibility with downstream consumers (clipRanges, binOfflineTable).
     // When callers are migrated to use TabletId (public API), this method can be updated.
     //
-    // REVIEW: The original TabletLocator.binRanges() used a retry loop for partial binning failures.
-    // The public locate() API may handle this internally. Verify retry semantics are equivalent.
+    // locate() replaces the old TabletLocator.binRanges() retry loop: it invalidates the tablet cache, retries until every range is binned, and checks
+    // that the table still exists and is online on each retry.
     public static Map<String,Map<KeyExtent,List<Range>>> locateTablets(AccumuloClient client, String tableName, List<Range> ranges)
                     throws AccumuloException, TableNotFoundException {
         return locateTablets(client.tableOperations(), tableName, ranges);

@@ -1071,7 +1071,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                             throw new TableOfflineException("Table " + tableName + " is offline");
                         }
                     }
-                    // REVIEW: retry semantics differ from original TabletLocator.binRanges() loop
                     binnedRanges = AccumuloTableUtils.locateTablets(client, tableName, ranges);
                     clipRanges(binnedRanges);
                 }
