@@ -233,9 +233,9 @@ public class QueryExpirationBean {
         query.touch(); // Since we know we're still in a call, go ahead and reset the idle time.
         long difference = currentTime - timeOfCurrentCall;
 
-        // if there is no timing constraints, then it cannot run too long
+        // Without page timing, the server call timeout still applies.
         if (query.getTiming() == null) {
-            return false;
+            return difference > config.getCallTimeoutMillis();
         }
 
         // if we are past the short circuit time for page (should be a bit less than the call timeout) and we have results
