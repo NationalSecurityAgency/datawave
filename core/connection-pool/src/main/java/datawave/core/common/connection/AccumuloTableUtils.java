@@ -12,6 +12,7 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.ActiveCompaction;
 import org.apache.accumulo.core.client.admin.Locations;
+import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.admin.servers.ServerId;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
@@ -43,7 +44,20 @@ public final class AccumuloTableUtils {
      * @return the TableId, or {@code null} if the table does not exist
      */
     public static TableId getTableId(AccumuloClient client, String tableName) {
-        String id = client.tableOperations().tableIdMap().get(tableName);
+        return getTableId(client.tableOperations(), tableName);
+    }
+
+    /**
+     * Get the {@link TableId} for a table by name.
+     *
+     * @param tableOperations
+     *            the table operations to use
+     * @param tableName
+     *            the table name to look up
+     * @return the TableId, or {@code null} if the table does not exist
+     */
+    public static TableId getTableId(TableOperations tableOperations, String tableName) {
+        String id = tableOperations.tableIdMap().get(tableName);
         return id == null ? null : TableId.of(id);
     }
 
@@ -73,9 +87,30 @@ public final class AccumuloTableUtils {
     // The public locate() API may handle this internally. Verify retry semantics are equivalent.
     public static Map<String,Map<KeyExtent,List<Range>>> locateTablets(AccumuloClient client, String tableName, List<Range> ranges)
                     throws AccumuloException, TableNotFoundException {
+        return locateTablets(client.tableOperations(), tableName, ranges);
+    }
+
+    /**
+     * Locate tablets for the given ranges and return them grouped by tablet server location, keyed by {@link KeyExtent}.
+     *
+     * @param tableOperations
+     *            the table operations to use
+     * @param tableName
+     *            the table to locate tablets for
+     * @param ranges
+     *            the ranges to bin into tablet locations
+     * @return a map of {@code location -> (extent -> ranges)}
+     * @throws AccumuloException
+     *             if a general Accumulo error occurs
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     * @see #locateTablets(AccumuloClient, String, List)
+     */
+    public static Map<String,Map<KeyExtent,List<Range>>> locateTablets(TableOperations tableOperations, String tableName, List<Range> ranges)
+                    throws AccumuloException, TableNotFoundException {
         Locations locations;
         try {
-            locations = client.tableOperations().locate(tableName, ranges);
+            locations = tableOperations.locate(tableName, ranges);
         } catch (AccumuloSecurityException e) {
             throw new AccumuloException(e);
         }
@@ -109,9 +144,27 @@ public final class AccumuloTableUtils {
      *             if the table does not exist
      */
     public static Map<Text,String> getSplitsWithLocations(AccumuloClient client, String tableName) throws AccumuloException, TableNotFoundException {
+        return getSplitsWithLocations(client.tableOperations(), tableName);
+    }
+
+    /**
+     * Get the split points and their tablet server locations for a table.
+     *
+     * @param tableOperations
+     *            the table operations to use
+     * @param tableName
+     *            the table name
+     * @return a sorted map of split point (end-row) to tablet server location
+     * @throws AccumuloException
+     *             if a general Accumulo error occurs
+     * @throws TableNotFoundException
+     *             if the table does not exist
+     * @see #getSplitsWithLocations(AccumuloClient, String)
+     */
+    public static Map<Text,String> getSplitsWithLocations(TableOperations tableOperations, String tableName) throws AccumuloException, TableNotFoundException {
         Locations locations;
         try {
-            locations = client.tableOperations().locate(tableName, Collections.singletonList(new Range()));
+            locations = tableOperations.locate(tableName, Collections.singletonList(new Range()));
         } catch (AccumuloSecurityException e) {
             throw new AccumuloException(e);
         }

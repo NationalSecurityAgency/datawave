@@ -50,6 +50,12 @@ public class AccumuloTableUtilsTest {
     }
 
     @Test
+    public void testGetTableIdFromTableOperations() {
+        TableId id = AccumuloTableUtils.getTableId(client.tableOperations(), "accumulo.metadata");
+        assertEquals(AccumuloTableUtils.getTableId(client, "accumulo.metadata"), id);
+    }
+
+    @Test
     public void testLocateTabletsForExistingTable() throws Exception {
         // Create a test table
         client.tableOperations().create("testTable");
