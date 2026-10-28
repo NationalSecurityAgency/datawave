@@ -5,6 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -26,6 +28,11 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -38,6 +45,7 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.stubbing.Stubber;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -114,10 +122,12 @@ public class UniqueTransformTest {
 
         UniqueTransform uniqueTransform = givenPageTimedTransform();
 
-        // The first document is unique and is returned as a real result (not an intermediate).
+        // The first document is unique and is returned as a real result (not an intermediate) while the page window is still active.
         Map.Entry<Key,Document> firstResult = uniqueTransform.apply(entryFor(inputDocuments.get(0)));
         assertNotNull(firstResult);
         assertFalse(firstResult.getValue().isIntermediateResult());
+
+        setClockTo(uniqueTransform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 1));
 
         // Only the first duplicate after the timeout emits an intermediate result; emitting it resets the page timer so the remaining duplicates (the clock
         // does not advance again) return null instead of flooding.
@@ -147,12 +157,14 @@ public class UniqueTransformTest {
 
         UniqueTransform uniqueTransform = givenPageTimedTransform();
 
-        // A unique document is returned as a real result, and does not itself reset the page timer.
+        // A unique document is returned as a real result within the page window, and does not itself reset the page timer.
         Map.Entry<Key,Document> result = uniqueTransform.apply(entryFor(inputDocuments.get(0)));
         assertNotNull(result);
         assertFalse(result.getValue().isIntermediateResult());
 
-        // The timeout has elapsed, so the first duplicate emits an intermediate result and resets the page timer.
+        setClockTo(uniqueTransform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 1));
+
+        // The timeout has elapsed and activity was seen during the page window, so the first duplicate emits an intermediate result and resets the page timer.
         result = uniqueTransform.apply(entryFor(inputDocuments.get(1)));
         assertNotNull(result);
         assertTrue(result.getValue().isIntermediateResult());
@@ -173,19 +185,194 @@ public class UniqueTransformTest {
     }
 
     /**
-     * Builds a transform whose page timer has already run past {@link #PAGE_TIMEOUT_MS}, so the very next {@code apply()} is eligible to emit an intermediate
-     * result. Timing is driven by a fixed {@link Clock} rather than wall time so the test never sleeps or races.
+     * A document observed exactly at the timeout boundary counts as activity, but the timeout is not exceeded until time advances beyond the boundary.
+     */
+    @Test
+    public void testDocumentAtPageTimeoutBoundaryCountsAsActivity() throws IOException {
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+
+        UniqueTransform uniqueTransform = givenPageTimedTransform();
+        setClockTo(uniqueTransform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS));
+        Map.Entry<Key,Document> result = uniqueTransform.apply(entryFor(inputDocuments.get(0)));
+        assertFirstUniqueResult(result, inputDocuments.get(0));
+
+        setClockTo(uniqueTransform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 1));
+        result = uniqueTransform.apply(entryFor(inputDocuments.get(1)));
+        assertNotNull(result);
+        assertTrue(result.getValue().isIntermediateResult());
+    }
+
+    /**
+     * A document arriving only after the page timeout must not itself qualify the page for an intermediate result. A fresh page window should allow
+     * intermediate results again once it has seen activity before its timeout.
+     */
+    @Test
+    public void testNoIntermediateResultWithoutDocumentWithinPageTimeout() throws IOException {
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+
+        UniqueTransform uniqueTransform = givenPageTimedTransform();
+        setClockTo(uniqueTransform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 1));
+
+        // Ordinary uniqueness returns the first document; most-recent uniqueness accumulates it.
+        Map.Entry<Key,Document> result = uniqueTransform.apply(entryFor(inputDocuments.get(0)));
+        assertFirstUniqueResult(result, inputDocuments.get(0));
+
+        // A late duplicate must return neither a real result nor an intermediate result.
+        assertNull(uniqueTransform.apply(entryFor(inputDocuments.get(1))));
+
+        // RunningQuery.next() establishes a fresh page window. Activity in that window makes a later intermediate result eligible again.
+        uniqueTransform.setQueryExecutionForPageStartTime(uniqueTransform.clock.millis());
+        assertNull(uniqueTransform.apply(entryFor(inputDocuments.get(2))));
+        setClockTo(uniqueTransform, PAGE_START.plusMillis((2 * PAGE_TIMEOUT_MS) + 2));
+        result = uniqueTransform.apply(entryFor(inputDocuments.get(2)));
+        assertNotNull(result);
+        assertTrue(result.getValue().isIntermediateResult());
+    }
+
+    private void assertFirstUniqueResult(Map.Entry<Key,Document> result, Document expected) {
+        if (uniqueFields.isMostRecent()) {
+            assertNull(result);
+        } else {
+            assertNotNull(result);
+            assertEquals(expected.getMetadata(), result.getKey());
+            assertEquals(expected, result.getValue());
+            assertFalse(result.getValue().isIntermediateResult());
+        }
+    }
+
+    @Test
+    public void testPageResetClearsPreviousPageActivity() throws IOException {
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+
+        UniqueTransform transform = givenPageTimedTransform();
+        Map.Entry<Key,Document> first = transform.apply(entryFor(inputDocuments.get(0)));
+        if (uniqueFields.isMostRecent()) {
+            assertNull(first);
+        } else {
+            assertNotNull(first);
+            assertEquals(inputDocuments.get(0), first.getValue());
+        }
+
+        // Reset while the previous page still has activity, without emitting a marker first.
+        setClockTo(transform, PAGE_START.plusMillis(1));
+        transform.setQueryExecutionForPageStartTime(transform.clock.millis());
+        setClockTo(transform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 2));
+        assertNull(transform.apply(null));
+        assertNull(transform.apply(entryFor(inputDocuments.get(1))));
+    }
+
+    @Test
+    public void testProcessingCrossingPageTimeoutEmitsIntermediateResult() throws IOException {
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+
+        UniqueTransform transform = givenPageTimedTransform();
+        transform.apply(entryFor(inputDocuments.get(0)));
+        setClockTo(transform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS - 1));
+        Document document = spy(inputDocuments.get(1));
+        doAnswer(invocation -> {
+            // Signature generation crosses the deadline after the arrival time was recorded.
+            setClockTo(transform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 1));
+            return invocation.callRealMethod();
+        }).when(document).getDictionary();
+
+        Map.Entry<Key,Document> result = transform.apply(entryFor(document));
+        assertNotNull(result);
+        assertTrue(result.getValue().isIntermediateResult());
+        assertEquals(document.getMetadata(), result.getKey());
+
+        // The new window starts at completion, not at the document's arrival time.
+        setClockTo(transform, PAGE_START.plusMillis((2 * PAGE_TIMEOUT_MS) + 1));
+        assertNull(transform.apply(entryFor(inputDocuments.get(1))));
+        setClockTo(transform, PAGE_START.plusMillis((2 * PAGE_TIMEOUT_MS) + 2));
+        result = transform.apply(entryFor(inputDocuments.get(1)));
+        assertNotNull(result);
+        assertTrue(result.getValue().isIntermediateResult());
+    }
+
+    @Test
+    public void testInFlightDocumentDoesNotConsumeNewPageActivity() throws Exception {
+        assertPageResetDuringApply(false);
+    }
+
+    @Test
+    public void testInFlightDocumentDoesNotRecordNewPageActivity() throws Exception {
+        assertPageResetDuringApply(true);
+    }
+
+    private void assertPageResetDuringApply(boolean beforeActivity) throws Exception {
+        givenValueTransformerForFields(TemporalGranularity.ALL, "ATTR0");
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+        givenInputDocument().withKeyValue("ATTR0", randomValues.get(0));
+
+        UniqueTransform transform = givenPageTimedTransform();
+        transform.apply(entryFor(inputDocuments.get(0)));
+        CountDownLatch processing = new CountDownLatch(1);
+        CountDownLatch resume = new CountDownLatch(1);
+        Document document = spy(inputDocuments.get(1));
+        Stubber pause = doAnswer(invocation -> {
+            processing.countDown();
+            assertTrue("Document processing was not released", resume.await(5, TimeUnit.SECONDS));
+            return invocation.callRealMethod();
+        });
+        if (beforeActivity) {
+            pause.when(document).isIntermediateResult();
+        } else {
+            pause.when(document).getDictionary();
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<Map.Entry<Key,Document>> inFlight = executor.submit(() -> transform.apply(entryFor(document)));
+            assertTrue("Document processing did not start", processing.await(5, TimeUnit.SECONDS));
+            setClockTo(transform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 1));
+            Future<?> reset = executor.submit(() -> transform.setQueryExecutionForPageStartTime(transform.clock.millis()));
+            reset.get(5, TimeUnit.SECONDS);
+
+            if (beforeActivity) {
+                // Old-page input must not qualify an idle new page when it resumes within that window.
+                resume.countDown();
+                assertNull(inFlight.get(5, TimeUnit.SECONDS));
+                setClockTo(transform, PAGE_START.plusMillis((2 * PAGE_TIMEOUT_MS) + 2));
+                assertNull(transform.apply(entryFor(inputDocuments.get(2))));
+            } else {
+                // New-page activity must remain available when old-page processing finishes.
+                assertNull(transform.apply(entryFor(inputDocuments.get(2))));
+                setClockTo(transform, PAGE_START.plusMillis((2 * PAGE_TIMEOUT_MS) + 2));
+                resume.countDown();
+                assertNull(inFlight.get(5, TimeUnit.SECONDS));
+                Map.Entry<Key,Document> result = transform.apply(entryFor(inputDocuments.get(2)));
+                assertNotNull(result);
+                assertTrue(result.getValue().isIntermediateResult());
+            }
+        } finally {
+            resume.countDown();
+            executor.shutdownNow();
+            assertTrue("Test workers did not terminate", executor.awaitTermination(5, TimeUnit.SECONDS));
+        }
+    }
+
+    /**
+     * Builds a transform with its page timer started at {@link #PAGE_START}. Timing is driven by a fixed {@link Clock} rather than wall time so the test never
+     * sleeps or races.
      *
-     * @return a transform ready to emit an intermediate result
+     * @return a transform with a fresh page window
      * @throws IOException
      *             if the transform cannot be built
      */
     private UniqueTransform givenPageTimedTransform() throws IOException {
-        UniqueTransform uniqueTransform = new UniqueTransform.Builder().withUniqueFields(uniqueFields).withQueryExecutionForPageTimeout(PAGE_TIMEOUT_MS)
-                        .build();
+        UniqueTransform uniqueTransform = getUniqueTransform(PAGE_TIMEOUT_MS);
         setClockTo(uniqueTransform, PAGE_START);
         uniqueTransform.setQueryExecutionForPageStartTime(uniqueTransform.clock.millis());
-        setClockTo(uniqueTransform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 1));
         return uniqueTransform;
     }
 

@@ -54,9 +54,13 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      */
     private long documentCount = 0L;
 
+    // Page state is guarded by pageLock; document processing stays outside the lock.
+    private final Object pageLock = new Object();
+    private long pageGeneration;
+    private boolean documentSeenWithinPageTimeout;
+
     /**
-     * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
-     * be returned to signal the request is still in progress.
+     * Page window in milliseconds. An intermediate result is eligible after this window only if a document was seen within it.
      */
     private final long queryExecutionForPageTimeout;
 
@@ -66,7 +70,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * @param groupFields
      *            the fields (user provided) to group by and aggregate
      * @param queryExecutionForPageTimeout
-     *            how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client
+     *            page window in milliseconds; an intermediate result requires a document observed within that window
      * @param markingFunctions
      *            the marking functions
      */
@@ -86,6 +90,10 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         log.trace("apply to {}", keyDocumentEntry);
 
+        long generation;
+        synchronized (pageLock) {
+            generation = pageGeneration;
+        }
         if (keyDocumentEntry != null) {
 
             // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
@@ -106,20 +114,34 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 return keyDocumentEntry;
             }
 
+            synchronized (pageLock) {
+                long elapsed = clock.millis() - queryExecutionForPageStartTime;
+                if (generation == pageGeneration && elapsed >= 0 && elapsed <= queryExecutionForPageTimeout) {
+                    documentSeenWithinPageTimeout = true;
+                }
+            }
+
             documentCount++;
             mostRecentKey = keyDocumentEntry.getKey();
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
             DocumentGrouper.group(keyDocumentEntry, groupFields, groups);
         }
 
-        long elapsedExecutionTimeForCurrentPage = clock.millis() - this.queryExecutionForPageStartTime;
-        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
-            log.debug("Generating intermediate result because over {}ms has been reached since {}", this.queryExecutionForPageTimeout,
-                            this.queryExecutionForPageStartTime);
-            this.queryExecutionForPageStartTime = clock.millis();
-            Document intermediateResult = new Document();
-            intermediateResult.setIntermediateResult(true);
-            return Maps.immutableEntry(new Key(), intermediateResult);
+        synchronized (pageLock) {
+            // An in-flight document must not consume activity from a newer page window.
+            if (generation != pageGeneration) {
+                return null;
+            }
+            long now = clock.millis();
+            if (documentSeenWithinPageTimeout && now - queryExecutionForPageStartTime > queryExecutionForPageTimeout) {
+                log.debug("Generating intermediate result after {}ms with page activity", queryExecutionForPageTimeout);
+                queryExecutionForPageStartTime = now;
+                pageGeneration++;
+                documentSeenWithinPageTimeout = false;
+                Document intermediateResult = new Document();
+                intermediateResult.setIntermediateResult(true);
+                return Maps.immutableEntry(new Key(), intermediateResult);
+            }
         }
 
         return null;
@@ -128,7 +150,11 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     @Override
     public void setQueryExecutionForPageStartTime(long queryExecutionForPageStartTime) {
         log.debug("setting query execution page start time to {}", queryExecutionForPageStartTime);
-        super.setQueryExecutionForPageStartTime(queryExecutionForPageStartTime);
+        synchronized (pageLock) {
+            super.setQueryExecutionForPageStartTime(queryExecutionForPageStartTime);
+            pageGeneration++;
+            documentSeenWithinPageTimeout = false;
+        }
     }
 
     @Override
