@@ -1,27 +1,25 @@
 package datawave.webservice.common.connection.config;
 
-import java.util.List;
+import java.util.Map;
 
+import datawave.core.common.result.ConnectionPoolProperties;
 import datawave.core.common.result.ConnectionPoolsProperties;
 
 public class ConnectionPoolsConfiguration extends ConnectionPoolsProperties {
-    private List<String> poolNames;
+    private ConnectionPoolsProperties connectionPoolsProperties;
 
     public ConnectionPoolsConfiguration build() {
-        for (String poolName : poolNames) {
-            pools.put(poolName, new ConnectionPoolConfiguration(poolName.toLowerCase()));
+        this.defaultPool = this.connectionPoolsProperties.getDefaultPool();
+        for (Map.Entry<String,ConnectionPoolProperties> entry : connectionPoolsProperties.getPools().entrySet()) {
+            String poolName = entry.getKey();
+            pools.put(poolName, entry.getValue());
             configs.put(poolName, new ConnectionPoolClientConfiguration(poolName.toLowerCase()));
         }
         return this;
     }
 
-    public ConnectionPoolsConfiguration withPoolNames(List<String> poolNames) {
-        this.poolNames = poolNames;
-        return this;
-    }
-
-    public ConnectionPoolsConfiguration withDefaultPool(String defaultPool) {
-        this.defaultPool = defaultPool;
+    public ConnectionPoolsConfiguration withConnectionPoolsProperties(ConnectionPoolsProperties connectionPoolsProperties) {
+        this.connectionPoolsProperties = connectionPoolsProperties;
         return this;
     }
 }

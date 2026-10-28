@@ -30,6 +30,10 @@ import datawave.util.time.TraceStopwatch;
 public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
     private static final Logger log = Logger.getLogger(BooleanChunkingQueryPlanner.class);
 
+    public BooleanChunkingQueryPlanner() {
+        super();
+    }
+
     public BooleanChunkingQueryPlanner(BooleanChunkingQueryPlanner booleanChunkingQueryPlanner) {
         super(booleanChunkingQueryPlanner);
     }

@@ -8,7 +8,7 @@ import javax.inject.Singleton;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-import datawave.webservice.query.runner.RunningQuery;
+import datawave.query.runner.RunningQuery;
 
 /**
  * A cache for storing {@link RunningQuery} objects.

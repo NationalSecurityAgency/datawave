@@ -42,7 +42,7 @@ import datawave.query.util.AbstractQueryTest;
  * Test excerpts against tf fields, including context style hashes, with and without phrase queries
  */
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",

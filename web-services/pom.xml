@@ -44,12 +44,18 @@
         <version.commons-digester>3.2</version.commons-digester>
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.commons-net>3.9.0</version.commons-net>
+        <version.datawave.starter>4.0.14-SNAPSHOT</version.datawave.starter>
+        <version.datawave.starter-metadata>3.0.8-SNAPSHOT</version.datawave.starter-metadata>
+        <version.datawave.starter-query>1.0.15-SNAPSHOT</version.datawave.starter-query>
+        <version.datawave.starter-webservice>1.0.0-SNAPSHOT</version.datawave.starter-webservice>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
         <version.jms>1.1</version.jms>
         <version.mrunit>1.0.0</version.mrunit>
         <version.protobuf>3.16.3</version.protobuf>
+        <version.spring-boot>2.7.1</version.spring-boot>
+        <version.spring-cloud-config-client>3.1.3</version.spring-cloud-config-client>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -129,9 +135,35 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-query-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>datawave-core-annotation</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave-query</artifactId>
+                <version>${version.datawave.starter-query}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave-webservice</artifactId>
+                <version>${version.datawave.starter-webservice}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.webservices</groupId>
+                <artifactId>datawave-ws-common-util</artifactId>
+                <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>gov.nsa.datawave.core</groupId>
+                        <artifactId>datawave-core-common-util</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.protostuff</groupId>

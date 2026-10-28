@@ -1,17 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <beans xmlns="http://www.springframework.org/schema/beans"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:cache="http://www.springframework.org/schema/cache"
-    xsi:schemaLocation="
-     http://www.springframework.org/schema/beans 
-     http://www.springframework.org/schema/beans/spring-beans.xsd
-     http://www.springframework.org/schema/cache 
-     http://www.springframework.org/schema/cache/spring-cache.xsd">
-     
-    <cache:annotation-driven cache-manager="markings-cache-manager"/>
-
-    <bean id="markings-cache-manager" class="org.springframework.cache.caffeine.CaffeineCacheManager" />
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+     http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean id="markingFunctions" class="datawave.marking.MarkingFunctions.Default" />
 

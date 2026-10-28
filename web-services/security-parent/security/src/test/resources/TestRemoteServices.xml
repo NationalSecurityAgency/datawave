@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <!-- The resourceFactory gets a bean from the applicationContext based on the requested type from property found in the environment -->
+    <bean id="resourceFactory" class="datawave.webservice.DatawaveResourceFactory"/>
+
+    <!-- based on property datawave.active-services.datawave-user-service -->
+    <bean id="datawaveUserService" class="datawave.security.authorization.DatawaveUserService" factory-bean="resourceFactory" factory-method="datawaveUserService"/>
+
+    <bean id="testDatawaveUserService1" class="datawave.security.authorization.test.AlternateDatawaveUserServices$DatawaveUserService1"/>
+
+    <bean id="AltDatawaveUserService1" class="datawave.security.authorization.test.AlternateDatawaveUserServices$AltDatawaveUserService1"/>
+
+    <bean id="AltDatawaveUserService2" class="datawave.security.authorization.test.AlternateDatawaveUserServices$AltDatawaveUserService2"/>
+
+    <bean id="AltDatawaveUserService3" class="datawave.security.authorization.test.AlternateDatawaveUserServices$AltDatawaveUserService3"/>
+
+    <bean id="AltDatawaveUserService4" class="datawave.security.authorization.test.AlternateDatawaveUserServices$AltDatawaveUserService4"/>
+
+    <bean id="AltDatawaveUserService5" class="datawave.security.authorization.test.AlternateDatawaveUserServices$AltDatawaveUserService5"/>
+</beans>

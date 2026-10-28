@@ -16,6 +16,7 @@ import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.springframework.util.MultiValueMap;
 
+import datawave.configuration.spring.SpringBean;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -31,6 +32,7 @@ public class AuditBean {
     private static final Logger log = Logger.getLogger(AuditBean.class);
 
     @Inject
+    @SpringBean
     private AuditService auditService;
 
     @Inject

@@ -1,0 +1,311 @@
+server:
+  ssl:
+    client-auth: need
+    key-store-type: PKCS12
+    key-store: '${pki.dir}/testServer.p12'
+    key-store-password: 'ChangeIt'
+    trust-store-type: JKS
+    trust-store: '${pki.dir}/testKeystore.jks'
+    trust-store-password: 'ChangeIt'
+
+logging:
+  level:
+    datawave: info
+    org.springframework: info
+
+accumulo:
+  zookeepers: 'localhost:2181'
+  instance-name: 'SuperStar'
+  username: 'root'
+  password: 'secret'
+
+query:
+  page:
+    short-circuit:
+      minutes: 55
+    size:
+      default: 10
+      max: 10000
+      short-circuit:
+        minutes: 30
+    byte:
+      trigger: 0
+  max-call-time:
+    minutes: 60
+  expiration:
+    minutes: 15
+    
+spring.context.debug.dir: "${java.io.tmpdir}/contextDebug-${random.uuid}"
+
+datawave:
+  active-implementation:
+    # can be referenced by fully qualified class name or by the simple class name
+    audit-service: NoOpAuditor
+    response-object-factory: DefaultResponseObjectFactory
+    datawave-user-service: RemoteDatawaveUserService
+    test-datawave-user-service-delegate: RemoteDatawaveUserService
+  cachedresults:
+    hdfs-uri: 'hdfs://localhost:8020/'
+    export-dir: '/CachedResults'
+    rows-per-batch: 10
+    days-to-live: 1
+  configuration:
+    spring:
+      # if false, then the cdi.bean.context property will be used to find the XML file (default beanRefContext.xml)
+      # to construct the application context and these datawave.configuration.spring properties will be ignored 
+      configure-from-properties: true
+      ignore-unresolvable-placeholders: false
+      scan-base-packages:
+        - "datawave.microservice.config.marking"
+        - "datawave.microservice.metadata.config"
+        - "datawave.microservice.query.edge.config"
+        - "datawave.microservice.query.logic.config"
+        - "datawave.webservice.config"
+      sources:
+        - "classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml"
+        - "classpath*:datawave-new/annotation/AnnotationManagerFactory.xml"
+        - "classpath*:datawave-new/marking/MarkingFunctionsContext.xml"
+        - "classpath*:datawave-new/metadata/MetadataHelperContext.xml"
+        - "classpath*:datawave-new/metadata/MetadataHelperCacheListenerContext.xml"
+        - "classpath*:datawave-new/modification/ModificationServices.xml"
+        - "classpath*:datawave-new/query/CachedResults*.xml"
+        - "classpath*:datawave-new/query/QueryExpiration.xml"
+        - "classpath*:datawave-new/query/QueryLimiterFactory.xml"
+        - "classpath*:datawave-new/query/QueryMetricsWriter.xml"
+        - "classpath*:datawave-new/security/TestDatawaveUserServiceConfiguration.xml"
+        - "classpath*:datawave-new/RemoteServices.xml"
+        - "classpath*:org/apache/accumulo/operations/LookupBean.xml"
+        - "classpath*:CacheContext.xml"
+        - "classpath*:QueryLogicFactory.xml"
+        - "classpath*:EdgeQueryLogicFactory.xml"
+        - "classpath*:KeywordExtractionQueryLogicFactory.xml"
+        - "classpath*:SSDeepQueryLogicFactory.xml"
+  connection:
+    factory:
+      default-pool: "WAREHOUSE"
+      pools:
+        WAREHOUSE:
+          zookeepers: ${accumulo.zookeepers}
+          instance: ${accumulo.instance-name}
+          username: ${accumulo.username}
+          password: ${accumulo.password}
+          low-priority-pool-size: 25
+          normal-priority-pool-size: 50
+          high-priority-pool-size: 100
+          admin-priority-pool-size: 200
+        METRICS:
+          zookeepers: ${accumulo.zookeepers}
+          instance: ${accumulo.instance-name}
+          username: ${accumulo.username}
+          password: ${accumulo.password}
+          low-priority-pool-size: 25
+          normal-priority-pool-size: 50
+          high-priority-pool-size: 100
+          admin-priority-pool-size: 200
+  query:
+    executor:
+      status:
+        cache:
+          enabled: false
+    expiration:
+      minutes: ${query.expiration.minutes}
+      call-timeout: ${query.max-call-time.minutes}
+      short-circuit-check-time: ${query.page.size.short-circuit.minutes}
+      short-circuit-timeout: ${query.page.short-circuit.minutes}
+    logic:
+      factory:
+        enabled: true
+        import-resources: false
+      logics:
+        RemoteEventQuery:
+          table-name: ${warehouse.tables.shard.name}
+          max-results: -1
+          audit-type: "NONE"
+          logic-description: "Retrieve sharded events/documents, leveraging the global index tables as needed"
+    mapreduce:
+      enabled: false
+    metric:
+      system-name: "docker quick-start"
+      handler:
+        zookeepers: ${accumulo.zookeepers}
+        instanceName: ${accumulo.instance-name}
+        username: ${accumulo.username}
+        password: ${accumulo.password}
+        mapStoreWriteThreads: 1
+        numShards: 10
+        fieldLengthThreshold: 4049
+        shardTableName: datawave.queryMetrics_s
+        indexTableName: datawave.queryMetrics_i
+        dateIndexTableName: datawave.queryMetrics_di
+        reverseIndexTableName: datawave.queryMetrics_r
+        metadataTableName: datawave.queryMetrics_m
+        metadataDefaultAuths: PUBLIC
+        recordWriterMaxMemory: 10000000
+        recordWriterMaxLatency: 60000
+        recordWriterNumThreads: 4
+        queryVisibility: PUBLIC
+        defaultMetricVisibility: PUBLIC
+        baseMaps: "{}"
+        queryPool: "pool1"
+        indexed-fields: [AUTHORIZATIONS,BEGIN_DATE,CREATE_CALL_TIME,CREATE_DATE,DOC_RANGES,ELAPSED_TIME,END_DATE,ERROR_CODE,ERROR_MESSAGE,FI_RANGES,HOST,LIFECYCLE,NEGATIVE_SELECTORS,NEXT_COUNT,NUM_PAGES,NUM_RESULTS,NUM_UPDATES,PARAMETERS,POSITIVE_SELECTORS,PROXY_SERVERS,QUERY,QUERY_ID,QUERY_LOGIC,QUERY_NAME,QUERY_TYPE,SEEK_COUNT,SETUP_TIME,SOURCE_COUNT,USER]
+        reverse-indexed-fields: [ERROR_CODE,ERROR_MESSAGE,HOST,NEGATIVE_SELECTORS,PARAMETERS,POSITIVE_SELECTORS,PROXY_SERVERS,QUERY,QUERY_ID,QUERY_LOGIC,QUERY_NAME,QUERY_TYPE,USER]
+        numeric-fields: [CREATE_CALL_TIME,ELAPSED_TIME,NUM_PAGES,NUM_RESULTS,NUM_UPDATES,SETUP_TIME]
+      writer:
+        confirm-ack-timeout-millis: 30000
+        remote-processor-threads: 4
+        batch-size: 100
+        max-queue-size: 250000
+        max-latency-ms: 5000
+        max-shutdown-ms: 30000
+        use-remote-service: false
+      timely:
+        enabled: false
+        host: "localhost"
+        port: 4245
+        metric-field-tags:
+          - "USER"
+          - "HOST"
+          - "QUERY_ID"
+          - "QUERY_LOGIC"
+    storage:
+      cache:
+        enabled: false
+  modification:
+    data:
+      table-name: ${warehouse.tables.metadata.name}
+      pool-name: ${datawave.connection.factory.defaultPool}
+    handlers:
+      requires-audit: false
+      authorized-roles:
+        - "AuthorizedUser"
+      event-table-name: ${warehouse.tables.shard.name}
+      metadata-table-name: ${warehouse.tables.metadata.name}
+      index-table-name: ${warehouse.tables.index.name}
+      reverse-index-table-name: ${warehouse.tables.reverseIndex.name}
+      security-marking-exempt-fields:
+        - "exemptField1"
+      index-only-map:
+        key1: "value1"
+      index-only-suffixes:
+        - "suffix1"
+      content-fields:
+        - "contentField1"
+  table:
+    cache:
+      enabled: false
+      zookeepers: ${accumulo.zookeepers}
+      pool-name: ${datawave.connection.factory.defaultPool}
+      reload-interval: 86400000
+      eviction-reaper-interval-in-seconds: 30
+      num-locks: 300
+      max-retries: 10
+      table-names:
+        - datawave.metadata
+        - datawave.error_m
+        - datawave.queryMetrics_m
+  metrics:
+    reporter:
+      host: "localhost"
+      port: 53421
+      reporter-class: "datawave.metrics.reporter.TimelyReporterFactory"
+      report:
+        interval:
+          value: 60
+          units: "SECONDS"
+  remote:
+    executor: &remote-executor-defaults
+      core-pool-size: 10
+      max-pool-size: 100
+      keep-alive-seconds: 60
+      queue-size: 100
+    auditor:
+      executor:
+        <<: *remote-executor-defaults
+      enabled: false
+      service-scheme: "https"
+      service-host: "audit"
+      service-port: 8443
+    accumulo:
+      executor:
+        <<: *remote-executor-defaults
+      service-scheme: "https"
+      service-host: "localhost"
+      service-port: 8943
+    dictionary:
+      executor:
+        <<: *remote-executor-defaults
+      use-configured-uri-for-redirect: true
+      service-scheme: "https"
+      service-host: "localhost"
+      service-port: 8843
+    query:
+      executor:
+        <<: *remote-executor-defaults
+      services:
+        RemoteQueryService:
+          scheme: "https"
+          host: "query"
+          port: 8443
+          uri: "/query/v1/"
+    query-metric:
+      executor:
+        <<: *remote-executor-defaults
+      use-configured-uri-for-redirect: true
+      service-scheme: "https"
+      service-host: "localhost"
+      service-port: 9043
+    user-service:
+      executor:
+        <<: *remote-executor-defaults
+      service-scheme: "https"
+      service-host: "localhost"
+      service-port: 8643
+    user-operations:
+      executor:
+        <<: *remote-executor-defaults
+      services:
+        RemoteUserOperations:
+          scheme: "https"
+          host: "localhost"
+          port: 8443
+          uri: "/DataWave/Security/User/"
+  security:
+    test-datawave-user-service:
+      test-users:
+        - subject-dn: "cn=test a. user, ou=my department, o=my company, st=some-state, c=us"
+          issuer-dn: "cn=test ca, ou=my department, o=my company, st=some-state, c=us"
+          user-type: USER
+          roles:
+            - "PRIVATE"
+            - "PUBLIC"
+            - "Administrator"
+            - "AuthorizedUser"
+            - "JBossAdministrator"
+          auths:
+            - "PVT"
+            - "PUB"
+          role-to-auth-mapping:
+            "PRIVATE": "PVT"
+            "PUBLIC": "PUB"
+          # only set for testing purposes, otherwise the creationTime will be set to the current time when the DatawaveUser is created
+          creation-time: -1
+          # only set for testing purposes, otherwise the expirationTime will be set to 24 hours after the creationTime when the DatawaveUser is created
+          expiration-time: 9223372036854775807
+
+        - subject-dn: "cn=testserver.example.com, ou=d009, o=my company, st=some-state, c=us"
+          issuer-dn: "cn=test ca, ou=my department, o=my company, st=some-state, c=us"
+          user-type: SERVER
+          roles:
+            - "PRIVATE"
+            - "PUBLIC"
+            - "AuthorizedServer"
+          auths:
+            - "PVT"
+            - "PUB"
+          role-to-auth-mapping:
+            "PRIVATE": "PVT"
+            "PUBLIC": "PUB"
+          # only set for testing purposes, otherwise the creationTime will be set to the current time when the DatawaveUser is created
+          creation-time: -1
+          # only set for testing purposes, otherwise the expirationTime will be set to 24 hours after the creationTime when the DatawaveUser is created
+          expiration-time: 9223372036854775807

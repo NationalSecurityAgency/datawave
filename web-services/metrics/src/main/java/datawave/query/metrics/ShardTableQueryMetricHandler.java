@@ -2,7 +2,6 @@ package datawave.query.metrics;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -33,11 +32,9 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.JobID;
@@ -50,7 +47,6 @@ import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -91,13 +87,14 @@ import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.map.SimpleQueryGeometryHandler;
+import datawave.query.runner.RunningQuery;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.WSAuthorizationsUtil;
+import datawave.webservice.config.QueryMetricIngestProperties;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.EventQueryResponseBase;
@@ -108,21 +105,18 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
 
     private static final String QUERY_METRICS_LOGIC_NAME = "QueryMetricsQuery";
-    protected static final String DEFAULT_SECURITY_MARKING = "PUBLIC";
 
     @Inject
+    @SpringBean
     private AccumuloConnectionFactory connectionFactory;
 
     @Inject
+    @SpringBean
     private QueryLogicFactory queryLogicFactory;
 
     @Inject
-    @ConfigProperty(name = "dw.query.metrics.marking")
-    protected String markingString;
-
-    @Inject
-    @ConfigProperty(name = "dw.query.metrics.visibility")
-    protected String visibilityString;
+    @SpringBean
+    private QueryMetricIngestProperties queryMetricIngestProperties;
 
     @Inject
     private QueryMetricFactory metricFactory;
@@ -151,22 +145,17 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
 
     private UIDBuilder<UID> uidBuilder = UID.builder();
 
-    public ShardTableQueryMetricHandler() {
-        URL queryMetricsUrl = Thread.currentThread().getContextClassLoader().getResource("datawave/query/QueryMetrics.xml");
-        Preconditions.checkNotNull(queryMetricsUrl);
-        conf.addResource(queryMetricsUrl);
-
-        // encode the password because that's how the AccumuloRecordWriter
-        String accumuloPassword = conf.get("AccumuloRecordWriter.password");
-        byte[] encodedAccumuloPassword = Base64.encodeBase64(accumuloPassword.getBytes());
-        conf.set("AccumuloRecordWriter.password", new String(encodedAccumuloPassword));
-    }
-
     @PostConstruct
     private void initialize() {
         AccumuloClient client = null;
 
         try {
+            conf.addResource(queryMetricIngestProperties.getQueryMetricIngestConfiguration());
+            // encode the password because that's how the AccumuloRecordWriter
+            String accumuloPassword = conf.get("AccumuloRecordWriter.password");
+            byte[] encodedAccumuloPassword = Base64.encodeBase64(accumuloPassword.getBytes());
+            conf.set("AccumuloRecordWriter.password", new String(encodedAccumuloPassword));
+
             client = connectionFactory.getClient(null, null, Priority.ADMIN, new HashMap<>());
             connectorAuthorizations = client.securityOperations().getUserAuthorizations(client.whoami()).toString();
             connectorAuthorizationCollection = Lists.newArrayList(connectorAuthorizations.split(","));
@@ -281,13 +270,13 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         // get security markings from metric, otherwise default to PUBLIC
         Markings<?> markings = updatedQueryMetric.getMarkings();
         if (markings == null || markings.isEmpty()) {
-            event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
+            event.setVisibility(queryMetricIngestProperties.getDefaultMetricVisibility());
         } else {
             try {
                 event.setVisibility(markings.toColumnVisibility());
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
-                event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
+                event.setVisibility(queryMetricIngestProperties.getDefaultMetricVisibility());
             }
         }
         event.setAuxData(storedQueryMetric);
@@ -408,7 +397,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
                     query.setQuery("QUERY_ID == '" + updatedQueryMetric.getQueryId() + "'");
                     query.setQueryName(QUERY_METRICS_LOGIC_NAME);
-                    query.setColumnVisibility(visibilityString);
+                    query.setColumnVisibility(queryMetricIngestProperties.getQueryVisibility());
                     query.setQueryAuthorizations(connectorAuthorizations);
                     query.setUserDN(sid);
                     query.setExpirationDate(DateUtils.addDays(new Date(), 1));
@@ -531,7 +520,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             // QueryMetricQueryLogic now enforces that you must be a QueryMetricsAdministrator to query metrics that do not belong to you
             query.setQuery("QUERY_ID == '" + queryId + "'");
             query.setQueryName(QUERY_METRICS_LOGIC_NAME);
-            query.setColumnVisibility(visibilityString);
+            query.setColumnVisibility(queryMetricIngestProperties.getQueryVisibility());
             query.setQueryAuthorizations(WSAuthorizationsUtil.buildAuthorizationString(authorizations));
             query.setExpirationDate(DateUtils.addDays(new Date(), 1));
             query.setPagesize(1000);
@@ -851,7 +840,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 query.setQuery("((_Bounded_ = true) && (USER > 'A' && USER < 'ZZZZZZZ'))");
             }
             query.setQueryName(QUERY_METRICS_LOGIC_NAME);
-            query.setColumnVisibility(visibilityString);
+            query.setColumnVisibility(queryMetricIngestProperties.getQueryVisibility());
             query.setQueryAuthorizations(WSAuthorizationsUtil.buildAuthorizationString(authorizations));
             query.setExpirationDate(DateUtils.addDays(new Date(), 1));
             query.setPagesize(1000);

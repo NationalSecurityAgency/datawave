@@ -28,12 +28,14 @@ import com.google.common.collect.Multimap;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
+import datawave.microservice.query.logic.DefaultQueryLogicFactory;
+import datawave.microservice.query.logic.config.QueryLogicFactoryProperties;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.UnauthorizedQueryException;
 
 /**
  * This test exercises several features of the {@link QueryLogicFactory}, notably the ability to remap logics based on name, and the ability to restrict access
@@ -52,7 +54,7 @@ public class ConfiguredQueryLogicFactoryBeanTest {
     @Qualifier("AdminQueryLogic")
     private BaseQueryLogic<?> adminQueryLogic;
 
-    private final QueryLogicFactory queryLogicFactory = new QueryLogicFactoryImpl();
+    private QueryLogicFactory queryLogicFactory;
 
     private static final String USER_LOGIC_NAME = "UserQueryLogic";
     private static final String ADMIN_LOGIC_NAME = "AdminQueryLogic";
@@ -74,9 +76,9 @@ public class ConfiguredQueryLogicFactoryBeanTest {
         ClassPathXmlApplicationContext queryFactory = new ClassPathXmlApplicationContext();
         queryFactory.setConfigLocation("TestConfiguredQueryLogicFactory.xml");
         queryFactory.refresh();
-        QueryLogicFactoryConfiguration factoryConfig = queryFactory.getBean("queryLogicFactoryConfiguration", QueryLogicFactoryConfiguration.class);
+        QueryLogicFactoryProperties factoryProperties = queryFactory.getBean("queryLogicFactoryProperties", QueryLogicFactoryProperties.class);
 
-        ReflectionTestUtils.setField(queryLogicFactory, "queryLogicFactoryConfiguration", factoryConfig);
+        queryLogicFactory = new DefaultQueryLogicFactory(factoryProperties, null);
         ReflectionTestUtils.setField(queryLogicFactory, "applicationContext", context);
 
         alternateLogicMap = (Map<String,String>) queryFactory.getBean("ExpandedLogicMap");
@@ -87,12 +89,6 @@ public class ConfiguredQueryLogicFactoryBeanTest {
         assertThrows(IllegalArgumentException.class, () -> queryLogicFactory.getQueryLogic("SuperUserQueryLogic"));
     }
 
-    // fun fact, this method always fails in the default implementation
-    @Test
-    public void testGetQueryLogicThatExistsButNoProxiedUser() {
-        assertThrows(NullPointerException.class, () -> queryLogicFactory.getQueryLogic(USER_LOGIC_NAME));
-    }
-
     @Test
     public void testUserGetsUserQueryLogic() throws QueryException, CloneNotSupportedException {
         QueryLogic<?> logic = queryLogicFactory.getQueryLogic(USER_LOGIC_NAME, USER_PRINCIPLE);
@@ -101,7 +97,7 @@ public class ConfiguredQueryLogicFactoryBeanTest {
 
     @Test
     public void testUserCannotGetAdminQueryLogic() {
-        assertThrows(UnauthorizedException.class, () -> queryLogicFactory.getQueryLogic(ADMIN_LOGIC_NAME, USER_PRINCIPLE));
+        assertThrows(UnauthorizedQueryException.class, () -> queryLogicFactory.getQueryLogic(ADMIN_LOGIC_NAME, USER_PRINCIPLE));
     }
 
     @Test
@@ -140,10 +136,9 @@ public class ConfiguredQueryLogicFactoryBeanTest {
     @Test
     public void testMappingLogicName() throws QueryException, CloneNotSupportedException {
         // for this test someone with the ADMINISTRATOR role should be redirected to the ADMIN logic
-        QueryLogicFactoryConfiguration config = (QueryLogicFactoryConfiguration) ReflectionTestUtils.getField(queryLogicFactory,
-                        "queryLogicFactoryConfiguration");
-        assertNotNull(config);
-        config.setLogicMap(alternateLogicMap);
+        QueryLogicFactoryProperties properties = (QueryLogicFactoryProperties) ReflectionTestUtils.getField(queryLogicFactory, "queryLogicFactoryProperties");
+        assertNotNull(properties);
+        properties.setQueryLogicsByName(alternateLogicMap);
 
         QueryLogic<?> logic = queryLogicFactory.getQueryLogic(ADMINISTRATOR_LOGIC_NAME, ADMIN_PRINCIPLE);
         assertEquals(adminQueryLogic, logic);

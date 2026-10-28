@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd">
+
+    <beans profile="dev">
+        <!-- based on property datawave.active-services.test-datawave-user-service-delegate -->
+        <bean id="testDatawaveUserServiceDelegate" class="datawave.security.authorization.DatawaveUserService" factory-bean="datawaveResourceFactory" factory-method="testDatawaveUserServiceDelegate"/>
+
+        <bean id="testDatawaveUserService" class="datawave.security.authorization.test.TestDatawaveUserService" init-method="init">
+            <!-- testUsers are autowired from the WebserviceConfiguration class which reads from wildfly.yml -->
+            <property name="testUsers" ref="testDatawaveUsers"/>
+            <property name="accumuloConnectionFactory" ref="accumuloConnectionFactory"/>
+            <property name="systemAuthorizations" value="${datawave.test-user-service.system-authorizations}"/>
+            <property name="delegateService" ref="remoteDatawaveUserService"/>
+        </bean>
+    </beans>
+</beans>

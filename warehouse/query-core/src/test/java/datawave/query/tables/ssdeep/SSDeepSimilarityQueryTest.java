@@ -42,13 +42,13 @@ import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.runner.RunningQuery;
 import datawave.query.tables.ssdeep.util.SSDeepTestUtil;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 
 /** Additional unit test against the SSDeepIndex / SSDeepSimilarityLogic code */

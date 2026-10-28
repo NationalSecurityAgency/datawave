@@ -43,6 +43,7 @@ import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.query.runner.RunningQuery;
 import datawave.query.tables.ssdeep.util.SSDeepTestUtil;
 import datawave.query.testframework.AbstractDataTypeConfig;
 import datawave.security.authorization.DatawavePrincipal;
@@ -54,7 +55,6 @@ import datawave.util.ssdeep.NGramGenerator;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 
 /** Simple unit test against the SSDeepIndex / SSDeepSimilarityLogic code */
