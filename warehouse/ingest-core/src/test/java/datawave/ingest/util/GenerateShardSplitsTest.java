@@ -1,8 +1,10 @@
 package datawave.ingest.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -11,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.client.admin.TabletMergeability;
 import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.Test;
 
@@ -32,6 +35,22 @@ class GenerateShardSplitsTest {
             assertTrue(expected.contains(element));
         }
 
+    }
+
+    @Test
+    void parseMergeability() {
+        assertEquals(TabletMergeability.never(), GenerateShardSplits.parseMergeability("never"));
+        assertEquals(TabletMergeability.always(), GenerateShardSplits.parseMergeability("ALWAYS"));
+        assertEquals(TabletMergeability.after(Duration.ofDays(30)), GenerateShardSplits.parseMergeability("P30D"));
+        assertEquals(TabletMergeability.after(Duration.ofHours(12)), GenerateShardSplits.parseMergeability("PT12H"));
+        assertEquals(TabletMergeability.after(Duration.ZERO), GenerateShardSplits.parseMergeability("PT0S"));
+    }
+
+    @Test
+    void parseMergeabilityRejectsBadValues() {
+        assertThrows(IllegalArgumentException.class, () -> GenerateShardSplits.parseMergeability("30d"));
+        assertThrows(IllegalArgumentException.class, () -> GenerateShardSplits.parseMergeability("sometimes"));
+        assertThrows(IllegalArgumentException.class, () -> GenerateShardSplits.parseMergeability("-P1D"));
     }
 
     @Test
