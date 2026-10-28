@@ -26,7 +26,7 @@ public abstract class MockTableTestJUnit5 {
 
     @BeforeEach
     public void setup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
-        InMemoryAccumulo i = new InMemoryAccumulo(this.getClass().toString());
+        InMemoryAccumulo i = InMemoryAccumulo.getInstance(this.getClass().toString());
         client = new InMemoryAccumuloClient("root", i);
         if (client.tableOperations().exists(TABLE_NAME))
             client.tableOperations().delete(TABLE_NAME);

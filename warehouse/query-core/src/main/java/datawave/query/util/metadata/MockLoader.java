@@ -79,7 +79,7 @@ public class MockLoader extends CacheLoader<LoaderKey,InMemoryAccumulo> {
         @Override
         public InMemoryAccumulo call() throws Exception {
 
-            InMemoryAccumulo instance = new InMemoryAccumulo(UUID.randomUUID() + key.table);
+            InMemoryAccumulo instance = InMemoryAccumulo.getInstance(UUID.randomUUID() + key.table);
             Authorizations auths = key.client.securityOperations().getUserAuthorizations(key.user);
 
             if (log.isTraceEnabled()) {

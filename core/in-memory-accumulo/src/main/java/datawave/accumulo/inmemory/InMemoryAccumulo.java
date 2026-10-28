@@ -71,6 +71,9 @@ public class InMemoryAccumulo {
         }
     }
 
+    // Static registry for named instances (allows sharing state across multiple clients)
+    private static final Map<String,InMemoryAccumulo> namedInstances = Collections.synchronizedMap(new HashMap<>());
+
     final Map<String,InMemoryTable> tables = Collections.synchronizedMap(new HashMap<>());
     final Map<String,InMemoryNamespace> namespaces = Collections.synchronizedMap(new HashMap<>());
     final Map<String,String> systemProperties = Collections.synchronizedMap(new HashMap<>());
@@ -78,6 +81,28 @@ public class InMemoryAccumulo {
     final FileSystem fs;
     final AtomicInteger tableIdCounter = new AtomicInteger(0);
     final String instanceName;
+
+    /**
+     * Gets or creates a named InMemoryAccumulo instance. Named instances allow multiple clients to share the same underlying data (tables, users, etc).
+     *
+     * @param instanceName
+     *            the name for this instance
+     * @return the InMemoryAccumulo for the given name
+     */
+    public static InMemoryAccumulo getInstance(String instanceName) {
+        synchronized (namedInstances) {
+            return namedInstances.computeIfAbsent(instanceName, InMemoryAccumulo::new);
+        }
+    }
+
+    /**
+     * Clears all named instances. Useful for test cleanup.
+     */
+    public static void clearInstances() {
+        synchronized (namedInstances) {
+            namedInstances.clear();
+        }
+    }
 
     public InMemoryAccumulo() {
         this(INSTANCE_NAME, getDefaultFileSystem());
