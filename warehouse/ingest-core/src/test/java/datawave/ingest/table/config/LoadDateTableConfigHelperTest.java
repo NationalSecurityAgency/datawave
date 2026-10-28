@@ -1,5 +1,8 @@
 package datawave.ingest.table.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Map;
@@ -11,14 +14,13 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
-import datawave.test.helpers.MockTableTest;
+import datawave.test.helpers.MockTableTestJUnit5;
 
-public class LoadDateTableConfigHelperTest extends MockTableTest {
+public class LoadDateTableConfigHelperTest extends MockTableTestJUnit5 {
 
     private Logger log = Logger.getLogger(LoadDateTableConfigHelperTest.class);
 
@@ -33,7 +35,7 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
 
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
 
-        Assert.assertEquals("Incorrect number of keys (expected 1) in " + actual, actual.size(), 1);
+        assertEquals(actual.size(), 1, "Incorrect number of keys (expected 1) in " + actual);
     }
 
     @Test
@@ -44,7 +46,7 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
 
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
 
-        Assert.assertEquals("Incorrect number of keys (expected 2) in " + actual, actual.size(), 2);
+        assertEquals(actual.size(), 2, "Incorrect number of keys (expected 2) in " + actual);
 
         assertKeyAndColFamilies(actual, "JAM", Sets.newHashSet(new Text("band"), new Text("es"), new Text("mies")));
     }
@@ -58,7 +60,7 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
 
         assertKeyAndColFamilies(actual, "LACS", EXPECTED_LAC_COL_FAMILIES);
 
-        Assert.assertEquals("Incorrect number of keys (expected 1) in " + actual, actual.size(), 1);
+        assertEquals(actual.size(), 1, "Incorrect number of keys (expected 1) in " + actual);
     }
 
     @Test
@@ -72,17 +74,16 @@ public class LoadDateTableConfigHelperTest extends MockTableTest {
 
         String actual = tableOperations.getLocalityGroups(TABLE_NAME).toString();
         String errorMessage = "Incorrect result (possibly the null character): " + actual;
-        Assert.assertTrue(errorMessage, actual.contains("LAC\u0000protobufEdge"));
-        Assert.assertTrue(errorMessage, actual.contains("LAC\u0000errorShard"));
-        Assert.assertTrue(errorMessage, actual.contains("LAC\u0000shard"));
-        Assert.assertTrue(errorMessage, actual.contains("LAC\u0000knowledgeShard"));
+        assertTrue(actual.contains("LAC\u0000protobufEdge"), errorMessage);
+        assertTrue(actual.contains("LAC\u0000errorShard"), errorMessage);
+        assertTrue(actual.contains("LAC\u0000shard"), errorMessage);
+        assertTrue(actual.contains("LAC\u0000knowledgeShard"), errorMessage);
     }
 
     public void assertKeyAndColFamilies(Map<String,Set<Text>> actual, final String expectedKey, HashSet<Text> expectedColFamilies) {
-        Assert.assertTrue("missing expected key '" + expectedKey + "' in " + actual, actual.containsKey(expectedKey));
+        assertTrue(actual.containsKey(expectedKey), "missing expected key '" + expectedKey + "' in " + actual);
 
-        Assert.assertTrue("Somethin isn't right with the " + expectedKey + ": " + actual.get(expectedKey),
-                        actual.get(expectedKey).containsAll(expectedColFamilies));
+        assertTrue(actual.get(expectedKey).containsAll(expectedColFamilies), "Somethin isn't right with the " + expectedKey + ": " + actual.get(expectedKey));
     }
 
     public Configuration createConfigurationWithLocalityGroups(String localityGroups) {
