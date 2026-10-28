@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <bean id="atomProperties" class="datawave.webservice.config.AtomProperties">
+        <property name="systemName" value="${cluster.name}"/>
+        <property name="tableName" value="${table.name.atom.categories}"/>
+        <property name="externalHostName" value="${atom.wildfly.hostname}"/>
+        <property name="externalPort" value="${atom.wildfly.port.number}"/>
+        <property name="connectionPoolName" value="${atom.connection.pool.name}"/>
+    </bean>
+</beans>

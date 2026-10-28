@@ -35,14 +35,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 # System properties
 #
 /system-property=cluster.name:add(value=${cluster.name})
-/system-property=dw.warehouse.instanceName:add(value=${accumulo.instance.name})
-/system-property=dw.warehouse.zookeepers:add(value="${zookeeper.hosts}")
-/system-property=dw.warehouse.accumulo.userName:add(value=${accumulo.user.name})
-/system-property=dw.warehouse.accumulo.password:add(value=${accumulo.user.password})
-/system-property=dw.metrics.instanceName:add(value=${accumulo.instance.name})
-/system-property=dw.metrics.zookeepers:add(value="${zookeeper.hosts}")
-/system-property=dw.metrics.accumulo.userName:add(value=${accumulo.user.name})
-/system-property=dw.metrics.accumulo.password:add(value=${accumulo.user.password})
+
 /system-property=dw.hornetq.system.userName:add(value=${hornetq.system.username})
 /system-property=dw.hornetq.system.password:add(value=${hornetq.system.password})
 /system-property=dw.modification.cache.mdb.pool.size:add(value=${modification.cache.mdb.pool.size})
@@ -50,98 +43,15 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.trusted.header.issuerDn:add(value=${trusted.header.issuer-header-name})
 /system-property=dw.trusted.header.subjectDn:add(value=${trusted.header.subject-header-name})
 /system-property=dw.transport.guarantee:add(value=${webapp.transport.guarantee})
-/system-property=dw.connectionPool.default:add(value=WAREHOUSE)
-/system-property=dw.connectionPool.pools:add(value="WAREHOUSE,METRICS,UUID")
-/system-property=dw.warehouse.pool.low.size:add(value=${accumulo.low.defaultpool.size})
-/system-property=dw.warehouse.pool.normal.size:add(value=${accumulo.normal.defaultpool.size})
-/system-property=dw.warehouse.pool.high.size:add(value=${accumulo.high.defaultpool.size})
-/system-property=dw.warehouse.pool.admin.size:add(value=${accumulo.admin.defaultpool.size})
-/system-property=dw.metadatahelper.all.auths:add(value="${metadatahelper.default.auths}")
-/system-property=dw.metrics.pool.low.size:add(value=${accumulo.low.defaultpool.size})
-/system-property=dw.metrics.pool.normal.size:add(value=${accumulo.normal.defaultpool.size})
-/system-property=dw.metrics.pool.high.size:add(value=${accumulo.high.defaultpool.size})
-/system-property=dw.metrics.pool.admin.size:add(value=${accumulo.admin.defaultpool.size})
-/system-property=dw.uuid.pool.low.size:add(value=${accumulo.low.uuidpool.size})
-/system-property=dw.uuid.pool.normal.size:add(value=${accumulo.normal.uuidpool.size})
-/system-property=dw.uuid.pool.high.size:add(value=${accumulo.high.uuidpool.size})
-/system-property=dw.uuid.pool.admin.size:add(value=${accumulo.admin.uuidpool.size})
-/system-property=dw.uuid.instanceName:add(value=${WAREHOUSE_INSTANCE_NAME})
-/system-property=dw.uuid.zookeepers:add(value="${WAREHOUSE_ZOOKEEPERS}")
-/system-property=dw.uuid.accumulo.userName:add(value=${accumulo.user.name})
-/system-property=dw.uuid.accumulo.password:add(value=${accumulo.user.password})
-/system-property=dw.query.metrics.marking:add(value=${query.metrics.marking})
-/system-property=dw.query.metrics.visibility:add(value=${query.metrics.visibility})
-/system-property=dw.metrics.warehouse.namenode:add(value=${metrics.warehouse.namenode})
-/system-property=dw.metrics.warehouse.hadoop.path:add(value=${metrics.warehouse.hadoop.path})
-/system-property=dw.atom.tableName:add(value=${table.name.atom.categories})
-/system-property=dw.atom.externalHostName:add(value=${atom.wildfly.hostname})
-/system-property=dw.atom.externalPort:add(value=${atom.wildfly.port.number})
-/system-property=dw.atom.connectionPoolName:add(value=${atom.connection.pool.name})
-/system-property=dw.metrics.reporter.host:add(value=${metrics.reporter.host})
-/system-property=dw.metrics.reporter.port:add(value=${metrics.reporter.port})
-/system-property=dw.metrics.reporter.class:add(value=${metrics.reporter.class})
-/system-property=dw.cache.tableNames:add(value="${tables.to.cache}")
-/system-property=dw.cache.reloadInterval:add(value="${cache.reloadInterval}")
-/system-property=dw.model.defaultTableName:add(value=${table.name.metadata})
-/system-property=dw.basemaps:add(value="${basemaps}")
 
-# Security SSL Properties
-/system-property=dw.ssl.context.info.keyStoreURL:add(value=file://${KEYSTORE})
-/system-property=dw.ssl.context.info.keyStoreType:add(value="${KEYSTORE_TYPE}")
-/system-property=dw.ssl.context.info.keyStorePassword:add(value="${KEYSTORE_PASSWORD}")
-/system-property=dw.ssl.context.info.trustStoreURL:add(value=file://${TRUSTSTORE})
-/system-property=dw.ssl.context.info.trustStoreType:add(value="${TRUSTSTORE_TYPE}")
-/system-property=dw.ssl.context.info.trustStorePassword:add(value="${TRUSTSTORE_PASSWORD}")
+/system-property=dw.metadatahelper.all.auths:add(value="${metadatahelper.default.auths}")
+
 
 # Required to allow the elytron module to lookup a SecurityEJBProvider instance from JNDI.
 /system-property=dw.security.ejb.provider.jndi:add(value=java:global/datawave-ws-deploy-application-${project.version}-${build.env}/gov.nsa.datawave.webservices-datawave-ws-security-${project.version}/SecurityEJBProviderImpl)
 
 # Proxied entities to be pruned from credentials.
 /system-property=dw.trusted.proxied.entities:add(value="${trusted.proxied.entities}")
-
-# Enable/disable the test authorization service (enable for development use only)
-/system-property=dw.security.use.testuserservice:add(value=${security.use.testauthservice})
-
-# Authorization microservice config
-/system-property=dw.security.use.remoteuserservice:add(value=${security.use.remoteauthservice})
-/system-property=dw.remoteDatawaveUserService.useSrvDnsLookup:add(value=${security.remoteuserservice.srv.lookup.enabled})
-/system-property=dw.remoteDatawaveUserService.srvDnsServers:add(value=${security.remoteuserservice.srv.lookup.servers})
-/system-property=dw.remoteDatawaveUserService.srvDnsPort:add(value=${security.remoteuserservice.srv.lookup.port})
-/system-property=dw.remoteDatawaveUserService.scheme:add(value=${security.remoteuserservice.scheme})
-/system-property=dw.remoteDatawaveUserService.host:add(value=${security.remoteuserservice.host})
-/system-property=dw.remoteDatawaveUserService.port:add(value=${security.remoteuserservice.port})
-
-# Audit microservice config
-/system-property=dw.audit.use.remoteauditservice:add(value=${auditing.use.remoteauditservice})
-/system-property=dw.remoteDatawaveAuditService.useSrvDnsLookup:add(value=${auditing.remoteauditservice.srv.lookup.enabled})
-/system-property=dw.remoteDatawaveAuditService.srvDnsServers:add(value=${auditing.remoteauditservice.srv.lookup.servers})
-/system-property=dw.remoteDatawaveAuditService.srvDnsPort:add(value=${auditing.remoteauditservice.srv.lookup.port})
-/system-property=dw.remoteDatawaveAuditService.scheme:add(value=${auditing.remoteauditservice.scheme})
-/system-property=dw.remoteDatawaveAuditService.host:add(value=${auditing.remoteauditservice.host})
-/system-property=dw.remoteDatawaveAuditService.port:add(value=${auditing.remoteauditservice.port})
-
-# Dictionary microservice config
-/system-property=dw.remoteDictionary.scheme:add(value=${dictionary.remoteservice.scheme})
-/system-property=dw.remoteDictionary.host:add(value=${dictionary.remoteservice.host})
-/system-property=dw.remoteDictionary.port:add(value=${dictionary.remoteservice.port})
-/system-property=dw.remoteDictionary.useConfiguredURIForRedirect:add(value=${dictionary.remoteservice.useConfiguredURIForRedirect})
-
-# Accumulo microservice config
-/system-property=dw.remoteAccumuloService.useSrvDnsLookup:add(value=${accumulo.remoteservice.srv.lookup.enabled})
-/system-property=dw.remoteAccumuloService.srvDnsServers:add(value=${accumulo.remoteservice.srv.lookup.servers})
-/system-property=dw.remoteAccumuloService.srvDnsPort:add(value=${accumulo.remoteservice.srv.lookup.port})
-/system-property=dw.remoteAccumuloService.scheme:add(value=${accumulo.remoteservice.scheme})
-/system-property=dw.remoteAccumuloService.host:add(value=${accumulo.remoteservice.host})
-/system-property=dw.remoteAccumuloService.port:add(value=${accumulo.remoteservice.port})
-
-# QueryMetric microservice config
-/system-property=dw.remoteQueryMetricService.useSrvDnsLookup:add(value=${querymetric.remoteservice.srv.lookup.enabled})
-/system-property=dw.remoteQueryMetricService.srvDnsServers:add(value=${querymetric.remoteservice.srv.lookup.servers})
-/system-property=dw.remoteQueryMetricService.srvDnsPort:add(value=${querymetric.remoteservice.srv.lookup.port})
-/system-property=dw.remoteQueryMetricService.scheme:add(value=${querymetric.remoteservice.scheme})
-/system-property=dw.remoteQueryMetricService.host:add(value=${querymetric.remoteservice.host})
-/system-property=dw.remoteQueryMetricService.port:add(value=${querymetric.remoteservice.port})
-/system-property=dw.remoteQueryMetricService.useConfiguredURIForRedirect:add(value=${querymetric.remoteservice.useConfiguredURIForRedirect})
 
 # Disable SASL client authentication in zookeeper
 /system-property=zookeeper.sasl.client:add(value=false)

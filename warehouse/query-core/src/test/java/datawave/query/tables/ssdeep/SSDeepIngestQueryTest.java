@@ -37,6 +37,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.RebuildingScannerTestHelper;
+import datawave.query.runner.RunningQuery;
 import datawave.query.tables.ssdeep.testframework.SSDeepDataType;
 import datawave.query.tables.ssdeep.testframework.SSDeepFields;
 import datawave.query.tables.ssdeep.testframework.SSDeepQueryTestTableHelper;
@@ -54,7 +55,6 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 
 /**

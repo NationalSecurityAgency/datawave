@@ -26,24 +26,24 @@ import datawave.query.language.parser.jexl.JexlNode;
 public class JexlTreeBuilder extends QueryTreeBuilder {
 
     public static final JexlQueryFunction[] DEFAULT_ALLOWED_FUNCTIONS;
-    public static final List<JexlQueryFunction> DEFAULT_ALLOWED_FUNCTION_LIST;
+    public static final List<JexlQueryFunction> DEFAULT_DEFINED_FUNCTION_LIST;
 
     static {
         ClassPathScanningCandidateComponentProvider p = new ClassPathScanningCandidateComponentProvider(false);
         p.addIncludeFilter(new AssignableTypeFilter(JexlQueryFunction.class));
         Set<BeanDefinition> candidates = p.findCandidateComponents("datawave.query.language.functions.jexl");
-        DEFAULT_ALLOWED_FUNCTION_LIST = candidates.stream().map(b -> {
+        DEFAULT_DEFINED_FUNCTION_LIST = candidates.stream().map(b -> {
             try {
                 return (JexlQueryFunction) (Class.forName(b.getBeanClassName()).getDeclaredConstructor().newInstance());
             } catch (Exception e) {
                 return null;
             }
         }).filter(b -> b != null).collect(Collectors.toList());
-        DEFAULT_ALLOWED_FUNCTIONS = DEFAULT_ALLOWED_FUNCTION_LIST.toArray(new JexlQueryFunction[0]);
+        DEFAULT_ALLOWED_FUNCTIONS = DEFAULT_DEFINED_FUNCTION_LIST.toArray(new JexlQueryFunction[0]);
     }
 
     public JexlTreeBuilder() {
-        this(DEFAULT_ALLOWED_FUNCTION_LIST);
+        this(DEFAULT_DEFINED_FUNCTION_LIST);
     }
 
     public JexlTreeBuilder(List<JexlQueryFunction> allowedFunctions) {

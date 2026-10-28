@@ -19,6 +19,7 @@ import datawave.core.common.cache.AccumuloTableCacheProperties;
 @ConditionalOnProperty(name = "datawave.table.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class TableCacheReloadMonitor {
     private final Logger log = LoggerFactory.getLogger(getClass());
+
     private final AccumuloTableCache cache;
     private final AccumuloTableCacheProperties properties;
 

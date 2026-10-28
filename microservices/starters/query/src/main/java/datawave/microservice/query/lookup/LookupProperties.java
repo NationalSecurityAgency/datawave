@@ -1,5 +1,6 @@
 package datawave.microservice.query.lookup;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -7,8 +8,11 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.validation.annotation.Validated;
 
+import datawave.microservice.query.QueryParameters;
 import datawave.query.data.UUIDType;
 
 @Validated
@@ -16,8 +20,10 @@ import datawave.query.data.UUIDType;
 public class LookupProperties {
     @NotEmpty
     private String pool = "unassigned";
-    private Map<String,UUIDType> types = new HashMap<>();
-    protected int batchLookupLimit = 100;
+    private Map<String,UUIDType> uuidTypes = new HashMap<>();
+    protected Map<String,String> contentLookupTypes = null;
+    protected int batchLookupUpperLimit = 100;
+    protected int tagCloudLookupUpperLimit = 500;
     @NotEmpty
     protected String beginDate;
     @NotNull
@@ -33,20 +39,36 @@ public class LookupProperties {
         this.pool = pool;
     }
 
-    public Map<String,UUIDType> getTypes() {
-        return types;
+    public Map<String,UUIDType> getUuidTypes() {
+        return uuidTypes;
     }
 
-    public void setTypes(Map<String,UUIDType> types) {
-        this.types = types;
+    public void setUuidTypes(Map<String,UUIDType> uuidTypes) {
+        this.uuidTypes = uuidTypes;
     }
 
-    public int getBatchLookupLimit() {
-        return batchLookupLimit;
+    public Map<String,String> getContentLookupTypes() {
+        return contentLookupTypes;
     }
 
-    public void setBatchLookupLimit(int batchLookupLimit) {
-        this.batchLookupLimit = batchLookupLimit;
+    public void setContentLookupTypes(Map<String,String> contentLookupTypes) {
+        this.contentLookupTypes = contentLookupTypes;
+    }
+
+    public int getBatchLookupUpperLimit() {
+        return batchLookupUpperLimit;
+    }
+
+    public void setBatchLookupUpperLimit(int batchLookupUpperLimit) {
+        this.batchLookupUpperLimit = batchLookupUpperLimit;
+    }
+
+    public int getTagCloudLookupUpperLimit() {
+        return tagCloudLookupUpperLimit;
+    }
+
+    public void setTagCloudLookupUpperLimit(int tagCloudLookupUpperLimit) {
+        this.tagCloudLookupUpperLimit = tagCloudLookupUpperLimit;
     }
 
     public String getBeginDate() {
@@ -71,5 +93,13 @@ public class LookupProperties {
 
     public void setContentQueryLogicName(String contentQueryLogicName) {
         this.contentQueryLogicName = contentQueryLogicName;
+    }
+
+    public MultiValueMap<String,String> optionalParamsToMap() {
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
+        if (this.columnVisibility != null) {
+            p.put(QueryParameters.QUERY_VISIBILITY, Collections.singletonList(this.columnVisibility));
+        }
+        return p;
     }
 }

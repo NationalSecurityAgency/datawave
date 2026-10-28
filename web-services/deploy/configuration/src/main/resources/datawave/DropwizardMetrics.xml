@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/c"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <!-- these values get substituted at compile time and then are used by other beans -->
+    <bean id="dropWizardMetricsImplementationProperties"
+          class="org.springframework.core.env.PropertiesPropertySource">
+        <constructor-arg value="dropWizardMetricsImplementationProperties"/>
+        <constructor-arg>
+            <props>
+                <prop key="datawave.active-implementation.metrics-reporter-factory">${metrics.reporter.class}</prop>
+            </props>
+        </constructor-arg>
+    </bean>
+
+    <bean id="registerDropWizardMetricsImplementationProperties"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetObject" value="#{environment.getPropertySources()}"/>
+        <property name="targetMethod" value="addLast"/>
+        <property name="arguments">
+            <list>
+                <ref bean="dropWizardMetricsImplementationProperties"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="dropwizardMetricsProperties" class="datawave.webservice.config.DropwizardMetricsProperties">
+        <property name="host" value="${metrics.reporter.host}"/>
+        <property name="port" value="${metrics.reporter.port}"/>
+    </bean>
+
+    <!-- options for the metrics reporter factory -->
+    <bean id="consoleMetricsReporterFactory" class="datawave.metrics.ConsoleMetricsReporterFactory"/>
+    <bean id="noOpMetricsReporterFactory" class="datawave.metrics.NoOpMetricsReporterFactory"/>
+    <bean id="nsqMetricsReporterFactory" class="datawave.metrics.NSQMetricsReporterFactory"/>
+    <bean id="statsDMetricReporterFactory" class="datawave.metrics.StatsDMetricReporterFactory"/>
+    <bean id="timelyMetricsReporterFactory" class="datawave.metrics.TimelyMetricsReporterFactory"/>
+
+    <bean id="dropwizardMetricsConfiguration" class="datawave.webservice.config.DropwizardMetricsConfiguration"/>
+
+    <bean id="metricRegistry" factory-bean="dropwizardMetricsConfiguration" factory-method="metricRegistry"/>
+
+    <!-- Add beans to depends-on attribute to ensure that these beans are present in the applicationContext before the metricsReporterFactory is created -->
+    <bean id="metricsReporterFactory" factory-bean="dropwizardMetricsConfiguration" factory-method="metricsReporterFactory" depends-on="registerDropWizardMetricsImplementationProperties, consoleMetricsReporterFactory, noOpMetricsReporterFactory, nsqMetricsReporterFactory, statsDMetricReporterFactory, timelyMetricsReporterFactory">
+        <constructor-arg ref="datawaveResourceFactory"/>
+    </bean>
+
+    <bean id="metricsReporter" factory-bean="dropwizardMetricsConfiguration" factory-method="metricsReporter" destroy-method="stop">
+        <constructor-arg ref="metricRegistry"/>
+        <constructor-arg ref="metricsReporterFactory"/>
+        <constructor-arg ref="dropwizardMetricsProperties"/>
+    </bean>
+
+</beans>

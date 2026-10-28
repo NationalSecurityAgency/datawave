@@ -119,6 +119,7 @@ public class ListEffectiveAuthorizationsTest {
         }
 
         @Bean
+        @SpringBean
         public AccumuloConnectionFactory accumuloConnectionFactory() {
             return mockAccumuloConnectionFactory;
         }

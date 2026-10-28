@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Priority;
-import javax.enterprise.inject.Alternative;
-import javax.interceptor.Interceptor;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
@@ -24,7 +21,6 @@ import org.apache.http.message.BasicNameValuePair;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.common.base.Preconditions;
 
-import datawave.configuration.RefreshableScope;
 import datawave.webservice.request.UpdateRequest;
 import datawave.webservice.response.ListTablesResponse;
 import datawave.webservice.response.ListUserAuthorizationsResponse;
@@ -34,9 +30,6 @@ import datawave.webservice.response.UpdateResponse;
 import datawave.webservice.response.ValidateVisibilityResponse;
 import datawave.webservice.result.VoidResponse;
 
-@RefreshableScope
-@Alternative
-@Priority(Interceptor.Priority.APPLICATION)
 public class RemoteAdminService extends RemoteAccumuloService {
 
     private enum Suffix {

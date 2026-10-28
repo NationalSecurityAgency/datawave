@@ -1,0 +1,6 @@
+warehouse-cluster:
+  accumulo:
+    zookeepers: 'localhost:2181'
+    instanceName: 'SuperStar'
+    username: 'root'
+    password: 'secret'

@@ -1,10 +1,8 @@
 package datawave.microservice.query.translateid;
 
-import static datawave.microservice.query.QueryParameters.QUERY_PAGESIZE;
-import static datawave.microservice.query.QueryParameters.QUERY_PAGETIMEOUT;
-
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,39 +13,42 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.validation.annotation.Validated;
 
+import datawave.microservice.query.QueryParameters;
 import datawave.query.data.UUIDType;
 
 @Validated
 @ConfigurationProperties(prefix = "datawave.query.translateid")
 public class TranslateIdProperties {
-    private Map<String,UUIDType> types;
+    private Map<String,UUIDType> uuidTypes;
     @NotEmpty
     private String beginDate;
     @NotNull
     private String columnVisibility;
-    private Set<String> allowedQueryParameters = new HashSet<>(Arrays.asList(QUERY_PAGESIZE, QUERY_PAGETIMEOUT));
+    private Set<String> allowedQueryParameters = new HashSet<>(Arrays.asList(QueryParameters.QUERY_PAGESIZE, QueryParameters.QUERY_PAGETIMEOUT));
     @NotEmpty
     private String queryLogicName = "IdTranslationQuery";
     @NotEmpty
     private String tldQueryLogicName = "IdTranslationTLDQuery";
     private String allowedUUIDQueryLogicName = "LuceneUUIDEventQuery";
 
-    public Map<String,UUIDType> getTypes() {
-        return types;
+    public Map<String,UUIDType> getUuidTypes() {
+        return uuidTypes;
     }
 
-    public void setTypes(Map<String,UUIDType> types) {
+    public void setUuidTypes(Map<String,UUIDType> uuidTypes) {
         Map<String,UUIDType> allowedTypes = new HashMap<>();
-        if (allowedUUIDQueryLogicName != null && types != null) {
-            for (Map.Entry<String,UUIDType> uuidType : types.entrySet()) {
+        if (allowedUUIDQueryLogicName != null && uuidTypes != null) {
+            for (Map.Entry<String,UUIDType> uuidType : uuidTypes.entrySet()) {
                 if (allowedUUIDQueryLogicName.equalsIgnoreCase(uuidType.getValue().getQueryLogic("default"))) {
                     allowedTypes.put(uuidType.getKey(), uuidType.getValue());
                 }
             }
         }
-        this.types = allowedTypes;
+        this.uuidTypes = allowedTypes;
     }
 
     public String getBeginDate() {
@@ -97,16 +98,24 @@ public class TranslateIdProperties {
     public void setAllowedUUIDQueryLogicName(String allowedUUIDQueryLogicName) {
         this.allowedUUIDQueryLogicName = allowedUUIDQueryLogicName;
 
-        if (this.allowedUUIDQueryLogicName != null && types != null) {
+        if (this.allowedUUIDQueryLogicName != null && uuidTypes != null) {
             List<String> entriesToRemove = new ArrayList<>();
-            for (Map.Entry<String,UUIDType> uuidEntry : types.entrySet()) {
+            for (Map.Entry<String,UUIDType> uuidEntry : uuidTypes.entrySet()) {
                 if (allowedUUIDQueryLogicName.equalsIgnoreCase(uuidEntry.getValue().getQueryLogic("default"))) {
                     entriesToRemove.add(uuidEntry.getKey());
                 }
             }
             for (String uuidKey : entriesToRemove) {
-                types.remove(uuidKey);
+                uuidTypes.remove(uuidKey);
             }
         }
+    }
+
+    public MultiValueMap<String,String> optionalParamsToMap() {
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
+        if (this.columnVisibility != null) {
+            p.put(QueryParameters.QUERY_VISIBILITY, Collections.singletonList(this.columnVisibility));
+        }
+        return p;
     }
 }

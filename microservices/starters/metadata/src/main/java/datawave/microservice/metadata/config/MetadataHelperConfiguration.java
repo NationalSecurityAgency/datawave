@@ -103,7 +103,7 @@ public class MetadataHelperConfiguration {
     @ConditionalOnMissingBean(name = "metadataHelperCacheManager")
     public CacheManager metadataHelperCacheManager() {
         CaffeineCacheManager caffeineCacheManager = new CaffeineCacheManager();
-        caffeineCacheManager.setCaffeineSpec(CaffeineSpec.parse("maximumSize=100, expireAfterAccess=24h, expireAfterWrite=24h"));
+        caffeineCacheManager.setCaffeineSpec(CaffeineSpec.parse("maximumSize=100, expireAfterWrite=1h, recordStats"));
         return caffeineCacheManager;
     }
 

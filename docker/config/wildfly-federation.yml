@@ -1,0 +1,6 @@
+datawave:
+  query:
+    remote:
+      serviceClass: WSRemoteQueryService
+
+

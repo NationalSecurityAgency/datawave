@@ -153,7 +153,7 @@
         <version.slf4j>2.0.17</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.3.39</version.spring>
-        <version.spring-security>5.8.16</version.spring-security>
+        <version.spring-security-core>5.8.16</version.spring-security-core>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.thrift>0.17.0</version.thrift>
@@ -189,7 +189,7 @@
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-core</artifactId>
-                <version>${version.spring-security}</version>
+                <version>${version.spring-security-core}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.bom</groupId>

@@ -54,7 +54,6 @@ function generateTestDatawaveUserServiceConfig() {
    fi
 
    echo "security.use.testauthservice=true" >> ${BUILD_PROPERTIES_FILE}
-   echo "security.testauthservice.context.entry=<value>classpath*:datawave/security/TestDatawaveUserServiceConfiguration.xml</value>" >> ${BUILD_PROPERTIES_FILE}
 
    # Format auth and role lists as json array elements
 

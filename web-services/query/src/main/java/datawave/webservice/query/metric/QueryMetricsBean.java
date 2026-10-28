@@ -38,7 +38,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -57,7 +56,9 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.query.runner.QueryMetricUpdater;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.config.QueryMetricsWriterProperties;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -71,23 +72,21 @@ import datawave.webservice.query.exception.QueryException;
 @DependsOn("QueryMetricsWriter")
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
-public class QueryMetricsBean {
+public class QueryMetricsBean implements QueryMetricUpdater {
 
     private static final Logger log = Logger.getLogger(QueryMetricsBean.class);
     @Resource
     private EJBContext ctx;
     @Inject
+    @SpringBean
     private RemoteQueryMetricService remoteQueryMetricService;
     @Inject
     private QueryMetricHandler<? extends BaseQueryMetric> queryHandler;
     @Inject
     private QueryGeometryHandler queryGeometryHandler;
     @Inject
-    @ConfigProperty(name = "dw.basemaps", defaultValue = "{}")
-    private String basemaps;
-    @Inject
-    @SpringBean(name = "QueryMetricsWriterConfiguration", refreshable = true)
-    private QueryMetricsWriterConfiguration queryMetricsWriterConfiguration;
+    @SpringBean
+    private QueryMetricsWriterProperties queryMetricsWriterProperties;
     @Inject
     private QueryMetricsWriter queryMetricsWriter;
 
@@ -122,7 +121,7 @@ public class QueryMetricsBean {
      * Used from HudBean to 1) ensure no redirect 2) return BaseQueryMetricListResponse
      */
     public BaseQueryMetricListResponse query(String id) {
-        if (queryMetricsWriterConfiguration.getUseRemoteService()) {
+        if (queryMetricsWriterProperties.getUseRemoteService()) {
             return remoteQueryMetricService.id(id);
         } else {
             try {
@@ -153,7 +152,7 @@ public class QueryMetricsBean {
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public Object query(@PathParam("id") @Required("id") String id, @Context HttpServletRequest request, @Context UriInfo uriInfo)
                     throws TextParseException, URISyntaxException {
-        if (queryMetricsWriterConfiguration.getUseRemoteService() || isHtmlResponse(request)) {
+        if (queryMetricsWriterProperties.getUseRemoteService() || isHtmlResponse(request)) {
             return sendRedirect(String.format(ID_METRIC_SUFFIX, id), uriInfo);
         } else {
             // Find out who/what called this method
@@ -174,7 +173,7 @@ public class QueryMetricsBean {
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public Object map(@PathParam("id") @Required("id") String id, @Context HttpServletRequest request, @Context UriInfo uriInfo)
                     throws TextParseException, URISyntaxException {
-        if (queryMetricsWriterConfiguration.getUseRemoteService() || isHtmlResponse(request)) {
+        if (queryMetricsWriterProperties.getUseRemoteService() || isHtmlResponse(request)) {
             return sendRedirect(String.format(MAP_METRIC_SUFFIX, id), uriInfo);
         } else {
             // Find out who/what called this method
@@ -224,7 +223,7 @@ public class QueryMetricsBean {
     public Object getQueryMetricsSummary(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
                     @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end, @Context HttpServletRequest request,
                     @Context UriInfo uriInfo) throws TextParseException, URISyntaxException {
-        if (queryMetricsWriterConfiguration.getUseRemoteService() || isHtmlResponse(request)) {
+        if (queryMetricsWriterProperties.getUseRemoteService() || isHtmlResponse(request)) {
             return sendRedirect(SUMMARY_ALL_SUFFIX, uriInfo);
         } else {
             return queryMetricsSummary(begin, end, false);
@@ -309,7 +308,7 @@ public class QueryMetricsBean {
     public Object getQueryMetricsUserSummary(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
                     @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end, @Context HttpServletRequest request,
                     @Context UriInfo uriInfo) throws TextParseException, URISyntaxException {
-        if (queryMetricsWriterConfiguration.getUseRemoteService() || isHtmlResponse(request)) {
+        if (queryMetricsWriterProperties.getUseRemoteService() || isHtmlResponse(request)) {
             return sendRedirect(SUMMARY_USER_SUFFIX, uriInfo);
         } else {
             return queryMetricsSummary(begin, end, true);

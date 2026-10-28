@@ -44,12 +44,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.QueryMetric;
+import datawave.query.runner.RunningQuery;
 import datawave.security.util.DnProperties;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor.QueryCall;
 import datawave.webservice.query.metric.QueryMetricsBean;
-import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;
 
 @ExtendWith(MockitoExtension.class)

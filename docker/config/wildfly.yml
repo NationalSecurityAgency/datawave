@@ -1,0 +1,323 @@
+server:
+  ssl:
+    client-auth: need
+    key-store-type: PKCS12
+    key-store: '${pki.dir}/testServer.p12'
+    key-store-password: 'ChangeIt'
+    trust-store-type: JKS
+    trust-store: '${pki.dir}/testKeystore.jks'
+    trust-store-password: 'ChangeIt'
+
+logging:
+  level:
+    datawave: info
+    org.springframework: info
+
+accumulo:
+  zookeepers: 'localhost:2181'
+  instance: 'accumulo'
+  # override for where accumulo.instanceName is used
+  instanceName: '${accumulo.instance}'
+  username: 'root'
+  password: 'secret'
+
+query:
+  page:
+    short-circuit:
+      minutes: 55
+    size:
+      default: 10
+      max: 10000
+      short-circuit:
+        minutes: 30
+    byte:
+      trigger: 0
+  max-call-time:
+    minutes: 60
+  expiration:
+    minutes: 15
+    
+system-name: dev
+
+datawave:
+  active-implementation:
+    # can be referenced by simple class name or fully qualified class name
+    audit-service: NoOpAuditor
+    datawave-user-service: RemoteDatawaveUserService
+    metrics-reporter-factory: TimelyMetricsReporterFactory
+  atom:
+    system-name: ${system-name}
+    table-name: datawave.atom
+    external-host-name: localhost
+    external-port: 8443
+    connection-pool-name: WAREHOUSE
+
+  cachedresults:
+    hdfs-uri: 'hdfs://localhost:8020/'
+    export-dir: '/CachedResults'
+    rows-per-batch: 10
+    days-to-live: 1
+  configuration:
+    spring:
+      # if false, then the cdi.bean.context property will be used to find the XML file (default beanRefContext.xml)
+      # to construct the application context and these datawave.configuration.spring properties will be ignored
+      configure-from-properties: true
+      use-bootstrap-context: false
+      ignore-unresolvable-placeholders: false
+      # formatted-date is added to the property sources by SpringCDIExtension and can be used in yml property files
+      debug-dir: "${java.io.tmpdir}/datawave-spring-debug-${formatted-date:random.uuid}"
+      scan-base-packages:
+      sources:
+        - "classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml"
+        - "classpath*:datawave/annotation/AnnotationManagerFactory.xml"
+        - "classpath*:datawave/atom/Atom.xml"
+        - "classpath*:datawave/marking/MarkingFunctionsContext.xml"
+        - "classpath*:datawave/metadata/MetadataHelperContext.xml"
+        - "classpath*:datawave/metadata/MetadataHelperCacheListenerContext.xml"
+        - "classpath*:datawave/model/Model.xml"
+        - "classpath*:datawave/modification/ModificationServices.xml"
+        - "classpath*:datawave/query/CachedResults*.xml"
+        - "classpath*:datawave/query/QueryExpiration.xml"
+        - "classpath*:datawave/query/QueryLimiterFactory.xml"
+        - "classpath*:datawave/query/QueryMetrics.xml"
+        - "classpath*:datawave/query/*QueryLogicFactory.xml"
+        - "classpath*:datawave/security/SecurityProducer.xml"
+        - "classpath*:datawave/security/TestDatawaveUserServiceConfiguration.xml"
+        - "classpath*:datawave/modification/ModificationServices.xml"
+        - "classpath*:datawave/AccumuloConnectionFactory.xml"
+        - "classpath*:datawave/DropwizardMetrics.xml"
+        - "classpath*:datawave/RemoteServices.xml"
+        - "classpath*:org/apache/accumulo/operations/LookupBean.xml"
+        - "classpath*:CacheContext.xml"
+  connection:
+    factory:
+      default-pool: "WAREHOUSE"
+      pools:
+        WAREHOUSE:
+          zookeepers: ${accumulo.zookeepers}
+          instance: ${accumulo.instance}
+          username: ${accumulo.username}
+          password: ${accumulo.password}
+          low-priority-pool-size: 25
+          normal-priority-pool-size: 50
+          high-priority-pool-size: 100
+          admin-priority-pool-size: 200
+        METRICS:
+          zookeepers: ${accumulo.zookeepers}
+          instance: ${accumulo.instance}
+          username: ${accumulo.username}
+          password: ${accumulo.password}
+          low-priority-pool-size: 25
+          normal-priority-pool-size: 50
+          high-priority-pool-size: 100
+          admin-priority-pool-size: 200
+  query:
+    executor:
+      status:
+        cache:
+          enabled: false
+    expiration:
+      minutes: ${query.expiration.minutes}
+      call-timeout: ${query.max-call-time.minutes}
+      short-circuit-check-time: ${query.page.size.short-circuit.minutes}
+      short-circuit-timeout: ${query.page.short-circuit.minutes}
+    logic:
+      factory:
+        enabled: true
+        import-resources: false
+      logics:
+        RemoteEventQuery:
+          table-name: ${warehouse.tables.shard.name}
+          max-results: -1
+          audit-type: "NONE"
+          logic-description: "Retrieve sharded events/documents, leveraging the global index tables as needed"
+    mapreduce:
+      enabled: false
+    metric:
+      system-name: ${system-name}
+      handler:
+        zookeepers: ${accumulo.zookeepers}
+        instance: ${accumulo.instance}
+        username: ${accumulo.username}
+        password: ${accumulo.password}
+        map-store-write-threads: 1
+        num-shards: 10
+        field-length-threshold: 4049
+        shard-table-name: datawave.queryMetrics_s
+        index-table-name: datawave.queryMetrics_i
+        date-index-table-name: datawave.queryMetrics_di
+        reverse-index-table-name: datawave.queryMetrics_r
+        metadata-table-name: datawave.queryMetrics_m
+        metadata-default-auths: PUBLIC
+        record-writer-max-memory: 10000000
+        record-writer-max-latency: 60000
+        record-writer-num-threads: 4
+        query-visibility: PUBLIC
+        default-metric-visibility: PUBLIC
+        base-maps: "{\
+          'Mapbox Streets': L.tileLayer( \
+              'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', \
+              { \
+                  maxZoom: 18, \
+                  id: 'mapbox.streets', \
+                  accessToken: 'your.mapbox.access.token' \
+              }), \
+          'Mapbox Satellite': L.tileLayer( \
+              'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', \
+              { \
+                  maxZoom: 18, \
+                  id: 'mapbox.satellite', \
+                  accessToken: 'your.mapbox.access.token' \
+              }) \
+          }"
+        query-pool: "pool1"
+        indexed-fields: [AUTHORIZATIONS,BEGIN_DATE,CREATE_CALL_TIME,CREATE_DATE,DOC_RANGES,ELAPSED_TIME,END_DATE,ERROR_CODE,ERROR_MESSAGE,FI_RANGES,HOST,LIFECYCLE,NEGATIVE_SELECTORS,NEXT_COUNT,NUM_PAGES,NUM_RESULTS,NUM_UPDATES,PARAMETERS,POSITIVE_SELECTORS,PROXY_SERVERS,QUERY,QUERY_ID,QUERY_LOGIC,QUERY_NAME,QUERY_TYPE,SEEK_COUNT,SETUP_TIME,SOURCE_COUNT,USER]
+        reverse-indexed-fields: [ERROR_CODE,ERROR_MESSAGE,HOST,NEGATIVE_SELECTORS,PARAMETERS,POSITIVE_SELECTORS,PROXY_SERVERS,QUERY,QUERY_ID,QUERY_LOGIC,QUERY_NAME,QUERY_TYPE,USER]
+        numeric-fields: [CREATE_CALL_TIME,ELAPSED_TIME,NUM_PAGES,NUM_RESULTS,NUM_UPDATES,SETUP_TIME]
+      writer:
+        batch-size: 100
+        confirm-ack-timeout-millis: 30000
+        max-queue-size: 250000
+        max-latency-ms: 5000
+        max-shutdown-ms: 30000
+        remote-processor-threads: 4
+        use-remote-service: false
+      timely:
+        enabled: false
+        host: "localhost"
+        port: 4245
+        metric-field-tags:
+          - "USER"
+          - "HOST"
+          - "QUERY_ID"
+          - "QUERY_LOGIC"
+    storage:
+      cache:
+        enabled: false
+  metric:
+    reporter:
+      host: "localhost"
+      port: 54321
+      report:
+        interval:
+          value: 60
+          units: "SECONDS"
+  model:
+    system-name: ${system-name}
+    table-name: ${warehouse.tables.metadata.name}
+    pool-name: ${datawave.connection.factory.defaultPool}
+  modification:
+    data:
+      table-name: ${warehouse.tables.metadata.name}
+      pool-name: ${datawave.connection.factory.defaultPool}
+    handlers:
+      requires-audit: false
+      authorized-roles:
+        - "AuthorizedUser"
+      event-table-name: ${warehouse.tables.shard.name}
+      metadata-table-name: ${warehouse.tables.metadata.name}
+      index-table-name: ${warehouse.tables.index.name}
+      reverse-index-table-name: ${warehouse.tables.reverseIndex.name}
+      security-marking-exempt-fields:
+        - "exemptField1"
+      index-only-map:
+        key1: "value1"
+      index-only-suffixes:
+        - "suffix1"
+      content-fields:
+        - "contentField1"
+  remote:
+    executor: &remote-executor-defaults
+      core-pool-size: 10
+      max-pool-size: 100
+      keep-alive-seconds: 60
+      queue-size: 100
+    auditor:
+      executor:
+        <<: *remote-executor-defaults
+      enabled: false
+      service-scheme: "https"
+      service-host: "audit"
+      service-port: 9043
+      connect-timeout: -1
+      socket-timeout: -1
+      retry-count: 5
+      unavailable-retry-count: 15
+      unavailable-retry-delay: 2000
+    accumulo:
+      executor:
+        <<: *remote-executor-defaults
+      service-scheme: "https"
+      service-host: "localhost"
+      service-port: 9143
+      connect-timeout: -1
+      socket-timeout: -1
+      retry-count: 5
+      unavailable-retry-count: 15
+      unavailable-retry-delay: 2000
+    dictionary:
+      executor:
+        <<: *remote-executor-defaults
+      use-configured-uri-for-redirect: true
+      service-scheme: "https"
+      service-host: "localhost"
+      service-port: 8643
+      connect-timeout: -1
+      socket-timeout: -1
+      retry-count: 5
+      unavailable-retry-count: 15
+      unavailable-retry-delay: 2000
+    query:
+      executor:
+        <<: *remote-executor-defaults
+      services:
+        RemoteQueryService:
+          scheme: "https"
+          host: "query"
+          port: 8443
+          uri: "/query/v1/"
+    query-metric:
+      executor:
+        <<: *remote-executor-defaults
+      use-configured-uri-for-redirect: true
+      service-scheme: "https"
+      service-host: "localhost"
+      service-port: 8543
+      connect-timeout: -1
+      socket-timeout: -1
+      retry-count: 5
+      unavailable-retry-count: 15
+      unavailable-retry-delay: 2000
+    user-service:
+      executor:
+        <<: *remote-executor-defaults
+      service-scheme: "https"
+      service-host: "localhost"
+      service-port: 8343
+      connect-timeout: -1
+      socket-timeout: -1
+      retry-count: 5
+      unavailable-retry-count: 15
+      unavailable-retry-delay: 2000
+    user-operations:
+      executor:
+        <<: *remote-executor-defaults
+      services:
+        RemoteUserOperations:
+          scheme: "https"
+          host: "localhost"
+          port: 8443
+          uri: "/DataWave/Security/User/"
+  table:
+    cache:
+      enabled: true
+      zookeepers: ${accumulo.zookeepers}
+      pool-name: ${datawave.connection.factory.defaultPool}
+      reload-interval: 86400000
+      eviction-reaper-interval-in-seconds: 30
+      num-locks: 300
+      max-retries: 10
+      table-names:
+        - datawave.metadata
+        - datawave.error_m
+        - datawave.queryMetrics_m

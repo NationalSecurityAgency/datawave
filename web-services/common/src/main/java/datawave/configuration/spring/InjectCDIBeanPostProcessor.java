@@ -16,11 +16,6 @@ public class InjectCDIBeanPostProcessor implements BeanPostProcessor {
     private Logger log = LoggerFactory.getLogger(getClass());
 
     @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-        return bean;
-    }
-
-    @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         Object beanToInject = bean;
         if (BeanProvider.isActive()) {
@@ -50,6 +45,11 @@ public class InjectCDIBeanPostProcessor implements BeanPostProcessor {
         } else {
             log.warn("BeanProvider not initialized yet. Non-prototype beans will not have dependency injection performed on them.");
         }
+        return bean;
+    }
+
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         return bean;
     }
 }

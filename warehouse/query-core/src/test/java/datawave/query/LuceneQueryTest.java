@@ -273,7 +273,7 @@ public class LuceneQueryTest extends AbstractFunctionalQueryJUnit5 {
 
         LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
 
-        for (JexlQueryFunction queryFunction : parser.getAllowedFunctions()) {
+        for (JexlQueryFunction queryFunction : parser.getDefinedFunctions()) {
             if (queryFunction instanceof EvaluationOnly) {
                 ((EvaluationOnly) queryFunction).setParser(parser);
                 break;

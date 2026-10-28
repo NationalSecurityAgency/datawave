@@ -49,8 +49,8 @@
 		<value>user</value>
 	</util:set>
 
-	<bean id="queryLogicFactoryConfiguration" scope="prototype" class="datawave.webservice.query.logic.QueryLogicFactoryConfiguration">
-		<property name="logicMap" ref="IdentityLogicMap"/>
+	<bean id="queryLogicFactoryProperties" scope="prototype" class="datawave.microservice.query.logic.config.QueryLogicFactoryProperties">
+		<property name="queryLogicsByName" ref="IdentityLogicMap"/>
 		<property name="maxPageSize" value="12345"/>
 		<property name="pageByteTrigger" value="123456"/>
 	</bean>

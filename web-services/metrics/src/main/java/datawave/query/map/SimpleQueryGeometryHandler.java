@@ -11,9 +11,9 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.log4j.Logger;
 
+import datawave.configuration.spring.SpringBean;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.map.QueryGeometryHandler;
 import datawave.microservice.query.QueryImpl;
@@ -25,6 +25,7 @@ import datawave.query.jexl.visitors.GeoFeatureVisitor;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.metrics.ShardTableQueryMetricHandler;
+import datawave.webservice.config.QueryMetricHandlerProperties;
 
 /**
  * This class is used to extract query geometries from the query metrics in an effort to provide those geometries for subsequent display to the user.
@@ -39,14 +40,14 @@ public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
     private LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
 
     @Inject
-    @ConfigProperty(name = "dw.basemaps", defaultValue = "{}")
-    private String basemaps;
+    @SpringBean
+    private QueryMetricHandlerProperties queryMetricHandlerProperties;
 
     @Override
     public QueryGeometryResponse getQueryGeometryResponse(String id, List<? extends BaseQueryMetric> metrics) {
         QueryGeometryResponse response = new QueryGeometryResponse();
         response.setQueryId(id);
-        response.setBasemaps(basemaps);
+        response.setBasemaps(queryMetricHandlerProperties.getBaseMaps());
         if (metrics != null) {
             Set<QueryGeometry> queryGeometries = new LinkedHashSet<>();
             for (BaseQueryMetric metric : metrics) {
@@ -88,5 +89,9 @@ public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
             log.trace(new Exception("Unable to parse the geo features"));
         }
         return false;
+    }
+
+    public void setQueryMetricHandlerProperties(QueryMetricHandlerProperties queryMetricHandlerProperties) {
+        this.queryMetricHandlerProperties = queryMetricHandlerProperties;
     }
 }

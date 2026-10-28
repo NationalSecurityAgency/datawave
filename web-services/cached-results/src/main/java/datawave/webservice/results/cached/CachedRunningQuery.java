@@ -43,8 +43,8 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.query.Query;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.query.runner.AbstractRunningQuery;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.QueryException;
@@ -78,7 +78,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     };
 
     private transient position currentRow = position.BEFORE_FIRST;
-    private static QueryLogicFactory queryFactory = null;
+    private static QueryLogicFactory queryLogicFactory = null;
 
     // fields below are persisted
 
@@ -1239,7 +1239,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     }
                     if (crq.queryLogicName != null) {
                         try {
-                            crq.queryLogic = queryFactory.getQueryLogic(crq.queryLogicName, (DatawavePrincipal) principal);
+                            crq.queryLogic = queryLogicFactory.getQueryLogic(crq.queryLogicName, (DatawavePrincipal) principal);
                         } catch (IllegalArgumentException | CloneNotSupportedException e) {
                             log.error(e.getMessage(), e);
                         }
@@ -1272,8 +1272,8 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         this.statusMessage = statusMessage;
     }
 
-    public static void setQueryFactory(QueryLogicFactory queryFactory) {
-        CachedRunningQuery.queryFactory = queryFactory;
+    public static void setQueryLogicFactory(QueryLogicFactory queryLogicFactory) {
+        CachedRunningQuery.queryLogicFactory = queryLogicFactory;
     }
 
     public void setView(String view) {

@@ -21,8 +21,9 @@ import org.apache.deltaspike.core.api.jmx.MBean;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.core.query.logic.QueryLogic;
+import datawave.query.runner.AbstractRunningQuery;
+import datawave.query.runner.RunningQuery;
 import datawave.webservice.query.runner.QueryExecutorBean;
-import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.VoidResponse;
 
 @Path("/Query/Cache")

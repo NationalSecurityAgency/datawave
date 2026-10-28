@@ -1,0 +1,78 @@
+accumulo:
+  zookeepers: '${ZOOKEEPER_HOST:localhost}:2181'
+  instance: 'SuperStar'
+  # override for where accumulo.instanceName is used
+  instanceName: ${accumulo.instance}
+  username: 'root'
+  password: 'secret'
+
+datawave:
+  active-implementation:
+    # can be referenced by fully qualified class name or by the simple class name
+    audit-service: NoOpAuditor
+    datawave-user-service: TestDatawaveUserService
+    metrics-reporter-factory: NoOpMetricsReporterFactory
+    test-datawave-user-service-delegate: RemoteDatawaveUserService
+
+  remote:
+    auditor:
+      service-host: "localhost"
+      service-port: 9043
+    accumulo:
+      service-host: "localhost"
+      service-port: 9143
+    dictionary:
+      service-host: "localhost"
+      service-port: 8643
+    query-metric:
+      service-host: "localhost"
+      service-port: 8543
+    user-service:
+      service-host: "localhost"
+      service-port: 8343
+
+  security:
+    test-datawave-user-service:
+      system-authorizations: "PVT,PUB"
+      test-users:
+        - subject-dn: "cn=test a. user, ou=my department, o=my company, st=some-state, c=us"
+          issuer-dn: "cn=test ca, ou=my department, o=my company, st=some-state, c=us"
+          user-type: USER
+          roles:
+            - "PRIVATE"
+            - "PUBLIC"
+            - "Administrator"
+            - "AuthorizedUser"
+            - "JBossAdministrator"
+          auths:
+            - "PVT"
+            - "PUB"
+          role-to-auth-mapping:
+            "PRIVATE": "PVT"
+            "PUBLIC": "PUB"
+          # only set for testing purposes, otherwise the creationTime will be set to the current time when the DatawaveUser is created
+          creation-time: -1
+          # only set for testing purposes, otherwise the expirationTime will be set to 24 hours after the creationTime when the DatawaveUser is created
+          expiration-time: 9223372036854775807
+
+        - subject-dn: "cn=testserver.example.com, ou=d009, o=my company, st=some-state, c=us"
+          issuer-dn: "cn=test ca, ou=my department, o=my company, st=some-state, c=us"
+          user-type: SERVER
+          roles:
+            - "PRIVATE"
+            - "PUBLIC"
+            - "AuthorizedServer"
+          auths:
+            - "PVT"
+            - "PUB"
+          role-to-auth-mapping:
+            "PRIVATE": "PVT"
+            "PUBLIC": "PUB"
+          # only set for testing purposes, otherwise the creationTime will be set to the current time when the DatawaveUser is created
+          creation-time: -1
+          # only set for testing purposes, otherwise the expirationTime will be set to 24 hours after the creationTime when the DatawaveUser is created
+          expiration-time: 9223372036854775807
+
+  table:
+    cache:
+      enabled: false

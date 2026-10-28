@@ -40,3 +40,46 @@ We also override the library versions of several modules that are part of the co
 - [org.slf4j](src/main/wildfly/overlay/modules/system/layers/base/org/slf4j)
 - [org.slf4j.impl](src/main/wildfly/overlay/modules/system/layers/base/org/slf4j/impl)
 - [org.apache.commons.lang3](src/main/wildfly/overlay/modules/system/layers/base/org/apache/commons/lang3)
+
+### Spring Boot Configuration
+
+The Datawave web service uses a combination of Spring and Spring Boot to configure the application context. The configuration is done through a combination of XML configuration files and YML property files. Beans that are part of the application context can be defined either in the XML configuration files or through Spring Boot's component scanning. The XML configuration files are generally located on the classpath, primarily in the [dtawave-ws-deploy-configuration resources](../configuration/src/main/resources) directory and in the [spring-boot-starter-datawave-query resources](../../../microservices/starters/query/src/main/resources) directory. Reference YML property files are located in the [docker/config](../../../docker/config) directory but are normally retrieved from a spring configuration server.
+
+The Spring application context is initialized through the `SpringCDIExtension` class, which is a CDI extension that is loaded by the Wildfly container. The `SpringCDIExtension` class is responsible for initializing the Spring application context and loading the XML configuration files and YML property files. The `SpringCDIExtension` class also provides a mechanism for reporting the configuration of the application context, including the configured and loaded XML configuration files, YML property files, a property report that list all property names, values, and source YML, and the names of all beans that are part of the application context.
+
+THe SpringCDIExtension class first creates a bootstrap context which loads YML files from the classpath, and either the configuration server or the directories specified in the `spring.config.additional-location` property. The SpringCDIExtension class then creates a simple AnnotationConfigApplicationContext taht searches the datawave.configuration.spring package. If datawave.configuration.spring.configure-from-properties=true (supplied via YML or system property override), then the SpringContextPropties bean will be loaded from YML otherwise we will look for a beanRefContext.xml file on the classpath to load the SpringContextProperties bean. 
+
+The SpringContextProperties bean is used to configure an AnnotationConfigApplicationContext and a ClasspathXmlApplicationContext. The annotation context is used to load beans that are defined through component scanning of the packages specified in SpringContextProperties's scan-base-packages property and the XML context is used to load beans that are defined in XML configuration files which are specified in SpringContextProperties's sources property. The annotation context is a child of the bootstrap context and the XML context is a child of the annotation context. Child contexts can access beans and properties of their parent contexts but not vice versa.
+
+The spring.config.name property is used to specify the name of the YML property file(s) to use for configuration. The default for the datawave webserver is `application, wildfly` which means that whether you are using the configuration server or a directory for your YML property files, the base filenames `application.yml` and `wildfly.yml` will be used for configuration. The property spring.active.profiles is used to specify the active Spring profile(s) to use and will cause any matching YML property files to also be added to the application context.  The query profile is added in [datawave-ws-common bootstrap.yml](../../common/src/main/resuorces/config/bootstrap.yml) via the spring.profiles.include property which forces that profile to always be included. For -Dspring.active.profiles=dev,federation the following YML property files (if found) will be used for configuration:
+
+- bootstrap.yml
+- application.yml 
+- wildfly.yml, 
+- bootstrap-query.yml
+- bootstrap-dev.yml
+- bootstrap-federation.yml
+- application-query.yml
+- application-dev.yml
+- application-federation.yml
+- wildfly-query.yml
+- wildfly-dev.yml
+- wildfly-federation.yml
+
+This list is in increasing precedence from top to bottom. Properties defined in YML files lower in the list will override properties defined in YML files higher in the list. i.e. properties in the wildfly- files will override properties in the application- files which will override properties in the bootstrap- files.
+
+Spring properties can be defined in YML and can also be overridden on the command line
+
+- `spring.profiles.active` - The active Spring profile(s) to use. This can be a comma-separated list of profiles.
+- `spring.cloud.config.enabled` - Whether to enable the Spring Cloud Config client. The default is `true`.
+- `spring.config.additional-location` - Additional locations to search for configuration files. This can be a comma-separated list of locations. The default is empty.
+
+To start the Datawave web service without using the configuration server and instead use YML files at a file path that works for your environment, set the following properties on the command line
+
+- `-Dspring.cloud.config.enabled=false -Dspring.config.additional-location=file:/data/git/workspaces/datawave/docker/config/`
+
+To start the Datawave web service without starting other microservices (authorization, cache, audit, querymetrics), ensure that the dev profile is included in -Dspring.profiles.active and that that you have the following set in wildfly-dev.yml or another YML file that is included
+
+- `datawave.active-implementation.datawave-user-service=TestDatawaveUserService` (do not use the remote user service, configure test users in wildfly-dev.yml)
+- `datawave.active-implementation.audit-service=NoOpAuditor` (do not use the remote audit service)
+- `datawave.query.metric.writer.use-remote-service=false` (do not use the remote query metrics service)

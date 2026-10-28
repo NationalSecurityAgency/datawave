@@ -34,7 +34,8 @@ import datawave.webservice.result.QueryLogicResponse;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
+@ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", "federation",
+        RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 @ContextConfiguration(classes = {QueryService.class})
 public class QueryServiceListTest extends AbstractQueryServiceTest {
 
@@ -410,16 +411,22 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
 
         QueryLogicResponse qlResponse = response.getBody();
 
-        String[] expectedQueryLogics = new String[] {"AltEventQuery", "ContentQuery", "CountQuery", "DiscoveryQuery", "EdgeEventQuery", "EdgeQuery",
-                "ErrorCountQuery", "ErrorDiscoveryQuery", "ErrorEventQuery", "ErrorFieldIndexCountQuery", "EventQuery", "FacetedQuery", "FieldIndexCountQuery",
-                "HitHighlights", "IndexStatsQuery", "LuceneUUIDEventQuery", "QueryMetricsQuery", "InternalQueryMetricsQuery", "TermFrequencyQuery",
-                "FederatedEventQuery"};
+        List<String> expectedQueryLogics = Arrays.asList("AltEventQuery", "ContentQuery", "CountQuery", "DiscoveryQuery", "EdgeEventQuery", "EdgeQuery",
+                        "ErrorCountQuery", "ErrorDiscoveryQuery", "ErrorEventQuery", "ErrorFieldIndexCountQuery", "EventQuery", "FacetedQuery",
+                        "FieldIndexCountQuery", "HitHighlights", "IndexStatsQuery", "LuceneUUIDEventQuery", "QueryMetricsQuery", "InternalQueryMetricsQuery",
+                        "TermFrequencyQuery", "RemoteEventQuery");
 
-        Assertions.assertEquals(expectedQueryLogics.length, qlResponse.getQueryLogicList().size());
+        List<String> missingQueryLogics = expectedQueryLogics.stream()
+                        .filter(ql -> !qlResponse.getQueryLogicList().stream().map(QueryLogicDescription::getName).collect(Collectors.toList()).contains(ql))
+                        .collect(Collectors.toList());
+        List<String> extraQueryLogics = qlResponse.getQueryLogicList().stream().map(QueryLogicDescription::getName)
+                        .filter(ql -> !expectedQueryLogics.contains(ql)).collect(Collectors.toList());
+        String message = "Missing query logics: " + missingQueryLogics + ", Extra query logics: " + extraQueryLogics;
+        Assertions.assertEquals(expectedQueryLogics.size(), qlResponse.getQueryLogicList().size(), message);
 
         List<String> qlNames = qlResponse.getQueryLogicList().stream().map(QueryLogicDescription::getName).sorted().collect(Collectors.toList());
 
-        qlNames.removeAll(Arrays.asList(expectedQueryLogics));
+        qlNames.removeAll(expectedQueryLogics);
 
         Assertions.assertTrue(qlNames.isEmpty());
     }

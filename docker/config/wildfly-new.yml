@@ -1,0 +1,29 @@
+datawave:
+  configuration:
+    spring:
+      use-bootstrap-context: true
+      scan-base-packages:
+        - "datawave.microservice.config.marking"
+        - "datawave.microservice.metadata.config"
+        - "datawave.microservice.query.edge.config"
+        - "datawave.microservice.query.logic"
+        - "datawave.webservice.config"
+      sources:
+        - "classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml"
+        - "classpath*:datawave-new/annotation/AnnotationManagerFactory.xml"
+        - "classpath*:datawave-new/marking/MarkingFunctionsContext.xml"
+        - "classpath*:datawave-new/metadata/MetadataHelperContext.xml"
+        - "classpath*:datawave-new/metadata/MetadataHelperCacheListenerContext.xml"
+        - "classpath*:datawave-new/modification/ModificationServices.xml"
+        - "classpath*:datawave-new/query/CachedResults*.xml"
+        - "classpath*:datawave-new/query/QueryExpiration.xml"
+        - "classpath*:datawave-new/query/QueryLimiterFactory.xml"
+        - "classpath*:datawave-new/query/QueryMetricsWriter.xml"
+        - "classpath*:datawave-new/security/TestDatawaveUserServiceConfiguration.xml"
+        - "classpath*:datawave-new/RemoteServices.xml"
+        - "classpath*:org/apache/accumulo/operations/LookupBean.xml"
+        - "classpath*:CacheContext.xml"
+        - "classpath*:QueryLogicFactory.xml"
+        - "classpath*:EdgeQueryLogicFactory.xml"
+        - "classpath*:KeywordExtractionQueryLogicFactory.xml"
+        - "classpath*:SSDeepQueryLogicFactory.xml"

@@ -50,8 +50,8 @@ spring:
   config.activate.on-profile: 'federatedAuthorizationServiceTest'
 
 datawave:
-  authorization:
-    federation:
+  remote:
+    user-operations:
       services:
-        FederatedAuthorizationService:
-          federatedAuthorizationUri: "https://authorization:8443/authorization/v2"
+        RemoteUserOperations:
+          authorizationServiceUri: "https://authorization:8443/authorization/v2"

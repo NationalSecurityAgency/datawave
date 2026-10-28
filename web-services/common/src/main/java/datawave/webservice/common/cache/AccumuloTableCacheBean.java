@@ -1,8 +1,9 @@
 package datawave.webservice.common.cache;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -16,7 +17,6 @@ import javax.ejb.LockType;
 import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
-import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.jms.Destination;
@@ -26,16 +26,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.annotation.Required;
+import datawave.configuration.spring.SpringBean;
 import datawave.core.common.cache.AccumuloTableCache;
-import datawave.core.common.cache.AccumuloTableCacheImpl;
-import datawave.core.common.cache.AccumuloTableCacheProperties;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.AccumuloTableCacheStatus;
 import datawave.core.common.result.TableCacheDescription;
@@ -68,61 +66,26 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
     @Resource(mappedName = "java:/topic/AccumuloTableCache")
     private Destination cacheTopic;
 
-    @Resource
-    private ManagedExecutorService executorService;
-
     @Inject
-    @ConfigProperty(name = "dw.warehouse.zookeepers")
-    private String zookeepers = null;
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-    @Inject
-    @ConfigProperty(name = "dw.cache.tableNames", defaultValue = "DatawaveMetadata,QueryMetrics_m,errorMetadata")
-    private List<String> tableNames;
-    @Inject
-    @ConfigProperty(name = "dw.cache.pool", defaultValue = "WAREHOUSE")
-    private String poolName;
-    @Inject
-    @ConfigProperty(name = "dw.cache.reloadInterval", defaultValue = "86400000")
-    private long reloadInterval;
-    @Inject
-    @ConfigProperty(name = "dw.cacheCoordinator.evictionReaperIntervalSeconds", defaultValue = "30")
-    private int evictionReaperIntervalInSeconds;
-    @Inject
-    @ConfigProperty(name = "dw.cacheCoordinator.numLocks", defaultValue = "300")
-    private int numLocks;
-    @Inject
-    @ConfigProperty(name = "dw.cacheCoordinator.maxRetries", defaultValue = "10")
-    private int maxRetries;
-
-    private AccumuloTableCacheImpl tableCache;
+    @SpringBean
+    private Optional<AccumuloTableCache> accumuloTableCache;
 
     public AccumuloTableCacheBean() {}
 
-    @PostConstruct
-    private void setup() {
-        AccumuloTableCacheProperties config = new AccumuloTableCacheProperties().withTableNames(tableNames).withPoolName(poolName).withNumLocks(numLocks)
-                        .withZookeepers(zookeepers).withMaxRetries(maxRetries).withReloadInterval(reloadInterval)
-                        .withEvictionReaperIntervalInSeconds(evictionReaperIntervalInSeconds);
-
-        log.debug("Called AccumuloTableCacheBean and accumuloTableCacheConfiguration = " + config);
-
-        tableCache = new AccumuloTableCacheImpl(executorService, config);
-    }
-
     @Override
     public void setConnectionFactory(AccumuloConnectionFactory connectionFactory) {
-        tableCache.setConnectionFactory(connectionFactory);
+        accumuloTableCache.ifPresent(tc -> tc.setConnectionFactory(connectionFactory));
     }
 
     @Override
     public InMemoryInstance getInstance() {
-        return tableCache.getInstance();
+        return accumuloTableCache.map(AccumuloTableCache::getInstance).orElse(null);
     }
 
     @Schedule(hour = "*", minute = "*", second = "1", persistent = false)
     @Override
     public void submitReloadTasks() {
-        tableCache.submitReloadTasks();
+        accumuloTableCache.ifPresent(AccumuloTableCache::submitReloadTasks);
     }
 
     @PreDestroy
@@ -132,8 +95,16 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
 
     @Override
     public void close() {
-        tableCache.close();
-        tableCache = null;
+        try {
+            if (accumuloTableCache.isPresent()) {
+                accumuloTableCache.get().close();
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        } finally {
+            accumuloTableCache = Optional.empty();
+        }
     }
 
     /**
@@ -171,7 +142,7 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
 
     @Override
     public void reloadTableCache(String tableName) {
-        tableCache.reloadTableCache(tableName);
+        accumuloTableCache.ifPresent(cache -> cache.reloadTableCache(tableName));
         sendCacheReloadMessage(tableName);
     }
 
@@ -203,12 +174,12 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
     @JmxManaged
     @Override
     public boolean isAvailable() {
-        return tableCache.isAvailable();
+        return accumuloTableCache.isEmpty() || accumuloTableCache.get().isAvailable();
     }
 
     @Override
     public List<TableCacheDescription> getTableCaches() {
-        return tableCache.getTableCaches();
+        return accumuloTableCache.isEmpty() ? new ArrayList<>() : accumuloTableCache.get().getTableCaches();
     }
 
     private void sendCacheReloadMessage(String tableName) {

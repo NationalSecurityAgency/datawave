@@ -67,6 +67,7 @@ datawave:
     metric:
       system-name: "docker quick-start"
       handler:
+        useRemoteQuery: false
         zookeepers: ${warehouse-cluster.accumulo.zookeepers}
         instanceName: ${warehouse-cluster.accumulo.instanceName}
         username: ${warehouse-cluster.accumulo.username}

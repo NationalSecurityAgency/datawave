@@ -31,6 +31,7 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.composite.CompositeLogicException;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.core.query.remote.RemoteQueryService;
+import datawave.core.query.remote.RemoteQueryServiceProperties;
 import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
@@ -44,7 +45,6 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.result.GenericResponse;
 
 @Tag("IntegrationTest")
@@ -91,12 +91,15 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
     @Test
     public void unsuppressedConnectTimeoutTest() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
-        remoteHttpService.setQueryServiceHost(NON_ROUTABLE_HOST);
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
+
+        String uri = remoteQueryService.getRemoteQueryServiceProperties().getQueryServiceUri();
+        uri = uri.replace("localhost", NON_ROUTABLE_HOST);
+        remoteQueryServiceProperties.setQueryServiceUri(uri);
 
         // set a super fast connect timeout
-        remoteConfig.setConnectTimeout(100);
+        ((RemoteHttpService) remoteQueryService).getConfig().setConnectTimeout(100);
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
         testUtil.updateRoute("/DataWave/Query/" + DEFAULT_REMOTE_LOGIC + "/create", foreverHandler);
@@ -110,12 +113,15 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
     @Test
     public void suppressedConnectTimeoutTest() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
-        remoteHttpService.setQueryServiceHost(NON_ROUTABLE_HOST);
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
+
+        String uri = remoteQueryService.getRemoteQueryServiceProperties().getQueryServiceUri();
+        uri = uri.replace("localhost", NON_ROUTABLE_HOST);
+        remoteQueryServiceProperties.setQueryServiceUri(uri);
 
         // set a super fast connect timeout
-        remoteConfig.setConnectTimeout(100);
+        ((RemoteHttpService) remoteQueryService).getConfig().setConnectTimeout(100);
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
         testUtil.updateRoute("/DataWave/Query/" + DEFAULT_REMOTE_LOGIC + "/create", foreverHandler);
@@ -129,11 +135,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
     @Test
     public void unsuppressedSocketTimeoutTest() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
 
         // set a super fast connect timeout
-        remoteConfig.setSocketTimeout(100);
+        remoteQueryServiceProperties.setCreateTimeout(100);
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
         testUtil.updateRoute("/DataWave/Query/" + DEFAULT_REMOTE_LOGIC + "/create", foreverHandler);
@@ -147,11 +153,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
     @Test
     public void suppressedSocketTimeoutTest() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
 
-        // set a super fast connect timeout
-        remoteConfig.setSocketTimeout(100);
+        // only wait 100ms for the read
+        remoteQueryServiceProperties.setCreateTimeout(100);
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
         testUtil.updateRoute("/DataWave/Query/" + DEFAULT_REMOTE_LOGIC + "/create", foreverHandler);
@@ -165,11 +171,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
     @Test
     public void unsuppressedIteratorTimeoutTest() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
 
-        // set a super fast connect timeout
-        remoteConfig.setSocketTimeout(100);
+        // only wait 100ms for the read
+        remoteQueryServiceProperties.setNextTimeout(100);
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
         testUtil.updateRoute("/DataWave/Query/" + uuid + "/next", foreverHandler);
@@ -183,11 +189,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
     @Test
     public void suppressedIteratorTimeoutTest() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
 
-        // set a super fast connect timeout
-        remoteConfig.setSocketTimeout(100);
+        // only wait 100ms for the read
+        remoteQueryServiceProperties.setNextTimeout(100);
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
         testUtil.updateRoute("/DataWave/Query/" + uuid + "/next", foreverHandler);
@@ -201,11 +207,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
     @Test
     public void testCompositeRemoteWithTimeoutOnInitialize() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
 
-        // only wait 100ms for the read
-        remoteConfig.setSocketTimeout(10);
+        // only wait 10ms for the read
+        remoteQueryServiceProperties.setCreateTimeout(10);
 
         logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
@@ -236,11 +242,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     public void testCompositeRemoteWithTimeoutOnInitializePassThrough() {
         logic.setSuppressTimeout(true);
 
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
 
         // only wait 100ms for the read
-        remoteConfig.setSocketTimeout(100);
+        remoteQueryServiceProperties.setCreateTimeout(100);
 
         logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
@@ -270,11 +276,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
     @Test
     public void testCompositeRemoteWithTimeoutOnResults() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
 
         // only wait 100ms for the read
-        remoteConfig.setSocketTimeout(100);
+        remoteQueryServiceProperties.setNextTimeout(100);
 
         logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
@@ -305,11 +311,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     public void testCompositeRemoteWithTimeoutOnResultsPassThrough() {
         logic.setSuppressTimeout(true);
 
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
 
         // only wait 100ms for the read
-        remoteConfig.setSocketTimeout(100);
+        remoteQueryServiceProperties.setNextTimeout(100);
 
         logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
@@ -336,11 +342,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
     @Test
     public void testCompositeGetPlanTimeout() {
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
 
         // only wait 100ms for the read
-        remoteConfig.setSocketTimeout(100);
+        remoteQueryServiceProperties.setPlanTimeout(100);
 
         logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
@@ -371,11 +377,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     public void testCompositeGetPlanTimeoutPassThrough() {
         logic.setSuppressTimeout(true);
 
-        RemoteHttpService remoteHttpService = (RemoteHttpService) ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
-        RemoteHttpServiceConfiguration remoteConfig = remoteHttpService.getConfig();
+        RemoteQueryService remoteQueryService = ((RemoteEventQueryLogic) remoteDelegate).getRemoteQueryService();
+        RemoteQueryServiceProperties remoteQueryServiceProperties = remoteQueryService.getRemoteQueryServiceProperties();
 
         // only wait 100ms for the read
-        remoteConfig.setSocketTimeout(100);
+        remoteQueryServiceProperties.setPlanTimeout(100);
 
         logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());

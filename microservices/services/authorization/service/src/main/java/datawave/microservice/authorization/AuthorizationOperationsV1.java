@@ -54,20 +54,20 @@ public class AuthorizationOperationsV1 {
 
     protected final DnProperties dnProperties;
 
-    protected final Set<UserOperations> registeredFederatedUserOperations;
+    protected final Set<UserOperations> registeredRemoteUserOperations;
 
     protected final DatawaveUserDetailsFactory datawaveUserDetailsFactory;
 
     public AuthorizationOperationsV1(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, ApplicationContext appCtx,
                     BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, DnProperties dnProperties,
-                    Set<UserOperations> registeredFederatedUserOperations, DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
+                    Set<UserOperations> registeredRemoteUserOperations, DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
         this.tokenHandler = tokenHandler;
         this.cachedDatawaveUserService = cachedDatawaveUserService;
         this.appCtx = appCtx;
         this.busProperties = busProperties;
         this.authorizationsListSupplier = authorizationsListSupplier;
         this.dnProperties = dnProperties;
-        this.registeredFederatedUserOperations = registeredFederatedUserOperations;
+        this.registeredRemoteUserOperations = registeredRemoteUserOperations;
         this.datawaveUserDetailsFactory = datawaveUserDetailsFactory;
     }
 
@@ -93,10 +93,10 @@ public class AuthorizationOperationsV1 {
         String name = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
 
         if (federate) {
-            for (UserOperations federatedUserOperations : registeredFederatedUserOperations) {
+            for (UserOperations remoteUserOperations : registeredRemoteUserOperations) {
                 try {
-                    DatawaveUserDetails federatedUserDetails = federatedUserOperations.getRemoteUser(currentUser);
-                    currentUser = AuthorizationsUtil.mergeProxiedUserDetails(currentUser, federatedUserDetails);
+                    DatawaveUserDetails remoteUserDetails = remoteUserOperations.getRemoteUser(currentUser);
+                    currentUser = AuthorizationsUtil.mergeProxiedUserDetails(currentUser, remoteUserDetails);
                 } catch (Exception e) {
                     log.error("Failed to lookup users from remote user service", e);
                     list.addMessage("Failed to lookup user from remote service: " + e.getMessage());
@@ -125,9 +125,9 @@ public class AuthorizationOperationsV1 {
 
         // if we have any remote services configured, then flush those credentials as well
         if (federate) {
-            for (UserOperations federatedUserOperations : registeredFederatedUserOperations) {
+            for (UserOperations remoteUserOperations : registeredRemoteUserOperations) {
                 try {
-                    federatedUserOperations.flushCachedCredentials(currentUser);
+                    remoteUserOperations.flushCachedCredentials(currentUser);
                 } catch (Exception e) {
                     log.error("Failed to flush user from remote user service", e);
                     response.addMessage("Unable to flush user from remote user service");

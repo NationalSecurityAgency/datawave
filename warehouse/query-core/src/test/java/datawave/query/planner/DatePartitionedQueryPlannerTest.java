@@ -72,7 +72,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
  * Tests usage of {@link DatePartitionedQueryPlanner} in queries.
  */
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",

@@ -4,7 +4,7 @@ import javax.annotation.security.PermitAll;
 import javax.ejb.Singleton;
 import javax.inject.Inject;
 
-import datawave.configuration.spring.BeanProvider;
+import datawave.configuration.spring.SpringBean;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.cache.ElytronCacheManager;
 import datawave.security.cert.SSLStores;
@@ -18,33 +18,23 @@ import datawave.security.cert.SSLStores;
 @Singleton
 public class SecurityEJBProviderImpl implements SecurityEJBProvider {
 
+    @Inject
+    @SpringBean(name = "datawaveUserService")
     private DatawaveUserService datawaveUserService;
 
+    @Inject
+    @SpringBean
     private SSLStores sslStores;
 
     private ElytronCacheManager elytronCacheManager;
 
-    private boolean injectedBeans = false;
-
-    @Inject
-    public void setDatawaveUserService(DatawaveUserService datawaveUserService) {
-        this.datawaveUserService = datawaveUserService;
-    }
-
     @Override
     public DatawaveUserService getDatawaveUserService() {
-        injectBeans();
         return datawaveUserService;
-    }
-
-    @Inject
-    public void setSSLContextInfo(SSLStores sslStores) {
-        this.sslStores = sslStores;
     }
 
     @Override
     public SSLStores getSSLStores() {
-        injectBeans();
         return sslStores;
     }
 
@@ -55,17 +45,6 @@ public class SecurityEJBProviderImpl implements SecurityEJBProvider {
 
     @Override
     public ElytronCacheManager getElytronCacheManager() {
-        injectBeans();
         return elytronCacheManager;
-    }
-
-    /**
-     * Injects beans here if not yet injected. This is necessary when the getters are being invoked within the external Datawave Elytron module.
-     */
-    private void injectBeans() {
-        if (!injectedBeans) {
-            BeanProvider.injectFields(this);
-            injectedBeans = true;
-        }
     }
 }

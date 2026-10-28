@@ -61,7 +61,7 @@ public class CredentialsCacheBeanTest {
     public void setUp() {
         bean = new CredentialsCacheBean();
         bean.setElytronCache(elytronCacheManager);
-        bean.setCachedDatawaveUserServiceInstance(new TestInstance());
+        bean.setCachedDatawaveUserService(new TestInstance().get());
         bean.setAccumuloConnectionFactory(connectionFactory);
     }
 
@@ -74,7 +74,7 @@ public class CredentialsCacheBeanTest {
 
         @BeforeEach
         void setUp() {
-            bean.setCachedDatawaveUserServiceInstance(new TestInstance());
+            bean.setCachedDatawaveUserService(new TestInstance().get());
         }
 
         /**
@@ -143,7 +143,7 @@ public class CredentialsCacheBeanTest {
 
         @BeforeEach
         void setUp() {
-            bean.setCachedDatawaveUserServiceInstance(new TestInstance(cachedDatawaveUserService));
+            bean.setCachedDatawaveUserService(cachedDatawaveUserService);
         }
 
         @Test

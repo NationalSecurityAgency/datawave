@@ -714,8 +714,8 @@ services:
     depends_on:
       authorization:
         condition: service_healthy
-      ingest:
-        condition: service_healthy
+          #    ingest:
+          #condition: service_healthy
 
   dictionary:
     profiles:

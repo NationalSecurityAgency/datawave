@@ -11,12 +11,27 @@
     <build>
         <finalName>${project.artifactId}</finalName>
         <resources>
+            <!-- most xml files under datawave that use config server properties do not get filtered -->
+            <resource>
+                <filtering>false</filtering>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>datawave-new/**/*</include>
+                </includes>
+            </resource>
+            <!-- these xml files under datawave do get filtered -->
             <resource>
                 <filtering>true</filtering>
                 <directory>src/main/resources</directory>
+                <includes>
+                    <include>datawave/**/*</include>
+                </includes>
             </resource>
         </resources>
         <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

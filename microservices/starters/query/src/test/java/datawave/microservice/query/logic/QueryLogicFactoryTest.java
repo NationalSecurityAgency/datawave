@@ -15,27 +15,19 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import datawave.core.query.logic.QueryLogicFactory;
-import datawave.microservice.query.logic.config.QueryLogicFactoryProperties;
-import datawave.security.authorization.JWTTokenHandler;
 import datawave.webservice.query.exception.QueryException;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-@ActiveProfiles({"QueryStarterDefaults", "QueryLogicFactoryTest"})
+@ActiveProfiles({"QueryStarterDefaults", "federation", "QueryLogicFactoryTest"})
 public class QueryLogicFactoryTest {
-
-    @Autowired
-    private QueryLogicFactoryProperties queryLogicFactoryProperties;
 
     @Autowired
     private QueryLogicFactory queryLogicFactory;
 
-    @Autowired
-    private JWTTokenHandler jwtTokenHandler;
-
     @Test
     public void createShardQueryLogicTest() throws QueryException, CloneNotSupportedException {
-        Assertions.assertNotNull(queryLogicFactory.getQueryLogic("FederatedEventQuery"));
+        Assertions.assertNotNull(queryLogicFactory.getQueryLogic("RemoteEventQuery"));
         Assertions.assertNotNull(queryLogicFactory.getQueryLogic("ContentQuery"));
         Assertions.assertNotNull(queryLogicFactory.getQueryLogic("CountQuery"));
         Assertions.assertNotNull(queryLogicFactory.getQueryLogic("DiscoveryQuery"));

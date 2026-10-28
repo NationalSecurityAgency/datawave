@@ -16,16 +16,26 @@
 
     <!-- Database properties are retrieved from the database.properties file
         but can be overridden by system properties -->
-    <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="0" />
+    <context:property-placeholder location="classpath:datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="0" />
 
     <!-- Default response rewriter is a no-op that returns responses unchanged. -->
     <bean id="AnnotationResponseRewriter" class="datawave.webservice.common.rest.NoOpResponseRewriter" />
 
-    <bean id="AnnotationManagerConfig" scope="prototype" class="datawave.webservice.annotation.AnnotationManagerConfig">
+    <bean id="AnnotationConfig" scope="prototype" class="datawave.query.config.annotation.AnnotationConfig">
         <property name="annotationTableName" value="${annotation.table.name}"/>
         <property name="annotationSourceTableName" value="${annotation.source.table.name}"/>
         <property name="truthmarkTableName" value="${truthmark.table.name}"/>
         <property name="truthmarkSourceTableName" value="${truthmark.source.table.name}"/>
+        <property name="visibilityTransformer">
+            <bean class="datawave.annotation.data.transform.DefaultVisibilityTransformer"/>
+        </property>
+        <property name="timestampTransformer">
+            <bean class="datawave.annotation.data.transform.DefaultTimestampTransformer"/>
+        </property>
+    </bean>
+
+    <bean id="AnnotationManagerConfig" scope="prototype"  class="datawave.webservice.annotation.AnnotationManagerConfig">
+        <property name="annotationConfig" ref="AnnotationConfig"/>
         <property name="connPoolName" value="WAREHOUSE" />
         <property name="enableInternalIdLookup" value="true" />
         <property name="lookupUUIDQueryLogic">
@@ -42,12 +52,6 @@
         </property>
         <property name="lookupUUIDServiceConfig">
             <bean class="datawave.webservice.annotation.LookupUUIDServiceConfig"/>
-        </property>
-        <property name="visibilityTransformer">
-            <bean class="datawave.annotation.data.transform.DefaultVisibilityTransformer"/>
-        </property>
-        <property name="timestampTransformer">
-            <bean class="datawave.annotation.data.transform.DefaultTimestampTransformer"/>
         </property>
     </bean>
 

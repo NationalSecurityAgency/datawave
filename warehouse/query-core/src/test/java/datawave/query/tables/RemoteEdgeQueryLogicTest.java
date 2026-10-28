@@ -20,6 +20,7 @@ import com.google.common.collect.Sets;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.remote.RemoteQueryService;
+import datawave.core.query.remote.RemoteQueryServiceProperties;
 import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -35,7 +36,7 @@ import datawave.webservice.result.VoidResponse;
 
 public class RemoteEdgeQueryLogicTest {
 
-    RemoteEdgeQueryLogic logic = new RemoteEdgeQueryLogic();
+    private final RemoteEdgeQueryLogic logic = new RemoteEdgeQueryLogic();
 
     @BeforeEach
     public void setup() {
@@ -122,7 +123,7 @@ public class RemoteEdgeQueryLogicTest {
         assertEquals("<entity2issuerdn><entity3issuerdn><entity1issuerdn>", RemoteHttpService.getProxiedIssuers(proxiedServerPrincipal2));
     }
 
-    public static class TestRemoteQueryService implements RemoteQueryService {
+    public class TestRemoteQueryService implements RemoteQueryService {
         GenericResponse<String> createResponse;
         LinkedList<BaseQueryResponse> nextResponses;
 
@@ -138,11 +139,6 @@ public class RemoteEdgeQueryLogicTest {
         @Override
         public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, ProxiedUserDetails callerObject) {
             return createResponse;
-        }
-
-        @Override
-        public void setNextQueryResponseClass(Class<? extends BaseQueryResponse> nextQueryResponseClass) {
-            // noop
         }
 
         @Override
@@ -172,6 +168,11 @@ public class RemoteEdgeQueryLogicTest {
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        @Override
+        public RemoteQueryServiceProperties getRemoteQueryServiceProperties() {
+            return RemoteEdgeQueryLogicTest.this.logic.getRemoteQueryService().getRemoteQueryServiceProperties();
         }
     }
 }

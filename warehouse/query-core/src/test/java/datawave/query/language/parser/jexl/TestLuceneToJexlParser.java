@@ -113,7 +113,7 @@ public class TestLuceneToJexlParser {
         LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
         parser.setTokenizedFields(Collections.singleton("TOKENIZED"));
 
-        for (JexlQueryFunction queryFunction : parser.getAllowedFunctions()) {
+        for (JexlQueryFunction queryFunction : parser.getDefinedFunctions()) {
             if (queryFunction instanceof EvaluationOnly) {
                 ((EvaluationOnly) queryFunction).setParser(parser);
                 break;

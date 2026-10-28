@@ -16,6 +16,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryGeometry;
 import datawave.microservice.querymetric.QueryGeometryResponse;
 import datawave.microservice.querymetric.QueryMetric;
+import datawave.webservice.config.QueryMetricHandlerProperties;
 import datawave.webservice.query.exception.QueryExceptionType;
 
 public class SimpleQueryGeometryHandlerTest {
@@ -31,6 +32,7 @@ public class SimpleQueryGeometryHandlerTest {
     @BeforeEach
     public void setup() {
         handler = new SimpleQueryGeometryHandler();
+        handler.setQueryMetricHandlerProperties(new QueryMetricHandlerProperties());
 
         commonId = "super-special-query-id";
 

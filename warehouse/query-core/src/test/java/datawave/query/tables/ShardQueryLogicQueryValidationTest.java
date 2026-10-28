@@ -68,7 +68,7 @@ import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.QueryException;
 
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",

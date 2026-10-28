@@ -1,0 +1,118 @@
+logging:
+  level:
+    datawave: info
+    datawave.springframework.integration.ContextComparisonTest: debug
+    org.springframework: info
+
+accumulo:
+  zookeepers: 'localhost:2181'
+  instance-name: 'accumulo'
+  username: 'root'
+  password: 'secret'
+
+query:
+  page:
+    short-circuit:
+      minutes: 55
+    size:
+      default: 10
+      max: 10000
+      short-circuit:
+        minutes: 30
+    byte:
+      trigger: 0
+  max-call-time:
+    minutes: 60
+  expiration:
+    minutes: 15
+
+spring.context.debug.dir: "${user.dir}/target/contextDebug"
+
+datawave:
+  cachedresults:
+    hdfs-uri: 'hdfs://localhost:8020/'
+    export-dir: '/CachedResults'
+    rows-per-batch: 10
+    days-to-live: 1
+  configuration:
+    spring:
+      configure-from-properties: false
+  query:
+    expiration:
+      minutes: ${query.expiration.minutes}
+      call-timeout: ${query.max-call-time.minutes}
+      short-circuit-check-time: ${query.page.size.short-circuit.minutes}
+      short-circuit-timeout: ${query.page.short-circuit.minutes}
+    logic:
+      factory:
+        enabled: true
+        import-resources: false
+      logics:
+        RemoteEventQuery:
+          tableName: ${warehouse.tables.shard.name}
+          maxResults: -1
+          auditType: "NONE"
+          logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
+    metrics:
+      remote-processor-threads: 4
+      batch-size: 100
+      max-queue-size: 250000
+      max-latency-ms: 5000
+      max-shutdown-ms: 30000
+      use-remote-service: false
+      timely:
+        host: "localhost"
+        port: 4242
+        metric-field-tags:
+          - "USER"
+          - "HOST"
+          - "QUERY_ID"
+          - "QUERY_LOGIC"
+    RemoteUserOperations:
+      scheme: "https"
+      host: "localhost"
+      port: 8443
+      uri: "/DataWave/Security/User/"
+    RemoteQueryService:
+      scheme: "https"
+      host: "query"
+      port: 8443
+      uri: "/query/v1/"
+  modification:
+    data:
+      tableName: ${warehouse.tables.metadata.name}
+      poolName: ${datawave.connection.factory.default-pool}
+    handlers:
+      requires-audit: false
+      authorized-roles:
+        - "AuthorizedUser"
+      event-table-name: ${warehouse.tables.shard.name}
+      metadata-table-name: ${warehouse.tables.metadata.name}
+      index-table-name: ${warehouse.tables.index.name}
+      reverse-index-table-name: ${warehouse.tables.reverse-index.name}
+      security-marking-exempt-fields:
+        - "exemptField1"
+      index-only-map:
+        key1: "value1"
+      index-only-suffixes:
+        - "suffix1"
+      content-fields:
+        - "contentField1"
+  security:
+    test:
+      users:
+        - "user1"
+        - "user2"
+  table:
+    cache:
+      enabled: false
+      zookeepers: ${accumulo.zookeepers}
+      pool-name: ${datawave.connection.factory.default-pool}
+      reload-interval: 86400000
+      eviction-reaper-interval-in-seconds: 30
+      num-locks: 300
+      max-retries: 10
+      table-names:
+        - datawave.metadata
+        - datawave.queryMetrics_m
+        - datawave.error_m

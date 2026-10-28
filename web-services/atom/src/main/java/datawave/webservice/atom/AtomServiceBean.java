@@ -19,7 +19,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJB;
 import javax.ejb.EJBContext;
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
@@ -48,12 +47,12 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.net.util.Base64;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
 import datawave.annotation.Required;
+import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.security.authorization.DatawavePrincipal;
@@ -61,6 +60,7 @@ import datawave.security.util.ScannerHelper;
 import datawave.webservice.accumulo.iterator.MatchingKeySkippingIterator;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.config.AtomProperties;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
@@ -80,31 +80,16 @@ public class AtomServiceBean {
 
     private final Logger log = Logger.getLogger(this.getClass());
 
-    @EJB
-    private AccumuloConnectionFactory connectionFactory;
-
     @Resource
     private EJBContext ctx;
 
     @Inject
-    @ConfigProperty(name = "cluster.name")
-    private String clustername;
+    @SpringBean
+    private AccumuloConnectionFactory connectionFactory;
 
     @Inject
-    @ConfigProperty(name = "dw.atom.tableName")
-    private String tableName;
-
-    @Inject
-    @ConfigProperty(name = "dw.atom.externalHostName")
-    private String host;
-
-    @Inject
-    @ConfigProperty(name = "dw.atom.externalPort")
-    private String port;
-
-    @Inject
-    @ConfigProperty(name = "dw.atom.connectionPoolName")
-    private String poolName;
+    @SpringBean
+    private AtomProperties atomProperties;
 
     @PostConstruct
     public void setup() {}
@@ -135,8 +120,8 @@ public class AtomServiceBean {
             result = abdera.newCategories();
 
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(userDN, proxyServers, poolName, Priority.NORMAL, trackingMap);
-            try (Scanner scanner = ScannerHelper.createScanner(client, tableName + "Categories", auths)) {
+            client = connectionFactory.getClient(userDN, proxyServers, atomProperties.getConnectionPoolName(), Priority.NORMAL, trackingMap);
+            try (Scanner scanner = ScannerHelper.createScanner(client, atomProperties.getTableName() + "Categories", auths)) {
                 Map<String,String> props = new HashMap<>();
                 props.put(MatchingKeySkippingIterator.ROW_DELIMITER_OPTION, "\0");
                 props.put(MatchingKeySkippingIterator.NUM_SCANS_STRING_NAME, "5");
@@ -215,16 +200,16 @@ public class AtomServiceBean {
         Date maxDate = new Date(0);
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(userDN, proxyServers, poolName, Priority.NORMAL, trackingMap);
+            client = connectionFactory.getClient(userDN, proxyServers, atomProperties.getConnectionPoolName(), Priority.NORMAL, trackingMap);
 
             result = abdera.newFeed();
-            result.addAuthor(clustername);
+            result.addAuthor(atomProperties.getSystemName());
             result.setTitle(category);
 
             Key nextLastKey = null;
             int count = 0;
 
-            try (Scanner scanner = ScannerHelper.createScanner(client, tableName, auths)) {
+            try (Scanner scanner = ScannerHelper.createScanner(client, atomProperties.getTableName(), auths)) {
                 if (null != lastKey) {
                     Key lastSeenKey = deserializeKey(lastKey);
                     scanner.setRange(new Range(lastSeenKey, false, new Key(category + "\1"), false));
@@ -237,7 +222,7 @@ public class AtomServiceBean {
                         maxDate = atom.getUpdated();
                     }
                     nextLastKey = entry.getKey();
-                    Entry e = atom.toEntry(abdera, this.host, this.port);
+                    Entry e = atom.toEntry(abdera, atomProperties.getExternalHostName(), Integer.toString(atomProperties.getExternalPort()));
                     result.addEntry(e);
                     count++;
                     if (count >= pagesize)
@@ -248,7 +233,8 @@ public class AtomServiceBean {
             String thisLastKey = "";
             if (null != nextLastKey)
                 thisLastKey = serializeKey(nextLastKey);
-            String id = MessageFormat.format(COLLECTION_LINK_FORMAT, this.host, this.port, category);
+            String id = MessageFormat.format(COLLECTION_LINK_FORMAT, atomProperties.getExternalHostName(), Integer.toString(atomProperties.getExternalPort()),
+                            category);
             result.setId(id);
             result.addLink(id + "?pagesize=" + pagesize, "first"); // need a link that contains the offset of null and current pagesize
             result.addLink(id + "?pagesize=" + pagesize + "&l=" + thisLastKey, "next"); // need a link that contains the next offset and current pagesize
@@ -308,14 +294,15 @@ public class AtomServiceBean {
         AccumuloClient client = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            client = connectionFactory.getClient(userDN, proxyServers, poolName, Priority.NORMAL, trackingMap);
+            client = connectionFactory.getClient(userDN, proxyServers, atomProperties.getConnectionPoolName(), Priority.NORMAL, trackingMap);
 
-            try (Scanner scanner = ScannerHelper.createScanner(client, tableName, auths)) {
+            try (Scanner scanner = ScannerHelper.createScanner(client, atomProperties.getTableName(), auths)) {
                 scanner.setRange(new Range(category, true, category + "\1", false));
                 // ID is fieldValue\0UUID
                 scanner.fetchColumnFamily(new Text(AtomKeyValueParser.decodeId(id)));
                 for (Map.Entry<Key,Value> entry : scanner) {
-                    result = AtomKeyValueParser.parse(entry.getKey(), entry.getValue()).toEntry(abdera, this.host, this.port);
+                    result = AtomKeyValueParser.parse(entry.getKey(), entry.getValue()).toEntry(abdera, atomProperties.getExternalHostName(),
+                                    Integer.toString(atomProperties.getExternalPort()));
                     break;
                 }
             }

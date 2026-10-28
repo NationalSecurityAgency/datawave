@@ -1,10 +1,12 @@
 package datawave.query.language.parser.jexl;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
@@ -38,7 +40,10 @@ public class LuceneToJexlQueryParser implements LuceneSyntaxQueryParser {
     private boolean positionIncrementsEnabled = true;
     private Set<String> allowedFields = null;
     private Boolean allowAnyFieldQueries = true;
-    private List<JexlQueryFunction> allowedFunctions = JexlTreeBuilder.DEFAULT_ALLOWED_FUNCTION_LIST;
+    private List<JexlQueryFunction> definedFunctions = JexlTreeBuilder.DEFAULT_DEFINED_FUNCTION_LIST;
+    private List<String> allowedFunctions = new ArrayList<>();
+    private List<String> disallowedFunctions = new ArrayList<>();
+
     private Analyzer analyzer = new StandardAnalyzer();
     private QueryNodeProcessorFactory queryNodeProcessorFactory = new QueryNodeProcessorFactory();
 
@@ -69,7 +74,15 @@ public class LuceneToJexlQueryParser implements LuceneSyntaxQueryParser {
             org.apache.lucene.queryparser.flexible.core.nodes.QueryNode queryTree = parseToLuceneQueryNode(query);
 
             QueryNodeProcessor processor = getQueryNodeProcessor();
-            QueryBuilder builder = new JexlTreeBuilder(allowedFunctions);
+            List<JexlQueryFunction> functions = definedFunctions.stream().filter(f -> {
+                String fullName = f.getClass().getName();
+                String simpleName = f.getClass().getSimpleName();
+                if (!allowedFunctions.isEmpty() && !allowedFunctions.contains(fullName) && !allowedFunctions.contains(simpleName)) {
+                    return false;
+                }
+                return disallowedFunctions.isEmpty() || (!disallowedFunctions.contains(fullName) && !disallowedFunctions.contains(simpleName));
+            }).collect(Collectors.toList());
+            QueryBuilder builder = new JexlTreeBuilder(functions);
 
             queryTree = processor.process(queryTree);
             parsedQuery = (JexlNode) builder.build(queryTree);
@@ -192,12 +205,27 @@ public class LuceneToJexlQueryParser implements LuceneSyntaxQueryParser {
         this.queryNodeProcessorFactory = queryNodeProcessorFactory;
     }
 
-    public List<JexlQueryFunction> getAllowedFunctions() {
+    public List<JexlQueryFunction> getDefinedFunctions() {
+        return definedFunctions;
+    }
+
+    public void setDefinedFunctions(List<JexlQueryFunction> definedFunctions) {
+        this.definedFunctions = definedFunctions;
+    }
+
+    public List<String> getAllowedFunctions() {
         return allowedFunctions;
     }
 
-    public void setAllowedFunctions(List<JexlQueryFunction> allowedFunctions) {
+    public void setAllowedFunctions(List<String> allowedFunctions) {
         this.allowedFunctions = allowedFunctions;
     }
 
+    public List<String> getDisallowedFunctions() {
+        return disallowedFunctions;
+    }
+
+    public void setDisallowedFunctions(List<String> disallowedFunctions) {
+        this.disallowedFunctions = disallowedFunctions;
+    }
 }

@@ -24,7 +24,7 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.webservice.query.runner.RunningQuery;
+import datawave.query.runner.RunningQuery;
 
 @ExtendWith(MockitoExtension.class)
 public class QueryCacheBeanTest {

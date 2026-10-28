@@ -35,7 +35,6 @@ import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.AsyncResult;
 import javax.ejb.Asynchronous;
-import javax.ejb.EJBContext;
 import javax.ejb.EJBException;
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
@@ -101,8 +100,11 @@ import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.query.runner.RunningQuery;
+import datawave.query.runner.RunningQueryTimingImpl;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.system.CallerPrincipal;
 import datawave.security.user.UserOperationsBean;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
@@ -117,7 +119,6 @@ import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.cache.CachedResultsQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -133,7 +134,6 @@ import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
-import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.CachedResultsDescribeResponse;
@@ -176,8 +176,8 @@ public class CachedResultsBean {
 
     private static Logger log = Logger.getLogger(CachedResultsBean.class);
 
-    @Resource
-    private EJBContext ctx;
+    @CallerPrincipal
+    private DatawavePrincipal callerPrincipal;
 
     @Inject
     private Persister persister;
@@ -186,7 +186,8 @@ public class CachedResultsBean {
     private AccumuloConnectionFactory connectionFactory;
 
     @Inject
-    private QueryLogicFactory queryFactory;
+    @SpringBean
+    private QueryLogicFactory queryLogicFactory;
 
     @Inject
     private QueryMetricsBean metrics;
@@ -271,7 +272,7 @@ public class CachedResultsBean {
         }
 
         CachedRunningQuery.setDatasource(ds);
-        CachedRunningQuery.setQueryFactory(queryFactory);
+        CachedRunningQuery.setQueryLogicFactory(queryLogicFactory);
         CachedRunningQuery.setResponseObjectFactory(responseObjectFactory);
 
         String template = null;
@@ -358,20 +359,12 @@ public class CachedResultsBean {
         GenericResponse<String> response = new GenericResponse<>();
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
-        String userDn = getDNFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
+        String userDn = getDNFromPrincipal(callerPrincipal);
         Collection<String> proxyServers = null;
         Collection<Collection<String>> cbAuths = new HashSet<>();
-        if (p instanceof DatawavePrincipal) {
-            DatawavePrincipal dp = (DatawavePrincipal) p;
-            proxyServers = dp.getProxyServers();
-            cbAuths.addAll(dp.getAuthorizations());
-        } else {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_PRINCIPAL_ERROR, MessageFormat.format("Class: {0}", p.getClass().getName()));
-            response.addException(qe);
-            throw new DatawaveWebApplicationException(qe, response);
-        }
+        proxyServers = callerPrincipal.getProxyServers();
+        cbAuths.addAll(callerPrincipal.getAuthorizations());
 
         AccumuloConnectionFactory.Priority priority;
         AccumuloClient client = null;
@@ -516,7 +509,7 @@ public class CachedResultsBean {
                 qlCache.add(q.getId().toString(), owner, logic, client);
 
                 try {
-                    query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p,
+                    query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), callerPrincipal,
                                     new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
                     query.setExecutor(executor);
                     query.setActiveCall(true);
@@ -652,7 +645,7 @@ public class CachedResultsBean {
             crq.setOriginalQueryId(queryId);
             crq.setTableName(tableName);
             crq.setStatus(CachedRunningQuery.Status.LOADED);
-            crq.setPrincipal(ctx.getCallerPrincipal());
+            crq.setPrincipal(callerPrincipal);
             persist(crq, owner);
 
             crq.getMetric().setLifecycle(QueryMetric.Lifecycle.INITIALIZED);
@@ -811,9 +804,7 @@ public class CachedResultsBean {
         GenericResponse<String> response = new GenericResponse<>();
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
         CachedRunningQuery crq;
         try {
             crq = retrieve(queryId, owner);
@@ -988,8 +979,7 @@ public class CachedResultsBean {
         String alias = queryParameters.getFirst(CachedResultsQueryParameters.ALIAS);
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         GenericResponse<String> r = null;
         try {
@@ -1090,8 +1080,7 @@ public class CachedResultsBean {
         }
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         CachedRunningQuery crq = null;
         try {
@@ -1161,8 +1150,7 @@ public class CachedResultsBean {
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public CachedResultsDescribeResponse describe(@PathParam("id") @Required("id") String id) {
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         CachedResultsDescribeResponse response = null;
 
@@ -1257,8 +1245,7 @@ public class CachedResultsBean {
         CachedResultsResponse response = new CachedResultsResponse();
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         CachedRunningQuery crq = null;
         Connection con = null;
@@ -1432,8 +1419,7 @@ public class CachedResultsBean {
         CachedResultsResponse response = new CachedResultsResponse();
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         try {
 
@@ -1464,7 +1450,7 @@ public class CachedResultsBean {
                         Connection connection = ds.getConnection();
                         String logicName = crq.getQueryLogicName();
                         if (logicName != null) {
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
+                            QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(logicName, callerPrincipal);
                             crq.activate(connection, queryLogic);
                         } else {
                             DbUtils.closeQuietly(connection);
@@ -1547,8 +1533,7 @@ public class CachedResultsBean {
         BaseQueryResponse response = responseObjectFactory.getEventQueryResponse();
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         try {
             CachedRunningQuery crq = null;
@@ -1570,7 +1555,7 @@ public class CachedResultsBean {
                         if (crq.getShouldAutoActivate()) {
                             Connection connection = ds.getConnection();
                             String logicName = crq.getQueryLogicName();
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
+                            QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(logicName, callerPrincipal);
                             crq.activate(connection, queryLogic);
                         } else {
                             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
@@ -1658,8 +1643,7 @@ public class CachedResultsBean {
         CachedResultsResponse response = new CachedResultsResponse();
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         try {
             CachedRunningQuery crq = null;
@@ -1684,7 +1668,7 @@ public class CachedResultsBean {
 
                     Connection connection = ds.getConnection();
                     String logicName = crq.getQueryLogicName();
-                    QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
+                    QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(logicName, callerPrincipal);
                     crq.activate(connection, queryLogic);
 
                     response.setQueryId(crq.getQueryId());
@@ -1754,8 +1738,7 @@ public class CachedResultsBean {
         BaseQueryResponse response = responseObjectFactory.getEventQueryResponse();
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         try {
             CachedRunningQuery crq = null;
@@ -1780,7 +1763,7 @@ public class CachedResultsBean {
                         if (crq.getShouldAutoActivate()) {
                             Connection connection = ds.getConnection();
                             String logicName = crq.getQueryLogicName();
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
+                            QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(logicName, callerPrincipal);
                             crq.activate(connection, queryLogic);
                         } else {
                             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
@@ -1874,8 +1857,7 @@ public class CachedResultsBean {
         BaseQueryResponse response = responseObjectFactory.getEventQueryResponse();
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         try {
             if (rowBegin < 1) {
@@ -1923,7 +1905,7 @@ public class CachedResultsBean {
                     if (crq.isActivated() == false) {
                         Connection connection = ds.getConnection();
                         String logicName = crq.getQueryLogicName();
-                        QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, (DatawavePrincipal) p);
+                        QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(logicName, callerPrincipal);
                         crq.activate(connection, queryLogic);
                     }
 
@@ -2011,8 +1993,7 @@ public class CachedResultsBean {
     @Timed(name = "dw.cachedr.cancel", absolute = true)
     public VoidResponse cancelLoad(@PathParam("queryId") @Required("queryId") String originalQueryId) {
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         VoidResponse response = new VoidResponse();
 
@@ -2126,8 +2107,7 @@ public class CachedResultsBean {
     @Timed(name = "dw.cachedr.close", absolute = true)
     public VoidResponse close(@PathParam("queryId") @Required("queryId") String queryId) {
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
         VoidResponse response = new VoidResponse();
         CachedRunningQuery crq;
         try {
@@ -2169,16 +2149,10 @@ public class CachedResultsBean {
 
     private RunningQuery getQueryById(String id) throws Exception {
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
-        Collection<Collection<String>> cbAuths = new HashSet<>();
-        if (p instanceof DatawavePrincipal) {
-            DatawavePrincipal cp = (DatawavePrincipal) p;
-            cbAuths.addAll(cp.getAuthorizations());
-        }
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         if (log.isTraceEnabled()) {
-            log.trace(owner + " has authorizations " + cbAuths);
+            log.trace(owner + " has authorizations " + callerPrincipal.getAuthorizations());
         }
 
         RunningQuery query = runningQueryCache.get(id);
@@ -2193,9 +2167,9 @@ public class CachedResultsBean {
                 Query q = queries.get(0);
 
                 // will throw IllegalArgumentException if not defined
-                QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), (DatawavePrincipal) p);
+                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), callerPrincipal);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
-                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
+                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), callerPrincipal,
                                 new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
                 query.setExecutor(executor);
                 query.setActiveCall(true);
@@ -2244,8 +2218,7 @@ public class CachedResultsBean {
         CachedResultsResponse response = new CachedResultsResponse();
 
         // Find out who/what called this method
-        Principal p = ctx.getCallerPrincipal();
-        String owner = getOwnerFromPrincipal(p);
+        String owner = getOwnerFromPrincipal(callerPrincipal);
 
         try {
             CachedRunningQuery crq = null;
@@ -2312,7 +2285,7 @@ public class CachedResultsBean {
             this.cachedRunningQueryCache.put(owner + "-" + crq.getAlias(), crq);
             this.cachedRunningQueryCache.put(owner + "-" + crq.getView(), crq);
             log.debug("persisting cachedRunningQuery " + crq.getQueryId() + " to database with status " + crq.getStatus());
-            crq.saveToDatabase(ctx.getCallerPrincipal(), metricFactory);
+            crq.saveToDatabase(callerPrincipal, metricFactory);
         }
 
     }
@@ -2338,7 +2311,7 @@ public class CachedResultsBean {
 
                 try {
                     log.debug("retrieving cachedRunningQuery " + id + " from database");
-                    crq = CachedRunningQuery.retrieveFromDatabase(id, ctx.getCallerPrincipal(), metricFactory);
+                    crq = CachedRunningQuery.retrieveFromDatabase(id, callerPrincipal, metricFactory);
                     if (crq != null) {
                         log.debug("retrieved cachedRunningQuery " + id + " from database with status " + crq.getStatus());
                         this.cachedRunningQueryCache.put(owner + "-" + id, crq);
@@ -2424,7 +2397,7 @@ public class CachedResultsBean {
                                     outReader.close();
                                     errReader.close();
                                 }
-                                crq = CachedRunningQuery.retrieveFromDatabase(id, ctx.getCallerPrincipal(), metricFactory);
+                                crq = CachedRunningQuery.retrieveFromDatabase(id, callerPrincipal, metricFactory);
                                 if (crq != null) {
                                     break;
                                 }

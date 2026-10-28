@@ -319,7 +319,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         while ((System.currentTimeMillis() - startTime) < TEST_WAIT_TIME_MILLIS && contentQueryIds == null) {
             final String eventQueryId = queryId;
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            if (queryStatuses.size() == 1 + Math.ceil((double) pageSize / lookupProperties.getBatchLookupLimit())) {
+            if (queryStatuses.size() == 1 + Math.ceil((double) pageSize / lookupProperties.getBatchLookupUpperLimit())) {
                 contentQueryIds = queryStatuses.stream().map(QueryStatus::getQueryKey).map(QueryKey::getQueryId)
                                 .filter(contentQueryId -> !contentQueryId.equals(eventQueryId)).collect(Collectors.toSet());
             }
@@ -482,7 +482,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         while ((System.currentTimeMillis() - startTime) < TEST_WAIT_TIME_MILLIS && contentQueryIds == null) {
             final String eventQueryId = queryId;
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            if (queryStatuses.size() == 1 + Math.ceil((double) pageSize / lookupProperties.getBatchLookupLimit())) {
+            if (queryStatuses.size() == 1 + Math.ceil((double) pageSize / lookupProperties.getBatchLookupUpperLimit())) {
                 contentQueryIds = queryStatuses.stream().map(QueryStatus::getQueryKey).map(QueryKey::getQueryId)
                                 .filter(contentQueryId -> !contentQueryId.equals(eventQueryId)).collect(Collectors.toSet());
             }
@@ -757,7 +757,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         MultiValueMap<String,String> uuidParams = createUUIDParams();
 
         StringBuilder lookupUUIDPairs = new StringBuilder();
-        for (int i = 0; i < lookupProperties.getBatchLookupLimit() + 1; i++) {
+        for (int i = 0; i < lookupProperties.getBatchLookupUpperLimit() + 1; i++) {
             if (i > 0) {
                 lookupUUIDPairs.append(" OR ");
             }
@@ -780,8 +780,8 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
 
         // @formatter:off
         assertQueryException(
-                "The " + (lookupProperties.getBatchLookupLimit() + 1) + " specified UUIDs exceed the maximum number of " + lookupProperties.getBatchLookupLimit() + " allowed for a given lookup request",
-                "java.lang.IllegalArgumentException: The " + (lookupProperties.getBatchLookupLimit() + 1) + " specified UUIDs exceed the maximum number of " + lookupProperties.getBatchLookupLimit() + " allowed for a given lookup request",
+                "The " + (lookupProperties.getBatchLookupUpperLimit() + 1) + " specified UUIDs exceed the maximum number of " + lookupProperties.getBatchLookupUpperLimit() + " allowed for a given lookup request",
+                "java.lang.IllegalArgumentException: The " + (lookupProperties.getBatchLookupUpperLimit() + 1) + " specified UUIDs exceed the maximum number of " + lookupProperties.getBatchLookupUpperLimit() + " allowed for a given lookup request",
                 "400-1",
                 Iterables.getOnlyElement(response.getBody().getExceptions()));
         // @formatter:on

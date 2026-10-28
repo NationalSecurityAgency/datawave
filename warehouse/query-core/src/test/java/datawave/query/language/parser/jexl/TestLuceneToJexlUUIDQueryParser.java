@@ -3,8 +3,8 @@ package datawave.query.language.parser.jexl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,12 +21,12 @@ public class TestLuceneToJexlUUIDQueryParser {
     @BeforeEach
     public void setUp() {
         parser = new LuceneToJexlUUIDQueryParser();
-        List<UUIDType> uuidTypes = new ArrayList<>();
+        Map<String,UUIDType> uuidTypes = new HashMap<>();
 
         for (String s : UUID_FIELDS) {
             UUIDType uuidType = new UUIDType();
             uuidType.setFieldName(s);
-            uuidTypes.add(uuidType);
+            uuidTypes.put(s, uuidType);
         }
         parser.setUuidTypes(uuidTypes);
     }

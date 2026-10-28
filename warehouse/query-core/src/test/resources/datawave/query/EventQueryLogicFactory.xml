@@ -16,7 +16,7 @@
     <bean id="responseObjectFactory" class="datawave.core.query.result.event.DefaultResponseObjectFactory"/>
 
     <!-- A list of lucene to jexl query functions -->
-    <util:list id="allowedQueryFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
+    <util:list id="definedFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
         <bean class="datawave.query.language.functions.jexl.IsNull"/>
         <bean class="datawave.query.language.functions.jexl.IsNotNull"/>
         <bean class="datawave.query.language.functions.jexl.Include"/>
@@ -163,18 +163,18 @@
     </bean>
     
     <bean id="LuceneToJexlUUIDQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlUUIDQueryParser">
-        <property name="uuidTypes" ref="UUIDTypeList" />
-        <property name="allowedFunctions" ref="allowedQueryFunctions"/>
+        <property name="uuidTypes" ref="uuidTypes" />
+        <property name="definedFunctions" ref="definedFunctions"/>
     </bean>
-    <util:list id="UUIDTypeList" value-type="datawave.query.data.UUIDType">
+    <util:map id="UUIDTypes" key-type="java.lang.String" value-type="datawave.query.data.UUIDType">
 
-    </util:list>
+    </util:map>>
 
     <!--<bean id="TokenizedLuceneToJexlQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">-->
         <!--<property name="tokenizeUnfieldedQueries" value="true" />-->
         <!--<property name="skipTokenizeUnfieldedFields" ref="skipTokenizeFields"/>-->
         <!--<property name="tokenizedFields" ref="tokenizeFields"/>-->
-        <!--<property name="allowedFunctions" ref="allowedQueryFunctions"/>-->
+        <!--<property name="definedFunctions" ref="definedFunctions"/>-->
     <!--</bean>-->
 
     <util:list id="pushdownRegexPatterns" value-type="java.lang.String">
