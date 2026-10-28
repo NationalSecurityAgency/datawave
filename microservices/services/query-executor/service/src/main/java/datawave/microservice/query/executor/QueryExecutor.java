@@ -2,10 +2,8 @@ package datawave.microservice.query.executor;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -55,7 +53,6 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     private static final Logger log = LoggerFactory.getLogger(QueryExecutor.class);
 
     protected final BlockingQueue<Runnable> workQueue;
-    protected final Set<Runnable> working;
     protected final Multimap<String,ExecutorTask> queryToTask;
     protected final QueryStorageCache cache;
     protected final QueryResultsManager queues;
@@ -86,7 +83,6 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         this.connectionFactory = connectionFactory;
         this.publisher = publisher;
         this.workQueue = new LinkedBlockingDeque<>(executorProperties.getMaxQueueSize());
-        this.working = Collections.synchronizedSet(new HashSet<>());
         this.queryToTask = Multimaps.synchronizedMultimap(LinkedHashMultimap.create());
         this.metricFactory = metricFactory;
         this.metricClient = metricClient;
@@ -95,14 +91,11 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
             @Override
             protected void beforeExecute(Thread t, Runnable r) {
                 log.debug("Before execute " + ((ExecutorTask) r).getTaskKey());
-                working.add(r);
-
             }
 
             @Override
             protected void afterExecute(Runnable r, Throwable t) {
                 log.debug("After execute " + ((ExecutorTask) r).getTaskKey());
-                working.remove(r);
                 queryToTask.remove(((ExecutorTask) r).getTaskKey().getQueryId(), r);
             }
         };
