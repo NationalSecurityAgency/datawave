@@ -116,7 +116,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, QueryMetricFactory metricFactory)
                     throws Exception {
-        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, null, null, metricFactory);
+        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, predictor, null, metricFactory);
     }
 
     public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,

@@ -6,6 +6,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -44,9 +45,12 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResponseEnricher;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
+import datawave.core.query.predict.QueryPredictor;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
@@ -139,6 +143,39 @@ public class RunningQueryTest {
         // extra tests to verify setConnection worked. Would rather mock and don't really like multiple asserts per test, but there is too much setup
         assertEquals(client, query.getClient());
         assertEquals(iter, query.getTransformIterator());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testConstructorRetainsAndAppliesPredictor() throws Exception {
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
+        InMemoryInstance instance = new InMemoryInstance("predictor test instance");
+        try (AccumuloClient client = new InMemoryAccumuloClient("root", instance)) {
+            SampleGenericQueryConfiguration config = new SampleGenericQueryConfiguration();
+            expect(logic.initialize(anyObject(), anyObject(), anyObject())).andReturn(config);
+            logic.setupQuery(config);
+            expect(logic.getCollectQueryMetrics()).andReturn(false);
+            expect(logic.getTransformIterator(settings)).andReturn(new TransformIterator<>());
+            expect(logic.isIntermediateEmptyPagesEnabled()).andReturn(false);
+            expect(logic.isUseSynchronousRunningQuery()).andReturn(false);
+            expect(logic.getResultLimit(settings)).andReturn(-1L);
+            expect(logic.getMaxResults()).andReturn(-1L);
+            logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
+            expect(logic.getUserOperations()).andReturn(null);
+
+            QueryPredictor<BaseQueryMetric> predictor = createMock(QueryPredictor.class);
+            Set<Prediction> predictions = Collections.singleton(new Prediction("runtime", 7));
+            expect(predictor.predict(anyObject())).andReturn(predictions);
+            replay(logic, predictor);
+
+            RunningQuery query = new RunningQuery(null, client, connectionPriority, logic, settings, methodAuths, principal,
+                            new RunningQuery.RunningQueryTimingNoOp(), predictor, new QueryMetricFactoryImpl());
+
+            assertSame(predictor, query.getPredictor());
+            assertEquals(predictions, query.getMetric().getPredictions());
+            verify(logic, predictor);
+        }
     }
 
     @Test
