@@ -91,6 +91,10 @@ class GenerateShardSplitsTest {
             exception = assertThrows(IllegalArgumentException.class, () -> parseOptions("20221015", "5", "100", "1000", "-splitsPerBatch", "5.0"));
             assertTrue(exception.getMessage().startsWith("-splitsPerBatch argument is not an integer: "));
 
+            // Test a value less than 10.
+            exception = assertThrows(IllegalArgumentException.class, () -> parseOptions("20221015", "5", "100", "1000", "-splitsPerBatch", "9"));
+            assertTrue(exception.getMessage().startsWith("-splitsPerBatch cannot be less than 10"));
+
             // Test a valid argument.
             GenerateShardSplits.Options opts = parseOptions("20221015", "2", "100", "1000", "-splitsPerBatch", "25");
             assertEquals(25, opts.splitsPerBatch);

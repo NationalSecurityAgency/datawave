@@ -212,8 +212,8 @@ public class GenerateShardSplits {
                 }
                 try {
                     opts.splitsPerBatch = Integer.parseInt(args[++i]);
-                    if (opts.splitsPerBatch < 0) {
-                        throw new IllegalArgumentException("-splitsPerBatch cannot be less than 0");
+                    if (opts.splitsPerBatch < 10) {
+                        throw new IllegalArgumentException("-splitsPerBatch cannot be less than 10");
                     }
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException("-splitsPerBatch argument is not an integer: " + e.getMessage());
