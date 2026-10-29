@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.handler.edge;
 
 import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_VERSION_CACHE_DIR;
 import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_VERSION_DIST_CACHE_DIR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -18,9 +19,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -49,7 +49,7 @@ public class ProtobufEdgePreconditionTest {
     private Configuration conf;
     private String loadDateStr = DateHelper.format(new Date(now.get()));
 
-    @Before
+    @BeforeEach
     public void setup() {
         TypeRegistry.reset();
         conf = new Configuration();
@@ -113,29 +113,27 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 8, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
         // colFam
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
 
         // colQual
-        Assert.assertEquals("20221026/MY_CSV_DATA-MY_CSV_DATA///B", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
+        assertEquals("20221026/MY_CSV_DATA-MY_CSV_DATA///B", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
 
         // values
-        Assert.assertEquals(1, EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").size());
-        Assert.assertEquals(
-                        "count: 1, bitmask: 2, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
-                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+        assertEquals(1, EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").size());
+        assertEquals("count: 1, bitmask: 2, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
+                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(0));
-        Assert.assertEquals(1, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
-        Assert.assertEquals(
-                        "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
-                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+        assertEquals(1, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
+        assertEquals("count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
+                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(0));
 
         // vis and ts
-        Assert.assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
-        Assert.assertEquals("1666747913000", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
+        assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
+        assertEquals("1666747913000", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
 
     }
 
@@ -170,36 +168,32 @@ public class ProtobufEdgePreconditionTest {
 
         // the count is doubled since activity < event date in this test. In this case, we add 2 edges each.
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 16, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
 
         // the dates
-        Assert.assertEquals("20221025/MY_CSV_DATA-MY_CSV_DATA///A", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
-        Assert.assertEquals("20221026/MY_CSV_DATA-MY_CSV_DATA///C", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(1)[1]);
+        assertEquals("20221025/MY_CSV_DATA-MY_CSV_DATA///A", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
+        assertEquals("20221026/MY_CSV_DATA-MY_CSV_DATA///C", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(1)[1]);
 
         // values
-        Assert.assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").size());
-        Assert.assertEquals(
-                        "count: 1, bitmask: 4194304, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
-                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+        assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").size());
+        assertEquals("count: 1, bitmask: 4194304, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
+                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(0));
-        Assert.assertEquals(
-                        "count: 1, bitmask: 2, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
-                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+        assertEquals("count: 1, bitmask: 2, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
+                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(1));
-        Assert.assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
-        Assert.assertEquals(
-                        "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], duration: , loadDate: "
-                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+        assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
+        assertEquals("count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], duration: , loadDate: "
+                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(0));
-        Assert.assertEquals(
-                        "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
-                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+        assertEquals("count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
+                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(1));
 
-        Assert.assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
-        Assert.assertEquals("1666737913000", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
+        assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
+        assertEquals("1666737913000", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
 
     }
 
@@ -234,36 +228,32 @@ public class ProtobufEdgePreconditionTest {
 
         // the count is doubled since activity < event date in this test. In this case, we add 2 edges each.
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 16, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
 
         // the dates
-        Assert.assertEquals("19700101/MY_CSV_DATA-MY_CSV_DATA///A", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
-        Assert.assertEquals("19660908/MY_CSV_DATA-MY_CSV_DATA///C", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(1)[1]);
+        assertEquals("19700101/MY_CSV_DATA-MY_CSV_DATA///A", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
+        assertEquals("19660908/MY_CSV_DATA-MY_CSV_DATA///C", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(1)[1]);
 
         // values
-        Assert.assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").size());
-        Assert.assertEquals(
-                        "count: 1, bitmask: , sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
-                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+        assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").size());
+        assertEquals("count: 1, bitmask: , sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
+                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(0));
-        Assert.assertEquals(
-                        "count: 1, bitmask: 1, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
-                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+        assertEquals("count: 1, bitmask: 1, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
+                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(1));
-        Assert.assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
-        Assert.assertEquals(
-                        "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
-                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+        assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
+        assertEquals("count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
+                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(0));
-        Assert.assertEquals(
-                        "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
-                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+        assertEquals("count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
+                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
                         EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(1));
 
-        Assert.assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
-        Assert.assertEquals("0", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
+        assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
+        assertEquals("0", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
 
     }
 
@@ -303,7 +293,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 12, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -331,7 +321,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -362,7 +352,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -387,7 +377,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 0, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -415,7 +405,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -443,7 +433,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -474,7 +464,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 7, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -504,7 +494,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -535,7 +525,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -558,7 +548,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 0, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -597,7 +587,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 8, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -632,7 +622,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 }

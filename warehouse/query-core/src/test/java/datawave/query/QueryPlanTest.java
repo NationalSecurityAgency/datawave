@@ -1,18 +1,17 @@
 package datawave.query;
 
 import static datawave.query.testframework.RawDataManager.RE_OP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.IOException;
 import java.util.Collections;
 
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.query.config.ShardQueryConfiguration;
@@ -24,8 +23,8 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -36,10 +35,10 @@ import datawave.query.testframework.GenericCityFields;
 /**
  * QueryPlanTest verifies that the query plan is being properly set in the query metrics, even in cases where the query fails during creation.
  */
-public class QueryPlanTest extends AbstractFunctionalQuery {
+public class QueryPlanTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(AnyFieldQueryTest.class);
 
@@ -55,7 +54,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         this.auths = CitiesDataType.getTestAuths();
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         FieldConfig generic = new GenericCityFields();
         generic.addIndexField(CitiesDataType.CityField.STATE.name());
@@ -68,9 +67,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         client = accumuloSetup.loadTables(log);
     }
 
-    @Before
-    public void before() throws IOException {
-        super.querySetUp();
+    @BeforeEach
+    public void before() {
         // Use RunningQuery to test that query metrics being updated with plan
         this.useRunningQuery();
 
