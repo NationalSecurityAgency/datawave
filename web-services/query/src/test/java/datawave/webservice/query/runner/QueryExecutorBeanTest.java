@@ -1,15 +1,22 @@
 package datawave.webservice.query.runner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -31,12 +38,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ejb.EJBContext;
 import javax.servlet.http.HttpServletResponse;
+import javax.transaction.Status;
+import javax.transaction.UserTransaction;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -50,6 +60,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -104,6 +116,8 @@ import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.limit.QueryHeartbeat;
+import datawave.webservice.query.limit.QueryHeartbeatCache;
 import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.limit.QueryLimiterResponse;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
@@ -218,6 +232,58 @@ public class QueryExecutorBeanTest {
         subject.hashCode();
         assertNotEquals(subject, null, "Should not be equal");
         assertNotEquals(subject, new Triple("test", null, null), "Should not be equal");
+    }
+
+    @ParameterizedTest(name = "{0}: accounting releases={1}")
+    @CsvSource({"limit, 0", "limiterError, 0", "closeError, 1"})
+    @SuppressWarnings("unchecked")
+    public void testResetFailureAccounting(String failure, int expectedReleases) throws Exception {
+        QueryImpl settings = createNewQuery();
+        settings.setOwner("owner");
+        String queryId = settings.getId().toString();
+        QueryLogic<Object> logic = mock(QueryLogic.class);
+        when(logic.isQueryLimiterEnabled()).thenReturn(true);
+        AccumuloClient client = mock(AccumuloClient.class);
+        TransformIterator<String,String> iterator = new TransformIterator<>(Collections.singletonList("row").iterator(), value -> value);
+        when(logic.initialize(eq(client), eq(settings), any())).thenReturn(mock(GenericQueryConfiguration.class));
+        when(logic.getTransformIterator(settings)).thenReturn(iterator);
+        RunningQuery runningQuery = new RunningQuery(client, AccumuloConnectionFactory.Priority.NORMAL, logic, settings, null, null,
+                        new QueryMetricFactoryImpl());
+        BaseQueryMetric.Lifecycle originalLifecycle = runningQuery.getMetric().getLifecycle();
+        cache.put(queryId, runningQuery);
+
+        QueryHeartbeat heartbeat = new QueryHeartbeat(queryId, Collections.emptyList());
+        QueryHeartbeatCache heartbeats = new QueryHeartbeatCache();
+        heartbeats.put(heartbeat);
+        queryLimiter = spy(new QueryLimiter());
+        queryLimiter.setHeartbeatCache(heartbeats);
+        ReflectionTestUtils.setField(bean, "queryLimiter", queryLimiter);
+        doReturn("limit".equals(failure) ? QueryLimiterResponse.metLimit("at limit") : QueryLimiterResponse.hasNotMetLimit()).when(queryLimiter)
+                        .checkForLimits(userDN, null, queryLogicName);
+        if ("limiterError".equals(failure)) {
+            doThrow(new IOException("limit check failed")).when(queryLimiter).checkForLimits(userDN, null, queryLogicName);
+        } else if ("closeError".equals(failure)) {
+            doThrow(new IOException("client return failed")).when(connectionFactory).returnClient(client);
+        }
+        UserTransaction transaction = mock(UserTransaction.class);
+        when(transaction.getStatus()).thenReturn(Status.STATUS_ACTIVE);
+        when(ctx.getUserTransaction()).thenReturn(transaction);
+        when(ctx.getCallerPrincipal()).thenReturn(() -> "owner");
+
+        assertThrows(DatawaveWebApplicationException.class, () -> bean.reset(queryId));
+
+        assertSame(runningQuery, cache.get(queryId));
+        assertSame(client, runningQuery.getClient());
+        assertSame(iterator, runningQuery.getTransformIterator());
+        assertFalse(runningQuery.isFinished());
+        assertFalse(runningQuery.isCanceled());
+        assertEquals(expectedReleases == 0 ? originalLifecycle : BaseQueryMetric.Lifecycle.CLOSED, runningQuery.getMetric().getLifecycle());
+        assertSame(expectedReleases == 0 ? heartbeat : null, heartbeats.get(queryId));
+        verify(queryLimiter).checkForLimits(userDN, null, queryLogicName);
+        verify(queryLimiter, times(expectedReleases)).stopCountingQueryTowardsLimits(queryId);
+        verify(connectionFactory, times(expectedReleases)).returnClient(client);
+        verify(logic).initialize(eq(client), eq(settings), any());
+        verify(transaction).commit();
     }
 
     private QueryImpl createNewQuery() throws Exception {
