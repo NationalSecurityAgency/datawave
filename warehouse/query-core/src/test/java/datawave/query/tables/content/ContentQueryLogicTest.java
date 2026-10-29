@@ -122,6 +122,15 @@ public class ContentQueryLogicTest {
     }
 
     @Test
+    public void maxIdsIsCopiedToClone() throws CloneNotSupportedException {
+        contentQueryLogic.setMaxIds(4);
+
+        ContentQueryLogic clone = (ContentQueryLogic) contentQueryLogic.clone();
+
+        assertEquals(4, clone.getMaxIds());
+    }
+
+    @Test
     public void testContainsDnWithAccess() {
         // borrowed from TestBaseQueryLogic.java
         Set<String> dns = Sets.newHashSet("dn=user", "dn=user chain 1", "dn=user chain 2");

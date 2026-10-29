@@ -2,8 +2,8 @@ package datawave.query.tables;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,9 +39,9 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
@@ -101,7 +101,7 @@ public class RemoteEdgeQueryLogicHttpTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
         System.setProperty(DnProperties.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
@@ -225,7 +225,7 @@ public class RemoteEdgeQueryLogicHttpTest {
         logic.setRemoteQueryLogic("TestQuery");
     }
 
-    @After
+    @AfterEach
     public void after() {
         if (server != null) {
             server.stop(0);

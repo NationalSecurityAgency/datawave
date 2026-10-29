@@ -17,8 +17,8 @@ import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -27,8 +27,8 @@ import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.testframework.AbstractFields;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.BooksDataManager;
 import datawave.query.testframework.BooksDataType;
 import datawave.query.testframework.BooksDataType.BooksEntry;
@@ -42,10 +42,10 @@ import datawave.query.testframework.RawDataManager;
 /**
  * Tests for grouping data. The {@link BooksDataManager} will create the valid grouping entries.
  */
-public class BooksQueryTest extends AbstractFunctionalQuery {
+public class BooksQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(BooksQueryTest.class);
 
