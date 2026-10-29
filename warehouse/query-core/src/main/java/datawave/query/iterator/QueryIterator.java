@@ -31,7 +31,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
-import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -117,6 +116,7 @@ import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.transformer.ExcerptTransform;
 import datawave.query.transformer.SummaryTransform;
 import datawave.query.transformer.UniqueTransform;
+import datawave.query.util.AccumuloExceptionChecker;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
 import datawave.query.util.TraceIterators;
@@ -592,15 +592,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
-        TabletClosedException tce = null;
+        RuntimeException tce = null;
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
         }
-        if (reason instanceof TabletClosedException) {
-            tce = (TabletClosedException) reason;
+        if (AccumuloExceptionChecker.isTabletClosedException(reason)) {
+            tce = (RuntimeException) reason;
         }
 
         int depth = 1;
@@ -612,8 +612,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
             }
-            if (reason instanceof TabletClosedException) {
-                tce = (TabletClosedException) reason;
+            if (AccumuloExceptionChecker.isTabletClosedException(reason)) {
+                tce = (RuntimeException) reason;
             }
             depth++;
         }
