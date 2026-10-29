@@ -1285,6 +1285,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
         AccumuloClient client = null;
         RunningQuery query = null;
+        boolean locked = false;
         try {
             ctx.getUserTransaction().begin();
 
@@ -1294,6 +1295,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // The lock should be released at the end of the method call.
             if (!queryCache.lock(id))
                 throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR);
+            locked = true;
 
             // Check if submitting a new query would exceed any configured concurrent query limits.
             Query settings = query.getSettings();
@@ -1397,7 +1399,10 @@ public class QueryExecutorBean implements QueryExecutor {
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
         } finally {
-            queryCache.unlock(id);
+            // Only release the lock if this request acquired it; otherwise we would release another request's lock.
+            if (locked) {
+                queryCache.unlock(id);
+            }
             try {
                 if (ctx.getUserTransaction().getStatus() != Status.STATUS_NO_TRANSACTION) {
                     // no reason to commit if transaction not started, ie Query not found exception
@@ -2131,6 +2136,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
         RunningQuery query = null;
         Query contentLookupSettings = null;
+        boolean locked = false;
         try {
             if (!id.matches(UUID_REGEX_RULE)) {
                 log.error("Invalid query id: " + id);
@@ -2148,6 +2154,7 @@ public class QueryExecutorBean implements QueryExecutor {
             if (!queryCache.lock(id)) {
                 throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR);
             }
+            locked = true;
 
             // When we pulled the query from the cache, we told it not to allocate a connection.
             // So if the connection is null here, then either the query wasn't in the cache
@@ -2270,7 +2277,10 @@ public class QueryExecutorBean implements QueryExecutor {
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
         } finally {
-            queryCache.unlock(id);
+            // Only release the lock if this request acquired it; otherwise we would release another request's lock.
+            if (locked) {
+                queryCache.unlock(id);
+            }
             try {
                 if (ctx.getUserTransaction().getStatus() == Status.STATUS_MARKED_ROLLBACK) {
                     ctx.getUserTransaction().rollback();
