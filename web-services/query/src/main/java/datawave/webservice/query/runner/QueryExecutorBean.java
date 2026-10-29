@@ -1291,6 +1291,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
         AccumuloClient client = null;
         RunningQuery query = null;
+        boolean resetStarted = false;
         try {
             ctx.getUserTransaction().begin();
 
@@ -1304,6 +1305,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // Check if submitting a new query would exceed any configured concurrent query limits
             Query settings = query.getSettings();
             checkForQueryLimits(query.getLogic(), response, settings.getUserDN(), settings.getSystemFrom(), settings.getQueryLogicName());
+            resetStarted = true;
 
             // We did not allocate a connection when we looked up the query. If
             // there's a connection when we get here, then we know it can only be
@@ -1396,7 +1398,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 log.error("Error returning connection on failed reset", e2);
             }
 
-            if (query != null) {
+            if (resetStarted) {
                 markQueryAsInactive(query.getLogic(), id);
             }
 
