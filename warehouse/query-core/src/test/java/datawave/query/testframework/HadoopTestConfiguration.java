@@ -18,7 +18,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Defines Hadoop configuration data for unit testing.

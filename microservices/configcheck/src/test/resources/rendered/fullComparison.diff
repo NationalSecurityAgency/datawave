@@ -35,21 +35,15 @@ doc.beans.BaseEventQuery.dateIndexThreads: ${datawave.query.logic.logics.BaseEve
 doc.beans.BaseEventQuery.defaultDateTypeName: ${datawave.query.logic.logics.BaseEventQuery.defaultDateTypeName}
 doc.beans.BaseEventQuery.disableIndexOnlyDocuments: ${datawave.query.logic.logics.BaseEventQuery.disableIndexOnlyDocuments}
 doc.beans.BaseEventQuery.evaluationOnlyFields: ${datawave.query.logic.logics.BaseEventQuery.evaluationOnlyFields}
+doc.beans.BaseEventQuery.finalMaxTermThreshold: ${datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold}
+doc.beans.BaseEventQuery.fullTableScanEnabled: ${datawave.query.logic.logics.BaseEventQuery.fullTableScanEnabled}
+doc.beans.BaseEventQuery.hdfsSiteConfigURLs: ${datawave.query.logic.logics.BaseEventQuery.hdfsSiteConfigURLs}
 =======
 doc.beans.BaseEventQuery.dateIndexTableName: ${date.index.table.name}
 doc.beans.BaseEventQuery.dateIndexThreads: ${date.index.threads}
 doc.beans.BaseEventQuery.defaultDateTypeName: ${default.date.type.name}
 doc.beans.BaseEventQuery.disableIndexOnlyDocuments: ${disable.index.only.documents}
 doc.beans.BaseEventQuery.evaluationOnlyFields: ${evaluation.only.fields}
->>>>>>> SECOND
-<<<<<<< FIRST
-=======
->>>>>>> SECOND
-<<<<<<< FIRST
-doc.beans.BaseEventQuery.finalMaxTermThreshold: ${datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold}
-doc.beans.BaseEventQuery.fullTableScanEnabled: ${datawave.query.logic.logics.BaseEventQuery.fullTableScanEnabled}
-doc.beans.BaseEventQuery.hdfsSiteConfigURLs: ${datawave.query.logic.logics.BaseEventQuery.hdfsSiteConfigURLs}
-=======
 doc.beans.BaseEventQuery.finalMaxTermThreshold: ${beq.finalMaxTermThreshold}
 doc.beans.BaseEventQuery.fullTableScanEnabled: ${beq.fullTableScanEnabled}
 doc.beans.BaseEventQuery.hdfsSiteConfigURLs: ${hdfs.site.config.urls}
@@ -136,12 +130,6 @@ doc.beans.BaseEventQuery.reverseIndexTableName: ${rindex.table.name}
 >>>>>>> SECOND
 <<<<<<< FIRST
 doc.beans.BaseEventQuery.sendTimingToStatsd: ${datawave.query.logic.logics.BaseEventQuery.sendTimingToStatsd}
-=======
->>>>>>> SECOND
-<<<<<<< FIRST
-=======
->>>>>>> SECOND
-<<<<<<< FIRST
 doc.beans.BaseEventQuery.statsdHost: ${datawave.query.logic.logics.BaseEventQuery.statsdHost}
 doc.beans.BaseEventQuery.statsdPort: ${datawave.query.logic.logics.BaseEventQuery.statsdPort}
 =======
@@ -666,6 +654,7 @@ doc.beans.BaseEventQuery.ivaratorCacheScanPersistThreshold: "${warehouse.default
 doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: "${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}"
 doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: "${warehouse.defaults.ivaratorFstHdfsBaseURIs}"
 doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: "${warehouse.defaults.ivaratorMaxOpenFiles}"
+doc.beans.BaseEventQuery.logTimingDetails: true
 =======
 doc.beans.BaseEventQuery.indexTableName: "${table.name.shardIndex}"
 doc.beans.BaseEventQuery.initialMaxTermThreshold: 2000
@@ -674,14 +663,6 @@ doc.beans.BaseEventQuery.ivaratorCacheScanPersistThreshold: 100000
 doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: 60
 doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: "hdfs:///IvaratorCache"
 doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: 100
->>>>>>> SECOND
-<<<<<<< FIRST
-=======
-doc.beans.BaseEventQuery.lazySetMechanismEnabled: false
->>>>>>> SECOND
-<<<<<<< FIRST
-doc.beans.BaseEventQuery.logTimingDetails: true
-=======
 doc.beans.BaseEventQuery.logTimingDetails: false
 >>>>>>> SECOND
 doc.beans.BaseEventQuery.logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"

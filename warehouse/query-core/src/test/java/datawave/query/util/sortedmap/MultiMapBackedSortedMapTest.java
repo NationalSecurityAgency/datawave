@@ -21,7 +21,6 @@ import java.util.TreeMap;
 
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -104,7 +103,17 @@ public abstract class MultiMapBackedSortedMapTest<K,V> {
     public void putRandomly(List<Map> maps, K key, V value) {
         Random random = new Random();
         int mapIndex = random.nextInt(maps.size());
-        maps.get(mapIndex).put(key, value);
+        // Mirror FileSortedMap#put's rewrite-aware contract here: a raw, unconditional Map.put() lets whichever randomly-routed write for a given
+        // key happens to land last in a given backing map silently clobber a prior, larger value with no rewrite check at all. Since a key can be
+        // routed into the same backing map on more than one call, that clobbering can - rarely - leave every backing map holding a smaller value
+        // than the one under test, which no amount of correct cross-map merge logic can then recover. Applying the rewrite strategy per-map, exactly
+        // as FileSortedMap#put does, keeps the map data self-consistent regardless of insertion order.
+        Map<K,V> targetMap = maps.get(mapIndex);
+        V previous = (V) targetMap.get(key);
+        FileSortedMap.RewriteStrategy<K,V> rewriteStrategy = getRewriteStrategy();
+        if ((previous == null) || (rewriteStrategy == null) || (rewriteStrategy.rewrite(key, previous, value))) {
+            targetMap.put(key, value);
+        }
     }
 
     public void addDataRandomly(List<Map> maps, Map.Entry<K,V>[] data) {
@@ -143,7 +152,7 @@ public abstract class MultiMapBackedSortedMapTest<K,V> {
 
     private void tryDelete(File file) {
         if (file.exists()) {
-            Assert.assertTrue("Failed to delete file " + file, file.delete());
+            assertTrue("Failed to delete file " + file, file.delete());
         }
     }
 

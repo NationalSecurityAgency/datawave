@@ -3,24 +3,25 @@ package datawave.common.io;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.mock;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class FilesTest {
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testEnsureDirException() throws Exception {
         File file = mock(File.class);
         expect(file.exists()).andReturn(false);
         expect(file.mkdirs()).andReturn(false);
         replay(file);
-        Files.ensureDir(file);
+        assertThrows(IllegalStateException.class, () -> Files.ensureDir(file));
     }
 
     @Test
@@ -90,10 +91,10 @@ public class FilesTest {
         assertEquals(err, "Directory, 'EasyMock for class java.io.File' cannot be written to.");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testCheckDirNull() throws Exception {
         File file = null;
-        Files.checkDir(file);
+        assertThrows(IllegalArgumentException.class, () -> Files.checkDir(file));
     }
 
     @Test
@@ -138,7 +139,7 @@ public class FilesTest {
         assertEquals(err, "File, 'EasyMock for class java.io.File' cannot be written to.");
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testEnsureMvIOException() throws Exception {
         File src = mock(File.class);
         File dest = mock(File.class);
@@ -162,7 +163,7 @@ public class FilesTest {
         expect(dest.getPath()).andReturn("").anyTimes();
         replay(dest);
 
-        Files.ensureMv(src, dest);
+        assertThrows(IOException.class, () -> Files.ensureMv(src, dest));
     }
 
     @Test
@@ -174,12 +175,12 @@ public class FilesTest {
         assertEquals(ret, "Directory, 'src' is not a file.");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEnsureMvStringNull() throws Exception {
         String src = null;
         String dest = null;
 
-        String ret = Files.mv(src, dest);
+        assertThrows(IllegalArgumentException.class, () -> Files.mv(src, dest));
     }
 
     @Test
@@ -297,11 +298,11 @@ public class FilesTest {
         assertEquals(ret, "Directory, 'src' is not a file.");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMvStringNull() throws Exception {
         String src = null;
         String dest = null;
-        String ret = Files.mv(src, dest, true);
+        assertThrows(IllegalArgumentException.class, () -> Files.mv(src, dest, true));
     }
 
     @Test

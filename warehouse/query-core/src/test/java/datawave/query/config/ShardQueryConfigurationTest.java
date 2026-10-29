@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import org.apache.accumulo.core.client.ScannerBase;
@@ -53,7 +54,7 @@ import datawave.query.iterator.logic.TermFrequencyIndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.scanhints.IvaratorScanHint;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class ShardQueryConfigurationTest {
 
@@ -158,9 +159,9 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("maxIndexBatchSize", 1100);
         defaultValues.put("allTermsIndexOnly", false);
         updatedValues.put("allTermsIndexOnly", true);
-        defaultValues.put("maxIndexScanTimeMillis", Long.MAX_VALUE);
+        defaultValues.put("maxIndexScanTimeMillis", TimeUnit.MINUTES.toMillis(7));
         updatedValues.put("maxIndexScanTimeMillis", 100000L);
-        defaultValues.put("maxAnyFieldScanTimeMillis", Long.MAX_VALUE);
+        defaultValues.put("maxAnyFieldScanTimeMillis", TimeUnit.MINUTES.toMillis(7));
         updatedValues.put("maxAnyFieldScanTimeMillis", 100000L);
         defaultValues.put("useNewIndexLookups", false);
         updatedValues.put("useNewIndexLookups", true);
@@ -186,6 +187,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("reduceTypeMetadata", true);
         defaultValues.put("reduceTypeMetadataPerShard", false);
         updatedValues.put("reduceTypeMetadataPerShard", true);
+        defaultValues.put("kryoTypeMetadata", false);
+        updatedValues.put("kryoTypeMetadata", true);
         defaultValues.put("collectTimingDetails", false);
         updatedValues.put("collectTimingDetails", true);
         defaultValues.put("logTimingDetails", false);
@@ -318,6 +321,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("limitFieldsField", "LIMITED");
         defaultValues.put("hitList", false);
         updatedValues.put("hitList", true);
+        defaultValues.put("stripHitTermGroupingContext", false);
+        updatedValues.put("stripHitTermGroupingContext", true);
         defaultValues.put("dateIndexTimeTravel", false);
         updatedValues.put("dateIndexTimeTravel", true);
         defaultValues.put("dateIndexIterator", false);

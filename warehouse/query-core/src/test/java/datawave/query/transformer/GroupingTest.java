@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -44,6 +45,7 @@ import com.google.common.collect.Lists;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.marking.Markings;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
@@ -57,7 +59,7 @@ import datawave.query.util.TestIndexTableNames;
 import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 import datawave.query.util.VisibilityWiseGuysNoGroupingIngestWithModel;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -604,13 +606,15 @@ public class GroupingTest extends AbstractQueryTest {
         for (QueryResult result : queryResults) {
             // noinspection rawtypes
             for (EventBase event : result.response.getEvents()) {
-                String eventCV = event.getMarkings().get(COLVIS_MARKING).toString();
+                String eventCV = Optional.ofNullable(event.getMarkings()).map(Markings::getMarkings).map(Object::toString).orElse(null);
                 assertThat(eventCV).describedAs("Assert event cv for teardown: %s, interrupt: %s", result.teardown, result.interrupt).isEqualTo(REDUCED_COLVIS);
                 // noinspection unchecked
                 for (FieldBase<?> field : (List<FieldBase<?>>) event.getFields()) {
-                    String fieldCV = field.getMarkings().get(COLVIS_MARKING);
-                    assertThat(fieldCV).describedAs("Assert null field cv for field: %s, teardown: %s, interrupt: %s", field.getName(), result.teardown,
-                                    result.interrupt).isNull();
+                    Markings<?> fieldMarkings = field.getMarkings();
+                    assertThat(fieldMarkings == null || fieldMarkings.isEmpty())
+                                    .describedAs("Assert empty field markings for field: %s, teardown: %s, interrupt: %s", field.getName(), result.teardown,
+                                                    result.interrupt)
+                                    .isTrue();
                 }
             }
         }

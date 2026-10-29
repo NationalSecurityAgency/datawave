@@ -49,7 +49,7 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.testframework.MockStatusReporter;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Write tests data for the {@link datawave.query.MixedGeoAndGeoWaveTest}

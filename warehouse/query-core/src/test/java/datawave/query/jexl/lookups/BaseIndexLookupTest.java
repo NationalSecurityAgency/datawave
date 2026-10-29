@@ -33,8 +33,8 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
-import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 
 /**

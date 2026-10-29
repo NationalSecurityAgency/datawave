@@ -2,7 +2,7 @@ package datawave.query.common.grouping;
 
 import java.util.Set;
 
-import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.access.AccessExpression;
 
 import datawave.query.attributes.Attribute;
 
@@ -32,7 +32,7 @@ public abstract class AbstractAggregator<AGGREGATE> implements Aggregator<AGGREG
     }
 
     @Override
-    public abstract Set<ColumnVisibility> getColumnVisibilities();
+    public abstract Set<AccessExpression> getAccessExpressions();
 
     @Override
     public abstract AGGREGATE getAggregation();

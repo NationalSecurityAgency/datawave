@@ -37,7 +37,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.scan.BatchScannerBuilder;
 import datawave.scan.ScannerBuilder;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class ScanSessionManagerTest {
 

@@ -57,9 +57,6 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
     private Text columnQualifierDate;
     private Text columnQualifierDateAndDatatype;
 
-    // used to track the unique field value pairs
-    private final Set<String> foundPairs = new HashSet<>();
-
     private final ShardIndexKey parser = new ShardIndexKey();
 
     enum HINT_TYPE {
@@ -112,20 +109,9 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
     }
 
     @Override
-    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (!range.isStartKeyInclusive()) {
-            // need to make the start key inclusive because filters operate slightly differently
-            Range seekRange = new Range(range.getStartKey(), true, range.getEndKey(), range.isEndKeyInclusive());
-            super.seek(seekRange, columnFamilies, inclusive);
-        } else {
-            super.seek(range, columnFamilies, inclusive);
-        }
-    }
-
-    @Override
     public FilterResult filter(Key k, Value v) {
-        if (log.isDebugEnabled()) {
-            log.debug("tk: {}", k.toStringNoTime());
+        if (log.isTraceEnabled()) {
+            log.trace("tk: {}", k.toStringNoTime());
         }
 
         // parse key and reset hint
@@ -145,39 +131,36 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
 
             if (!matcher.matches()) {
                 // advance to next row
-                log.debug("pattern does not match, advance to next row");
+                log.trace("pattern does not match, advance to next row");
                 return new FilterResult(false, AdvanceResult.NEXT_ROW);
             }
             previousMatch = parser.getValue();
         }
 
-        String candidate = parser.getValue() + parser.getField();
-        if (foundPairs.contains(candidate)) {
-            // advance to next field
-            foundPairs.clear();
-            log.debug("Found duplicate field, advance to next field");
-            return new FilterResult(false, AdvanceResult.NEXT_CF);
-        }
-
         String date = parser.getShard();
         if (date.compareTo(startDate) < 0) {
             // advance to start date
-            log.debug("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
+            if (log.isTraceEnabled()) {
+                log.trace("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
+            }
             hint = HINT_TYPE.DATE;
             return new FilterResult(false, AdvanceResult.USE_HINT);
         } else if (date.compareTo(endDate) > 0) {
             // advance to next row
-            log.debug("date {} sorts after end date {}, advance to next column family", date, endDate);
+            if (log.isTraceEnabled()) {
+                log.trace("date {} sorts after end date {}, advance to next column family", date, endDate);
+            }
             return new FilterResult(false, AdvanceResult.NEXT_CF);
         }
 
         if (datatypes != null && !datatypes.contains(parser.getDatatype())) {
-            log.debug("datatype {} does not match, advance to next key", parser.getDatatype());
+            if (log.isTraceEnabled()) {
+                log.trace("datatype {} does not match, advance to next key", parser.getDatatype());
+            }
             return new FilterResult(false, AdvanceResult.NEXT);
         }
 
-        log.debug("key accepted, advancing to next column family");
-        foundPairs.add(candidate);
+        log.trace("key accepted, advancing to next column family");
         return new FilterResult(true, AdvanceResult.NEXT_CF);
     }
 
@@ -218,5 +201,40 @@ public class UnfieldedRegexExpansionIterator extends SeekingFilter implements Op
                 options.containsKey(END_DATE) &&
                 options.containsKey(PATTERN);
         //  @formatter:on
+    }
+
+    /**
+     * Resumes a torn down scan past the column family it already reported a value for.
+     * <p>
+     * A rebuilt stack is re-seeked at {@code Range(lastReturnedKey, exclusive)}, which lands inside the column family the previous stack skipped when it
+     * accepted that key. Ranges from {@code ShardIndexQueryTableStaticMethods#getRegexRange} are exclusive too, but their start key is a bare row with no
+     * column family, so only a complete index key marks a resume.
+     */
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        if (!range.isStartKeyInclusive() && isCompleteIndexKey(range.getStartKey())) {
+            Key skip = range.getStartKey().followingKey(PartialKey.ROW_COLFAM);
+            // a null end key means the scan is unbounded, as happens for a pattern with wildcards on both sides
+            Key endKey = range.getEndKey();
+            if (endKey != null && skip.compareTo(endKey) > 0) {
+                // handles the case where appending a null byte would cause the start key to be greater than the end key
+                super.seek(new Range(endKey, true, endKey, range.isEndKeyInclusive()), columnFamilies, inclusive);
+            } else {
+                super.seek(new Range(skip, true, endKey, range.isEndKeyInclusive()), columnFamilies, inclusive);
+            }
+        } else {
+            super.seek(range, columnFamilies, inclusive);
+        }
+    }
+
+    /**
+     * A complete shard index key carries a column family, meaning it identifies a specific field rather than a bare row boundary.
+     *
+     * @param key
+     *            the start key of a seek range
+     * @return true if the key could be one this iterator previously returned
+     */
+    private static boolean isCompleteIndexKey(Key key) {
+        return key != null && key.getColumnFamily().getLength() > 0;
     }
 }

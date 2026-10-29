@@ -197,6 +197,11 @@ public class QueryParameters {
     public static final String HIT_LIST = "hit.list";
 
     /**
+     * Used to remove the grouping context from the values of the HIT_TERM field
+     */
+    public static final String STRIP_HIT_TERM_GROUPING_CONTEXT = "strip.hit.term.grouping.context";
+
+    /**
      * The type of dates used in the date range. Leaving blank will use the default.
      */
     public static final String DATE_RANGE_TYPE = "date.type";

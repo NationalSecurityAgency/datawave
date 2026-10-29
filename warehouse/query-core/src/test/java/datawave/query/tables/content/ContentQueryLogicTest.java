@@ -55,7 +55,7 @@ public class ContentQueryLogicTest {
     private ContentQueryConfiguration mockContentConfig;
     private Query query;
 
-    private final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
+    private final MarkingFunctions<?> markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
 
     @BeforeEach
     public void setup() throws TableNotFoundException {
@@ -119,6 +119,15 @@ public class ContentQueryLogicTest {
         assertEquals(0, result1, "Incorrect max page size");
         assertEquals(0, result2, "Incorrect page byte trigger");
         assertNotNull(result3, "Iterator should not be null");
+    }
+
+    @Test
+    public void maxIdsIsCopiedToClone() throws CloneNotSupportedException {
+        contentQueryLogic.setMaxIds(4);
+
+        ContentQueryLogic clone = (ContentQueryLogic) contentQueryLogic.clone();
+
+        assertEquals(4, clone.getMaxIds());
     }
 
     @Test

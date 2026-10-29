@@ -68,6 +68,7 @@ doc.beans.BaseEventQuery.ivaratorCacheScanPersistThreshold: "${warehouse.default
 doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: "${warehouse.defaults.ivaratorCacheScanTimeoutMinutes}"
 doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: "${warehouse.defaults.ivaratorFstHdfsBaseURIs}"
 doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: "${warehouse.defaults.ivaratorMaxOpenFiles}"
+doc.beans.BaseEventQuery.logTimingDetails: true
 =======
 doc.beans.BaseEventQuery.indexTableName: "${table.name.shardIndex}"
 doc.beans.BaseEventQuery.initialMaxTermThreshold: 2000
@@ -76,14 +77,6 @@ doc.beans.BaseEventQuery.ivaratorCacheScanPersistThreshold: 100000
 doc.beans.BaseEventQuery.ivaratorCacheScanTimeoutMinutes: 60
 doc.beans.BaseEventQuery.ivaratorFstHdfsBaseURIs: "hdfs:///IvaratorCache"
 doc.beans.BaseEventQuery.ivaratorMaxOpenFiles: 100
->>>>>>> SECOND
-<<<<<<< FIRST
-=======
-doc.beans.BaseEventQuery.lazySetMechanismEnabled: false
->>>>>>> SECOND
-<<<<<<< FIRST
-doc.beans.BaseEventQuery.logTimingDetails: true
-=======
 doc.beans.BaseEventQuery.logTimingDetails: false
 >>>>>>> SECOND
 doc.beans.BaseEventQuery.logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"

@@ -21,8 +21,9 @@ import com.google.common.collect.Sets;
 
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
-import datawave.query.tld.TLD;
+import datawave.table.util.TLD;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields
@@ -551,6 +552,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         for (ASTIdentifier identifier : identifiers) {
             ids.add(JexlASTHelper.deconstructIdentifier(identifier));
         }
+
+        // List ivarator keeps field as ASTStringLiteral
+        String fieldName = ExceededOr.decodeField(script);
+        if (fieldName != null) {
+            ids.add(fieldName);
+        }
+
         return ids;
     }
 

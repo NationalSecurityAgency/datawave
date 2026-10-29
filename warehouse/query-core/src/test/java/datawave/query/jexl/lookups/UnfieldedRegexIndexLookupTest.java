@@ -22,7 +22,7 @@ import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods.RefactoredRangeDescription;
 import datawave.query.tables.ScannerFactory;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * Some basic tests for the {@link UnfieldedRegexIndexLookup}

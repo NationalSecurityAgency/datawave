@@ -1,10 +1,10 @@
 package datawave.webservice.query.result.event;
 
-import java.util.Map;
+import datawave.marking.Markings;
 
 public interface HasMarkings {
 
-    void setMarkings(Map<String,String> markings);
+    void setMarkings(Markings<?> markings);
 
-    Map<String,String> getMarkings();
+    Markings<?> getMarkings();
 }

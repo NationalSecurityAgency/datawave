@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="com.fasterxml.jackson.module.jackson-module-jaxb-annotations" xmlns="urn:jboss:module:1.9">
+    <resources>
+        <resource-root path="jackson-module-jaxb-annotations-${version.jackson}.jar"/>
+    </resources>
+
+    <dependencies>
+        <module name="com.fasterxml.jackson.core.jackson-core"/>
+        <module name="com.fasterxml.jackson.core.jackson-databind"/>
+        <module name="com.fasterxml.jackson.core.jackson-annotations"/>
+        <module name="javax.xml.bind.api"/>
+    </dependencies>
+</module>

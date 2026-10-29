@@ -16,7 +16,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -239,16 +238,10 @@ public class CardinalityRecord implements Serializable {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(() -> {
                 synchronized (LOCK) {
-                    ObjectOutputStream oos = null;
-                    try {
-                        FileOutputStream fos = new FileOutputStream(file);
-                        oos = new ObjectOutputStream(fos);
+                    try (FileOutputStream fos = new FileOutputStream(file); ObjectOutputStream oos = new ObjectOutputStream(fos)) {
                         oos.writeObject(cardinalityRecord);
                     } catch (Exception e) {
                         log.error(e.getMessage(), e);
-                    } finally {
-                        IOUtils.closeQuietly(oos);
-                        file.notifyAll();
                     }
                 }
             });

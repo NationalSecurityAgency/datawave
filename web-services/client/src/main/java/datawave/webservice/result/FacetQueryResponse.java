@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -16,6 +15,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
+import datawave.marking.Markings;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.DefaultFacets;
 import datawave.webservice.query.result.event.FacetsBase;
@@ -46,11 +46,13 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
         this.facets = new ArrayList<DefaultFacets>(facets);
     }
 
-    public void setMarkings(Map<String,String> markings) {
+    @Override
+    public void setMarkings(Markings<?> markings) {
         this.markings = markings;
     }
 
-    public Map<String,String> getMarkings() {
+    @Override
+    public Markings<?> getMarkings() {
         return markings;
     }
 

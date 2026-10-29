@@ -33,10 +33,17 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.QueryScannerHelper;
+import datawave.security.util.ScannerHelper;
 import datawave.util.time.DateHelper;
 
 public class ShardRangeStream extends RangeStream {
 
+    public ShardRangeStream(ShardQueryConfiguration config, MetadataHelper helper) {
+        super(config, helper);
+    }
+
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public ShardRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper helper) {
         super(config, scanners, helper);
     }
@@ -47,8 +54,11 @@ public class ShardRangeStream extends RangeStream {
             String queryString = JexlStringBuildingVisitor.buildQuery(node);
 
             int stackStart = config.getBaseIteratorPriority() + 40;
-            BatchScanner scanner = scanners.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(),
-                            true);
+
+            BatchScanner scanner = ScannerHelper.createBatchScanner(client, config.getShardTableName(), config.getAuthorizations(),
+                            config.getNumQueryThreads());
+            scanner.addScanIterator(QueryScannerHelper.getQueryInfoIterator(config.getQuery(), true));
+            sessionManager.addScanner(scanner);
 
             IteratorSetting cfg = new IteratorSetting(stackStart++, "query", FieldIndexOnlyQueryIterator.class);
 

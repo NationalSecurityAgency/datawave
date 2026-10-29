@@ -28,7 +28,7 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 
 /**
- * <h1>Overview</h1> This is a base query logic implementation that can handle delegating to a remote query logic
+ * <h2>Overview</h2> This is a base query logic implementation that can handle delegating to a remote query logic
  */
 public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implements RemoteQueryLogic<T> {
 
@@ -130,7 +130,7 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
         return transformerInstance;
     }
 
-    public abstract QueryLogicTransformer<T,T> createTransformer(Query settings, MarkingFunctions markingFunctions,
+    public abstract QueryLogicTransformer<T,T> createTransformer(Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory);
 
     @Override

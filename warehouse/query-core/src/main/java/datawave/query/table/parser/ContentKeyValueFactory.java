@@ -19,7 +19,7 @@ public class ContentKeyValueFactory {
 
     private static final Logger log = Logger.getLogger(ContentKeyValueFactory.class);
 
-    public static ContentKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions markingFunctions) throws MarkingFunctions.Exception {
+    public static ContentKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions<?> markingFunctions) throws MarkingFunctions.Exception {
 
         if (null == key)
             throw new IllegalArgumentException("Cannot pass null key to ContentKeyValueFactory");

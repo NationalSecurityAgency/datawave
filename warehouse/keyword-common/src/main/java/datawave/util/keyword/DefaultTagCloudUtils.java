@@ -1,8 +1,8 @@
 package datawave.util.keyword;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang3.StringUtils;
 
+import datawave.marking.MarkingFunctions;
+
 /**
  * Default implementations for pluggable utilities for generating tag clouds, includes mechanisms to partition keywords into separate tag clouds, combine or
  * merge visibility strings, and calculate scores, source collections and frequencies of individual keywords based on observed results
@@ -20,18 +22,23 @@ import org.apache.commons.lang3.StringUtils;
 public class DefaultTagCloudUtils implements TagCloudUtils, Serializable {
     private static final long serialVersionUID = 652771994052429009L;
     private static final String MULTI_VALUE_SEPARATOR = ",";
+    private MarkingFunctions<?> markingFunctions;
 
     @Override
-    public Map<String,String> generateCombinedVisibility(Set<String> visibilities) {
-        final StringBuilder b = new StringBuilder();
-        visibilities.forEach(x -> b.append("(").append(x).append(")&"));
-        if (b.length() > 0) {
-            b.setLength(b.length() - 1);
-            ColumnVisibility cv = new ColumnVisibility(b.toString());
-            ColumnVisibility flat = new ColumnVisibility(cv.flatten());
-            return Map.of("visibility", flat.toString());
-        } else {
-            return Collections.emptyMap();
+    public String generateCombinedVisibility(Set<String> visibilities) {
+        if (visibilities == null || visibilities.isEmpty()) {
+            return null;
+        }
+        try {
+            if (null == markingFunctions) {
+                markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+            }
+            // Calculate the columnVisibility for this key from the combiner.
+            ColumnVisibility columnVisibility = markingFunctions
+                            .combineVisibilities(visibilities.stream().map(ColumnVisibility::new).collect(Collectors.toList()));
+            return new String(columnVisibility.getExpression(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

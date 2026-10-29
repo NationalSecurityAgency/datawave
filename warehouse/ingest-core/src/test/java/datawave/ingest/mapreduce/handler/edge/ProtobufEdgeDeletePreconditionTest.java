@@ -62,7 +62,7 @@ public class ProtobufEdgeDeletePreconditionTest {
     private RawRecordContainer getEvent(Configuration conf) {
 
         RawRecordContainerImpl myEvent = new RawRecordContainerImpl();
-        myEvent.addSecurityMarking("columnVisibility", "PRIVATE");
+        myEvent.setVisibility("PRIVATE");
         myEvent.setDataType(type);
         myEvent.setId(UID.builder().newId());
         myEvent.setConf(conf);

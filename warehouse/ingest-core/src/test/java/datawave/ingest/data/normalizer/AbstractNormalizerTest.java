@@ -1,9 +1,10 @@
 package datawave.ingest.data.normalizer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -27,7 +28,7 @@ public class AbstractNormalizerTest {
         }
     };
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Configuration conf = new Configuration();
         conf.set("test" + TypeRegistry.INGEST_HELPER, TestBaseIngestHelper.class.getName());
@@ -38,41 +39,41 @@ public class AbstractNormalizerTest {
 
     @Test
     public void testHandlesAll() throws NormalizationException {
-        Assert.assertEquals("converted", normalizer.normalizeFieldValue("FIELD1", "test"));
-        Assert.assertEquals("converted", normalizer.normalizeFieldValue("FIELD2", "test"));
+        assertEquals("converted", normalizer.normalizeFieldValue("FIELD1", "test"));
+        assertEquals("converted", normalizer.normalizeFieldValue("FIELD2", "test"));
 
         NormalizedContentInterface nf = normalizer.normalize(new NormalizedFieldAndValue("FIELD1", "test"));
-        Assert.assertEquals("FIELD1", nf.getEventFieldName());
-        Assert.assertEquals("test", nf.getEventFieldValue());
-        Assert.assertEquals("FIELD1", nf.getIndexedFieldName());
-        Assert.assertEquals("converted", nf.getIndexedFieldValue());
+        assertEquals("FIELD1", nf.getEventFieldName());
+        assertEquals("test", nf.getEventFieldValue());
+        assertEquals("FIELD1", nf.getIndexedFieldName());
+        assertEquals("converted", nf.getIndexedFieldValue());
         nf = normalizer.normalize(new NormalizedFieldAndValue("FIELD2", "test"));
-        Assert.assertEquals("FIELD2", nf.getEventFieldName());
-        Assert.assertEquals("test", nf.getEventFieldValue());
-        Assert.assertEquals("FIELD2", nf.getIndexedFieldName());
-        Assert.assertEquals("converted", nf.getIndexedFieldValue());
+        assertEquals("FIELD2", nf.getEventFieldName());
+        assertEquals("test", nf.getEventFieldValue());
+        assertEquals("FIELD2", nf.getIndexedFieldName());
+        assertEquals("converted", nf.getIndexedFieldValue());
 
         Multimap<String,String> fields = HashMultimap.create();
         fields.put("FIELD1", "test");
         fields.put("FIELD2", "test");
         fields.put("FIELD2", "test2");
         Multimap<String,NormalizedContentInterface> nmap = normalizer.normalize(fields);
-        Assert.assertEquals(3, nmap.size());
-        Assert.assertEquals(1, nmap.get("FIELD1").size());
-        Assert.assertEquals("converted", nmap.get("FIELD1").iterator().next().getIndexedFieldValue());
-        Assert.assertEquals(2, nmap.get("FIELD2").size());
-        Assert.assertEquals("converted", nmap.get("FIELD2").iterator().next().getIndexedFieldValue());
+        assertEquals(3, nmap.size());
+        assertEquals(1, nmap.get("FIELD1").size());
+        assertEquals("converted", nmap.get("FIELD1").iterator().next().getIndexedFieldValue());
+        assertEquals(2, nmap.get("FIELD2").size());
+        assertEquals("converted", nmap.get("FIELD2").iterator().next().getIndexedFieldValue());
 
         Multimap<String,NormalizedContentInterface> nciFields = HashMultimap.create();
         nciFields.put("FIELD1", new NormalizedFieldAndValue("FIELD1", "test"));
         nciFields.put("FIELD2", new NormalizedFieldAndValue("FIELD2", "test"));
         nciFields.put("FIELD2", new NormalizedFieldAndValue("FIELD2", "test2"));
         nmap = normalizer.normalizeMap(nciFields);
-        Assert.assertEquals(3, nmap.size());
-        Assert.assertEquals(1, nmap.get("FIELD1").size());
-        Assert.assertEquals("converted", nmap.get("FIELD1").iterator().next().getIndexedFieldValue());
-        Assert.assertEquals(2, nmap.get("FIELD2").size());
-        Assert.assertEquals("converted", nmap.get("FIELD2").iterator().next().getIndexedFieldValue());
+        assertEquals(3, nmap.size());
+        assertEquals(1, nmap.get("FIELD1").size());
+        assertEquals("converted", nmap.get("FIELD1").iterator().next().getIndexedFieldValue());
+        assertEquals(2, nmap.get("FIELD2").size());
+        assertEquals("converted", nmap.get("FIELD2").iterator().next().getIndexedFieldValue());
 
     }
 }

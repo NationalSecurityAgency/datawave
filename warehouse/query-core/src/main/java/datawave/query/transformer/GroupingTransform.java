@@ -70,7 +70,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * @param markingFunctions
      *            the marking functions
      */
-    public GroupingTransform(GroupFields groupFields, MarkingFunctions markingFunctions, long queryExecutionForPageTimeout) {
+    public GroupingTransform(GroupFields groupFields, MarkingFunctions<?> markingFunctions, long queryExecutionForPageTimeout) {
         super.initialize(settings, markingFunctions);
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.groups = new Groups();
@@ -112,10 +112,11 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             DocumentGrouper.group(keyDocumentEntry, groupFields, groups);
         }
 
-        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+        long elapsedExecutionTimeForCurrentPage = clock.millis() - this.queryExecutionForPageStartTime;
         if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
             log.debug("Generating intermediate result because over {}ms has been reached since {}", this.queryExecutionForPageTimeout,
                             this.queryExecutionForPageStartTime);
+            this.queryExecutionForPageStartTime = clock.millis();
             Document intermediateResult = new Document();
             intermediateResult.setIntermediateResult(true);
             return Maps.immutableEntry(new Key(), intermediateResult);

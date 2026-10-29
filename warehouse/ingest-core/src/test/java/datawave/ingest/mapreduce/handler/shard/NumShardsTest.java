@@ -26,7 +26,7 @@ import org.junit.Test;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class NumShardsTest {
     @Test
