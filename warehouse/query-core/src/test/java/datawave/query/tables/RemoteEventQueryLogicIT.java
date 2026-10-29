@@ -27,7 +27,7 @@ import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 
-@Tag("datawave.common.test.integration.IntegrationTest")
+@Tag("IntegrationTest")
 public class RemoteEventQueryLogicIT {
     private RemoteEventQueryLogic logic = new RemoteEventQueryLogic();
     private RemoteQueryServiceTestUtil testUtil;

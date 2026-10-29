@@ -47,7 +47,7 @@ import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.result.GenericResponse;
 
-@Tag("datawave.common.test.integration.IntegrationTest")
+@Tag("IntegrationTest")
 public class RemoteTimeoutInterceptingQueryLogicIT {
     private static final String QUERY = "Grinning\uD83D\uDE00Face";
 
