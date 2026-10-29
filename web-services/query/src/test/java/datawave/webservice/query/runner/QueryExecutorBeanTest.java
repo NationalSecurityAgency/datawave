@@ -4,12 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -50,6 +54,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -66,9 +72,11 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.audit.PrivateAuditConstants;
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.predict.QueryPredictor;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
@@ -95,6 +103,7 @@ import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.DefaultAuditParameterBuilder;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
@@ -110,6 +119,7 @@ import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.MapUtils;
+import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.GenericResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -218,6 +228,36 @@ public class QueryExecutorBeanTest {
         subject.hashCode();
         assertNotEquals(subject, null, "Should not be equal");
         assertNotEquals(subject, new Triple("test", null, null), "Should not be equal");
+    }
+
+    @ParameterizedTest(name = "{0}, finished={1}, limiterEnabled={2}: releases={3}")
+    @CsvSource({"COMPLETE, false, true, 0", "PARTIAL, false, true, 0", "COMPLETE, true, true, 1", "PARTIAL, true, true, 1", "NONE, false, true, 1",
+            "COMPLETE, false, false, 0", "COMPLETE, true, false, 0", "NONE, false, false, 0"})
+    @SuppressWarnings("unchecked")
+    public void testPageCompletionAccounting(ResultsPage.Status status, boolean finished, boolean limiterEnabled, int expectedReleases) throws Exception {
+        QueryImpl settings = createNewQuery();
+        settings.setPagesize(status == ResultsPage.Status.PARTIAL ? 2 : 1);
+        String queryId = settings.getId().toString();
+        RunningQuery runningQuery = mock(RunningQuery.class);
+        QueryLogic<Object> logic = mock(QueryLogic.class);
+        QueryLogicTransformer<Object,Object> transformer = mock(QueryLogicTransformer.class);
+        ResultsPage page = new ResultsPage(status == ResultsPage.Status.NONE ? Collections.emptyList() : Collections.singletonList("row"), status);
+        DefaultEventQueryResponse pageResponse = new DefaultEventQueryResponse();
+        when(runningQuery.next()).thenReturn(page);
+        when(runningQuery.isFinished()).thenReturn(finished);
+        doReturn(logic).when(runningQuery).getLogic();
+        when(runningQuery.getSettings()).thenReturn(settings);
+        when(runningQuery.getMetric()).thenReturn(new QueryMetric());
+        when(logic.isQueryLimiterEnabled()).thenReturn(limiterEnabled);
+        when(logic.getEnrichedTransformer(settings)).thenReturn(transformer);
+        when(transformer.createResponse(page)).thenReturn(pageResponse);
+
+        if (status == ResultsPage.Status.NONE) {
+            assertThrows(NoResultsException.class, () -> ReflectionTestUtils.invokeMethod(bean, "_next", runningQuery, queryId, Collections.emptyList()));
+        } else {
+            assertSame(pageResponse, ReflectionTestUtils.invokeMethod(bean, "_next", runningQuery, queryId, Collections.emptyList()));
+        }
+        verify(queryLimiter, times(expectedReleases)).stopCountingQueryTowardsLimits(queryId);
     }
 
     private QueryImpl createNewQuery() throws Exception {
