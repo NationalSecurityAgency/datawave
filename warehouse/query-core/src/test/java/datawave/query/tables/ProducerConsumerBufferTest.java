@@ -1,7 +1,8 @@
 package datawave.query.tables;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,14 +14,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class ProducerConsumerBufferTest {
     private ProducerConsumerBuffer<Integer> queue;
 
-    @Before
+    @BeforeEach
     public void setup() {
         queue = new ProducerConsumerBuffer<>(25);
     }
@@ -69,7 +70,7 @@ public class ProducerConsumerBufferTest {
         assertTrue(end - start >= 250);
     }
 
-    @Test(expected = InterruptedException.class)
+    @Test
     public void putHandlesInterrupt() throws InterruptedException {
         Thread t = Thread.currentThread();
         for (int i = 0; i < 25; i++) {
@@ -86,10 +87,10 @@ public class ProducerConsumerBufferTest {
         interrupter.start();
 
         // no room for this, so it will block until interrupted
-        queue.put(26);
+        assertThrows(InterruptedException.class, () -> queue.put(26));
     }
 
-    @Test(expected = InterruptedException.class)
+    @Test
     public void takeHandlesInterrupt() throws InterruptedException {
         Thread t = Thread.currentThread();
         Thread interrupter = new Thread(() -> {
@@ -103,7 +104,7 @@ public class ProducerConsumerBufferTest {
         interrupter.start();
 
         // nothing to consume so blocks until interrupted
-        queue.take();
+        assertThrows(InterruptedException.class, () -> queue.take());
     }
 
     @Test
@@ -284,7 +285,7 @@ public class ProducerConsumerBufferTest {
         assertEquals(Integer.valueOf(1), queue.take());
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void overheadTest() throws InterruptedException, ExecutionException {
         ExecutorService pool = Executors.newFixedThreadPool(75);

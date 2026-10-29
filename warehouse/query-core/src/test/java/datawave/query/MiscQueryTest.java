@@ -6,6 +6,10 @@ import static datawave.query.testframework.RawDataManager.GTE_OP;
 import static datawave.query.testframework.RawDataManager.LTE_OP;
 import static datawave.query.testframework.RawDataManager.NE_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,18 +24,17 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.BaseShardIdRange;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
@@ -44,14 +47,14 @@ import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.ShardIdValues;
 
-public class MiscQueryTest extends AbstractFunctionalQuery {
+public class MiscQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(MiscQueryTest.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
@@ -80,7 +83,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         String expect = CityField.CITY.name() + NE_OP + "all";
         try {
             runTest(query, expect);
-            Assert.fail("full table scan exception expected");
+            fail("full table scan exception expected");
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
@@ -135,7 +138,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
     }
 
-    @Test(expected = InvalidQueryException.class)
+    @Test
     public void testFieldIgnoreParam1() throws Exception {
         log.info("------  testFieldIgnoreParam1  ------");
         String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
@@ -147,7 +150,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         // this will throw an exception due to the nonexistent fields not being ignored.
         options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "false");
 
-        runTest(query, expect, options);
+        assertThrows(InvalidQueryException.class, () -> runTest(query, expect, options));
     }
 
     @Test
@@ -306,19 +309,19 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
             this.logic.setFinalMaxTermThreshold(1);
             try {
                 runTest(query, query);
-                Assert.fail("threshold exception expected");
+                fail("threshold exception expected");
             } catch (DatawaveFatalQueryException e) {
                 // expected
             }
         }
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorQuery() throws Exception {
         log.info("------  testErrorQuery  ------");
         String query = "error-query";
-        runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
-                        Collections.emptyMap());
+        assertThrows(FullTableScansDisallowedException.class, () -> runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0],
+                        this.dataManager.getShardStartEndDate()[1], Collections.emptyMap()));
     }
 
     // ============================================
@@ -348,8 +351,8 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         public void assertValid(Document doc) {
             for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : doc.entrySet()) {
                 String key = entry.getKey();
-                Assert.assertFalse("excluded key found(" + key + ")", exclude.contains(key));
-                Assert.assertTrue("invalid key(" + key + ")", validKeys.contains(key));
+                assertFalse(exclude.contains(key), "excluded key found(" + key + ")");
+                assertTrue(validKeys.contains(key), "invalid key(" + key + ")");
             }
         }
     }
