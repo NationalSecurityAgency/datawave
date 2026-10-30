@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.TimeZone;
+
 import org.junit.jupiter.api.Test;
 
 public class YearMonthDayTest {
@@ -119,5 +121,26 @@ public class YearMonthDayTest {
         assertEquals(366, bounds.getEndOrdinal("2020"));
         assertEquals(365, bounds.getEndOrdinal("2021"));
         assertEquals(366, bounds.getEndOrdinal("2022"));
+    }
+
+    /**
+     * Dates are formatted in UTC by DateHelper, so results must not depend on the JVM's default time zone.
+     */
+    @Test
+    public void testResultsDoNotDependOnDefaultTimeZone() {
+        TimeZone original = TimeZone.getDefault();
+        try {
+            for (String zone : new String[] {"UTC", "Europe/Berlin", "Asia/Tokyo", "Pacific/Kiritimati", "America/Los_Angeles"}) {
+                TimeZone.setDefault(TimeZone.getTimeZone(zone));
+                assertEquals("20210102", YearMonthDay.nextDay("20210101").getYyyymmdd(), zone);
+                assertEquals("20201231", YearMonthDay.previousDay("20210101").getYyyymmdd(), zone);
+                assertEquals("20210101", new YearMonthDay(2021, 1).getYyyymmdd(), zone);
+                assertEquals("20211231", YearMonthDay.calculateMMDD(365, 2021), zone);
+                assertEquals(365, YearMonthDay.calculateJulian("20211231"), zone);
+                assertEquals(1, new YearMonthDay("20210101").getJulian(), zone);
+            }
+        } finally {
+            TimeZone.setDefault(original);
+        }
     }
 }
