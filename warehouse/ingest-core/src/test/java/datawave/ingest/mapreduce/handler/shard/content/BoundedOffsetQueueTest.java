@@ -1,7 +1,11 @@
 package datawave.ingest.mapreduce.handler.shard.content;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -21,7 +25,7 @@ public class BoundedOffsetQueueTest {
 
             BoundedOffsetQueue.OffsetList ol = uut.addOffset(taz, offset);
 
-            Assert.assertNull("AddOffset unexpectedly returned an offset list", ol);
+            assertNull(ol, "AddOffset unexpectedly returned an offset list");
         }
 
         String token = String.format("term-%d:zone-%d", 0, 0);
@@ -31,13 +35,13 @@ public class BoundedOffsetQueueTest {
 
             BoundedOffsetQueue.OffsetList ol = uut.addOffset(taz, (offset + uut.getCapacity()));
 
-            Assert.assertNotNull("AddOffset failed to return an offset list", ol);
+            assertNotNull(ol, "AddOffset failed to return an offset list");
         }
 
         BoundedOffsetQueue.OffsetList ol = uut.addOffset(taz, (2 * uut.getCapacity()));
-        Assert.assertNotNull("AddOffset failed to return an offset list", ol);
-        Assert.assertEquals("AddOffset returned a OffsetList with an unexpected number of offsets.", 21, ol.offsets.size());
-        Assert.assertEquals("AddOffset failed to correctly update the number of elements in the Queue", 0, uut.size());
+        assertNotNull(ol, "AddOffset failed to return an offset list");
+        assertEquals(21, ol.offsets.size(), "AddOffset returned a OffsetList with an unexpected number of offsets.");
+        assertEquals(0, uut.size(), "AddOffset failed to correctly update the number of elements in the Queue");
 
     }
 
@@ -56,27 +60,26 @@ public class BoundedOffsetQueueTest {
 
             String msg = iae.getMessage();
 
-            Assert.assertTrue(String.format(
-                            "BoundedOffsetQueue.OffsetListComparator threw the expected exception, however it did not have the correct message: %s", msg),
-                            msg.matches("Cannot compare a key that has no offsets to be found"));
+            assertTrue(msg.matches("Cannot compare a key that has no offsets to be found"), String.format(
+                            "BoundedOffsetQueue.OffsetListComparator threw the expected exception, however it did not have the correct message: %s", msg));
         }
 
         TermAndZone taz = new TermAndZone(token);
 
         boq.addOffset(taz, 0);
 
-        Assert.assertTrue("BoundedOffsetQueue.OffsetListComparator failed to match itself.", (0 == uut.compare(token, token)));
+        assertTrue((0 == uut.compare(token, token)), "BoundedOffsetQueue.OffsetListComparator failed to match itself.");
 
         String token1 = String.format("term-%d:zone-%d", 1, 1);
         taz = new TermAndZone(token1);
 
         boq.addOffset(taz, 1);
-        Assert.assertTrue("BoundedOffsetQueue.OffsetListComparator failed to match another TermAndZone instance with the same number of elements.",
-                        (0 == uut.compare(token, token1)));
+        assertTrue((0 == uut.compare(token, token1)),
+                        "BoundedOffsetQueue.OffsetListComparator failed to match another TermAndZone instance with the same number of elements.");
 
         boq.addOffset(taz, 2);
-        Assert.assertTrue("BoundedOffsetQueue.OffsetListComparator failed to correctly order two TermAndZone instances.", (0 > uut.compare(token, token1)));
-        Assert.assertTrue("BoundedOffsetQueue.OffsetListComparator failed to correctly order two TermAndZone instances.", (0 < uut.compare(token1, token)));
+        assertTrue((0 > uut.compare(token, token1)), "BoundedOffsetQueue.OffsetListComparator failed to correctly order two TermAndZone instances.");
+        assertTrue((0 < uut.compare(token1, token)), "BoundedOffsetQueue.OffsetListComparator failed to correctly order two TermAndZone instances.");
     }
 
 }
