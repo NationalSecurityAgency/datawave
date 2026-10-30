@@ -1,10 +1,10 @@
 package datawave.query.tables.ssdeep.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -109,15 +109,15 @@ public class SSDeepTestUtil {
     public static void assertSSDeepSimilarityMatch(String querySsdeep, String matchingSsdeep, String overlapScore, String overlapSsdeepNgrams,
                     String weightedScore, Map<String,Map<String,String>> observedEvents) {
         final Map<String,String> observedFields = observedEvents.get(querySsdeep + "#" + matchingSsdeep);
-        assertNotNull("Observed fields was null", observedFields);
-        assertFalse("Observed fields was unexpectedly empty", observedFields.isEmpty());
+        assertNotNull(observedFields, "Observed fields was null");
+        assertFalse(observedFields.isEmpty(), "Observed fields was unexpectedly empty");
         assertEquals(overlapScore, observedFields.remove("OVERLAP_SCORE"));
         assertEquals(overlapSsdeepNgrams, observedFields.remove("OVERLAP_SSDEEP_NGRAMS"));
 
         assertEquals(weightedScore, observedFields.remove("WEIGHTED_SCORE"));
         assertEquals(querySsdeep, observedFields.remove("QUERY_SSDEEP"));
         assertEquals(matchingSsdeep, observedFields.remove("MATCHING_SSDEEP"));
-        assertTrue("Observed unexpected field(s) in full match: " + observedFields, observedFields.isEmpty());
+        assertTrue(observedFields.isEmpty(), "Observed unexpected field(s) in full match: " + observedFields);
     }
 
     /**
@@ -132,7 +132,7 @@ public class SSDeepTestUtil {
      */
     public static void assertNoMatch(String querySsdeep, String matchingSsdeep, Map<String,Map<String,String>> observedEvents) {
         final Map<String,String> observedFields = observedEvents.get(querySsdeep + "#" + matchingSsdeep);
-        assertTrue("Observed fields was not empty", observedFields.isEmpty());
+        assertTrue(observedFields.isEmpty(), "Observed fields was not empty");
 
     }
 
