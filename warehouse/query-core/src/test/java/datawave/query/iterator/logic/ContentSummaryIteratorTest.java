@@ -3,9 +3,9 @@ package datawave.query.iterator.logic;
 import static datawave.query.iterator.logic.ContentSummaryIterator.ONLY_SPECIFIED;
 import static datawave.query.iterator.logic.ContentSummaryIterator.SUMMARY_SIZE;
 import static datawave.query.iterator.logic.ContentSummaryIterator.VIEW_NAMES;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,19 +27,19 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import datawave.query.Constants;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.table.constants.ColumnFamilyConstants;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class ContentSummaryIteratorTest extends EasyMockSupport {
 
     private static final Text row = new Text("20220115_1");
@@ -51,7 +51,7 @@ public class ContentSummaryIteratorTest extends EasyMockSupport {
     private final Map<String,String> options = new HashMap<>();
     private final ContentSummaryIterator iterator = new ContentSummaryIterator();
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws IOException {
         givenData("email", "123.456.789", "CONTENT1", "test content");
         givenData("email", "987.654.321", "CONTENT1", "test content two first");
@@ -76,7 +76,7 @@ public class ContentSummaryIteratorTest extends EasyMockSupport {
         source.add(entry);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         options.clear();
     }
