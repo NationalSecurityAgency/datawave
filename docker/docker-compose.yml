@@ -315,6 +315,12 @@ services:
       - "15672:15672"
     networks:
       - demo
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      start_period: 30s
+      retries: 20
     depends_on:
       consul:
         condition: service_started
@@ -436,6 +442,36 @@ services:
       configuration:
         condition: service_healthy
 
+  annotation-cache:
+    profiles:
+      - annotation-cache
+    image: nationalsecurityagency/datawave/annotation-cache-service:${VERSION:-latest}
+    scale: 2
+    command:
+      - --spring.profiles.active=consul,compose
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "5701"
+      - "8080"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/annotation-cache/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      configuration:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   annotation:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5959","-jar","app.jar" ]
     profiles:
@@ -443,7 +479,7 @@ services:
     image: nationalsecurityagency/datawave/annotation-service:1.0.0-SNAPSHOT
     scale: 1
     command:
-      - --spring.profiles.active=consul,compose,remoteauth,log-disabled
+      - --spring.profiles.active=combined,consul,compose,remoteauth,log-disabled
       - --spring.output.ansi.enabled=NEVER
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}

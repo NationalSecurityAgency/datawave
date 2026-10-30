@@ -14,8 +14,12 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
+
 /** Configuration for the HttpClient that will be used by the LookupService */
 @Configuration
+@ConditionalOnAnnotationRole({AnnotationRole.API, AnnotationRole.COMBINED})
 public class HttpClientConfig {
 
     @Bean
