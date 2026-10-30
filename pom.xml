@@ -46,7 +46,7 @@
         <failsafe.maxMemory>${surefire.maxMemory}</failsafe.maxMemory>
         <failsafe.reuseForks>${surefire.reuseForks}</failsafe.reuseForks>
         <image.prefix>datawave/</image.prefix>
-        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
         <skipITs>${skipTests}</skipITs>
@@ -2132,6 +2132,12 @@
             <id>java11</id>
             <properties>
                 <datawave.build.jdk.version.range>[11,12)</datawave.build.jdk.version.range>
+            </properties>
+        </profile>
+        <profile>
+            <id>java17</id>
+            <properties>
+                <datawave.build.jdk.version.range>[17,18)</datawave.build.jdk.version.range>
             </properties>
         </profile>
         <profile>
