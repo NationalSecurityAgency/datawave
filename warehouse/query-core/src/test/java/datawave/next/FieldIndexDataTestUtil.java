@@ -141,6 +141,40 @@ public abstract class FieldIndexDataTestUtil {
     }
 
     /**
+     * Write an explicit set of uids for the specified field and value, using the default datatype.
+     * <p>
+     * Unlike {@link #writeRange(String, String, int, int)} the uids need not be contiguous, which is how a fixture expresses terms whose hits interleave.
+     *
+     * @param field
+     *            the field
+     * @param value
+     *            the value
+     * @param uids
+     *            the uids to write
+     */
+    protected void writeIndices(String field, String value, int... uids) {
+        writeIndices(field, value, DEFAULT_DATATYPE, uids);
+    }
+
+    /**
+     * Write an explicit set of uids for the specified field, value and datatype
+     *
+     * @param field
+     *            the field
+     * @param value
+     *            the value
+     * @param datatype
+     *            the datatype
+     * @param uids
+     *            the uids to write
+     */
+    protected void writeIndices(String field, String value, String datatype, int... uids) {
+        for (int uid : uids) {
+            writeIndex(field, value, datatype, uid);
+        }
+    }
+
+    /**
      * Write an INCLUSIVE range of uids for the specified field and value, using the default datatype
      *
      * @param field
