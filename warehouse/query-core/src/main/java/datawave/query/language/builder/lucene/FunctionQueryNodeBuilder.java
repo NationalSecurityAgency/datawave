@@ -18,10 +18,9 @@ package datawave.query.language.builder.lucene;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
@@ -48,7 +47,7 @@ import datawave.webservice.query.exception.NotFoundQueryException;
 @Deprecated
 public class FunctionQueryNodeBuilder implements QueryBuilder {
 
-    private Map<String,LuceneQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<>());
+    private Map<String,LuceneQueryFunction> allowedFunctionMap = new ConcurrentHashMap<>();
 
     public FunctionQueryNodeBuilder() {
         addFunction(new IsNull());

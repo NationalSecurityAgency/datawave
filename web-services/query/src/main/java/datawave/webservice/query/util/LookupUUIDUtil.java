@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.EJBContext;
 import javax.ejb.EJBException;
@@ -112,7 +113,7 @@ public class LookupUUIDUtil {
 
     private final UserOperations userOperations;
 
-    private final Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String,UUIDType> uuidTypes = new ConcurrentHashMap<>();
     private Map<String,String> contentLookupTypes = Collections.synchronizedMap(new HashMap<>());
 
     MultivaluedMap<String,String> defaultOptionalParams;

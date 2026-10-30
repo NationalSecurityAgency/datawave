@@ -19,7 +19,6 @@ import java.sql.Types;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +26,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 import javax.annotation.PostConstruct;
@@ -248,8 +248,8 @@ public class CachedResultsBean {
 
     private static final String IMPORT_FILE = "replication_scripts/import.sh";
 
-    private static Map<String,RunningQuery> loadingQueryMap = Collections.synchronizedMap(new HashMap<>());
-    private static Set<String> loadingQueries = Collections.synchronizedSet(new HashSet<>());
+    private static Map<String,RunningQuery> loadingQueryMap = new ConcurrentHashMap<>();
+    private static final Set<String> loadingQueries = ConcurrentHashMap.newKeySet();
     private URL importFileUrl = null;
     private CachedResultsQueryParameters cp = new CachedResultsQueryParameters();
 
@@ -414,15 +414,13 @@ public class CachedResultsBean {
                     throw qe;
                 }
 
-                // prevent duplicate calls to load with the same queryId
-                if (CachedResultsBean.loadingQueries.contains(queryId)) {
+                // prevent duplicate calls to load with the same queryId; add() checks and inserts atomically
+                if (!CachedResultsBean.loadingQueries.add(queryId)) {
                     // if a different thread is using rq, we don't want to modify it in the finally block
                     rq = null;
                     // this is used in the inside & outside finally block to bypass cleanup that would adversely affect the loading query
                     queryLockedException = true;
                     throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR);
-                } else {
-                    CachedResultsBean.loadingQueries.add(queryId);
                 }
 
                 rq.setActiveCall(true);

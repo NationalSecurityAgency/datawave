@@ -1,9 +1,8 @@
 package datawave.marking;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -13,7 +12,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
  *
  */
 public class FlattenedVisibilityCache {
-    private static final Map<ColumnVisibility,byte[]> flattenedVisCache = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<ColumnVisibility,byte[]> flattenedVisCache = new ConcurrentHashMap<>();
 
     /**
      * Create a flattened visibility, using the cache if possible
