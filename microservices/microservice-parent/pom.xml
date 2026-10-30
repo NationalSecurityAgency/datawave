@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave.microservice</groupId>
     <artifactId>datawave-microservice-parent</artifactId>
-    <version>4.0.14-SNAPSHOT</version>
+    <version>4.0.15-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave Microservices Parent</name>
     <description>DataWave microservices provide functionality previously contained in the DataWave
@@ -32,12 +32,12 @@
     <properties>
         <argLine />
         <container.registry>ghcr.io</container.registry>
-        <datawave.build.jdk.version.range>[11,12)</datawave.build.jdk.version.range>
+        <datawave.build.jdk.version.range>[17,18)</datawave.build.jdk.version.range>
         <failsafe.maxMemory>${surefire.maxMemory}</failsafe.maxMemory>
         <failsafe.minMemory>${surefire.minMemory}</failsafe.minMemory>
         <image.prefix>datawave/</image.prefix>
-        <java.version>11</java.version>
-        <maven.compiler.release>11</maven.compiler.release>
+        <java.version>17</java.version>
+        <maven.compiler.release>17</maven.compiler.release>
         <maven.release.arguments>-Ddist</maven.release.arguments>
         <maven.release.profiles>dist</maven.release.profiles>
         <project.artifactId>${project.artifactId}</project.artifactId>
@@ -774,8 +774,8 @@
                                     <quiet>true</quiet>
                                     <javaApiLinks>
                                         <property>
-                                            <name>api_11.0</name>
-                                            <value>https://docs.oracle.com/en/java/javase/11/docs/api</value>
+                                            <name>api_17.0</name>
+                                            <value>https://docs.oracle.com/en/java/javase/17/docs/api</value>
                                         </property>
                                     </javaApiLinks>
                                 </configuration>

@@ -1,4 +1,4 @@
-FROM maven:3-amazoncorretto-11 AS builder
+FROM maven:3-amazoncorretto-17 AS builder
 FROM rockylinux/rockylinux:8
 
 ENV MAVEN_HOME=/usr/share/maven
