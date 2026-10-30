@@ -1,6 +1,6 @@
 package datawave.query.tables.facets;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,7 +10,7 @@ import java.util.Locale;
 
 import javax.annotation.Nullable;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -56,7 +56,7 @@ public class MergedReadAheadTest {
             output.add(mra.next());
         }
 
-        assertArrayEquals("Expected input and output arrays to be equal (streaming=" + streaming + ")", expected.toArray(), output.toArray());
+        assertArrayEquals(expected.toArray(), output.toArray(), "Expected input and output arrays to be equal (streaming=" + streaming + ")");
     }
 
     static final Function<String,String> lowercaseFunction = new Function<String,String>() {
