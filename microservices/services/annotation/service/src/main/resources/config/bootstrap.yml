@@ -1,6 +1,10 @@
 spring:
   application:
     name: annotation
+  rabbitmq:
+    # Required by annotationSource's confirmation future and the REST acceptance boundary.
+    publisher-confirm-type: correlated
+    publisher-returns: true
   cloud:
     config:
       # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.
@@ -17,14 +21,24 @@ spring:
         bindings:
           annotationSource-out-0:
             producer:
-              # Note: This must match ANNOTATION_ACK_CHANNEL in AnnotationControllerV1 or producer confirms will not work.
-              confirmAckChannel: 'annotationAckChannel'
+              # Complete the CorrelationData future supplied by AnnotationPublisher.
+              useConfirmHeader: true
 management:
-  health:
-    status:
-      order: DOWN, OUT_OF_SERVICE, UNKNOWN, RABBITMQ_UNHEALTHY, UP
-      http-mapping:
-        RABBITMQ_UNHEALTHY: 200
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          # Include required Rabbit topology and any enabled backend health indicators.
+          include: "*"
+      status:
+        # Preserve Boot's UP-before-UNKNOWN order while making required Rabbit failures decisive.
+        order: DOWN, OUT_OF_SERVICE, RABBITMQ_UNHEALTHY, UP, UNKNOWN
+        http-mapping:
+          DOWN: 503
+          OUT_OF_SERVICE: 503
+          RABBITMQ_UNHEALTHY: 503
 
 annotation:
   system-from: "datawave-annotation-service"
