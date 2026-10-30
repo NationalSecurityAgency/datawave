@@ -65,7 +65,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private Iterator<Entry<Key,Document>> setIterator;
     // Page state is guarded by pageLock; document processing stays outside the lock.
     private final Object pageLock = new Object();
-    private long pageGeneration;
+    // Identifies the active page-timeout window so stale in-flight work can be rejected.
+    private long pageWindowEpoch;
     private boolean documentSeenWithinPageTimeout;
 
     /**
@@ -145,7 +146,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public void setQueryExecutionForPageStartTime(long queryExecutionForPageStartTime) {
         synchronized (pageLock) {
             super.setQueryExecutionForPageStartTime(queryExecutionForPageStartTime);
-            pageGeneration++;
+            // Invalidate snapshots from the previous page window.
+            pageWindowEpoch++;
             documentSeenWithinPageTimeout = false;
         }
     }
@@ -164,10 +166,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Nullable
     private Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry, boolean emitIntermediateResults) {
         if (keyDocumentEntry != null) {
-            long generation = 0;
+            long observedPageWindowEpoch = 0;
             if (emitIntermediateResults) {
                 synchronized (pageLock) {
-                    generation = pageGeneration;
+                    // Snapshot the window this document belongs to, to avoid crediting a later window.
+                    observedPageWindowEpoch = pageWindowEpoch;
                 }
             }
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
@@ -188,7 +191,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             if (emitIntermediateResults) {
                 synchronized (pageLock) {
                     long elapsed = clock.millis() - queryExecutionForPageStartTime;
-                    if (generation == pageGeneration && elapsed >= 0 && elapsed <= queryExecutionForPageTimeout) {
+                    // Only activity from the still-current window can qualify for its keep-alive.
+                    if (observedPageWindowEpoch == pageWindowEpoch && elapsed >= 0 && elapsed <= queryExecutionForPageTimeout) {
                         documentSeenWithinPageTimeout = true;
                     }
                 }
@@ -211,14 +215,15 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
             if (emitIntermediateResults) {
                 synchronized (pageLock) {
-                    // An in-flight document must not consume activity from a newer page window.
-                    if (generation != pageGeneration) {
+                    // Reject this document if its window changed while it was being processed.
+                    if (observedPageWindowEpoch != pageWindowEpoch) {
                         return null;
                     }
                     long now = clock.millis();
                     if (documentSeenWithinPageTimeout && now - queryExecutionForPageStartTime > queryExecutionForPageTimeout) {
                         queryExecutionForPageStartTime = now;
-                        pageGeneration++;
+                        // Start a new window and invalidate other work still carrying the old epoch.
+                        pageWindowEpoch++;
                         documentSeenWithinPageTimeout = false;
                         Document intermediateResult = new Document();
                         intermediateResult.setIntermediateResult(true);

@@ -56,7 +56,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
 
     // Page state is guarded by pageLock; document processing stays outside the lock.
     private final Object pageLock = new Object();
-    private long pageGeneration;
+    // Identifies the active page-timeout window so stale in-flight work can be rejected.
+    private long pageWindowEpoch;
     private boolean documentSeenWithinPageTimeout;
 
     /**
@@ -90,9 +91,10 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         log.trace("apply to {}", keyDocumentEntry);
 
-        long generation;
+        long observedPageWindowEpoch;
         synchronized (pageLock) {
-            generation = pageGeneration;
+            // Snapshot the window this document belongs to, to avoid crediting a later window.
+            observedPageWindowEpoch = pageWindowEpoch;
         }
         if (keyDocumentEntry != null) {
 
@@ -116,7 +118,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
 
             synchronized (pageLock) {
                 long elapsed = clock.millis() - queryExecutionForPageStartTime;
-                if (generation == pageGeneration && elapsed >= 0 && elapsed <= queryExecutionForPageTimeout) {
+                // Only activity from the still-current window can qualify for its keep-alive.
+                if (observedPageWindowEpoch == pageWindowEpoch && elapsed >= 0 && elapsed <= queryExecutionForPageTimeout) {
                     documentSeenWithinPageTimeout = true;
                 }
             }
@@ -128,15 +131,16 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         }
 
         synchronized (pageLock) {
-            // An in-flight document must not consume activity from a newer page window.
-            if (generation != pageGeneration) {
+            // Reject this document if its window changed while it was being processed.
+            if (observedPageWindowEpoch != pageWindowEpoch) {
                 return null;
             }
             long now = clock.millis();
             if (documentSeenWithinPageTimeout && now - queryExecutionForPageStartTime > queryExecutionForPageTimeout) {
                 log.debug("Generating intermediate result after {}ms with page activity", queryExecutionForPageTimeout);
                 queryExecutionForPageStartTime = now;
-                pageGeneration++;
+                // Start a new window and invalidate other work still carrying the old epoch.
+                pageWindowEpoch++;
                 documentSeenWithinPageTimeout = false;
                 Document intermediateResult = new Document();
                 intermediateResult.setIntermediateResult(true);
@@ -152,7 +156,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         log.debug("setting query execution page start time to {}", queryExecutionForPageStartTime);
         synchronized (pageLock) {
             super.setQueryExecutionForPageStartTime(queryExecutionForPageStartTime);
-            pageGeneration++;
+            // Invalidate snapshots from the previous page window.
+            pageWindowEpoch++;
             documentSeenWithinPageTimeout = false;
         }
     }

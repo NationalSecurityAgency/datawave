@@ -153,6 +153,51 @@ public class GroupingTransformTest {
     }
 
     @Test
+    public void testInFlightDocumentDoesNotConsumeNewPageActivityAfterIntermediateRollover() throws Exception {
+        GroupingTransform transform = givenPageTimedTransform();
+        assertNull(transform.apply(documentEntry("FIELD_A", "old-page-activity", 0)));
+
+        CountDownLatch processing = new CountDownLatch(1);
+        CountDownLatch resume = new CountDownLatch(1);
+        Map.Entry<Key,Document> entry = documentEntry("FIELD_A", "in-flight-old-page", 1);
+        Document document = spy(entry.getValue());
+        doAnswer(invocation -> {
+            processing.countDown();
+            assertTrue(resume.await(5, TimeUnit.SECONDS), "Document processing was not released");
+            return invocation.callRealMethod();
+        }).when(document).isIntermediateResult();
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<Map.Entry<Key,Document>> inFlight = executor.submit(() -> transform.apply(new AbstractMap.SimpleEntry<>(entry.getKey(), document)));
+            assertTrue(processing.await(5, TimeUnit.SECONDS), "Document processing did not start");
+
+            // Existing page activity allows this call to roll the timeout window while the old document is still in flight.
+            setClockTo(transform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 1));
+            Map.Entry<Key,Document> result = transform.apply(null);
+            assertNotNull(result);
+            assertTrue(result.getValue().isIntermediateResult());
+
+            // Record activity in the new window before the old document resumes.
+            setClockTo(transform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 2));
+            assertNull(transform.apply(documentEntry("FIELD_A", "new-page-activity", 2)));
+            setClockTo(transform, PAGE_START.plusMillis((2 * PAGE_TIMEOUT_MS) + 2));
+
+            resume.countDown();
+            assertNull(inFlight.get(5, TimeUnit.SECONDS));
+
+            // The stale document must not consume the new window's activity or emit its keep-alive itself.
+            result = transform.apply(null);
+            assertNotNull(result);
+            assertTrue(result.getValue().isIntermediateResult());
+        } finally {
+            resume.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS), "Test workers did not terminate");
+        }
+    }
+
+    @Test
     public void testInFlightDocumentDoesNotConsumeNewPageActivity() throws Exception {
         assertPageResetDuringApply(false);
     }
