@@ -5,7 +5,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
+
 @Configuration
+@ConditionalOnAnnotationRole({AnnotationRole.API, AnnotationRole.COMBINED})
 public class LookupConfig {
     @Bean
     @ConditionalOnMissingBean(LookupProperties.class)

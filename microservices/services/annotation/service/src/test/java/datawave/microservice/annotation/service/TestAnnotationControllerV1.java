@@ -186,7 +186,7 @@ public class TestAnnotationControllerV1 {
 
         ExecutorService executorService = Executors.newCachedThreadPool();
         annotationController = new AnnotationControllerV1(connectionFactory, lookupService, annotationProperties, timestampTransformer, visibilityTransformer,
-                        annotationSink, executorService, new AnnotationAckTracker());
+                        new AnnotationPublisher(annotationSink, annotationProperties, null), executorService);
         lenient().when(connectionFactory.getClient(any(), any(), any(), any(), any())).thenReturn(client);
     }
 
@@ -198,11 +198,11 @@ public class TestAnnotationControllerV1 {
     private void configureImmediateAck() {
         when(annotationSink.send(any())).thenAnswer(invocation -> {
             org.springframework.messaging.Message<?> sent = invocation.getArgument(0);
-            Object correlationId = sent.getHeaders().get(org.springframework.integration.IntegrationMessageHeaderAccessor.CORRELATION_ID);
-            assertNotNull(correlationId);
-            org.springframework.messaging.Message<String> ack = org.springframework.integration.support.MessageBuilder.withPayload("ack")
-                            .setCorrelationId(correlationId).build();
-            annotationController.processConfirmAck(ack);
+            org.springframework.amqp.rabbit.connection.CorrelationData correlation = sent.getHeaders().get(
+                            org.springframework.amqp.support.AmqpHeaders.PUBLISH_CONFIRM_CORRELATION,
+                            org.springframework.amqp.rabbit.connection.CorrelationData.class);
+            assertNotNull(correlation);
+            correlation.getFuture().set(new org.springframework.amqp.rabbit.connection.CorrelationData.Confirm(true, null));
             return true;
         });
     }

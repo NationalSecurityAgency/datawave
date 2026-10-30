@@ -293,6 +293,24 @@ Start all services:
 
 ```docker compose --profile datawave-stack --profile full up -d```
 
+To scale annotation API and writer pools independently, use the split profile
+in place of the combined `annotation` profile:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose-annotation-split.yml \
+  --profile datawave-stack --profile annotation-split up -d \
+  --scale annotation-api=3 --scale annotation-writer=1
+```
+
+Publish shared `config/annotation.yml` and the matching role overlays before
+starting. The API pool registers as `annotation-api` in Consul; writers register
+as `annotation-writer`. API host ports are dynamic; use a load balancer. Writers
+publish no host ports. All annotation roles use local caches.
+
+See the [service quick start](../microservices/services/annotation/README.md#deployment-quick-start)
+and [deployment reference](../microservices/services/annotation/docs/deployment.md)
+for role requirements, storage, routes, tuning, and cutover.
+
 ### Shard table splits
 
 `stack/shard-splits.txt` holds the split points for `datawave.shard`, one full `yyyyMMdd_num` shard id

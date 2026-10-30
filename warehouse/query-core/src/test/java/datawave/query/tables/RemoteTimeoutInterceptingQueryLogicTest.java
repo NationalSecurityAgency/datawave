@@ -3,9 +3,10 @@ package datawave.query.tables;
 import static datawave.query.tables.RemoteTimeoutInterceptingQueryLogic.REMOTE_TIMEOUT_PLAN;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Iterator;
 import java.util.List;
@@ -14,8 +15,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
@@ -33,7 +34,7 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
     private Set<Authorizations> auths;
     private Iterator data;
 
-    @Before
+    @BeforeEach
     public void setup() {
         delegate = createMock(BaseQueryLogic.class);
 
@@ -43,18 +44,18 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         data = List.of("A", "B", "C", "D").iterator();
     }
 
-    @Test(expected = RemoteTimeoutQueryException.class)
+    @Test
     public void defaultInitializeTest() throws Exception {
         expect(delegate.initialize(client, settings, auths)).andThrow(new RemoteTimeoutQueryException());
 
         replayAll();
 
-        logic.initialize(client, settings, auths);
+        assertThrows(RemoteTimeoutQueryException.class, () -> logic.initialize(client, settings, auths));
 
         verifyAll();
     }
 
-    @Test(expected = QueryException.class)
+    @Test
     public void unsuppressedInitializeTest() throws Exception {
         logic.setSuppressTimeout(true);
 
@@ -62,7 +63,7 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         replayAll();
 
-        logic.initialize(client, settings, auths);
+        assertThrows(QueryException.class, () -> logic.initialize(client, settings, auths));
 
         verifyAll();
     }
@@ -91,7 +92,7 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         assertFalse(itr.hasNext());
     }
 
-    @Test(expected = RemoteTimeoutQueryException.class)
+    @Test
     public void defaultSetupTest() throws Exception {
         GenericQueryConfiguration config = new GenericQueryConfiguration();
 
@@ -102,12 +103,12 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         replayAll();
 
         logic.initialize(client, settings, auths);
-        logic.setupQuery(config);
+        assertThrows(RemoteTimeoutQueryException.class, () -> logic.setupQuery(config));
 
         verifyAll();
     }
 
-    @Test(expected = QueryException.class)
+    @Test
     public void unsuppressedSetupTest() throws Exception {
         logic.setSuppressTimeout(true);
 
@@ -120,7 +121,7 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         replayAll();
 
         logic.initialize(client, settings, auths);
-        logic.setupQuery(config);
+        assertThrows(QueryException.class, () -> logic.setupQuery(config));
 
         verifyAll();
     }
@@ -148,7 +149,7 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         assertFalse(itr.hasNext());
     }
 
-    @Test(expected = RemoteTimeoutQueryRuntimeException.class)
+    @Test
     public void defaultIteratorTest() throws Exception {
         Iterator itr = new ExceptionThrowingIterator(data, 0, new RemoteTimeoutQueryRuntimeException("runtime exception"));
 
@@ -165,12 +166,12 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         Iterator logicItr = logic.iterator();
 
-        logicItr.hasNext();
+        assertThrows(RemoteTimeoutQueryRuntimeException.class, logicItr::hasNext);
 
         verifyAll();
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void unsuppressedIteratorTest() throws Exception {
         Iterator itr = new ExceptionThrowingIterator(data, 0, new RuntimeException());
 
@@ -187,7 +188,7 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         Iterator logicItr = logic.iterator();
 
-        logicItr.hasNext();
+        assertThrows(RuntimeException.class, logicItr::hasNext);
 
         verifyAll();
     }
@@ -241,13 +242,13 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         verifyAll();
     }
 
-    @Test(expected = RemoteTimeoutQueryException.class)
+    @Test
     public void defaultPlanTest() throws Exception {
         expect(delegate.getPlan(client, settings, auths, false, false)).andThrow(new RemoteTimeoutQueryException("exception"));
 
         replayAll();
 
-        logic.getPlan(client, settings, auths, false, false);
+        assertThrows(RemoteTimeoutQueryException.class, () -> logic.getPlan(client, settings, auths, false, false));
 
         verifyAll();
     }
