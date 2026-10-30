@@ -21,6 +21,8 @@ on:
           - microservices/microservice-service-parent
           - microservices/services/accumulo/api
           - microservices/services/accumulo/service
+          - microservices/services/annotation-cache/api
+          - microservices/services/annotation-cache/service
           - microservices/services/audit/api
           - microservices/services/audit/service
           - microservices/services/authorization/api
