@@ -15,7 +15,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -47,7 +48,7 @@ import net.sf.saxon.s9api.XsltExecutable;
  *
  */
 public class AnnotationHelper {
-    private static final Logger log = Logger.getLogger(AnnotationHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(AnnotationHelper.class);
 
     public static final String ANNOTATION_TNAME = "annotation.table.name";
     private final String annotationTableName;
@@ -125,7 +126,9 @@ public class AnnotationHelper {
                 this.xslt30Transformer = xsltExecutable.load30();
             }
         } catch (IOException | SaxonApiException | FileSystemNotFoundException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             throw new RuntimeException(e);
         }
     }
@@ -202,7 +205,9 @@ public class AnnotationHelper {
             }
 
         } catch (InvalidProtocolBufferException | AnnotationSerializationException | SaxonApiException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             // failing the record
             throw new RuntimeException(e);
         }
@@ -249,7 +254,9 @@ public class AnnotationHelper {
                 contextWriter.write(new BulkIngestKey(annotationSourceTableNameText, entry.getKey()), entry.getValue(), context);
             }
         } catch (InvalidProtocolBufferException | AnnotationSerializationException | SaxonApiException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             // failing the record
             throw new RuntimeException(e);
         }

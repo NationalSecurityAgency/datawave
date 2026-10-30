@@ -25,7 +25,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -90,7 +91,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 2321985989282659247L;
-    private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
+    private static final Logger log = LoggerFactory.getLogger(ShardQueryConfiguration.class);
 
     // is this a tld query, explicitly default to false
     private boolean tldQuery = false;

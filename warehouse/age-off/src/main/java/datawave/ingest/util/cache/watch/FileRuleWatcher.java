@@ -9,7 +9,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.iterators.filter.ageoff.FilterRule;
 
@@ -18,7 +19,7 @@ import datawave.iterators.filter.ageoff.FilterRule;
  */
 public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
 
-    private static final Logger log = Logger.getLogger(FileRuleWatcher.class);
+    private static final Logger log = LoggerFactory.getLogger(FileRuleWatcher.class);
 
     private final IteratorEnvironment iterEnv;
 

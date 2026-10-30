@@ -16,8 +16,9 @@ import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.log4j.Logger;
 import org.checkerframework.checker.index.qual.NonNegative;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -28,7 +29,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
  *
  */
 public class IteratorThreadPoolManager {
-    private static final Logger log = Logger.getLogger(IteratorThreadPoolManager.class);
+    private static final Logger log = LoggerFactory.getLogger(IteratorThreadPoolManager.class);
     private static final String IVARATOR_THREAD_PROP = "tserver.datawave.ivarator.threads";
     private static final String IVARATOR_THREAD_NAME = "DATAWAVE Ivarator";
     private static final String EVALUATOR_THREAD_PROP = "tserver.datawave.evaluation.threads";
@@ -70,7 +71,9 @@ public class IteratorThreadPoolManager {
                     ivaratorRunnableTimeoutMinutes = value;
                 }
             } catch (Throwable t) {
-                log.error(t, t);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(t), t);
+                }
             }
         }, 1, 10, TimeUnit.SECONDS);
 
@@ -176,7 +179,9 @@ public class IteratorThreadPoolManager {
                     }
                 }
             } catch (Throwable t) {
-                log.error(t, t);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(t), t);
+                }
             }
         }, 1, 10, TimeUnit.SECONDS);
         return service;

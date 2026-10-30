@@ -2,9 +2,10 @@ package datawave.query.rules;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QuotedFieldQueryNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.lucene.visitors.UnescapedWildcardsInQuotedPhrasesVisitor;
 
@@ -13,7 +14,7 @@ import datawave.query.lucene.visitors.UnescapedWildcardsInQuotedPhrasesVisitor;
  */
 public class UnescapedWildcardsInPhrasesRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(UnescapedWildcardsInPhrasesRule.class);
+    private static final Logger log = LoggerFactory.getLogger(UnescapedWildcardsInPhrasesRule.class);
 
     public UnescapedWildcardsInPhrasesRule() {}
 

@@ -13,7 +13,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -36,7 +37,7 @@ import datawave.webservice.result.FacetQueryResponseBase;
 
 public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Value>,FacetsBase> {
 
-    private static final Logger log = Logger.getLogger(FacetedTransformer.class);
+    private static final Logger log = LoggerFactory.getLogger(FacetedTransformer.class);
 
     private MarkingFunctions<?> markingFunctions;
 
@@ -200,7 +201,9 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
         try {
             response.setMarkings(markingFunctions.translateFromColumnVisibility(cv));
         } catch (MarkingFunctions.Exception e) {
-            log.warn(e);
+            if (log.isWarnEnabled()) {
+                log.warn(String.valueOf(e));
+            }
             // original ignored these exceptions
         }
 

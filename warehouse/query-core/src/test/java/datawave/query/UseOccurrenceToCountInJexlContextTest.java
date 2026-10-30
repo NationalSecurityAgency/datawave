@@ -29,11 +29,12 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
@@ -73,7 +74,7 @@ import datawave.table.constants.TableName;
  */
 public abstract class UseOccurrenceToCountInJexlContextTest {
 
-    private static final Logger log = Logger.getLogger(UseOccurrenceToCountInJexlContextTest.class);
+    private static final Logger log = LoggerFactory.getLogger(UseOccurrenceToCountInJexlContextTest.class);
 
     public static class ShardRange extends UseOccurrenceToCountInJexlContextTest {
         protected static AccumuloClient client = null;

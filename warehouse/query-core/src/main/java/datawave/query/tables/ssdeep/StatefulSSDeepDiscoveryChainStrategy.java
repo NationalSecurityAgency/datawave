@@ -12,7 +12,8 @@ import java.util.stream.StreamSupport;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
@@ -28,7 +29,7 @@ import datawave.query.tables.chained.strategy.FullChainStrategy;
  * size of -1 will force a single batch. When seenHashes is set ScoredSSDeepPair matchingHash will be deduped.
  */
 public class StatefulSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSSDeepPair,DiscoveredSSDeep> {
-    private static final Logger log = Logger.getLogger(StatefulSSDeepDiscoveryChainStrategy.class);
+    private static final Logger log = LoggerFactory.getLogger(StatefulSSDeepDiscoveryChainStrategy.class);
 
     private int batchSize = -1;
     private Set<Integer> seenHashes;

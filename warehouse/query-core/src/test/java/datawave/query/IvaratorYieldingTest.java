@@ -28,11 +28,12 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.WaitWindowQueryIterator;
@@ -51,7 +52,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(IvaratorYieldingTest.class);
+    private static final Logger log = LoggerFactory.getLogger(IvaratorYieldingTest.class);
 
     public IvaratorYieldingTest() {
         super(CitiesDataType.getManager());

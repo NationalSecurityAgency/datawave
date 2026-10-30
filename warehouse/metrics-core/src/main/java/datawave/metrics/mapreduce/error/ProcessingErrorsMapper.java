@@ -6,7 +6,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Mapper to produce counts from the processingErrors table.
@@ -15,7 +16,7 @@ import org.apache.log4j.Logger;
  */
 public class ProcessingErrorsMapper extends Mapper<Key,Value,Text,Text> {
 
-    private static final Logger log = Logger.getLogger(ProcessingErrorsMapper.class);
+    private static final Logger log = LoggerFactory.getLogger(ProcessingErrorsMapper.class);
 
     public void map(Key key, Value value, Context context) throws IOException, InterruptedException {
         // format of the row == JobName\0DataType\0UID

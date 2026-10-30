@@ -10,11 +10,12 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
 import org.apache.lucene.util.IntsRef;
 import org.apache.lucene.util.IntsRefBuilder;
 import org.apache.lucene.util.fst.FST;
 import org.apache.lucene.util.fst.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.type.DateType;
 import datawave.data.type.Type;
@@ -24,7 +25,7 @@ import datawave.query.attributes.ValueTuple;
 public abstract class DatawaveArithmetic extends JexlArithmetic {
     private static final String LESS_THAN = "<", GREATER_THAN = ">", LESS_THAN_OR_EQUAL = "<=", GREATER_THAN_OR_EQUAL = ">=";
 
-    private static final Logger log = Logger.getLogger(DatawaveArithmetic.class);
+    private static final Logger log = LoggerFactory.getLogger(DatawaveArithmetic.class);
 
     /**
      * Default to being lenient so we don't have to add "null" for every field in the query that doesn't exist in the document

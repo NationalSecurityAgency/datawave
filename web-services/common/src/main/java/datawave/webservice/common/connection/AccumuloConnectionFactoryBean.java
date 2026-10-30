@@ -31,8 +31,9 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -62,7 +63,7 @@ import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration
 @MBean
 public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Resource
     private EJBContext context;

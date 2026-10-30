@@ -20,7 +20,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultimap;
@@ -63,7 +64,7 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
     private static final String SHARD_DAY_INDEX = "shardDayIndex";
     private static final String EDGE = "edge";
     private static final Joiner KEY_ELEMENT_JOINER = Joiner.on(" ::: ");
-    private static final Logger log = Logger.getLogger(ColumnBasedHandlerTestUtilJUnit5.class);
+    private static final Logger log = LoggerFactory.getLogger(ColumnBasedHandlerTestUtilJUnit5.class);
 
     public static boolean isDocumentKey(Key k) {
         return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT);
@@ -101,7 +102,9 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
         checkForErrors(expectedShardReverseIndexKeys, tableToKeys.get(shardReverseIndexTableName), REVERSE_SHARD_INDEX, errors);
 
         for (String error : errors) {
-            log.error(error.trim());
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(error.trim()));
+            }
         }
         assertTrue(errors.isEmpty(), "Observed errors:\n" + errors);
     }
@@ -174,7 +177,9 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
         try {
             if (!printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
-                    log.info(keyString.trim());
+                    if (log.isInfoEnabled()) {
+                        log.info(String.valueOf(keyString.trim()));
+                    }
                 }
             }
             assertTrue(countMap.get(shardTableName) == expectedShardKeys && countMap.get(shardIndexTableName) == expectedShardIndexKeys
@@ -182,7 +187,9 @@ public class ColumnBasedHandlerTestUtilJUnit5 {
         } catch (AssertionError ae) {
             if (printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
-                    log.info(keyString.trim());
+                    if (log.isInfoEnabled()) {
+                        log.info(String.valueOf(keyString.trim()));
+                    }
                 }
             }
             fail(String.format("Expected: %s shard, %s index, %s reverse index, and %s edge keys.\nFound: %s, %s, %s, and %s respectively", expectedShardKeys,

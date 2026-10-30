@@ -16,12 +16,15 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
@@ -35,7 +38,7 @@ public class MetadataTableConfigHelperTest {
         }
     }
 
-    private static final Logger logger = Logger.getLogger(MetadataTableConfigHelperTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(MetadataTableConfigHelperTest.class);
     private static Level testDriverLevel;
 
     public static final String DEFAULT_EXCEPTION_MESSAGE = "This is a test exception.  NOTHING IS ACTUALLY WRONG....";
@@ -221,15 +224,15 @@ public class MetadataTableConfigHelperTest {
     public void setup() {
         Level desiredLevel = Level.ALL;
 
-        Logger log = Logger.getLogger(MetadataTableConfigHelperTest.class);
-        MetadataTableConfigHelperTest.testDriverLevel = log.getLevel();
-        log.setLevel(desiredLevel);
+        Logger log = LoggerFactory.getLogger(MetadataTableConfigHelperTest.class);
+        MetadataTableConfigHelperTest.testDriverLevel = LogManager.getLogger(log.getName()).getLevel();
+        Configurator.setLevel(log.getName(), desiredLevel);
     }
 
     @AfterEach
     public void teardown() {
 
-        MetadataTableConfigHelperTest.logger.setLevel(MetadataTableConfigHelperTest.testDriverLevel);
+        Configurator.setLevel(MetadataTableConfigHelperTest.logger.getName(), MetadataTableConfigHelperTest.testDriverLevel);
     }
 
     @Test

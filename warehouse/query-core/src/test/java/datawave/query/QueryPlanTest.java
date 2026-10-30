@@ -7,11 +7,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.Collections;
 
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.query.config.ShardQueryConfiguration;
@@ -40,7 +41,7 @@ public class QueryPlanTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(AnyFieldQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AnyFieldQueryTest.class);
 
     // To be inspected
     private QueryMetric metric;

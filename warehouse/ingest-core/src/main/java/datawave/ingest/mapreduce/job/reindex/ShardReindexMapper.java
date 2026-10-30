@@ -37,7 +37,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -90,7 +91,7 @@ public class ShardReindexMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     public static final String METADATA_GENERATE_EVENT_FROM_FI = CLASS_NAME + ".metadata.generate.event.from.fi";
     private static final byte[] FI_START_BYTES = ShardReindexJob.FI_START.getBytes();
 
-    private static final Logger log = Logger.getLogger(ShardReindexMapper.class);
+    private static final Logger log = LoggerFactory.getLogger(ShardReindexMapper.class);
 
     private final Value UID_VALUE = new Value(buildIndexValue().toByteArray());
     private final Value EMPTY_VALUE = new Value();

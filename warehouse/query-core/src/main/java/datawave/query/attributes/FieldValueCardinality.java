@@ -1,7 +1,8 @@
 package datawave.query.attributes;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
@@ -20,7 +21,7 @@ public class FieldValueCardinality implements Comparable<FieldValueCardinality> 
 
     protected ICardinality estimate;
 
-    private static final Logger log = Logger.getLogger(FieldValueCardinality.class);
+    private static final Logger log = LoggerFactory.getLogger(FieldValueCardinality.class);
 
     protected String myValue = null;
 

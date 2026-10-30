@@ -20,7 +20,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -36,7 +37,7 @@ import datawave.webservice.query.result.event.DefaultEvent;
  * source iterator is exhausted. A query that is torn down before that happens must {@link #close()} this iterator to release the thread.
  */
 public class CountAggregatingIterator extends TransformIterator implements Closeable {
-    private static final Logger log = Logger.getLogger(CountAggregatingIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(CountAggregatingIterator.class);
 
     public static final long DEFAULT_PAGE_WAIT_TIME_MILLIS = 3_600_000L;
 

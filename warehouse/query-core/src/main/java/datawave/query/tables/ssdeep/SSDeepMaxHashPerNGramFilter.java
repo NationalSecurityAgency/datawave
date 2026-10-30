@@ -3,14 +3,15 @@ package datawave.query.tables.ssdeep;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.util.ssdeep.NGramTuple;
 import datawave.util.ssdeep.SSDeepHash;
 
 public class SSDeepMaxHashPerNGramFilter implements Predicate<Map.Entry<NGramTuple,SSDeepHash>> {
-    private static final Logger log = Logger.getLogger(SSDeepMaxHashPerNGramFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(SSDeepMaxHashPerNGramFilter.class);
     private final int maxHashesPerNGram;
     private final Map<String,Long> countMap;
 

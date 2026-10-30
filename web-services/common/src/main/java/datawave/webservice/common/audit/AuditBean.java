@@ -12,8 +12,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.MultiValueMap;
 
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
@@ -28,7 +29,7 @@ import datawave.webservice.result.VoidResponse;
 @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
 @DeclareRoles({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
 public class AuditBean {
-    private static final Logger log = Logger.getLogger(AuditBean.class);
+    private static final Logger log = LoggerFactory.getLogger(AuditBean.class);
 
     @Inject
     private AuditService auditService;
@@ -49,7 +50,9 @@ public class AuditBean {
             return response;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.AUDITING_ERROR, e);
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);

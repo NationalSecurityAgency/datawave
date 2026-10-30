@@ -2,7 +2,8 @@ package datawave.ingest.util;
 
 import java.security.MessageDigest;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Identity {
 
@@ -10,7 +11,7 @@ public class Identity {
     private MessageDigest md;
     private static final String HEXITS = "0123456789abcdef";
     private StringBuilder sb = new StringBuilder();
-    private static Logger log = Logger.getLogger(Identity.class);
+    private static Logger log = LoggerFactory.getLogger(Identity.class);
 
     public Identity() {
         setHasher(hasher);
@@ -33,7 +34,9 @@ public class Identity {
             try {
                 md = MessageDigest.getInstance(hasher);
             } catch (Exception e2) {
-                log.warn(e2);
+                if (log.isWarnEnabled()) {
+                    log.warn(String.valueOf(e2));
+                }
                 return "Can not set hasher, something is wrong";
             }
 

@@ -23,8 +23,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.zookeeper.ZooKeeper;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -33,6 +34,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.util.ShardLocationTrieMap;
@@ -43,7 +46,7 @@ public class TableSplitsCacheTest {
     public static final String PASSWORD = "passw0rd";
     public static final String HOST_NAME = "localhost";
     public static final String USER_NAME = "staff";
-    protected static final Logger logger = Logger.getLogger(TableSplitsCacheTest.class);
+    protected static final Logger logger = LoggerFactory.getLogger(TableSplitsCacheTest.class);
     protected static Level testDriverLevel;
     protected static Level uutLevel;
     protected static Level zooCacheLevel;
@@ -141,20 +144,20 @@ public class TableSplitsCacheTest {
 
         mockConfiguration.clear();
         mockConfiguration.put(TableSplitsCache.REFRESH_SPLITS, "false");
-        testDriverLevel = logger.getLevel();
-        logger.setLevel(Level.ALL);
+        testDriverLevel = LogManager.getLogger(logger.getName()).getLevel();
+        Configurator.setLevel(logger.getName(), Level.ALL);
 
-        Logger uutLog = Logger.getLogger(TableSplitsCache.class);
-        uutLevel = uutLog.getLevel();
-        uutLog.setLevel(Level.ALL);
+        Logger uutLog = LoggerFactory.getLogger(TableSplitsCache.class);
+        uutLevel = LogManager.getLogger(uutLog.getName()).getLevel();
+        Configurator.setLevel(uutLog.getName(), Level.ALL);
 
-        Logger zcLog = Logger.getLogger(ZooCache.class);
-        zooCacheLevel = zcLog.getLevel();
-        zcLog.setLevel(Level.ALL);
+        Logger zcLog = LoggerFactory.getLogger(ZooCache.class);
+        zooCacheLevel = LogManager.getLogger(zcLog.getName()).getLevel();
+        Configurator.setLevel(zcLog.getName(), Level.ALL);
 
-        Logger zkLog = Logger.getLogger(ZooKeeper.class);
-        zooKeeperLevel = zkLog.getLevel();
-        zkLog.setLevel(Level.ALL);
+        Logger zkLog = LoggerFactory.getLogger(ZooKeeper.class);
+        zooKeeperLevel = LogManager.getLogger(zkLog.getName()).getLevel();
+        Configurator.setLevel(zkLog.getName(), Level.ALL);
 
         createMockFileSystem();
 
@@ -177,10 +180,10 @@ public class TableSplitsCacheTest {
     @After
     public void teardown() {
 
-        logger.setLevel(testDriverLevel);
-        Logger.getLogger(TableSplitsCache.class).setLevel(uutLevel);
-        Logger.getLogger(ZooCache.class).setLevel(zooCacheLevel);
-        Logger.getLogger(ZooKeeper.class).setLevel(zooKeeperLevel);
+        Configurator.setLevel(logger.getName(), testDriverLevel);
+        Configurator.setLevel(TableSplitsCache.class.getName(), uutLevel);
+        Configurator.setLevel(ZooCache.class.getName(), zooCacheLevel);
+        Configurator.setLevel(ZooKeeper.class.getName(), zooKeeperLevel);
         TableSplitsCache.clear();
 
     }

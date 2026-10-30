@@ -6,7 +6,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.attributes.Document;
 import datawave.query.iterator.DocumentSpecificNestedIterator;
@@ -17,7 +18,7 @@ import datawave.query.iterator.NestedQueryIterator;
  */
 public class Pipeline implements Runnable {
 
-    private static final Logger log = Logger.getLogger(Pipeline.class);
+    private static final Logger log = LoggerFactory.getLogger(Pipeline.class);
     /**
      * A source list for which the iterator will automatically reset to the beginning upon co-modification. This allows us to have an iterator that will always
      * return results as long as elements are added to the list.

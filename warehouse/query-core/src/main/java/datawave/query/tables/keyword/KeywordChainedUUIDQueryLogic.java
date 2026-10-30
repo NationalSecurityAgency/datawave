@@ -10,7 +10,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
@@ -25,7 +26,7 @@ import datawave.query.tables.keyword.extractor.FieldedTagCloudInputExtractor;
  */
 public class KeywordChainedUUIDQueryLogic extends ChainedQueryTable<Entry<Key,Value>,Entry<Key,Value>> {
 
-    private static final Logger log = Logger.getLogger(KeywordChainedUUIDQueryLogic.class);
+    private static final Logger log = LoggerFactory.getLogger(KeywordChainedUUIDQueryLogic.class);
 
     private Query keywordExtractionQuery = null;
     private List<FieldedTagCloudInputExtractor> extractors;
@@ -80,19 +81,25 @@ public class KeywordChainedUUIDQueryLogic extends ChainedQueryTable<Entry<Key,Va
 
         if (null == this.logic1) {
             final String error = "No initial logic (logic1) provided for KeywordChainedUUIDQueryLogic!";
-            log.error(error);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(error));
+            }
             throw new RuntimeException(error);
         }
 
         if (null == this.logic2) {
             final String error = "No follow-on logic (logic2) provided for KeywordChainedUUIDQueryLogic!";
-            log.error(error);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(error));
+            }
             throw new RuntimeException(error);
         }
 
         if (null == this.getChainStrategy()) {
             final String error = "No transformed ChainStrategy provided for KeywordChainedUUIDQueryLogic!";
-            log.error(error);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(error));
+            }
             throw new RuntimeException(error);
         }
 

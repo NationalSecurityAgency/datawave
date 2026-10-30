@@ -11,13 +11,14 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConfigurableVisibilityFilter extends WrappingIterator implements OptionDescriber {
     public static final String AUTHORIZATIONS_OPT = "authorizations";
     private SortedKeyValueIterator<Key,Value> delegate;
 
-    private static final Logger log = Logger.getLogger(ConfigurableVisibilityFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(ConfigurableVisibilityFilter.class);
 
     public ConfigurableVisibilityFilter() {}
 

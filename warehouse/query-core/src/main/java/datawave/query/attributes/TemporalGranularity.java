@@ -4,7 +4,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.function.Function;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -173,7 +174,7 @@ public enum TemporalGranularity {
      */
     private static class DateTimeValueFormatter implements Function<String,String> {
 
-        private static final Logger log = Logger.getLogger(DateTimeValueFormatter.class);
+        private static final Logger log = LoggerFactory.getLogger(DateTimeValueFormatter.class);
         private final SimpleDateFormat formatter;
         private final Function<String,String> postFormatFunction;
 

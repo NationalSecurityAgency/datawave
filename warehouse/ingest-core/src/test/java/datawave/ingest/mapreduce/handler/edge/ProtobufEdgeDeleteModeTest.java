@@ -8,7 +8,6 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,12 +23,15 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -59,8 +61,9 @@ public class ProtobufEdgeDeleteModeTest {
 
     private Configuration conf;
     private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static Logger log = Logger.getLogger(ProtobufEdgeDeleteModeTest.class);
-    private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
+    private static Logger log = LoggerFactory.getLogger(ProtobufEdgeDeleteModeTest.class);
+    private static final LoggerContext logContext = (LoggerContext) LogManager.getContext(false);
+    private static final Map<String,Appender> rootAppenders = new HashMap<>(logContext.getRootLogger().getAppenders());
     private static Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private static final Now now = Now.getInstance();
@@ -74,7 +77,7 @@ public class ProtobufEdgeDeleteModeTest {
         try {
             Files.write(edgeKeyVersionCachePath, "1\t1970-01-01T00:00:00.000Z".getBytes());
         } catch (IOException io) {
-            log.fatal("Could not create " + edgeKeyVersionCachePath);
+            log.error("Could not create " + edgeKeyVersionCachePath);
         }
 
         fields.put("fileExtension", new BaseNormalizedContent("fileExtension", "gz"));
@@ -105,11 +108,8 @@ public class ProtobufEdgeDeleteModeTest {
 
     @AfterClass
     public static void tearDown() {
-        Logger.getRootLogger().removeAllAppenders();
-        while (rootAppenders.hasMoreElements()) {
-            Appender appender = (Appender) rootAppenders.nextElement();
-            Logger.getRootLogger().addAppender(appender);
-        }
+        logContext.getRootLogger().getAppenders().values().forEach(logContext.getRootLogger()::removeAppender);
+        rootAppenders.values().forEach(logContext.getRootLogger()::addAppender);
         try {
             Files.deleteIfExists(edgeKeyVersionCachePath);
         } catch (IOException io) {

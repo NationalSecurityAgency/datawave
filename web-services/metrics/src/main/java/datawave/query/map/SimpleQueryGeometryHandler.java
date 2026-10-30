@@ -12,7 +12,7 @@ import javax.inject.Inject;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.map.QueryGeometryHandler;
@@ -85,7 +85,9 @@ public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
 
             return !GeoFeatureVisitor.getGeoFeatures(JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery)).isEmpty();
         } catch (Exception e) {
-            log.trace(new Exception("Unable to parse the geo features"));
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(new Exception("Unable to parse the geo features")));
+            }
         }
         return false;
     }

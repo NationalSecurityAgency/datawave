@@ -14,10 +14,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
@@ -37,7 +38,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(DataTypeQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(DataTypeQueryTest.class);
 
     private static final List<String> TEST_STATES = Arrays.asList("'ohio'", "'Missouri'", "'Maine'");
     private static final List<String> TEST_NUMS = Arrays.asList("100", "110", "120");

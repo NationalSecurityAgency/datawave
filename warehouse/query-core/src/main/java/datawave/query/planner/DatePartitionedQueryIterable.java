@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.QueryData;
@@ -156,7 +156,9 @@ public class DatePartitionedQueryIterable implements CloseableIterable<QueryData
                     }
                 } catch (Exception e) {
                     String msg = "Exception occurred when processing sub-plan against date range (" + subBeginDate + "-" + subEndDate + ")";
-                    log.warn(msg, e);
+                    if (log.isWarnEnabled()) {
+                        log.warn(String.valueOf(msg), e);
+                    }
                     exceptions.add(new DatawaveQueryException(msg, e.getCause() != null ? e.getCause() : e));
                 } finally {
                     // The sub-plan config is null if the callable failed before it could build one. There are no timers or plan to collect in that case,

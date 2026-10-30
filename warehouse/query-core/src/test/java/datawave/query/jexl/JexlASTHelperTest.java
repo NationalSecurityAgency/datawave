@@ -28,10 +28,11 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -52,7 +53,7 @@ import datawave.query.util.Tuple3;
 
 public class JexlASTHelperTest {
 
-    private static final Logger log = Logger.getLogger(JexlASTHelperTest.class);
+    private static final Logger log = LoggerFactory.getLogger(JexlASTHelperTest.class);
 
     private final ASTValidator validator = new ASTValidator();
 

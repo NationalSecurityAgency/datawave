@@ -10,7 +10,8 @@ import java.util.List;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -25,7 +26,7 @@ import datawave.query.util.sortedset.FileSortedSet;
  *            value of the map
  */
 public class HdfsBackedSortedMap<K,V> extends BufferedFileBackedSortedMap<K,V> {
-    private static final Logger log = Logger.getLogger(HdfsBackedSortedMap.class);
+    private static final Logger log = LoggerFactory.getLogger(HdfsBackedSortedMap.class);
     private static final String FILENAME_PREFIX = "SortedMapFile.";
 
     public static class Builder<B extends Builder<B,K,V>,K,V> extends BufferedFileBackedSortedMap.Builder<B,K,V> {

@@ -28,8 +28,9 @@ import javax.ws.rs.Produces;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.annotation.Required;
@@ -60,7 +61,7 @@ import datawave.webservice.result.VoidResponse;
 @Lock(LockType.READ)
 public class AccumuloTableCacheBean implements AccumuloTableCache {
 
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Inject
     private JMSContext jmsContext;

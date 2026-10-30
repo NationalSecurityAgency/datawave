@@ -8,17 +8,18 @@ import static org.junit.Assert.assertTrue;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  */
 public class RangeSplitterTest {
 
-    Logger log = Logger.getLogger(RangeSplitterTest.class);
+    Logger log = LoggerFactory.getLogger(RangeSplitterTest.class);
 
     @Before
     public void setUp() throws Exception {}
@@ -65,7 +66,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -93,7 +96,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -121,7 +126,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -149,7 +156,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -177,7 +186,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -205,7 +216,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -233,7 +246,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -261,7 +276,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -289,7 +306,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -317,7 +336,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -345,7 +366,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());
@@ -373,7 +396,9 @@ public class RangeSplitterTest {
         int count = 0;
         log.trace("Splitting " + r);
         for (Range range : splitter) {
-            log.trace(range);
+            if (log.isTraceEnabled()) {
+                log.trace(String.valueOf(range));
+            }
             count++;
             assertTrue(range.isStartKeyInclusive());
             assertFalse(range.isEndKeyInclusive());

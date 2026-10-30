@@ -23,10 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -52,7 +53,7 @@ public class MiscQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(MiscQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(MiscQueryTest.class);
 
     @BeforeAll
     public static void filterSetup() throws Exception {

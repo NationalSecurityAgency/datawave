@@ -1,7 +1,8 @@
 package datawave.util.ssdeep;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements functions to calculate a similarity score for a pair of SSDeepHashes. This implementation will calculate an edit distance between two hashes and
@@ -9,7 +10,7 @@ import org.apache.log4j.Logger;
  * hash comparisons that have different lenghts.
  */
 public class SSDeepHashEditDistanceScorer implements SSDeepHashScorer<Integer> {
-    private static final Logger log = Logger.getLogger(SSDeepHash.class);
+    private static final Logger log = LoggerFactory.getLogger(SSDeepHash.class);
 
     private final int maxRepeatedCharacters;
 

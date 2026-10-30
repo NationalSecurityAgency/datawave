@@ -40,7 +40,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.mock.MockDispatcherFactory;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.jboss.resteasy.mock.MockHttpResponse;
@@ -54,6 +53,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -130,7 +131,7 @@ public class QueryExecutorBeanTest {
     private final String userDN = "CN=Guy Some Other soguy, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US";
     private final String[] auths = new String[] {"PRIVATE", "PUBLIC"};
 
-    private static final Logger log = Logger.getLogger(QueryExecutorBeanTest.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryExecutorBeanTest.class);
 
     // QueryExecutorBean dependencies
     private QueryCache cache;

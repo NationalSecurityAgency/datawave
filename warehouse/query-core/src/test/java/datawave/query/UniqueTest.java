@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +23,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -60,7 +61,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 // @formatter:on
 public class UniqueTest extends AbstractQueryTest {
 
-    private static final Logger log = Logger.getLogger(UniqueTest.class);
+    private static final Logger log = LoggerFactory.getLogger(UniqueTest.class);
     private static final Authorizations auths = new Authorizations("ALL");
 
     private static AccumuloClient client;

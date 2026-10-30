@@ -15,7 +15,7 @@
     <module name="IllegalImport">
         <property name="regexp" value="true"/>
         <property name="illegalClasses"
-                  value="^org\.apache\.accumulo\.core\.util\.Pair"/>
+                  value="^org\.apache\.accumulo\.core\.util\.Pair,^org\.apache\.log4j\..*,^org\.apache\.commons\.logging\.(Log|LogFactory),^org\.apache\.logging\.log4j\.Logger,^org\.jboss\.logging\.(Logger|NDC),^java\.util\.logging\.Logger"/>
         <property name="severity" value="error"/>
     </module>
     <!-- Do not allow any unused imports. -->

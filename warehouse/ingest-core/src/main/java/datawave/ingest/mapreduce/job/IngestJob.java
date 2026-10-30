@@ -75,10 +75,16 @@ import org.apache.hadoop.tools.DistCp;
 import org.apache.hadoop.tools.DistCpOptions;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.filter.ThresholdFilter;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StopWatch;
 
 import datawave.ingest.config.TableConfigCache;
@@ -132,8 +138,7 @@ public class IngestJob implements Tool {
     public static final String REDUCE_TASKS_ARG_PREFIX = "-mapreduce.job.reduces=";
 
     protected boolean eventProcessingError = false;
-    protected Logger log = Logger.getLogger("datawave.ingest");
-    private ConsoleAppender ca = new ConsoleAppender();
+    protected Logger log = LoggerFactory.getLogger("datawave.ingest");
 
     protected ArrayList<String[]> confOverrides = new ArrayList<>();
     protected int reduceTasks = 0;
@@ -250,18 +255,29 @@ public class IngestJob implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
+        ConsoleAppender appender = ConsoleAppender.newBuilder().setName("IngestJobConsole")
+                        .setLayout(PatternLayout.newBuilder().withPattern("%p [%c{1}] %m%n").build())
+                        .setFilter(ThresholdFilter.createFilter(Level.INFO, Filter.Result.ACCEPT, Filter.Result.DENY)).build();
+        appender.start();
+        LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        context.getLogger(log.getName()).addAppender(appender);
+        try {
+            return runJob(args);
+        } finally {
+            context.getLogger(log.getName()).removeAppender(appender);
+            appender.stop();
+        }
+    }
 
+    private int runJob(String[] args) throws Exception {
         long start = System.currentTimeMillis();
 
         StopWatch sw = new StopWatch("Ingest Job");
         sw.start("local init");
 
-        Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
+        Configurator.setLevel(TypeRegistry.class.getName(), Level.ALL);
 
-        ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
-        ca.setThreshold(Level.INFO);
-        log.addAppender(ca);
-        log.setLevel(Level.INFO);
+        Configurator.setLevel(log.getName(), Level.INFO);
 
         // Initialize the markings file helper so we get the right markings file
         MarkingFunctions.Factory.createMarkingFunctions();
@@ -334,7 +350,9 @@ public class IngestJob implements Tool {
             try {
                 configureBulkPartitionerAndOutputFormatter(job, cbHelper, conf, outputFs);
             } catch (Exception e) {
-                log.error(e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(e));
+                }
                 log.info("Deleting orphaned directory: " + workDirPath);
                 try {
                     outputFs.delete(workDirPath, true);
@@ -371,7 +389,9 @@ public class IngestJob implements Tool {
 
         startDaemonProcesses(conf);
         sw.stop();
-        log.info(formatTaskInfo(sw.getLastTaskInfo()));
+        if (log.isInfoEnabled()) {
+            log.info(String.valueOf(formatTaskInfo(sw.getLastTaskInfo())));
+        }
         sw.start("AM Init");
 
         job.submit();
@@ -428,7 +448,9 @@ public class IngestJob implements Tool {
             }
         }
         sw.stop();
-        log.info(formatTaskInfo(sw.getLastTaskInfo()));
+        if (log.isInfoEnabled()) {
+            log.info(String.valueOf(formatTaskInfo(sw.getLastTaskInfo())));
+        }
 
         sw.start("MR Job");
         job.waitForCompletion(true);
@@ -436,8 +458,12 @@ public class IngestJob implements Tool {
 
         long stop = System.currentTimeMillis();
 
-        log.info(formatTaskInfo(sw.getLastTaskInfo()));
-        log.info(sw.prettyPrint());
+        if (log.isInfoEnabled()) {
+            log.info(String.valueOf(formatTaskInfo(sw.getLastTaskInfo())));
+        }
+        if (log.isInfoEnabled()) {
+            log.info(String.valueOf(sw.prettyPrint()));
+        }
 
         // output the counters to the log
         Counters counters = job.getCounters();

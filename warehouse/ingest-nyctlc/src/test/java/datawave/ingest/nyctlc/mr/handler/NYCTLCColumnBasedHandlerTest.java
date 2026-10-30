@@ -13,10 +13,11 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.csv.mr.handler.ColumnBasedHandlerTestUtilJUnit5;
 import datawave.ingest.data.RawRecordContainer;
@@ -31,7 +32,7 @@ import datawave.table.constants.TableName;
 public class NYCTLCColumnBasedHandlerTest {
 
     private Configuration conf;
-    private static Logger log = Logger.getLogger(NYCTLCColumnBasedHandlerTest.class);
+    private static Logger log = LoggerFactory.getLogger(NYCTLCColumnBasedHandlerTest.class);
 
     @BeforeAll
     public static void setupSystemSettings() throws Exception {
@@ -44,7 +45,9 @@ public class NYCTLCColumnBasedHandlerTest {
         TaskAttemptContext ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         TypeRegistry.reset();
         TypeRegistry.getInstance(ctx.getConfiguration());
-        log.debug(TypeRegistry.getContents());
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(TypeRegistry.getContents()));
+        }
         NYCTLCReader reader = new NYCTLCReader();
         reader.initialize(split, ctx);
         return reader;

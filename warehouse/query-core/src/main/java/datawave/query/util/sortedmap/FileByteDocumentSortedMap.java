@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.SortedMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.attributes.Document;
 import datawave.query.util.sortedmap.rfile.RFileByteDocumentInputStream;
@@ -20,7 +21,7 @@ import datawave.query.util.sortedset.FileSortedSet;
  *
  */
 public class FileByteDocumentSortedMap extends FileSortedMap<byte[],Document> {
-    private static Logger log = Logger.getLogger(FileByteDocumentSortedMap.class);
+    private static Logger log = LoggerFactory.getLogger(FileByteDocumentSortedMap.class);
 
     public final static class DefaultByteComparator implements Comparator<byte[]> {
 

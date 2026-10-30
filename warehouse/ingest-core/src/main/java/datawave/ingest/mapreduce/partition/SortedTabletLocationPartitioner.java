@@ -8,7 +8,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -16,7 +17,7 @@ import datawave.ingest.mapreduce.job.SplitsFile;
 
 public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner {
 
-    private static final Logger log = Logger.getLogger(SortedTabletLocationPartitioner.class);
+    private static final Logger log = LoggerFactory.getLogger(SortedTabletLocationPartitioner.class);
     private final Map<String,Map<Integer,Integer>> SPLIT_TO_REDUCER_MAP = new HashMap<>();
 
     @Override

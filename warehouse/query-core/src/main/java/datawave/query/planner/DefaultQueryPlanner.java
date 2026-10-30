@@ -49,7 +49,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -476,7 +476,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("Stack trace for overflow " + e);
             }
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
-            log.warn(qe);
+            if (log.isWarnEnabled()) {
+                log.warn(String.valueOf(qe));
+            }
             throw new DatawaveFatalQueryException(qe);
         } catch (NoResultsException e) {
             if (log.isTraceEnabled()) {
@@ -662,7 +664,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("Stack trace for overflow " + e);
             }
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, e);
-            log.warn(qe);
+            if (log.isWarnEnabled()) {
+                log.warn(String.valueOf(qe));
+            }
             throw new DatawaveFatalQueryException(qe);
         } catch (NoResultsException e) {
             if (log.isTraceEnabled()) {
@@ -1658,11 +1662,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         } catch (EmptyUnfieldedTermExpansionException e) {
             // The visitor will only throw this if we cannot expand anything resulting in empty query
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ", query));
-            log.info(qe);
+            if (log.isInfoEnabled()) {
+                log.info(String.valueOf(qe));
+            }
             throw new NoResultsException(qe);
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-            log.info(qe);
+            if (log.isInfoEnabled()) {
+                log.info(String.valueOf(qe));
+            }
             throw new DatawaveFatalQueryException(qe);
         }
     }
@@ -1730,7 +1738,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FIELDS_NOT_IN_DATA_DICTIONARY, MessageFormat.format(
                             "Datatype Filter: {0}, Missing Fields: {1}, Auths: {2}", datatypeFilterSet, nonexistentFields, settings.getQueryAuthorizations()));
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             throw new InvalidQueryException(qe);
         }
 
@@ -2012,7 +2022,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.FIELD_FETCH_ERROR, e);
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             throw new DatawaveFatalQueryException(qe);
         }
 
@@ -2046,21 +2058,27 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 stopwatch.stop();
             }
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_OR_TERM_THRESHOLD_EXCEEDED, soe);
-            log.warn(qe);
+            if (log.isWarnEnabled()) {
+                log.warn(String.valueOf(qe));
+            }
             throw new DatawaveFatalQueryException(qe);
         } catch (ParseException e) {
             if (stopwatch != null) {
                 stopwatch.stop();
             }
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNPARSEABLE_JEXL_QUERY, e, MessageFormat.format("Query: {0}", query));
-            log.warn(qe);
+            if (log.isWarnEnabled()) {
+                log.warn(String.valueOf(qe));
+            }
             throw new DatawaveFatalQueryException(qe);
         } catch (PatternSyntaxException e) {
             if (stopwatch != null) {
                 stopwatch.stop();
             }
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REGEX, e, MessageFormat.format("Query: {0}", query));
-            log.warn(qe);
+            if (log.isWarnEnabled()) {
+                log.warn(String.valueOf(qe));
+            }
             throw new DatawaveFatalQueryException(qe);
         }
         return queryTree;
@@ -2068,9 +2086,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void logDebug(List<String> output, String message) {
         if (log.isDebugEnabled()) {
-            log.debug(message);
+            log.debug(String.valueOf(message));
             for (String line : output) {
-                log.debug(line);
+                log.debug(String.valueOf(line));
             }
             log.debug("");
         }
@@ -2078,9 +2096,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public static void logTrace(List<String> output, String message) {
         if (log.isTraceEnabled()) {
-            log.trace(message);
+            log.trace(String.valueOf(message));
             for (String line : output) {
-                log.trace(line);
+                log.trace(String.valueOf(line));
             }
             log.trace("");
         }

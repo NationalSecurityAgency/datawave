@@ -9,7 +9,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
@@ -26,7 +27,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 @SuppressWarnings("rawtypes")
 public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> {
 
-    private static final Logger log = Logger.getLogger(ContentQueryTransformer.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentQueryTransformer.class);
 
     protected final Authorizations auths;
     protected final ResponseObjectFactory responseObjectFactory;

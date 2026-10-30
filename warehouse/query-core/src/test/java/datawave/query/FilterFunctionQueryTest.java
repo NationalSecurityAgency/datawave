@@ -11,10 +11,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -34,7 +35,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(FilterFunctionQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(FilterFunctionQueryTest.class);
 
     private static final String IncludeRegex = "filter:includeRegex(";
     private static final String ExcludeRegex = FILTER_EXCLUDE_REGEX + "(";

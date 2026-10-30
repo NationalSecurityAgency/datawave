@@ -6,7 +6,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class QuerySpanCollector {
     private final AtomicLong seekCount = new AtomicLong();
@@ -14,7 +15,7 @@ public class QuerySpanCollector {
     private final AtomicBoolean yield = new AtomicBoolean();
     private final AtomicLong sourceCount = new AtomicLong();
     private final Map<String,Long> stageTimers = new LinkedHashMap<>();
-    private final Logger log = Logger.getLogger(QuerySpan.class);
+    private final Logger log = LoggerFactory.getLogger(QuerySpan.class);
 
     public void addQuerySpan(QuerySpan querySpan) {
 

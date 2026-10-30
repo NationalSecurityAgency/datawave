@@ -22,7 +22,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -103,7 +104,7 @@ import datawave.util.CompositeTimestamp;
  */
 public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber {
 
-    private static final Logger log = Logger.getLogger(ConfigurableAgeOffFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(ConfigurableAgeOffFilter.class);
 
     private static final ThreadFactory TIMER_THREAD_FACTORY = new ThreadFactoryBuilder()
                     .setNameFormat(ConfigurableAgeOffFilter.class.getSimpleName() + "-ruleCache-refresh-%d").build();
@@ -451,7 +452,9 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
                                                 .expireAfterAccess(EXPIRATION_INTERVAL_MS, TimeUnit.MILLISECONDS).build(new FileRuleCacheLoader());
                             }
                         } catch (Throwable t) {
-                            log.error(t, t);
+                            if (log.isErrorEnabled()) {
+                                log.error(String.valueOf(t), t);
+                            }
                         }
                     }, 1, 10, TimeUnit.SECONDS);
                 }

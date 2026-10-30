@@ -21,16 +21,17 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
 import org.jboss.resteasy.specimpl.MultivaluedTreeMap;
 import org.jboss.resteasy.spi.Failure;
 import org.jboss.resteasy.util.CaseInsensitiveMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.io.CountingOutputStream;
 
 public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilter, ContainerResponseFilter, WriterInterceptor {
-    protected static final Logger log = Logger.getLogger(BaseMethodStatsInterceptor.class);
+    protected static final Logger log = LoggerFactory.getLogger(BaseMethodStatsInterceptor.class);
 
     protected static class RequestMethodStats {
 

@@ -16,7 +16,8 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -33,7 +34,7 @@ import datawave.ingest.input.reader.AbstractEventRecordReader;
  * fields
  */
 public class SimpleAnnotationRecordReader extends AbstractEventRecordReader<BytesWritable> {
-    private static final Logger logger = Logger.getLogger(SimpleAnnotationRecordReader.class);
+    private static final Logger logger = LoggerFactory.getLogger(SimpleAnnotationRecordReader.class);
 
     // RecordReader stuff
 

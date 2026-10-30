@@ -16,7 +16,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.protobuf.TermWeight;
@@ -24,7 +25,7 @@ import datawave.scan.ScannerBuilder;
 import datawave.util.accumulo.RFileUtil;
 
 public class ShardReindexVerificationMapper extends Mapper<Range,String,Key,Value> {
-    private static final Logger log = Logger.getLogger(ShardReindexVerificationMapper.class);
+    private static final Logger log = LoggerFactory.getLogger(ShardReindexVerificationMapper.class);
 
     private AccumuloClient accumuloClient = null;
     private AccumuloHelper accumuloHelper = null;

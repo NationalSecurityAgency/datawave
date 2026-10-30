@@ -2,7 +2,8 @@ package datawave.microservice.querymetric;
 
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
@@ -10,7 +11,7 @@ import com.hazelcast.cluster.MembershipListener;
 
 public class ClusterMembershipListener implements MembershipListener {
 
-    private Logger log = Logger.getLogger(ClusterMembershipListener.class);
+    private Logger log = LoggerFactory.getLogger(ClusterMembershipListener.class);
 
     @Override
     public void memberAdded(MembershipEvent membershipEvent) {

@@ -10,11 +10,12 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -25,7 +26,7 @@ import datawave.query.util.TypeMetadata;
 
 public class IngestTypePruningVisitorTest {
 
-    private static final Logger log = Logger.getLogger(IngestTypePruningVisitorTest.class);
+    private static final Logger log = LoggerFactory.getLogger(IngestTypePruningVisitorTest.class);
 
     private static final TypeMetadata typeMetadata = new TypeMetadata();
     private final ASTValidator validator = new ASTValidator();

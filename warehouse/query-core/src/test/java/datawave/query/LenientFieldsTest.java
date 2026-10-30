@@ -12,11 +12,12 @@ import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -46,7 +47,7 @@ import datawave.query.util.WiseGuysIngest;
 // @formatter:on
 public class LenientFieldsTest extends AbstractQueryTest {
 
-    private static final Logger log = Logger.getLogger(LenientFieldsTest.class);
+    private static final Logger log = LoggerFactory.getLogger(LenientFieldsTest.class);
 
     private static final Authorizations auths = new Authorizations("ALL");
 

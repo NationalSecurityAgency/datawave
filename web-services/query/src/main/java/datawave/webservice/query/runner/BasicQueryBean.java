@@ -35,7 +35,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.annotation.Timed;
 
@@ -81,7 +82,7 @@ public class BasicQueryBean {
 
     static final List<String> NO_PLAN_REQUIRED = Arrays.asList("datawave.query.tables.content.ContentQueryTable");
 
-    private final Logger log = Logger.getLogger(BasicQueryBean.class);
+    private final Logger log = LoggerFactory.getLogger(BasicQueryBean.class);
 
     @Inject
     private QueryLogicFactory queryLogicFactory;
@@ -170,7 +171,9 @@ public class BasicQueryBean {
                 try {
                     d.setResponseClass(l.getResponseClass(q));
                 } catch (QueryException e) {
-                    log.error(e, e);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(e), e);
+                    }
                     response.addException(e);
                     d.setResponseClass("unknown");
                 }
@@ -269,7 +272,9 @@ public class BasicQueryBean {
                     try {
                         d.setResponseClass(l.getResponseClass(q));
                     } catch (QueryException e) {
-                        log.error(e, e);
+                        if (log.isErrorEnabled()) {
+                            log.error(String.valueOf(e), e);
+                        }
                         response.addException(e);
                         d.setResponseClass("unknown");
                     }

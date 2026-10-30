@@ -16,12 +16,14 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -55,7 +57,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
 
-    private static final Logger log = Logger.getLogger(FacetedQueryLogicTest.class);
+    private static final Logger log = LoggerFactory.getLogger(FacetedQueryLogicTest.class);
 
     public FacetedQueryLogicTest() {
         super(CitiesDataType.getManager());
@@ -63,7 +65,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
 
     @BeforeClass
     public static void setupClass() throws Exception {
-        Logger.getLogger(FacetedQueryLogicTest.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(FacetedQueryLogicTest.class.getName(), Level.DEBUG);
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
         generic.addIndexField(CityField.COUNTRY.name());

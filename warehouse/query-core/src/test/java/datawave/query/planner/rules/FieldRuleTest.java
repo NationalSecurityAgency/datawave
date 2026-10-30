@@ -12,11 +12,12 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -46,7 +47,7 @@ import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 // @formatter:on
 public class FieldRuleTest extends AbstractQueryTest {
 
-    private static final Logger log = Logger.getLogger(FieldRuleTest.class);
+    private static final Logger log = LoggerFactory.getLogger(FieldRuleTest.class);
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");
     protected Set<Authorizations> authSet = Collections.singleton(auths);
 

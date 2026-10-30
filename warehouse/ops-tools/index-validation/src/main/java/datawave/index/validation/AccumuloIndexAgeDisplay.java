@@ -26,7 +26,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.scan.ScannerBuilder;
 
@@ -35,7 +36,7 @@ import datawave.scan.ScannerBuilder;
  * will be displayed. The user can enter a list of days to check
  */
 public class AccumuloIndexAgeDisplay implements AutoCloseable {
-    private static final Logger log = Logger.getLogger(AccumuloIndexAgeDisplay.class);
+    private static final Logger log = LoggerFactory.getLogger(AccumuloIndexAgeDisplay.class);
     private static final long MILLIS_IN_DAY = 86400000;
 
     private AccumuloClient accumuloClient = null;
@@ -241,7 +242,9 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
         sb.append("\n");
 
         String summary = sb.toString();
-        log.info(summary);
+        if (log.isInfoEnabled()) {
+            log.info(String.valueOf(summary));
+        }
 
         return (summary);
     }

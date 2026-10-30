@@ -10,7 +10,8 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.util.sortedmap.FileSortedMap.SortedMapFileHandler;
 
@@ -25,7 +26,7 @@ import datawave.query.util.sortedmap.FileSortedMap.SortedMapFileHandler;
  *            value of the map
  **/
 public class BufferedFileBackedSortedMap<K,V> implements SortedMap<K,V>, RewritableSortedMap<K,V> {
-    private static final Logger log = Logger.getLogger(BufferedFileBackedSortedMap.class);
+    private static final Logger log = LoggerFactory.getLogger(BufferedFileBackedSortedMap.class);
     protected static final int DEFAULT_BUFFER_PERSIST_THRESHOLD = 1000;
     protected static final int DEFAULT_MAX_OPEN_FILES = 100;
     protected static final int DEFAULT_NUM_RETRIES = 2;

@@ -20,7 +20,8 @@ import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -38,7 +39,7 @@ import datawave.query.util.MetadataHelper;
  *
  */
 public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
-    private static final Logger log = Logger.getLogger(FunctionNormalizationRebuildingVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(FunctionNormalizationRebuildingVisitor.class);
 
     private static final NoOpType NO_OP = new NoOpType();
 
@@ -281,7 +282,8 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         } catch (Exception e) {
             // If we can't normalize a term, note that, and quit
             if (log.isTraceEnabled()) {
-                log.trace("Failed to normalized " + node.getLiteral() + " with " + normalizer != null ? normalizer.getClass().getName() : null + " normalizer");
+                log.trace(String.valueOf("Failed to normalized " + node.getLiteral() + " with " + normalizer != null ? normalizer.getClass().getName()
+                                : null + " normalizer"));
             }
 
             this.normalizationFailed = true;

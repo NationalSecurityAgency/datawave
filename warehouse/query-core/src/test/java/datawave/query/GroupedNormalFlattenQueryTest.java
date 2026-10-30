@@ -18,10 +18,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
@@ -45,7 +46,7 @@ public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQueryJUnit5
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(GroupedNormalFlattenQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(GroupedNormalFlattenQueryTest.class);
 
     private static final FlattenMode flatMode = FlattenMode.GROUPED_AND_NORMAL;
     private static final FlattenDataType flatten;

@@ -23,7 +23,8 @@ import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedExcepti
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
@@ -134,7 +135,7 @@ public abstract class AbstractVersionFilter<A> {
     public static final String KEY_UID_VERSION_PATTERN = NORMALIZED_VERSION_FILTER_ROOT_KEY + ".uid.pattern";
     public static final String KEY_VERSION_FIELDNAME = NORMALIZED_VERSION_FILTER_ROOT_KEY + ".fieldname";
 
-    private static final Logger LOG = Logger.getLogger(AbstractVersionFilter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractVersionFilter.class);
     private static final NumberType NUMBER_NORMALIZER = new VersionNumberType();
     private static final String NUMBER_NORMALIZER_MAX_VALUE = NUMBER_NORMALIZER.normalize(Integer.toString(Integer.MAX_VALUE));
     private static final Text TF_COLUMN = new Text("tf");
@@ -751,7 +752,9 @@ public abstract class AbstractVersionFilter<A> {
                 } catch (Exception e) {
                     final String message = "Unable to validate version for range " + startKey.toStringNoTime()
                                     + " due to an invalid field index (fi) column qualifier " + topKey.toStringNoTime();
-                    LOG.warn(message, e);
+                    if (LOG.isWarnEnabled()) {
+                        LOG.warn(String.valueOf(message), e);
+                    }
                 }
             }
 
@@ -790,7 +793,9 @@ public abstract class AbstractVersionFilter<A> {
                 } catch (final Exception e) {
                     final String message = "Unable to denormalize version " + in + " using parent " + NumberType.class.getSimpleName()
                                     + ". Falling back to the " + NumericalEncoder.class.getSimpleName() + '.';
-                    LOG.warn(message, e);
+                    if (LOG.isWarnEnabled()) {
+                        LOG.warn(String.valueOf(message), e);
+                    }
 
                     if (e instanceof NumberFormatException) {
                         USE_PARENT_DENORMALIZER = false;

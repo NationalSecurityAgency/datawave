@@ -35,7 +35,7 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
@@ -673,10 +673,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
             stopwatch.stop();
 
-            log.info(getStopwatchHeader(config));
+            if (log.isInfoEnabled()) {
+                log.info(String.valueOf(getStopwatchHeader(config)));
+            }
             List<String> timings = timers.summarizeAsList();
             for (String timing : timings) {
-                log.info(timing);
+                if (log.isInfoEnabled()) {
+                    log.info(String.valueOf(timing));
+                }
             }
 
             return;
@@ -698,10 +702,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
         stopwatch.stop();
 
-        log.info(getStopwatchHeader(config));
+        if (log.isInfoEnabled()) {
+            log.info(String.valueOf(getStopwatchHeader(config)));
+        }
         List<String> timings = timers.summarizeAsList();
         for (String timing : timings) {
-            log.info(timing);
+            if (log.isInfoEnabled()) {
+                log.info(String.valueOf(timing));
+            }
         }
     }
 
@@ -1628,7 +1636,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                     log.trace("LUCENE Query after parsing:");
                     List<String> lines = datawave.query.lucene.visitors.PrintingVisitor.printToList(luceneQuery);
                     for (String line : lines) {
-                        log.trace(line);
+                        log.trace(String.valueOf(line));
                     }
                     log.trace("");
                 }
@@ -1755,9 +1763,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     private static void logQuery(final ASTJexlScript queryTree, String message) {
         if (log.isTraceEnabled()) {
             List<String> lines = PrintingVisitor.formattedQueryStringList(queryTree, -1, -1);
-            log.trace(message);
+            log.trace(String.valueOf(message));
             for (String line : lines) {
-                log.trace(line);
+                log.trace(String.valueOf(line));
             }
             log.trace("");
         }

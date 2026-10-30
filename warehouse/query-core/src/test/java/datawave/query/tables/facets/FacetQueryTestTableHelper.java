@@ -6,7 +6,7 @@ import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.helpers.PrintUtility;
 import datawave.ingest.mapreduce.handler.facet.FacetHandler;

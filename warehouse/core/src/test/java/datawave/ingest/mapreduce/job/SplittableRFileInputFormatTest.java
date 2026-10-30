@@ -29,8 +29,8 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.JobContextImpl;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +41,7 @@ public class SplittableRFileInputFormatTest {
 
     @BeforeEach
     public void setup() {
-        Logger.getRootLogger().setLevel(Level.WARN);
+        Configurator.setRootLevel(Level.WARN);
         config = new Configuration();
     }
 

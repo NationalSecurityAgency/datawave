@@ -19,13 +19,14 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -56,7 +57,7 @@ import datawave.webservice.query.util.TypedValue;
 // @formatter:on
 public class ContentQueryLogicFunctionalTest {
 
-    private static final Logger log = Logger.getLogger(ContentQueryLogicFunctionalTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentQueryLogicFunctionalTest.class);
     private static final String CAPONE_DOCUMENT = "DOCUMENT:20130101_0/test/" + WiseGuysIngest.caponeUID;
     private static final String CORLEONE_DOCUMENT = "DOCUMENT:20130101_0/test/" + WiseGuysIngest.corleoneUID;
 

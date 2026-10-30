@@ -343,8 +343,8 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 # Configure custom loggers and categories
 #
 /subsystem=undertow/server=default-server/host=default-host/setting=access-log:add(prefix="access",pattern="%h %{i,x-originating-host} %{c,query-session-id} \"%u\" %t \"%r\" %s %b %D %I")
-/subsystem=logging/pattern-formatter=PATTERN:write-attribute(name=pattern,value="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %x %s%e%n")
-/subsystem=logging/pattern-formatter=COLOR-PATTERN:write-attribute(name=pattern,value="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %x %s%e%n")
+/subsystem=logging/pattern-formatter=PATTERN:write-attribute(name=pattern,value="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %X{NDC} %s%e%n")
+/subsystem=logging/pattern-formatter=COLOR-PATTERN:write-attribute(name=pattern,value="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %X{NDC} %s%e%n")
 
 /subsystem=logging/periodic-rotating-file-handler=QUERY_LOG/:add(level=DEBUG,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"Query.log"})
 /subsystem=logging/periodic-rotating-file-handler=CACHED_LOG/:add(level=INFO,suffix=".yyyy-MM-dd",append=true,autoflush=true,named-formatter=PATTERN,file={relative-to=>"jboss.server.log.dir", path=>"CachedResults.log"})

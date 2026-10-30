@@ -71,9 +71,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -174,7 +175,7 @@ import datawave.webservice.result.VoidResponse;
 @TransactionManagement(TransactionManagementType.BEAN)
 public class CachedResultsBean {
 
-    private static Logger log = Logger.getLogger(CachedResultsBean.class);
+    private static Logger log = LoggerFactory.getLogger(CachedResultsBean.class);
 
     @Resource
     private EJBContext ctx;
@@ -503,7 +504,9 @@ public class CachedResultsBean {
                     auditor.audit(queryMap);
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
-                    log.error(qe);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(qe));
+                    }
                     response.addException(qe.getBottomQueryException());
                     throw new DatawaveWebApplicationException(qe, response);
                 }
@@ -770,7 +773,9 @@ public class CachedResultsBean {
                 try {
                     connectionFactory.returnClient(client);
                 } catch (Exception e) {
-                    log.error(new QueryException(DatawaveErrorCode.CONNECTOR_RETURN_ERROR, e));
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(new QueryException(DatawaveErrorCode.CONNECTOR_RETURN_ERROR, e)));
+                    }
                 }
             }
 
@@ -1361,7 +1366,9 @@ public class CachedResultsBean {
                 response.addException(new QueryException(DatawaveErrorCode.CACHED_QUERY_PERSISTANCE_ERROR, e1));
             }
             QueryException qe = new QueryException(DatawaveErrorCode.CACHED_QUERY_SET_ERROR, e);
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
@@ -1499,7 +1506,9 @@ public class CachedResultsBean {
             return response;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CACHED_QUERY_UPDATE_ERROR, e);
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -1615,7 +1624,9 @@ public class CachedResultsBean {
                 qe = new QueryException(DatawaveErrorCode.NO_CONTENT_STATUS, e);
             } else {
                 qe = new QueryException("Error calling previous.", e, "500-42");
-                log.error(qe);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(qe));
+                }
             }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -1706,7 +1717,9 @@ public class CachedResultsBean {
         } catch (Exception e) {
             response.addMessage(e.getMessage());
             QueryException qe = new QueryException(DatawaveErrorCode.RESET_CALL_ERROR, e);
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -1825,7 +1838,9 @@ public class CachedResultsBean {
                 qe = new QueryException(DatawaveErrorCode.NO_CONTENT_STATUS, e);
             } else {
                 qe = new QueryException(DatawaveErrorCode.NEXT_CALL_ERROR, e);
-                log.error(qe);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(qe));
+                }
             }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -1972,7 +1987,9 @@ public class CachedResultsBean {
                 dec = DatawaveErrorCode.CACHED_QUERY_TRANSACTION_ERROR;
             }
             QueryException qe = new QueryException(dec, e);
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2033,7 +2050,9 @@ public class CachedResultsBean {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, MessageFormat.format("query_id: {0}", originalQueryId));
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2083,7 +2102,9 @@ public class CachedResultsBean {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, MessageFormat.format("query_id: {0}", originalQueryId));
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2128,7 +2149,9 @@ public class CachedResultsBean {
             crq = retrieve(queryId, owner);
         } catch (IOException e) {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.CACHED_RUNNING_QUERY_ERROR, e);
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             throw new PreConditionFailedException(qe, response);
         }
@@ -2285,7 +2308,9 @@ public class CachedResultsBean {
             }
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CACHED_QUERY_TRANSACTION_ERROR, e);
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2379,7 +2404,9 @@ public class CachedResultsBean {
                                         try {
                                             String line = outReader.readLine();
                                             while (line != null) {
-                                                log.info(line);
+                                                if (log.isInfoEnabled()) {
+                                                    log.info(String.valueOf(line));
+                                                }
                                                 line = outReader.readLine();
                                             }
                                         } catch (IOException e) {
@@ -2390,7 +2417,9 @@ public class CachedResultsBean {
                                         try {
                                             String line = errReader.readLine();
                                             while (line != null) {
-                                                log.error(line);
+                                                if (log.isErrorEnabled()) {
+                                                    log.error(String.valueOf(line));
+                                                }
                                                 line = errReader.readLine();
                                             }
                                         } catch (IOException e) {

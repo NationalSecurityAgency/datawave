@@ -22,7 +22,8 @@ import java.util.TreeMap;
 
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -42,7 +43,7 @@ import datawave.webservice.query.exception.QueryException;
  *            value of the map
  */
 public abstract class FileSortedMap<K,V> implements SortedMap<K,V>, Cloneable, RewritableSortedMap<K,V> {
-    private static final Logger log = Logger.getLogger(FileSortedMap.class);
+    private static final Logger log = LoggerFactory.getLogger(FileSortedMap.class);
     protected boolean persisted;
     protected K[] range;
     protected SortedMap<K,V> map;

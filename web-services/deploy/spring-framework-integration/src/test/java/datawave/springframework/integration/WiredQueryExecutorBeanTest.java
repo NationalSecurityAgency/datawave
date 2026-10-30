@@ -8,7 +8,6 @@ import java.util.Properties;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit5.ArquillianExtension;
@@ -17,6 +16,8 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
 import datawave.core.query.logic.QueryLogic;
@@ -52,7 +53,7 @@ import datawave.webservice.results.cached.CachedResultsConfiguration;
 @ExtendWith(ArquillianExtension.class)
 public class WiredQueryExecutorBeanTest {
 
-    private Logger log = Logger.getLogger(WiredQueryExecutorBeanTest.class);
+    private Logger log = LoggerFactory.getLogger(WiredQueryExecutorBeanTest.class);
 
     @Inject
     ApplicationContext ctx;

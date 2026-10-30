@@ -7,7 +7,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.MapMaker;
 
@@ -17,7 +18,7 @@ import com.google.common.collect.MapMaker;
  */
 public class Counts<K> {
 
-    private static final Logger logger = Logger.getLogger(Counts.class);
+    private static final Logger logger = LoggerFactory.getLogger(Counts.class);
 
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final Lock updateLock = rwLock.readLock();

@@ -11,13 +11,15 @@ import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -55,7 +57,7 @@ import datawave.test.HitTermAssertions;
 // @formatter:on
 public class TestLimitReturnedGroupsToHitTermGroups extends AbstractQueryTest {
 
-    private static final Logger log = Logger.getLogger(TestLimitReturnedGroupsToHitTermGroups.class);
+    private static final Logger log = LoggerFactory.getLogger(TestLimitReturnedGroupsToHitTermGroups.class);
     private static final Authorizations auths = new Authorizations("ALL");
 
     private static AccumuloClient clientForTest;
@@ -138,7 +140,7 @@ public class TestLimitReturnedGroupsToHitTermGroups extends AbstractQueryTest {
         CommonalityTokenTestDataIngest.writeItAll(clientForTest, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
 
         // set to DEBUG if you want table output
-        Logger.getLogger(PrintUtility.class).setLevel(Level.INFO);
+        Configurator.setLevel(PrintUtility.class.getName(), Level.INFO);
         PrintUtility.printTable(clientForTest, auths, TableName.SHARD);
         PrintUtility.printTable(clientForTest, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(clientForTest, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
@@ -152,7 +154,7 @@ public class TestLimitReturnedGroupsToHitTermGroups extends AbstractQueryTest {
     @BeforeEach
     public void setup() {
         setClientForTest(clientForTest);
-        log.setLevel(Level.DEBUG);
+        Configurator.setLevel(log.getName(), Level.DEBUG);
         logic.setFullTableScanEnabled(true);
         logic.setCollapseUids(false);
 

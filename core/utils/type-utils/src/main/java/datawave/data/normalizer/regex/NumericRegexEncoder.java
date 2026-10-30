@@ -4,7 +4,8 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.ZeroRegexStatus;
 import datawave.data.normalizer.regex.visitor.AlternationDeduper;
@@ -95,7 +96,7 @@ import datawave.data.type.util.NumericalEncoder;
  */
 public class NumericRegexEncoder {
 
-    private static final Logger log = Logger.getLogger(NumericRegexEncoder.class);
+    private static final Logger log = LoggerFactory.getLogger(NumericRegexEncoder.class);
 
     /**
      * Matches against any invalid character (anything besides reserved regex characters, numerics, and the letter d)

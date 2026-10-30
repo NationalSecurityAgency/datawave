@@ -5,14 +5,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class will capture scanner hints per table and the consistency level per table. This will be used by the WrappedAccumuloClient to setup scanners as they
  * are created.
  */
 public class AccumuloClientConfiguration {
-    private Logger log = Logger.getLogger(AccumuloClientConfiguration.class);
+    private Logger log = LoggerFactory.getLogger(AccumuloClientConfiguration.class);
     private Map<String,Map<String,String>> hintsByTable = new HashMap<>();
     private Map<String,ScannerBase.ConsistencyLevel> consistencyByTable = new HashMap<>();
 

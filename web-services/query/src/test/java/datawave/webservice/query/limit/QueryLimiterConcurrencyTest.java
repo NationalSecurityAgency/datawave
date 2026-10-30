@@ -23,19 +23,20 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.curator.test.TestingServer;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 class QueryLimiterConcurrencyTest {
 
-    private static final Logger log = Logger.getLogger(QueryLimiterConcurrencyTest.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryLimiterConcurrencyTest.class);
 
     private static final Random random = new Random();
 
@@ -319,7 +320,9 @@ class QueryLimiterConcurrencyTest {
                 String line = attempt.timestamp + ", queryId:" + attempt.queryId + ", system:" + attempt.clientRequest.system + ", userDn:"
                                 + attempt.clientRequest.userDn + ", queryLogic:" + attempt.clientRequest.queryLogic + ": "
                                 + (attempt.succeeded ? "SUCCESS" : "FAILURE");
-                log.debug(line);
+                if (log.isDebugEnabled()) {
+                    log.debug(String.valueOf(line));
+                }
             }
         }
     }

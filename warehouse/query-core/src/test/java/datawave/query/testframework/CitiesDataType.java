@@ -12,7 +12,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.type.GeoType;
@@ -28,7 +29,7 @@ import datawave.ingest.input.reader.EventRecordReader;
  */
 public class CitiesDataType extends AbstractDataTypeConfig {
 
-    private static final Logger log = Logger.getLogger(CitiesDataType.class);
+    private static final Logger log = LoggerFactory.getLogger(CitiesDataType.class);
     private static final Random rVal = new Random(System.currentTimeMillis());
 
     /**

@@ -24,7 +24,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
@@ -71,7 +72,7 @@ import datawave.query.util.Tuple3;
  * @see KeyToDocumentData
  */
 public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key,List<Entry<Key,Value>>>,DescendantCount> {
-    private static final Logger LOG = Logger.getLogger(DescendantCountFunction.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DescendantCountFunction.class);
 
     private static final String DEFAULT_DELIMITER_PATTERN = "-att-\\d*";
 
@@ -122,7 +123,9 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                 count = this.countDescendants(range, key, documentAttributes);
             } catch (final IOException e) {
                 final String message = "Unable to count child events";
-                LOG.error(message, e);
+                if (LOG.isErrorEnabled()) {
+                    LOG.error(String.valueOf(message), e);
+                }
             }
 
             // Create a list of key entries based on tallied counts, if any
@@ -237,12 +240,12 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                 if (childCount.skippedDescendants()) {
                     LOG.trace(message + " (some descendants were skipped)");
                 } else {
-                    LOG.trace(message);
+                    LOG.trace(String.valueOf(message));
                 }
             }
         } else if (LOG.isTraceEnabled()) {
             final String message = "Unable to count child events";
-            LOG.trace(message, new IllegalArgumentException("Key is null"));
+            LOG.trace(String.valueOf(message), new IllegalArgumentException("Key is null"));
             childCount = new CountResult(0, 0);
         } else {
             childCount = new CountResult(0, 0);
@@ -486,7 +489,9 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                                 this.skipThreshold = (threshold > 1) ? threshold : this.skipThreshold;
                             } catch (NumberFormatException e) {
                                 final String message = "Unable to configure " + QueryOptions.CHILD_COUNT_INDEX_SKIP_THRESHOLD;
-                                LOG.trace(message, e);
+                                if (LOG.isTraceEnabled()) {
+                                    LOG.trace(String.valueOf(message), e);
+                                }
                             }
                         }
                     }
@@ -508,7 +513,9 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             this.source = (SortedKeyValueIterator<Key,Value>) source;
         } else {
             final String message = "Unable to initialize " + this.getClass().getSimpleName();
-            LOG.error(message, new IllegalArgumentException("Iterator source is null"));
+            if (LOG.isErrorEnabled()) {
+                LOG.error(String.valueOf(message), new IllegalArgumentException("Iterator source is null"));
+            }
         }
     }
 

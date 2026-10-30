@@ -6,7 +6,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -21,7 +22,7 @@ import datawave.util.ssdeep.SSDeepNGramOverlapScorer;
 public class SSDeepScoringFunction implements Function<Map.Entry<NGramTuple,SSDeepHash>,Collection<ScoredSSDeepPair>> {
 
     public static final String MIN_SSDEEP_SCORE_PARAMETER = "minScore";
-    private static final Logger log = Logger.getLogger(SSDeepScoringFunction.class);
+    private static final Logger log = LoggerFactory.getLogger(SSDeepScoringFunction.class);
 
     /** The maximum number of repeated characters allowed in a ssdeep hash - used to perform normalization for scoring */
     private final int maxRepeatedCharacters;

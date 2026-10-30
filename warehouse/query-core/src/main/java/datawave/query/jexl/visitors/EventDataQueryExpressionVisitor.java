@@ -26,7 +26,8 @@ import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -51,7 +52,7 @@ import datawave.query.predicate.PeekingPredicate;
  * wasteful to load these into memory of they are not necessary for query evaluation.
  */
 public class EventDataQueryExpressionVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(EventDataQueryExpressionVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(EventDataQueryExpressionVisitor.class);
 
     /**
      * ExpressionFilter is used to select those Keys that are required in order to evaluate a query.

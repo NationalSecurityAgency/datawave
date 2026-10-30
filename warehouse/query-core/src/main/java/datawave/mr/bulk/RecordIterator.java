@@ -59,7 +59,8 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -162,7 +163,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     // given we double MAX_COUNT each time
     private static final float PROGRESS_PRECISION = 0.0005f;
 
-    private static final Logger log = Logger.getLogger(RecordIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(RecordIterator.class);
 
     public static class RFileEnvironment implements IteratorEnvironment {
 
@@ -632,7 +633,9 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 try {
                     fs.close();
                 } catch (Exception e) {
-                    log.debug(e);
+                    if (log.isDebugEnabled()) {
+                        log.debug(String.valueOf(e));
+                    }
                 }
             }
         }
@@ -641,7 +644,9 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 try {
                     iter.close();
                 } catch (Exception e) {
-                    log.warn(e);
+                    if (log.isWarnEnabled()) {
+                        log.warn(String.valueOf(e));
+                    }
                 }
             }
         }
@@ -725,7 +730,9 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 currentRange = new Range(lastSeenKey, false, currentRange.getEndKey(), currentRange.isEndKeyInclusive());
             }
         } catch (Exception e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
         }
 
         globalIter.seek(currentRange, Collections.emptyList(), false);

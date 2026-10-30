@@ -10,7 +10,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.type.NoOpType;
@@ -30,7 +31,7 @@ import datawave.query.testframework.RawMetaData;
  */
 public class SSDeepDataType extends AbstractDataTypeConfig {
 
-    private static final Logger log = Logger.getLogger(SSDeepDataType.class);
+    private static final Logger log = LoggerFactory.getLogger(SSDeepDataType.class);
 
     /**
      * Contains predefined names for the ssdeep datatype. Each enumeration will contain the path of the data ingest file. Currently, there is only one

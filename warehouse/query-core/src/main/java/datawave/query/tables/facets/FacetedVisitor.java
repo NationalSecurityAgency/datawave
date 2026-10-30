@@ -19,7 +19,8 @@ import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
@@ -45,7 +46,7 @@ import datawave.query.util.TypeMetadata;
  *
  */
 public class FacetedVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(FacetedVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(FacetedVisitor.class);
 
     public static final String NULL_DELIMETER = "\u0000";
 

@@ -19,7 +19,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -39,7 +40,7 @@ import datawave.query.Constants;
  * </p>
  */
 public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
-    protected static final Logger log = Logger.getLogger(GlobalIndexDateSummaryIterator.class);
+    protected static final Logger log = LoggerFactory.getLogger(GlobalIndexDateSummaryIterator.class);
     protected SortedKeyValueIterator<Key,Value> iterator;
     protected Key returnKey = null;
     protected Value returnValue = null;
@@ -239,7 +240,9 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
             } catch (Exception e) {
                 // We want to stop the scan when we cannot properly combine ColumnVisibility
                 String message = "Error parsing ColumnVisibility of key";
-                log.error(message, e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(message), e);
+                }
                 throw new IOException(message, e);
             }
         }
@@ -275,7 +278,9 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
                 } catch (Exception e) {
                     // We want to stop the scan when we cannot properly combine ColumnVisibility
                     String message = "Could not create combined ColumnVisibility";
-                    log.error(message, e);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(message), e);
+                    }
                     throw new IOException(message, e);
                 }
             }

@@ -10,10 +10,11 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.ext.Provider;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.core.ResourceMethodInvoker;
 import org.jboss.resteasy.spi.util.FindAnnotation;
 import org.jboss.resteasy.util.HttpHeaderNames;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.Constants;
 import datawave.annotation.GenerateQuerySessionId;
@@ -24,7 +25,7 @@ import datawave.annotation.GenerateQuerySessionId;
 @Provider
 @GenerateQuerySessionId(cookieBasePath = "notNeededHere")
 public class CreateQuerySessionIDFilter implements ContainerResponseFilter {
-    private final Logger log = Logger.getLogger(CreateQuerySessionIDFilter.class);
+    private final Logger log = LoggerFactory.getLogger(CreateQuerySessionIDFilter.class);
     public static final ThreadLocal<String> QUERY_ID = new ThreadLocal<>();
 
     @Override

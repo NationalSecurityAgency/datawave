@@ -14,11 +14,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.helpers.PrintUtility;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -44,7 +46,7 @@ public class RangeQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(RangeQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(RangeQueryTest.class);
 
     @BeforeAll
     public static void filterSetup() throws Exception {
@@ -55,7 +57,7 @@ public class RangeQueryTest extends AbstractFunctionalQueryJUnit5 {
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(PrintUtility.class.getName(), Level.DEBUG);
         client = accumuloSetup.loadTables(log);
     }
 
@@ -226,7 +228,7 @@ public class RangeQueryTest extends AbstractFunctionalQueryJUnit5 {
 
     @Test
     public void testMultiFieldsNoResults() throws Exception {
-        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(DefaultQueryPlanner.class.getName(), Level.DEBUG);
         log.info("------  testMultiFieldsNoResults  ------");
         String state = "ohio";
         String cont = "europe";
@@ -332,7 +334,7 @@ public class RangeQueryTest extends AbstractFunctionalQueryJUnit5 {
 
     @Test
     public void testRangeOrExp() throws Exception {
-        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(DefaultQueryPlanner.class.getName(), Level.DEBUG);
         log.info("------  testRangeOrExp  ------");
         String start = "'e'";
         String end = "'r'";

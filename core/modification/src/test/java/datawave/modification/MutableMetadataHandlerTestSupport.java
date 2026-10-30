@@ -31,7 +31,8 @@ import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.hash.HashUID;
 import datawave.data.hash.UID;
@@ -50,7 +51,7 @@ import datawave.webservice.modification.ModificationRequestBase.MODE;
 
 @SuppressWarnings({"SameParameterValue", "unused"})
 class MutableMetadataHandlerTestSupport {
-    static final Logger log = Logger.getLogger(MutableMetadataHandlerTestSupport.class);
+    static final Logger log = LoggerFactory.getLogger(MutableMetadataHandlerTestSupport.class);
     private static final BatchWriterConfig BATCH_WRITER_CONFIG = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS)
                     .setMaxWriteThreads(1);
 

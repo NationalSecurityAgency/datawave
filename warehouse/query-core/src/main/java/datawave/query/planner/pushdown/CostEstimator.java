@@ -7,7 +7,8 @@ import java.util.NoSuchElementException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
@@ -22,7 +23,7 @@ import datawave.query.util.MetadataHelper;
  */
 public class CostEstimator {
 
-    private static final Logger log = Logger.getLogger(CostEstimator.class);
+    private static final Logger log = LoggerFactory.getLogger(CostEstimator.class);
     protected ShardQueryConfiguration config;
     protected MetadataHelper helper;
     protected ScannerFactory scannerFactory;

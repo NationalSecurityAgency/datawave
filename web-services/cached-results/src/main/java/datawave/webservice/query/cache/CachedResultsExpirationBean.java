@@ -17,7 +17,8 @@ import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.webservice.results.cached.CachedResultsBean;
@@ -36,7 +37,7 @@ import datawave.webservice.results.cached.CachedRunningQuery;
 @TransactionManagement(TransactionManagementType.BEAN)
 public class CachedResultsExpirationBean {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Inject
     private CachedResultsQueryCache cachedRunningQueryCache;

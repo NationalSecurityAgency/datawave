@@ -1,9 +1,10 @@
 package datawave.query.language.tree;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OrNode extends QueryNode {
-    private static final Logger log = Logger.getLogger(OrNode.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(OrNode.class.getName());
 
     public OrNode(QueryNode... children) {
         super(children);

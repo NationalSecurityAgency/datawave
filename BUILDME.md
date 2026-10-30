@@ -148,6 +148,20 @@ If you are updating an API module, you should be careful. In general, the associ
 well to support the API changes. The service should _add_ a new version of the API and continue to support the old
 version until it can be ensured that there are no more consumers of the old API.
 
+# Logging
+
+Application code uses SLF4J. Declare `slf4j-api` directly in modules that use it; keep backend APIs confined to logging configuration and test capture.
+Standalone applications and Spring Boot services use the Log4j 2 SLF4J provider, while WildFly supplies the JBoss LogManager provider.
+The Log4j 1 compatibility bridge remains a runtime dependency for existing configuration files and third-party libraries.
+SLF4J has no fatal level, so former fatal messages use error.
+
+`ThreadConfigurableLogger` applies SLF4J levels per logger name and thread, in addition to the backend's threshold.
+Call `clearThreadLevels()` before returning a thread to a pool; `disableForThread()` suppresses all levels for a named logger.
+Nested diagnostic context uses the SLF4J MDC key `NDC`, displayed with `%X{NDC}`.
+
+Logging parameters in shared APIs, including table configuration helpers and query test helpers, now use `org.slf4j.Logger`.
+Consumers of these APIs must compile against the migrated DataWave artifacts.
+
 # Troubleshooting Build Issues
 
 Due to our use of the **git-commit-id-plugin** Maven plugin, your build could fail with...

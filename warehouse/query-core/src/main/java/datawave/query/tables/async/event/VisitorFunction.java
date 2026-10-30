@@ -28,7 +28,8 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -95,7 +96,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     // not thread-safe; consistent with cachedTypeMetadata above, this assumes a VisitorFunction instance is confined to a single thread
     private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
 
-    private static final Logger log = Logger.getLogger(VisitorFunction.class);
+    private static final Logger log = LoggerFactory.getLogger(VisitorFunction.class);
 
     public VisitorFunction(ShardQueryConfiguration config, MetadataHelper metadataHelper) throws MalformedURLException {
         this.config = config;
@@ -261,7 +262,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     if (log.isTraceEnabled()) {
                         log.trace("Need to pull up non-executable query: " + JexlStringBuildingVisitor.buildQuery(script));
                         for (String debugStatement : debug) {
-                            log.trace(debugStatement);
+                            log.trace(String.valueOf(debugStatement));
                         }
                         DefaultQueryPlanner.logQuery(script, "Failing query:");
                     }
@@ -281,7 +282,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         if (log.isTraceEnabled()) {
                             log.trace("Need to push down non-executable query: " + JexlStringBuildingVisitor.buildQuery(script));
                             for (String debugStatement : debug) {
-                                log.trace(debugStatement);
+                                log.trace(String.valueOf(debugStatement));
                             }
                         }
                         script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, true, config, indexedFields, indexOnlyFields,
@@ -303,7 +304,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                             if (log.isTraceEnabled()) {
                                 log.trace("Full Table fail of " + JexlStringBuildingVisitor.buildQuery(script));
                                 for (String debugStatement : debug) {
-                                    log.trace(debugStatement);
+                                    log.trace(String.valueOf(debugStatement));
                                 }
                                 DefaultQueryPlanner.logQuery(script, "Failing query:");
                             }
@@ -314,7 +315,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
                     if (log.isTraceEnabled()) {
                         for (String debugStatement : debug) {
-                            log.trace(debugStatement);
+                            log.trace(String.valueOf(debugStatement));
                         }
                         DefaultQueryPlanner.logQuery(script, "Query pushing down large fielded lists:");
                     }

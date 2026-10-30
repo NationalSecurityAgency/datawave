@@ -9,7 +9,7 @@ import java.util.regex.Matcher;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;

@@ -40,7 +40,8 @@ import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
@@ -90,7 +91,7 @@ public class Persister {
     private static final QueryResultsTransform<Query> resultsTransform = new QueryResultsTransform<>();
     private static final QueryResultsTransform<Query> implResultsTransform = new QueryResultsTransform<>();
 
-    private Logger log = Logger.getLogger(Persister.class);
+    private Logger log = LoggerFactory.getLogger(Persister.class);
 
     private static final String TABLE_NAME = "Queries";
 

@@ -8,7 +8,8 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.accumulo.core.data.Value;
@@ -18,15 +19,19 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Appender;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.TypeRegistry;
@@ -49,8 +54,9 @@ public class ContentJsonColumnBasedHandlerTest {
 
     private Configuration conf;
     private static final Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
-    private static final Logger log = Logger.getLogger(ContentJsonColumnBasedHandlerTest.class);
-    private static final Enumeration<?> rootAppenders = Logger.getRootLogger().getAllAppenders();
+    private static final Logger log = LoggerFactory.getLogger(ContentJsonColumnBasedHandlerTest.class);
+    private static final LoggerContext logContext = (LoggerContext) LogManager.getContext(false);
+    private static final Map<String,Appender> rootAppenders = new HashMap<>(logContext.getRootLogger().getAppenders());
 
     @BeforeAll
     public static void setupSystemSettings() throws Exception {
@@ -60,17 +66,14 @@ public class ContentJsonColumnBasedHandlerTest {
         try {
             Files.write(edgeKeyVersionCachePath, "1\t1970-01-01T00:00:00.000Z".getBytes());
         } catch (IOException io) {
-            log.fatal("Could not create " + edgeKeyVersionCachePath);
+            log.error("Could not create " + edgeKeyVersionCachePath);
         }
     }
 
     @AfterAll
     public static void tearDown() {
-        Logger.getRootLogger().removeAllAppenders();
-        while (rootAppenders.hasMoreElements()) {
-            Appender appender = (Appender) rootAppenders.nextElement();
-            Logger.getRootLogger().addAppender(appender);
-        }
+        logContext.getRootLogger().getAppenders().values().forEach(logContext.getRootLogger()::removeAppender);
+        rootAppenders.values().forEach(logContext.getRootLogger()::addAppender);
         try {
             Files.deleteIfExists(edgeKeyVersionCachePath);
         } catch (IOException io) {
@@ -83,28 +86,31 @@ public class ContentJsonColumnBasedHandlerTest {
         TaskAttemptContext ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         TypeRegistry.reset();
         TypeRegistry.getInstance(ctx.getConfiguration());
-        log.debug(TypeRegistry.getContents());
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(TypeRegistry.getContents()));
+        }
         JsonRecordReader reader = new JsonRecordReader();
         reader.initialize(split, ctx);
         return reader;
     }
 
     private static void enableLogging() {
-        Logger.getRootLogger().removeAllAppenders();
-        ConsoleAppender ca = new ConsoleAppender();
-        ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
-        Logger.getRootLogger().addAppender(ca);
-        log.setLevel(Level.TRACE);
-        Logger.getLogger(ColumnBasedHandlerTestUtilJUnit5.class).setLevel(Level.TRACE);
-        Logger.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.TRACE);
-        Logger.getLogger(ContentBaseIngestHelper.class).setLevel(Level.TRACE);
+        logContext.getRootLogger().getAppenders().values().forEach(logContext.getRootLogger()::removeAppender);
+        ConsoleAppender ca = ConsoleAppender.newBuilder().setName("TestConsole").setLayout(PatternLayout.newBuilder().withPattern("%p [%c{1}] %m%n").build())
+                        .build();
+        ca.start();
+        logContext.getRootLogger().addAppender(ca);
+        Configurator.setLevel(log.getName(), Level.TRACE);
+        Configurator.setLevel(ColumnBasedHandlerTestUtilJUnit5.class.getName(), Level.TRACE);
+        Configurator.setLevel(ContentIndexingColumnBasedHandler.class.getName(), Level.TRACE);
+        Configurator.setLevel(ContentBaseIngestHelper.class.getName(), Level.TRACE);
     }
 
     private static void disableLogging() {
-        log.setLevel(Level.OFF);
-        Logger.getLogger(ColumnBasedHandlerTestUtilJUnit5.class).setLevel(Level.OFF);
-        Logger.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.OFF);
-        Logger.getLogger(ContentBaseIngestHelper.class).setLevel(Level.OFF);
+        Configurator.setLevel(log.getName(), Level.OFF);
+        Configurator.setLevel(ColumnBasedHandlerTestUtilJUnit5.class.getName(), Level.OFF);
+        Configurator.setLevel(ContentIndexingColumnBasedHandler.class.getName(), Level.OFF);
+        Configurator.setLevel(ContentBaseIngestHelper.class.getName(), Level.OFF);
     }
 
     @BeforeEach

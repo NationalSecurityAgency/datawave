@@ -10,7 +10,8 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.SetMultimap;
 
@@ -21,7 +22,7 @@ import datawave.query.jexl.visitors.UnescapedSpecialCharactersVisitor;
  */
 public class UnescapedSpecialCharsRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(UnescapedSpecialCharsRule.class);
+    private static final Logger log = LoggerFactory.getLogger(UnescapedSpecialCharsRule.class);
 
     private static final String REGEX_VALUE_DESCRIPTOR = "Regex pattern";
     private static final String LITERAL_VALUE_DESCRIPTOR = "Literal string";

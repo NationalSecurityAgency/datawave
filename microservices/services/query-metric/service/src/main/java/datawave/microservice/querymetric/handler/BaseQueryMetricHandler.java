@@ -9,7 +9,8 @@ import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
@@ -26,7 +27,7 @@ import datawave.query.language.tree.QueryNode;
  */
 public abstract class BaseQueryMetricHandler<T extends BaseQueryMetric> implements QueryMetricHandler<T> {
 
-    private Logger log = Logger.getLogger(BaseQueryMetricHandler.class);
+    private Logger log = LoggerFactory.getLogger(BaseQueryMetricHandler.class);
     protected LuceneToJexlQueryParser luceneToJexlQueryParser;
     protected QueryMetricResponseFactory queryMetricResponseFactory;
 

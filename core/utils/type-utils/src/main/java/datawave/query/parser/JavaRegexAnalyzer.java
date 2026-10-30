@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -19,7 +20,7 @@ import com.google.common.collect.Iterables;
  * TODO: if somebody finds a usable java Pattern grammar, please rewrite this class
  */
 public class JavaRegexAnalyzer {
-    protected static final Logger log = Logger.getLogger(JavaRegexAnalyzer.class);
+    protected static final Logger log = LoggerFactory.getLogger(JavaRegexAnalyzer.class);
 
     // Types as applied to portions of the regex. We are interested in portions that
     // are literals and those that contain regex constructs.

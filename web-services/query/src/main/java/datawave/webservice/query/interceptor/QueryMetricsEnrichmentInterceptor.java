@@ -12,10 +12,11 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl;
 import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
 import org.jboss.resteasy.spi.util.FindAnnotation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
@@ -46,7 +47,7 @@ public class QueryMetricsEnrichmentInterceptor extends BaseMethodStatsIntercepto
         }
     }
 
-    private Logger log = Logger.getLogger(QueryMetricsEnrichmentInterceptor.class);
+    private Logger log = LoggerFactory.getLogger(QueryMetricsEnrichmentInterceptor.class);
 
     @Inject
     private QueryMetricsBean queryMetricsBean;

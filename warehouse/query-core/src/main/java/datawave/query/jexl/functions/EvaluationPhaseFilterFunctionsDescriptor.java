@@ -17,7 +17,8 @@ import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -56,7 +57,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
      *
      */
     public static class EvaluationPhaseFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
-        private static final Logger log = Logger.getLogger(EvaluationPhaseFilterJexlArgumentDescriptor.class);
+        private static final Logger log = LoggerFactory.getLogger(EvaluationPhaseFilterJexlArgumentDescriptor.class);
 
         public static final ImmutableSet<String> regexFunctions = ImmutableSet.of(EXCLUDE_REGEX, INCLUDE_REGEX, GET_ALL_MATCHES);
         public static final ImmutableSet<String> andExpansionFunctions = ImmutableSet.of(IS_NULL);

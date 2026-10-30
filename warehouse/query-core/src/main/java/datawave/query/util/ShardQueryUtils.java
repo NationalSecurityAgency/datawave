@@ -5,7 +5,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -21,7 +22,7 @@ import datawave.query.model.QueryModel;
 
 public class ShardQueryUtils {
 
-    private static final Logger log = Logger.getLogger(ShardQueryUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(ShardQueryUtils.class);
 
     /**
      * Uppercases all identifiers in the given script, as well as in the configuration's group-by fields, unique fields, excerpt fields, user projection fields,

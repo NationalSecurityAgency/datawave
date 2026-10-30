@@ -10,11 +10,12 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SourceTrackingIterator extends WrappingIterator {
     protected QuerySpan querySpan;
-    private Logger log = Logger.getLogger(QuerySpan.class);
+    private Logger log = LoggerFactory.getLogger(QuerySpan.class);
 
     public SourceTrackingIterator(QuerySpan span, SortedKeyValueIterator<Key,Value> kv) {
         setSource(kv);

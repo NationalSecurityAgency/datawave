@@ -25,10 +25,11 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedListMultimap;
@@ -60,7 +61,7 @@ public class FacetHandlerTest {
     private static final String TEST_TYPE = "test";
     private static final UID TEST_UID = UID.builder().newId();
 
-    private static final Logger log = Logger.getLogger(FacetHandlerTest.class);
+    private static final Logger log = LoggerFactory.getLogger(FacetHandlerTest.class);
     public static final String DATAWAVE_FACETS = "datawave.facets";
     public static final String DATAWAVE_FACET_METADATA = "datawave.facetMetadata";
     public static final String DATAWAVE_FACET_HASHES = "datawave.facetHashes";

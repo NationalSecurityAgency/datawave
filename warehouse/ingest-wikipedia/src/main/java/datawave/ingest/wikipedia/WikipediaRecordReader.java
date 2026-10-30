@@ -23,10 +23,11 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
 import com.google.common.base.Preconditions;
@@ -49,7 +50,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
 
     public static final String DEFAULT_SECURITY_MARKING = "PUBLIC";
 
-    private static final Logger log = Logger.getLogger(WikipediaRecordReader.class);
+    private static final Logger log = LoggerFactory.getLogger(WikipediaRecordReader.class);
 
     private ReaderDelegate delegate = null;
 

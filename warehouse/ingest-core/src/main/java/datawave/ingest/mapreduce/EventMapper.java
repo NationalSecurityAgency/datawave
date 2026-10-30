@@ -27,13 +27,14 @@ import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.core.common.logging.NestedDiagnosticContext;
 import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -100,7 +101,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
     private static final String SRC_FILE_DEL = "|";
 
-    private static final Logger log = Logger.getLogger(EventMapper.class);
+    private static final Logger log = LoggerFactory.getLogger(EventMapper.class);
 
     // for backward compatibility, these DISCARD constants are maintained here as well
     public static final String DISCARD_INTERVAL = DataTypeDiscardIntervalPredicate.DISCARD_INTERVAL;
@@ -180,7 +181,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             split = (FileSplit) is;
         // push the current filename on to the NDC
         if (null != split) {
-            NDC.push(split.getPath().toString());
+            NestedDiagnosticContext.push(split.getPath().toString());
             splitStart = Long.valueOf(split.getStart()).toString();
         } else
             splitStart = null;
@@ -442,7 +443,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // this is automatically done by the sequence reader....
         // value.setConf(context.getConfiguration());
 
-        // Flag to control whether a reprocessed event caused an NDC.push
+        // Flag to control whether a reprocessed event pushed a nested diagnostic context
         boolean reprocessedNDCPush = false;
 
         long rawDataBytes = value.getDataOutputSize();
@@ -480,7 +481,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                 // Set the original file value from the event in the error table
                 Collection<String> origFiles = errorSummary.getEventFields().get(SEQUENCE_FILE_FIELDNAME);
                 if (!origFiles.isEmpty()) {
-                    NDC.push(origFiles.iterator().next());
+                    NestedDiagnosticContext.push(origFiles.iterator().next());
                     reprocessedNDCPush = true;
                 }
             } catch (InterruptedException e) {
@@ -588,7 +589,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         } finally {
             // Remove ORIG_FILE from NDC that was populated by reprocessing events from the error tables
             if (reprocessedNDCPush) {
-                NDC.pop();
+                NestedDiagnosticContext.pop();
             }
             // cleanup the context writer
             contextWriter.commit(context);
@@ -702,7 +703,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
         // we pushed the filename on the NDC if split is non null, so pop it here.
         if (null != split) {
-            NDC.pop();
+            NestedDiagnosticContext.pop();
         }
     }
 
@@ -825,7 +826,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
         // place the sequence filename into the event
         if (createSequenceFileName) {
-            seqFileName = NDC.peek();
+            seqFileName = NestedDiagnosticContext.peek();
 
             if (trimSequenceFileName) {
                 seqFileName = StringUtils.substringAfterLast(seqFileName, "/");

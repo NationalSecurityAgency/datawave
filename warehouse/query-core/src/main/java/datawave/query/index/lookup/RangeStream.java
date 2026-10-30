@@ -66,7 +66,7 @@ import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -224,7 +224,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
         }
 
         if (log.isTraceEnabled()) {
-            log.trace(JexlStringBuildingVisitor.buildQuery(node));
+            log.trace(String.valueOf(JexlStringBuildingVisitor.buildQuery(node)));
         }
 
         BaseIndexStream ranges = (BaseIndexStream) node.jjtAccept(this, null);
@@ -245,7 +245,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
             if (queryStream != null) {
                 int count = 0;
                 for (String line : queryStream.getContextDebug().split("\n")) {
-                    log.debug(line);
+                    log.debug(String.valueOf(line));
                     if (maxLinesToPrint > 0 && ++count > maxLinesToPrint) {
                         break;
                     }
@@ -317,7 +317,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                     log.debug("Query returned a stream with a context of " + this.context);
                     int count = 0;
                     for (String line : queryStream.getContextDebug().split("\n")) {
-                        log.debug(line);
+                        log.debug(String.valueOf(line));
                         if (maxLinesToPrint > 0 && ++count > maxLinesToPrint) {
                             break;
                         }
@@ -575,7 +575,9 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                     return ScannerStream.delayed(node);
                 }
             } catch (TableNotFoundException e) {
-                log.error(e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(e));
+                }
                 throw new RuntimeException(e);
             }
             if (maxLinesToPrint > 0 && ++linesPrinted < maxLinesToPrint) {
@@ -678,7 +680,9 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
             return ScannerStream.initialized(scannerSession, entryParser, node);
 
         } catch (Exception e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             throw new RuntimeException(e);
         }
     }
@@ -734,7 +738,9 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                 return ScannerStream.delayed(node);
             }
         } catch (TableNotFoundException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             throw new RuntimeException(e);
         }
 
@@ -1001,7 +1007,7 @@ public class RangeStream extends BaseVisitor implements QueryPlanStream {
                     }
 
                     if (scannedKeys == 0) {
-                        log.fatal("no entries in num_shards cache");
+                        log.error("no entries in num_shards cache");
                     }
                 }
             } catch (AccumuloException | AccumuloSecurityException | RuntimeException e) {

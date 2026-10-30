@@ -28,7 +28,8 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -50,7 +51,7 @@ import datawave.query.jexl.visitors.LiteralNodeSubsetVisitor;
 import datawave.query.predicate.EventDataQueryFilter;
 
 public class TermOffsetPopulator {
-    private static final Logger log = Logger.getLogger(TermOffsetPopulator.class);
+    private static final Logger log = LoggerFactory.getLogger(TermOffsetPopulator.class);
 
     private static final Set<String> phraseFunctions;
 

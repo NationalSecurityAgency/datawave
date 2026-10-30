@@ -16,7 +16,8 @@ import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -43,7 +44,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 @SuppressWarnings("unchecked")
 public class FetchDataTypesVisitor extends BaseVisitor {
-    private static final Logger log = Logger.getLogger(FetchDataTypesVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(FetchDataTypesVisitor.class);
 
     protected final MetadataHelper helper;
     protected final Set<String> datatypeFilter;
@@ -105,7 +106,9 @@ public class FetchDataTypesVisitor extends BaseVisitor {
                 } else
                     dataTypesForField = this.helper.getDatatypesForField(fieldName, datatypeFilter);
             } catch (InstantiationException | TableNotFoundException | IllegalAccessException e) {
-                log.error(e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(e));
+                }
             }
 
             if (!dataTypesForField.isEmpty()) {
@@ -214,11 +217,15 @@ public class FetchDataTypesVisitor extends BaseVisitor {
                 mm.putAll(fieldName, dataTypesForField);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                log.error(qe);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(qe));
+                }
                 throw new DatawaveFatalQueryException(qe);
             } catch (InstantiationException | IllegalAccessException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-                log.error(qe);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(qe));
+                }
                 throw new DatawaveFatalQueryException(qe);
             }
         }

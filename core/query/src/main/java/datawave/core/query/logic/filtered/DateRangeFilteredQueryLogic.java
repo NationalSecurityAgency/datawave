@@ -4,7 +4,8 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.Query;
@@ -13,7 +14,7 @@ import datawave.microservice.query.Query;
  * A FilteredQueryLogic which can limit the begin and end date of a Query by the configured filter dates when paired with a QueryLogicFilterByDate
  */
 public class DateRangeFilteredQueryLogic extends FilteredQueryLogic {
-    public static final Logger log = Logger.getLogger(DateRangeFilteredQueryLogic.class);
+    public static final Logger log = LoggerFactory.getLogger(DateRangeFilteredQueryLogic.class);
 
     public DateRangeFilteredQueryLogic() {}
 

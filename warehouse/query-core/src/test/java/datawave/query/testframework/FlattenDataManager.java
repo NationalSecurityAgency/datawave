@@ -11,7 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 
@@ -23,7 +24,7 @@ import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
  */
 public class FlattenDataManager extends AbstractDataManager {
 
-    private static final Logger log = Logger.getLogger(FlattenDataManager.class);
+    private static final Logger log = LoggerFactory.getLogger(FlattenDataManager.class);
     private static FlattenDataManager INSTANCE;
 
     private final FlattenData flatData;

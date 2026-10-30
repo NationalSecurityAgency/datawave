@@ -75,9 +75,10 @@ import org.apache.commons.collections4.Transformer;
 import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -186,7 +187,7 @@ import io.protostuff.YamlIOUtil;
 @TransactionManagement(TransactionManagementType.BEAN)
 public class QueryExecutorBean implements QueryExecutor {
 
-    private static final Logger log = Logger.getLogger(QueryExecutorBean.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryExecutorBean.class);
 
     private static final String PRIVILEGED_USER = "PrivilegedUser";
     private static final String UNLIMITED_QUERY_RESULTS_USER = "UnlimitedQueryResultsUser";
@@ -365,7 +366,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 try {
                     d.setResponseClass(l.getResponseClass(q));
                 } catch (QueryException e) {
-                    log.error(e, e);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(e), e);
+                    }
                     response.addException(e);
                     d.setResponseClass("unknown");
                 }
@@ -474,7 +477,9 @@ public class QueryExecutorBean implements QueryExecutor {
 
         QueryData qd = new QueryData();
 
-        log.debug(queryParameters);
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(queryParameters));
+        }
         qp.clear();
         qp.setRequestHeaders(httpHeaders != null ? MapUtils.toMultiValueMap(httpHeaders.getRequestHeaders()) : null);
 
@@ -1925,7 +1930,9 @@ public class QueryExecutorBean implements QueryExecutor {
             log.error("Failed to get query plan", e);
 
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_PLAN_ERROR, e, MessageFormat.format("query id: {0}", id));
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             if (query != null) {
@@ -2015,7 +2022,9 @@ public class QueryExecutorBean implements QueryExecutor {
             log.error("Failed to get query predictions", e);
 
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_PREDICTIONS_ERROR, e, MessageFormat.format("query id: {0}", id));
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             if (query != null) {
@@ -2262,9 +2271,13 @@ public class QueryExecutorBean implements QueryExecutor {
                     close(id);
                     closedQueryCache.add(id); // remember that we auto-closed this query
                 } catch (Exception ce) {
-                    log.error(qe, ce);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(qe), ce);
+                    }
                 }
-                log.error(qe, e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(qe), e);
+                }
                 response.addException(qe.getBottomQueryException());
             }
             int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -2381,7 +2394,9 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CLOSE_ERROR, e, MessageFormat.format("query_id: {0}", id));
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2443,7 +2458,9 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CLOSE_ERROR);
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2547,7 +2564,9 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, MessageFormat.format("query_id: {0}", id));
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2608,7 +2627,9 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (Exception e) {
             log.error("Error cancelling query: " + id, e);
             QueryException qe = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, MessageFormat.format("query_id: {0}", id));
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2651,7 +2672,9 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_LISTING_ERROR, e);
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2695,7 +2718,9 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_GET_ERROR, e, MessageFormat.format("queryID: {0}", id));
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2804,7 +2829,9 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_REMOVAL_ERROR, e, MessageFormat.format("query_id: {0}", id));
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -2940,7 +2967,9 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_DUPLICATION_ERROR, e);
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             if (e.getClass() == IllegalArgumentException.class) {
                 throw new BadRequestException(qe, response);
@@ -3019,7 +3048,9 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_UPDATE_ERROR, e, MessageFormat.format("query_id: {0}", id));
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             if (e.getClass() == IllegalArgumentException.class) {
                 throw new BadRequestException(qe, response);
@@ -3085,7 +3116,9 @@ public class QueryExecutorBean implements QueryExecutor {
                     throw new BadRequestException(qe, response);
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
-                    log.error(qe, e);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(qe), e);
+                    }
                     response.addException(qe.getBottomQueryException());
                     throw e;
                 }
@@ -3291,7 +3324,9 @@ public class QueryExecutorBean implements QueryExecutor {
             throw e;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_LISTING_ERROR, e, MessageFormat.format("UserId: {0}", userId));
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -3324,7 +3359,9 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_CACHE_PURGE_ERROR, e);
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
@@ -3587,7 +3624,9 @@ public class QueryExecutorBean implements QueryExecutor {
             responseClass = refResponse.getClass();
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_TRANSFORM_ERROR, e);
-            log.error(qe, e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe), e);
+            }
             response.setHasResults(false);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
@@ -3834,7 +3873,9 @@ public class QueryExecutorBean implements QueryExecutor {
                     xmlSerializer = jaxbContext.createMarshaller();
                 } catch (JAXBException e1) {
                     QueryException qe = new QueryException(DatawaveErrorCode.JAXB_CONTEXT_ERROR, e1, MessageFormat.format("class: {0}", queryResponseClass));
-                    log.error(qe, e1);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(qe), e1);
+                    }
                     errorResponse.addException(qe.getBottomQueryException());
                     throw new DatawaveWebApplicationException(qe, errorResponse);
                 }
@@ -3923,7 +3964,9 @@ public class QueryExecutorBean implements QueryExecutor {
             } catch (Exception e) {
                 log.error("ExecuteStreamingOutputResponse write Failed", e);
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, MessageFormat.format("query_id: {0}", rq.getSettings().getId()));
-                log.error(qe, e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(qe), e);
+                }
                 errorResponse.addException(qe.getBottomQueryException());
                 int statusCode = qe.getBottomQueryException().getStatusCode();
                 throw new DatawaveWebApplicationException(qe, errorResponse, statusCode);
@@ -3933,7 +3976,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (Exception e) {
                     log.error("Error returning connection on failed create", e);
                     QueryException qe = new QueryException(DatawaveErrorCode.CONNECTION_RETURN_ERROR, e);
-                    log.error(qe, e);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(qe), e);
+                    }
                     errorResponse.addException(qe.getBottomQueryException());
                 }
             }

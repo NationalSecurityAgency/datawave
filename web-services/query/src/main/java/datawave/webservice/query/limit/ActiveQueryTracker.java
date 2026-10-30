@@ -16,12 +16,13 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.quorum.QuorumPeer;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class provides methods for leveraging Zookeeper to track queries and their active status.
@@ -30,7 +31,7 @@ public class ActiveQueryTracker implements AutoCloseable {
 
     public static final String ZOOKEEPER_NAMESPACE = "ActiveQueries";
 
-    private static final Logger log = Logger.getLogger(ActiveQueryTracker.class);
+    private static final Logger log = LoggerFactory.getLogger(ActiveQueryTracker.class);
 
     private static final byte[] EMPTY_DATA = new byte[0];
 

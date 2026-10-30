@@ -10,7 +10,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -27,7 +28,7 @@ import com.google.common.util.concurrent.AbstractExecutionThreadService;
 @SuppressWarnings("UnstableApiUsage")
 public class MergedReadAhead<T> extends AbstractExecutionThreadService implements Iterator<T>, Closeable {
 
-    private static final Logger log = Logger.getLogger(MergedReadAhead.class);
+    private static final Logger log = LoggerFactory.getLogger(MergedReadAhead.class);
 
     /** the underlying iterator we will read form */
     private final Iterator<T> iterator;

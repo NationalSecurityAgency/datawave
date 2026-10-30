@@ -38,8 +38,8 @@ import javax.ws.rs.core.Response;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -55,6 +55,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.annotation.data.transform.DefaultTimestampTransformer;
 import datawave.annotation.data.transform.DefaultVisibilityTransformer;
@@ -95,7 +97,7 @@ public class AnnotationManagerBeanFunctionalTest {
 
     private static ManagedExecutorService federatedReadExecutor;
 
-    private static final Logger log = Logger.getLogger(AnnotationManagerBeanFunctionalTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AnnotationManagerBeanFunctionalTest.class);
 
     // used for writing data for specific tests
     protected static AnnotationDataAccess testAnnotationDao;
@@ -209,7 +211,7 @@ public class AnnotationManagerBeanFunctionalTest {
         addMoreAnnotationTestData(client);
 
         // dump the contents of the various tables used for this test
-        Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(PrintUtility.class.getName(), Level.DEBUG);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(client, auths, TableName.SHARD);
@@ -266,7 +268,7 @@ public class AnnotationManagerBeanFunctionalTest {
     @BeforeEach
     public void setup() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        log.setLevel(Level.TRACE);
+        Configurator.setLevel(log.getName(), Level.TRACE);
 
         ctx = EasyMock.createMock(EJBContext.class);
 

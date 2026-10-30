@@ -40,8 +40,9 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.xbill.DNS.TextParseException;
 
@@ -73,7 +74,7 @@ import datawave.webservice.query.exception.QueryException;
 @TransactionManagement(TransactionManagementType.BEAN)
 public class QueryMetricsBean {
 
-    private static final Logger log = Logger.getLogger(QueryMetricsBean.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryMetricsBean.class);
     @Resource
     private EJBContext ctx;
     @Inject

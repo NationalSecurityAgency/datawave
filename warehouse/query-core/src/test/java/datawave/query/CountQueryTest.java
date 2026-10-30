@@ -12,10 +12,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
@@ -37,7 +38,7 @@ public class CountQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(CountQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(CountQueryTest.class);
 
     @BeforeAll
     public static void filterSetup() throws Exception {

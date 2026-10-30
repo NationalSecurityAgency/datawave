@@ -22,7 +22,8 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNSWNode;
 import org.apache.commons.jexl3.parser.ASTSWNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
@@ -33,7 +34,7 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
  */
 public class PushdownUnindexedFieldsVisitor extends RebuildingVisitor {
 
-    private static final Logger log = Logger.getLogger(PushdownUnindexedFieldsVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(PushdownUnindexedFieldsVisitor.class);
 
     protected Set<String> unindexedFields;
 

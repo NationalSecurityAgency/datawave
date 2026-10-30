@@ -13,7 +13,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.SplitsFile;
@@ -23,7 +24,7 @@ import datawave.ingest.mapreduce.job.SplitsFile;
  * list.
  */
 public class TabletLocationNamePartitioner extends Partitioner<BulkIngestKey,Value> implements Configurable, DelegatePartitioner {
-    private static final Logger log = Logger.getLogger(TabletLocationNamePartitioner.class);
+    private static final Logger log = LoggerFactory.getLogger(TabletLocationNamePartitioner.class);
     private Configuration conf;
     private Map<String,Map<Text,Integer>> shardLocations;
 

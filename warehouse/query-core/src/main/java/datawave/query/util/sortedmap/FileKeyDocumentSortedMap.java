@@ -5,7 +5,8 @@ import java.util.Comparator;
 import java.util.SortedMap;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.attributes.Document;
 import datawave.query.util.sortedmap.rfile.RFileKeyDocumentInputStream;
@@ -20,7 +21,7 @@ import datawave.query.util.sortedset.FileSortedSet;
  *
  */
 public class FileKeyDocumentSortedMap extends FileSortedMap<Key,Document> {
-    private static Logger log = Logger.getLogger(FileKeyDocumentSortedMap.class);
+    private static Logger log = LoggerFactory.getLogger(FileKeyDocumentSortedMap.class);
 
     public static class DefaultKeyComparator implements Comparator<Key> {
         @Override

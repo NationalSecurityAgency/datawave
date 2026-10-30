@@ -6,7 +6,8 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.postprocessing.tf.TermOffsetMap;
@@ -39,7 +40,7 @@ import datawave.query.postprocessing.tf.TermOffsetMap;
  */
 public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
 
-    private static final Logger log = Logger.getLogger(ContentOrderedEvaluator.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentOrderedEvaluator.class);
 
     private static final int FORWARD = 1;
     private static final int REVERSE = -1;
