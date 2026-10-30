@@ -12,11 +12,17 @@ public abstract class ValueDependentQueryTerm extends AbstractQueryTerm {
     @Override
     public final void forEachEvaluation(FieldMetadata fieldMetadata, Runnable onEvaluation) {
         this.metadata = fieldMetadata;
+        prepareField();
         for (String value : fieldMetadata.getValues()) {
             apply(value);
             onEvaluation.run();
         }
     }
+
+    /**
+     * Prepares state shared by this field's values. Called on every evaluation pass, including when this term is reused with updated metadata.
+     */
+    protected void prepareField() {}
 
     /**
      * Builds this term's query text, plan text and event ids against a single value of the current field.
