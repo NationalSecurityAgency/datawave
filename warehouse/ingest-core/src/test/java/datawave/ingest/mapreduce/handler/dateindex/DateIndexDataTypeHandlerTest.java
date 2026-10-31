@@ -1,5 +1,10 @@
 package datawave.ingest.mapreduce.handler.dateindex;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.BitSet;
 
 import org.apache.accumulo.core.data.Key;
@@ -9,9 +14,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -38,7 +42,7 @@ public class DateIndexDataTypeHandlerTest {
     private TestBaseIngestHelper helper = new TestBaseIngestHelper();
     private DateNormalizer dateNormalizer = new DateNormalizer();
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
 
         conf = new Configuration();
@@ -64,10 +68,10 @@ public class DateIndexDataTypeHandlerTest {
         handler.setup(new TaskAttemptContextImpl(conf, new TaskAttemptID()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMissingConfigSetup() {
         DateIndexDataTypeHandler<Text> handler = new DateIndexDataTypeHandler<>();
-        handler.setup(new TaskAttemptContextImpl(new Configuration(), new TaskAttemptID()));
+        assertThrows(IllegalArgumentException.class, () -> handler.setup(new TaskAttemptContextImpl(new Configuration(), new TaskAttemptID())));
     }
 
     @Test
@@ -88,39 +92,39 @@ public class DateIndexDataTypeHandlerTest {
 
         // process the event
         Multimap<BulkIngestKey,Value> mutations = handler.processBulk(new Text("1"), event, eventFields, null);
-        Assert.assertEquals(0, mutations.size());
+        assertEquals(0, mutations.size());
         // verify the mutations which are now placed in the metadata
         handler.getMetadata().addEvent(helper, event, eventFields);
         mutations = handler.getMetadata().getBulkMetadata();
-        Assert.assertEquals(2, mutations.size());
+        assertEquals(2, mutations.size());
 
         // verify that clear clears out the mutations
         handler.getMetadata().clear();
         mutations = handler.getMetadata().getBulkMetadata();
-        Assert.assertEquals(0, mutations.size());
+        assertEquals(0, mutations.size());
 
         // verify that the mutations are not duplicated
         handler.getMetadata().addEvent(helper, event, eventFields);
         handler.getMetadata().addEvent(helper, event, eventFields);
-        Assert.assertEquals(2, mutations.size());
+        assertEquals(2, mutations.size());
 
         BitSet expectedValue = DateIndexUtil.getBits(shard1);
         for (BulkIngestKey bulkIngestKey : mutations.keySet()) {
-            Assert.assertEquals(1, mutations.get(bulkIngestKey).size());
+            assertEquals(1, mutations.get(bulkIngestKey).size());
             Value value = mutations.get(bulkIngestKey).iterator().next();
-            Assert.assertEquals(TableName.DATE_INDEX, bulkIngestKey.getTableName().toString());
+            assertEquals(TableName.DATE_INDEX, bulkIngestKey.getTableName().toString());
             Key key = bulkIngestKey.getKey();
-            Assert.assertEquals(expectedValue, BitSet.valueOf(value.get()));
+            assertEquals(expectedValue, BitSet.valueOf(value.get()));
             if ("ACTIVITY".equals(key.getColumnFamily().toString())) {
-                Assert.assertEquals("20130429_4", key.getRow().toString());
-                Assert.assertEquals("20130430\0testdatatype\0ACTIVITY_DATE", key.getColumnQualifier().toString());
-                Assert.assertEquals(dateNormalizer.denormalize("2013-04-29T00:00:00Z").getTime(), key.getTimestamp());
+                assertEquals("20130429_4", key.getRow().toString());
+                assertEquals("20130430\0testdatatype\0ACTIVITY_DATE", key.getColumnQualifier().toString());
+                assertEquals(dateNormalizer.denormalize("2013-04-29T00:00:00Z").getTime(), key.getTimestamp());
             } else if ("LOADED".equals(key.getColumnFamily().toString())) {
-                Assert.assertEquals("20140101_3", key.getRow().toString());
-                Assert.assertEquals("20130430\0testdatatype\0LOAD_DATE", key.getColumnQualifier().toString());
-                Assert.assertEquals(dateNormalizer.denormalize("2014-01-01T00:00:00Z").getTime(), key.getTimestamp());
+                assertEquals("20140101_3", key.getRow().toString());
+                assertEquals("20130430\0testdatatype\0LOAD_DATE", key.getColumnQualifier().toString());
+                assertEquals(dateNormalizer.denormalize("2014-01-01T00:00:00Z").getTime(), key.getTimestamp());
             } else {
-                Assert.fail("Unexpected colf: " + key.getColumnFamily());
+                fail("Unexpected colf: " + key.getColumnFamily());
             }
         }
 
@@ -145,7 +149,7 @@ public class DateIndexDataTypeHandlerTest {
         // process the event
         handler.getMetadata().addEvent(helper, event, eventFields);
         Multimap<BulkIngestKey,Value> mutations = handler.getMetadata().getBulkMetadata();
-        Assert.assertEquals(2, mutations.size());
+        assertEquals(2, mutations.size());
 
         // create a second sample event
         data = "00000000-0000-0000-0000-000000000000,UUID,FOO,null,2013-04-30T00:00:00Z,2013-04-29T11:11:11Z";
@@ -156,32 +160,32 @@ public class DateIndexDataTypeHandlerTest {
         // do not put the load date in this one: eventFields.put("LOAD_DATE", loadDate);
 
         // ensure we have a different shard for testing purposes
-        Assert.assertNotEquals(shard1, shard2);
+        assertNotEquals(shard1, shard2);
 
         // verify that the mutations are reduced
         handler.getMetadata().addEvent(helper, event, eventFields);
         mutations = handler.getMetadata().getBulkMetadata();
-        Assert.assertEquals(2, mutations.size());
+        assertEquals(2, mutations.size());
 
         for (BulkIngestKey bulkIngestKey : mutations.keySet()) {
-            Assert.assertEquals(1, mutations.get(bulkIngestKey).size());
+            assertEquals(1, mutations.get(bulkIngestKey).size());
             Value value = mutations.get(bulkIngestKey).iterator().next();
-            Assert.assertEquals(TableName.DATE_INDEX, bulkIngestKey.getTableName().toString());
+            assertEquals(TableName.DATE_INDEX, bulkIngestKey.getTableName().toString());
             Key key = bulkIngestKey.getKey();
             if ("ACTIVITY".equals(key.getColumnFamily().toString())) {
                 BitSet expectedValue = DateIndexUtil.merge(DateIndexUtil.getBits(shard1), DateIndexUtil.getBits(shard2));
-                Assert.assertEquals(expectedValue, BitSet.valueOf(value.get()));
-                Assert.assertEquals("20130429_4", key.getRow().toString());
-                Assert.assertEquals("20130430\0testdatatype\0ACTIVITY_DATE", key.getColumnQualifier().toString());
-                Assert.assertEquals(dateNormalizer.denormalize("2013-04-29T00:00:00Z").getTime(), key.getTimestamp());
+                assertEquals(expectedValue, BitSet.valueOf(value.get()));
+                assertEquals("20130429_4", key.getRow().toString());
+                assertEquals("20130430\0testdatatype\0ACTIVITY_DATE", key.getColumnQualifier().toString());
+                assertEquals(dateNormalizer.denormalize("2013-04-29T00:00:00Z").getTime(), key.getTimestamp());
             } else if ("LOADED".equals(key.getColumnFamily().toString())) {
                 BitSet expectedValue = DateIndexUtil.getBits(shard1);
-                Assert.assertEquals(expectedValue, BitSet.valueOf(value.get()));
-                Assert.assertEquals("20140101_3", key.getRow().toString());
-                Assert.assertEquals("20130430\0testdatatype\0LOAD_DATE", key.getColumnQualifier().toString());
-                Assert.assertEquals(dateNormalizer.denormalize("2014-01-01T00:00:00Z").getTime(), key.getTimestamp());
+                assertEquals(expectedValue, BitSet.valueOf(value.get()));
+                assertEquals("20140101_3", key.getRow().toString());
+                assertEquals("20130430\0testdatatype\0LOAD_DATE", key.getColumnQualifier().toString());
+                assertEquals(dateNormalizer.denormalize("2014-01-01T00:00:00Z").getTime(), key.getTimestamp());
             } else {
-                Assert.fail("Unexpected colf: " + key.getColumnFamily());
+                fail("Unexpected colf: " + key.getColumnFamily());
             }
         }
 
