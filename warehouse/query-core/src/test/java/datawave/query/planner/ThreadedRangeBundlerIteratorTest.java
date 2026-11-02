@@ -2,8 +2,8 @@ package datawave.query.planner;
 
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,8 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
@@ -30,7 +30,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
     private List<QueryPlan> plans;
     private ThreadedRangeBundlerIterator.Builder builder;
 
-    @Before
+    @BeforeEach
     public void setup() {
         // TODO delete this
         // enable to see logs

@@ -1,14 +1,14 @@
 package datawave.query.common.grouping;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,7 +25,7 @@ public class GroupFieldsTest {
     private static final Multimap<String,String> inverseReverseModel = HashMultimap.create();
     private static final Map<String,String> reverseModel = new HashMap<>();
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         inverseReverseModel.put("GEN", "GENERE");
         inverseReverseModel.put("GEN", "GENDER");

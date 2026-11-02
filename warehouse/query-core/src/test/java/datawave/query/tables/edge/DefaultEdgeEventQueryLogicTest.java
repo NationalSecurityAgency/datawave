@@ -1,6 +1,7 @@
 package datawave.query.tables.edge;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,8 +9,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.edge.model.DefaultEdgeModelFieldsFactory;
 import datawave.microservice.query.Query;
@@ -28,7 +29,7 @@ public class DefaultEdgeEventQueryLogicTest {
     DefaultEdgeEventQueryLogic logic = new DefaultEdgeEventQueryLogic();
     Collection<DefaultMetadata> metadata;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         logic.setEdgeModelFieldsFactory(new DefaultEdgeModelFieldsFactory());
         logic.setEdgeQueryModel(EdgeQueryModel.loadModel("/DATAWAVE_EDGE.xml", logic.getEdgeFields()));
@@ -291,37 +292,37 @@ public class DefaultEdgeEventQueryLogicTest {
         assertEquals("(SOURCEFIELD1 == 'sourceValue' AND TARGETFIELD1 == 'targetValue')", transformed);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMismatchAttribute1Source() throws Exception {
         Query query = new QueryImpl();
         query.setQuery("SOURCE == 'sourceValue' AND SINK == 'targetValue' AND TYPE == 'TEST7' AND RELATION == 'REL1-REL2' AND ATTRIBUTE1 == 'BLAH1-BLAH2'");
 
-        logic.getEventQuery(query); // throws because BLAH1 and BLAH2 aren't in the edge dictionary
+        assertThrows(IllegalArgumentException.class, () -> logic.getEventQuery(query)); // BLAH1 and BLAH2 aren't in the edge dictionary
 
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMismatchRelationshipSource() throws Exception {
         Query query = new QueryImpl();
         query.setQuery("SOURCE == 'sourceValue' AND SINK == 'targetValue' AND TYPE == 'TEST7' AND RELATION == 'NOREL1-NOREL2' AND ATTRIBUTE1 == 'SOURCE1-SOURCE2'");
 
-        logic.getEventQuery(query); // throws because BLAH1 and BLAH2 aren't in the edge dictionary
+        assertThrows(IllegalArgumentException.class, () -> logic.getEventQuery(query));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBogusType() throws Exception {
         Query query = new QueryImpl();
         query.setQuery("SOURCE == 'sourceValue' AND SINK == 'targetValue' AND TYPE == 'DOESNTEXIST' AND RELATION == 'REL1-REL2' AND ATTRIBUTE1 == 'SOURCE1-SOURCE2'");
 
-        logic.getEventQuery(query); // throws because BLAH1 and BLAH2 aren't in the edge dictionary
+        assertThrows(IllegalArgumentException.class, () -> logic.getEventQuery(query));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidEdgeEventQuery() throws Exception {
         Query query = new QueryImpl();
         query.setQuery("SOURCE == 'sourceValue' AND TYPE == 'TEST1' AND RELATION == 'REL1-REL2' AND ATTRIBUTE1 == 'SOURCE1-SOURCE2'");
 
-        logic.getEventQuery(query); // throws
+        assertThrows(IllegalArgumentException.class, () -> logic.getEventQuery(query));
     }
 
     @Test
@@ -380,21 +381,21 @@ public class DefaultEdgeEventQueryLogicTest {
         assertEquals("(SOURCEFIELD == 'sourceValue' AND TARGETFIELD == 'targetValue' AND ENRICHFIELD == 'enrichValue')", transformed);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testManditoryFieldEdgeType() throws Exception {
         Query query = new QueryImpl();
         query.setQuery("SOURCE == 'sourceValue' AND SINK == 'targetValue' AND RELATION == 'REL1-REL2' AND ATTRIBUTE1 == 'SOURCE1-SOURCE2'");
-        logic.getEventQuery(query);
+        assertThrows(IllegalArgumentException.class, () -> logic.getEventQuery(query));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testManditoryFieldEdgeRelationship() throws Exception {
         Query query = new QueryImpl();
         query.setQuery("SOURCE == 'sourceValue' AND SINK == 'targetValue' AND TYPE == 'TEST1' AND ATTRIBUTE1 == 'SOURCE1-SOURCE2'");
-        logic.getEventQuery(query);
+        assertThrows(IllegalArgumentException.class, () -> logic.getEventQuery(query));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void orAbleFieldtest() throws Exception {
         Query query = new QueryImpl();
         query.setQuery("SOURCE == 'sourceValue' AND SINK == 'targetValue' AND TYPE == 'TEST1' AND RELATION == 'REL1-REL2' AND ATTRIBUTE1 == 'SOURCE1-SOURCE2' AND (ATTRIBUTE2 == 'red' OR ATTRIBUTE2 == 'blue')");
@@ -403,13 +404,14 @@ public class DefaultEdgeEventQueryLogicTest {
 
         assertEquals("(SOURCEFIELD == 'sourceValue' AND TARGETFIELD == 'targetValue' AND ENRICHFIELD == 'enrichValue')", transformed);
 
-        query = new QueryImpl();
-        query.setQuery("SOURCE == 'sourceValue' AND SINK == 'targetValue' AND TYPE == 'TEST1' AND RELATION == 'REL1-REL2' AND (ATTRIBUTE1 == 'SOURCE1-SOURCE2' OR ATTRIBUTE1 == 'SOURCE2-SOURCE2')");
+        Query invalidQuery = new QueryImpl();
+        invalidQuery.setQuery(
+                        "SOURCE == 'sourceValue' AND SINK == 'targetValue' AND TYPE == 'TEST1' AND RELATION == 'REL1-REL2' AND (ATTRIBUTE1 == 'SOURCE1-SOURCE2' OR ATTRIBUTE1 == 'SOURCE2-SOURCE2')");
 
-        transformed = logic.getEventQuery(query); // throws
+        assertThrows(IllegalArgumentException.class, () -> logic.getEventQuery(invalidQuery));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void moreOrTesting() throws Exception {
         Query query = new QueryImpl();
         query.setQuery("(SOURCE == 'sourceValue' AND SINK == 'targetValue' AND TYPE == 'TEST1' AND RELATION == 'REL1-REL2' "
@@ -421,10 +423,11 @@ public class DefaultEdgeEventQueryLogicTest {
         assertEquals("(SOURCEFIELD == 'sourceValue' AND TARGETFIELD == 'targetValue' AND ENRICHFIELD == 'enrichValue') "
                         + "OR (SOURCEFIELD == 'sourceValue2' AND TARGETFIELD == 'targetValue2' AND ENRICHFIELD == 'enrichValue')", transformed);
 
-        query = new QueryImpl();
-        query.setQuery("SOURCE == 'sourceValue' AND SINK == 'targetValue' AND TYPE == 'TEST1' AND RELATION == 'REL1-REL2' AND ATTRIBUTE1 == 'SOURCE1-SOURCE2' AND (ATTRIBUTE2 == 'red' OR ATTRIBUTE3 == 'blue')");
+        Query invalidQuery = new QueryImpl();
+        invalidQuery.setQuery(
+                        "SOURCE == 'sourceValue' AND SINK == 'targetValue' AND TYPE == 'TEST1' AND RELATION == 'REL1-REL2' AND ATTRIBUTE1 == 'SOURCE1-SOURCE2' AND (ATTRIBUTE2 == 'red' OR ATTRIBUTE3 == 'blue')");
 
-        transformed = logic.getEventQuery(query); // throws
+        assertThrows(IllegalArgumentException.class, () -> logic.getEventQuery(invalidQuery));
 
     }
 }

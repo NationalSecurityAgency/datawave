@@ -1,6 +1,9 @@
 package datawave.iterators;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -30,8 +33,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -49,7 +51,7 @@ public class PropogatingIteratorTest {
     private void validateUids(Value topValue, String... uids) throws InvalidProtocolBufferException {
         Uid.List v = Uid.List.parseFrom(topValue.get());
 
-        Assert.assertEquals(uids.length, v.getCOUNT());
+        assertEquals(uids.length, v.getCOUNT());
         for (String uid : uids) {
             assertTrue(v.getUIDList().contains(uid));
         }
@@ -58,7 +60,7 @@ public class PropogatingIteratorTest {
     private void validateRemoval(Value topValue, String... uids) throws InvalidProtocolBufferException {
         Uid.List v = Uid.List.parseFrom(topValue.get());
 
-        Assert.assertEquals(-uids.length, v.getCOUNT());
+        assertEquals(-uids.length, v.getCOUNT());
         for (String uid : uids) {
             assertTrue(v.getREMOVEDUIDList().contains(uid));
         }
@@ -209,11 +211,11 @@ public class PropogatingIteratorTest {
 
         Key topKey = iter.getTopKey();
 
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.1", "abc.2", "abc.3");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
 
     }
 
@@ -245,25 +247,26 @@ public class PropogatingIteratorTest {
 
         Key topKey = iter.getTopKey();
 
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         validateUids(iter.getTopValue(), "abc.3");
 
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNullOptions() throws IOException {
 
         PropogatingIterator iter = new PropogatingIterator();
 
         IteratorEnvironment env = new MockIteratorEnvironment(false);
 
-        iter.init(createSourceWithTestData(), null, env);
-
-        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
+        assertThrows(NullPointerException.class, () -> {
+            iter.init(createSourceWithTestData(), null, env);
+            iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
+        });
     }
 
     private SortedMultiMapIterator createSourceWithTestData() {
@@ -280,16 +283,17 @@ public class PropogatingIteratorTest {
         return new SortedMultiMapIterator(map);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNullEnvironment() throws IOException {
         PropogatingIterator iter = new PropogatingIterator();
         Map<String,String> options = Maps.newHashMap();
 
         options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
 
-        iter.init(createSourceWithTestData(), options, null);
-
-        iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
+        assertThrows(NullPointerException.class, () -> {
+            iter.init(createSourceWithTestData(), options, null);
+            iter.seek(new Range(new Key(SHARD), null), Collections.emptyList(), false);
+        });
     }
 
     @Test
@@ -317,7 +321,7 @@ public class PropogatingIteratorTest {
         assertTrue(iter.hasTop());
 
         Key topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
 
     }
 
@@ -345,14 +349,14 @@ public class PropogatingIteratorTest {
 
         Key topKey = iter.getTopKey();
 
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.0");
         iter.next();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateRemoval(iter.getTopValue(), "abc.0");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
 
     }
 
@@ -375,11 +379,11 @@ public class PropogatingIteratorTest {
 
         Key topKey = iter.getTopKey();
 
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
         validateUids(iter.getTopValue(), "abc.0", "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
 
     }
 
@@ -401,18 +405,18 @@ public class PropogatingIteratorTest {
 
         Key topKey = iter.getTopKey();
 
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
         validateUids(iter.getTopValue(), "abc.0", "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
 
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testDeepCopyCannotCopyUninitialized() {
         PropogatingIterator uut = new PropogatingIterator();
-        uut.deepCopy(new MockIteratorEnvironment(false));
+        assertThrows(NullPointerException.class, () -> uut.deepCopy(new MockIteratorEnvironment(false)));
     }
 
     @Test
@@ -443,11 +447,11 @@ public class PropogatingIteratorTest {
 
         Key topKey = iter.getTopKey();
 
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.1", "abc.2", "abc.3");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
 
     }
 
@@ -480,26 +484,26 @@ public class PropogatingIteratorTest {
 
         Key topKey = iter.getTopKey();
 
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         validateUids(iter.getTopValue(), "abc.3");
 
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNullOptionsWithInit() throws IOException {
         IteratorEnvironment env = new MockIteratorEnvironment(false);
-        new PropogatingIterator().init(createSourceWithTestData(), null, env);
+        assertThrows(NullPointerException.class, () -> new PropogatingIterator().init(createSourceWithTestData(), null, env));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNullEnvironmentWithInit() throws IOException {
         Map<String,String> options = Maps.newHashMap();
         options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
-        new PropogatingIterator().init(createSourceWithTestData(), options, null);
+        assertThrows(NullPointerException.class, () -> new PropogatingIterator().init(createSourceWithTestData(), options, null));
     }
 
     @Test
@@ -528,7 +532,7 @@ public class PropogatingIteratorTest {
         assertTrue(iter.hasTop());
 
         Key topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
 
     }
 
@@ -557,14 +561,14 @@ public class PropogatingIteratorTest {
 
         Key topKey = iter.getTopKey();
 
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.0");
         iter.next();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateRemoval(iter.getTopValue(), "abc.0");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
 
     }
 
@@ -586,11 +590,11 @@ public class PropogatingIteratorTest {
 
         Key topKey = iter.getTopKey();
 
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
         validateUids(iter.getTopValue(), "abc.0", "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
 
     }
 
@@ -612,11 +616,11 @@ public class PropogatingIteratorTest {
 
         Key topKey = iter.getTopKey();
 
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), topKey);
         validateUids(iter.getTopValue(), "abc.0", "abc.1", "abc.2", "abc.3", "abc.4");
         iter.next();
         topKey = iter.getTopKey();
-        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
 
     }
 
@@ -659,14 +663,14 @@ public class PropogatingIteratorTest {
         for (Future<List<Entry<Key,Value>>> future : futures) {
             List<Entry<Key,Value>> kvList = future.get();
 
-            Assert.assertEquals(2, kvList.size());
+            assertEquals(2, kvList.size());
 
             Entry<Key,Value> kv1 = kvList.get(0);
             Entry<Key,Value> kv2 = kvList.get(1);
 
-            Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), kv1.getKey());
+            assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc", true), kv1.getKey());
             validateUids(kv1.getValue(), "abc.0", "abc.1", "abc.2", "abc.3", "abc.4");
-            Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), kv2.getKey());
+            assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), kv2.getKey());
         }
         exec.shutdownNow();
 
@@ -681,7 +685,7 @@ public class PropogatingIteratorTest {
         PropogatingIterator propogatingIterator = new PropogatingIterator();
         propogatingIterator.init(source, emptyOptions, env);
         PropogatingIterator deepCopiedPropogatingIterator = propogatingIterator.deepCopy(env);
-        Assert.assertNotNull("PropogatingIterator default constructor failed to create a valid instance.", deepCopiedPropogatingIterator);
+        assertNotNull(deepCopiedPropogatingIterator, "PropogatingIterator default constructor failed to create a valid instance.");
     }
 
     @Test
@@ -693,18 +697,18 @@ public class PropogatingIteratorTest {
         PropogatingIterator propogatingIterator = new PropogatingIterator(source, null);
         propogatingIterator.init(source, emptyOptions, env);
         PropogatingIterator deepCopiedPropogatingIterator = propogatingIterator.deepCopy(env);
-        Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", deepCopiedPropogatingIterator);
+        assertNotNull(deepCopiedPropogatingIterator, "PropogatingIterator constructor failed to create a valid instance.");
     }
 
     @Test
     public void testDefaultConstructor() {
         PropogatingIterator uut = new PropogatingIterator();
-        Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", uut);
+        assertNotNull(uut, "PropogatingIterator constructor failed to create a valid instance.");
     }
 
     @Test
     public void testConstructor() throws IOException {
         PropogatingIterator uut = new PropogatingIterator(createSourceWithTestData(), null);
-        Assert.assertNotNull("PropogatingIterator constructor failed to create a valid instance.", uut);
+        assertNotNull(uut, "PropogatingIterator constructor failed to create a valid instance.");
     }
 }

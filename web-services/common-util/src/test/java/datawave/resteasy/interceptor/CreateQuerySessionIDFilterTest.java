@@ -1,8 +1,8 @@
 package datawave.resteasy.interceptor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.lang.annotation.Annotation;
 
@@ -11,7 +11,7 @@ import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
 import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.easymock.MockType;
@@ -21,16 +21,16 @@ import org.jboss.resteasy.core.interception.jaxrs.ResponseContainerRequestContex
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.jboss.resteasy.mock.MockHttpResponse;
 import org.jboss.resteasy.specimpl.BuiltResponse;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import datawave.annotation.GenerateQuerySessionId;
 
 /**
  *
  */
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
 
     private CreateQuerySessionIDFilter filter;
@@ -40,7 +40,7 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
     @Mock(type = MockType.STRICT)
     private ResourceMethodInvoker method;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         annotation = new GenerateQuerySessionId() {
             @Override
@@ -72,7 +72,7 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         filter.filter(request, response);
 
         NewCookie responseCookie = (NewCookie) response.getHeaders().getFirst("Set-Cookie");
-        assertNotNull("No cookie present when we should have one.", responseCookie);
+        assertNotNull(responseCookie, "No cookie present when we should have one.");
         assertEquals("query-session-id", responseCookie.getName());
         assertEquals("/test/path/1234", responseCookie.getPath());
 
@@ -92,7 +92,7 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         filter.filter(request, response);
 
         NewCookie responseCookie = (NewCookie) response.getHeaders().getFirst("Set-Cookie");
-        assertNotNull("No cookie present when we should have one.", responseCookie);
+        assertNotNull(responseCookie, "No cookie present when we should have one.");
         assertEquals("query-session-id", responseCookie.getName());
         assertEquals("/test/path/", responseCookie.getPath());
 
@@ -109,7 +109,7 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         filter.filter(request, response);
 
         NewCookie responseCookie = (NewCookie) response.getHeaders().getFirst("Set-Cookie");
-        assertNull("Cookie present when we shouldn't have one.", responseCookie);
+        assertNull(responseCookie, "Cookie present when we shouldn't have one.");
 
         verifyAll();
     }
@@ -124,7 +124,7 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         filter.filter(request, response);
 
         NewCookie responseCookie = (NewCookie) response.getHeaders().getFirst("Set-Cookie");
-        assertNull("Cookie present when we shouldn't have one.", responseCookie);
+        assertNull(responseCookie, "Cookie present when we shouldn't have one.");
 
         verifyAll();
     }

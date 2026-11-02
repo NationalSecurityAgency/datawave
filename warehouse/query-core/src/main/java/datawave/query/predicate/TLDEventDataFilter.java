@@ -21,6 +21,7 @@ import com.google.common.collect.Sets;
 
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.table.util.TLD;
 
@@ -551,6 +552,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         for (ASTIdentifier identifier : identifiers) {
             ids.add(JexlASTHelper.deconstructIdentifier(identifier));
         }
+
+        // List ivarator keeps field as ASTStringLiteral
+        String fieldName = ExceededOr.decodeField(script);
+        if (fieldName != null) {
+            ids.add(fieldName);
+        }
+
         return ids;
     }
 

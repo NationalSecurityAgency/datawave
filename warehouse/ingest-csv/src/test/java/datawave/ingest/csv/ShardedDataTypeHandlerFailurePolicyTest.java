@@ -1,7 +1,7 @@
 package datawave.ingest.csv;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -16,10 +16,10 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import datawave.ingest.csv.mr.handler.ColumnBasedHandlerTestUtil;
+import datawave.ingest.csv.mr.handler.ColumnBasedHandlerTestUtilJUnit5;
 import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -51,7 +51,7 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
     private AbstractColumnBasedHandler<Text> abstractHandler;
     private CSVRecordReader reader;
 
-    @Before
+    @BeforeEach
     public void setup() {
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource(CONFIG_FILE));
@@ -94,9 +94,9 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
         expectedKeys.get("shardIndexKeys").addAll(shardIndexKeys);
         expectedKeys.get("shardReverseIndexKeys").addAll(shardReverseIndexKeys);
 
-        assertTrue("Can you read the second row of records?", reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue(), "Can you read the second row of records?");
         RawRecordContainer event = reader.getEvent();
-        assertEquals("Do expected and actual timestamps equal?", SECOND_TS, event.getDate());
+        assertEquals(SECOND_TS, event.getDate(), "Do expected and actual timestamps equal?");
 
         processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"), expectedKeys.get("shardReverseIndexKeys"));
 
@@ -138,9 +138,9 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
         expectedKeys.get("shardIndexKeys").addAll(shardIndexKeys);
         expectedKeys.get("shardReverseIndexKeys").addAll(shardReverseIndexKeys);
 
-        assertTrue("Can you read the second row of records?", reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue(), "Can you read the second row of records?");
         RawRecordContainer event = reader.getEvent();
-        assertEquals("Do expected and actual timestamps equal?", SECOND_TS, event.getDate());
+        assertEquals(SECOND_TS, event.getDate(), "Do expected and actual timestamps equal?");
 
         processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"), expectedKeys.get("shardReverseIndexKeys"));
 
@@ -180,9 +180,9 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
         expectedKeys.get("shardIndexKeys").addAll(shardIndexKeys);
         expectedKeys.get("shardReverseIndexKeys").addAll(shardReverseIndexKeys);
 
-        assertTrue("Can you read the second row of records?", reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue(), "Can you read the second row of records?");
         RawRecordContainer event = reader.getEvent();
-        assertEquals("Do expected and actual timestamps equal?", SECOND_TS, event.getDate());
+        assertEquals(SECOND_TS, event.getDate(), "Do expected and actual timestamps equal?");
 
         processEvent(abstractHandler, event, expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"), expectedKeys.get("shardReverseIndexKeys"));
 
@@ -207,9 +207,9 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
     private void processFirstRow() throws IOException {
         HashMap<String,Set<Key>> expectedKeys = getExpectedKeysFromFirstRow();
 
-        assertTrue("Can you read the first row of records?", reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue(), "Can you read the first row of records?");
         RawRecordContainer event = reader.getEvent();
-        assertEquals("Do event timestamps equal?", FIRST_TS, event.getDate());
+        assertEquals(FIRST_TS, event.getDate(), "Do event timestamps equal?");
 
         processEvent(abstractHandler, reader.getEvent(), expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
                         expectedKeys.get("shardReverseIndexKeys"));
@@ -218,9 +218,9 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
     private void processThirdRow() throws IOException {
         HashMap<String,Set<Key>> expectedKeys = getExpectedKeysFromThirdRow();
 
-        assertTrue("Can you read the third row of records?", reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue(), "Can you read the third row of records?");
         RawRecordContainer event = reader.getEvent();
-        assertEquals("Do event timestamps equal?", THIRD_TS, event.getDate());
+        assertEquals(THIRD_TS, event.getDate(), "Do event timestamps equal?");
 
         processEvent(abstractHandler, reader.getEvent(), expectedKeys.get("shardKeys"), expectedKeys.get("shardIndexKeys"),
                         expectedKeys.get("shardReverseIndexKeys"));
@@ -350,6 +350,6 @@ public class ShardedDataTypeHandlerFailurePolicyTest {
 
     private void processEvent(DataTypeHandler<Text> handler, RawRecordContainer record, Set<Key> shardKeys, Set<Key> shardIndexKeys,
                     Set<Key> shardReverseIndexKeys) {
-        ColumnBasedHandlerTestUtil.processEvent(handler, record, shardKeys, shardIndexKeys, shardReverseIndexKeys);
+        ColumnBasedHandlerTestUtilJUnit5.processEvent(handler, record, shardKeys, shardIndexKeys, shardReverseIndexKeys);
     }
 }

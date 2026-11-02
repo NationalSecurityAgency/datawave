@@ -1,11 +1,11 @@
 package datawave.util.keyword.language;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.ibm.icu.text.BreakIterator;
 
@@ -26,7 +26,7 @@ public class BaseYakeLanguageTest {
                     sentences.add(sentence);
                 }
             }
-            assertFalse("No sentences produced for language " + language, sentences.isEmpty());
+            assertFalse(sentences.isEmpty(), "No sentences produced for language " + language);
         }
     }
 }

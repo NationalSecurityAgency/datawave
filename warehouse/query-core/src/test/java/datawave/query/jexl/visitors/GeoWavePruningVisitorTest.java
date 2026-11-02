@@ -1,18 +1,18 @@
 package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.functions.GeoWaveFunctionsDescriptorTest.convertFunctionToIndexQuery;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -30,14 +30,14 @@ public class GeoWavePruningVisitorTest {
 
     private final ASTValidator validator = new ASTValidator();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         metadataHelper = new MockMetadataHelper();
         metadataHelper.addField("GEO_FIELD", "datawave.data.type.GeometryType");
         metadataHelper.addField("LEGACY_GEO_FIELD", "datawave.data.type.GeoType");
     }
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         validator.enableAll();
     }

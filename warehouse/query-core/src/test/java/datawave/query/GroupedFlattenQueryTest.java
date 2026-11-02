@@ -18,15 +18,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import datawave.query.testframework.AbstractFields;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.FlattenData;
@@ -38,10 +38,10 @@ import datawave.query.testframework.RawMetaData;
 /**
  * Test cases for flatten mode {@link FlattenMode@GROUPED}.
  */
-public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
+public class GroupedFlattenQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(GroupedFlattenQueryTest.class);
 
@@ -60,7 +60,7 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
         }
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         accumuloSetup.setData(FileType.JSON, flatten);
         client = accumuloSetup.loadTables(log);

@@ -1,13 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.microservice.querymetric.QueryGeometry;
 import datawave.query.jexl.JexlASTHelper;

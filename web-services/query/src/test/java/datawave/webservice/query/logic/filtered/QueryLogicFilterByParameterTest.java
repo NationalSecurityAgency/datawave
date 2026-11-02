@@ -1,9 +1,9 @@
 package datawave.webservice.query.logic.filtered;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.logic.filtered.QueryLogicFilterByParameter;
 import datawave.microservice.query.QueryImpl;

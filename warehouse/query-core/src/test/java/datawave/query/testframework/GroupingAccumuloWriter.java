@@ -1,6 +1,8 @@
 package datawave.query.testframework;
 
 import static datawave.query.testframework.AbstractDataTypeConfig.YMD_DateFormat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Calendar;
 import java.util.Collection;
@@ -20,7 +22,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import com.google.common.collect.Multimap;
 
@@ -208,8 +209,8 @@ class GroupingAccumuloWriter {
 
     private String extractShard(Multimap<String,String> data) {
         Collection<String> shard = data.get(this.shardField);
-        Assert.assertNotNull("shard date field not found in raw data", shard);
-        Assert.assertEquals("shard date is invalid", 1, shard.size());
+        assertNotNull("shard date field not found in raw data", shard);
+        assertEquals("shard date is invalid", 1, shard.size());
         return shard.iterator().next();
     }
 
@@ -240,7 +241,7 @@ class GroupingAccumuloWriter {
         }
 
         // add others as needed
-        Assert.assertNotNull(clName);
+        assertNotNull(clName);
         return clName;
     }
 }
