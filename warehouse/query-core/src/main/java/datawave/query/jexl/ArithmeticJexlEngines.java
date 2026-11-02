@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.JexlBuilder;
-import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +61,7 @@ public class ArithmeticJexlEngines {
                 .namespaces(registeredFunctions)
                 .cache(1024)
                 .silent(false)
-                .strict(false)
-                .permissions(JexlPermissions.UNRESTRICTED);
+                .strict(false);
         //  @formatter:on
 
         // Setting strict to be true causes an Exception when a field

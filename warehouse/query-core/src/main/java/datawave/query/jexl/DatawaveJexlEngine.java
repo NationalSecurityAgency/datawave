@@ -10,9 +10,11 @@ import org.apache.commons.jexl3.JexlScript;
 import org.apache.commons.jexl3.internal.Engine;
 import org.apache.commons.jexl3.internal.Frame;
 import org.apache.commons.jexl3.internal.Interpreter;
+import org.apache.commons.jexl3.internal.Scope;
 import org.apache.commons.jexl3.internal.Script;
-import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+
+import datawave.query.jexl.visitors.ValidateJexlExecutionVisitor;
 
 /**
  * An extension of the {@link JexlEngine} with reasonable default configurations for DataWave's use-case.
@@ -31,7 +33,7 @@ public class DatawaveJexlEngine extends Engine {
      */
     @Deprecated
     public DatawaveJexlEngine() {
-        super(new JexlBuilder().debug(false).namespaces(ArithmeticJexlEngines.functions()).permissions(JexlPermissions.UNRESTRICTED));
+        this(new JexlBuilder().debug(false).namespaces(ArithmeticJexlEngines.functions()));
     }
 
     /**
@@ -41,7 +43,16 @@ public class DatawaveJexlEngine extends Engine {
      *            a {@link JexlBuilder}
      */
     public DatawaveJexlEngine(JexlBuilder jexlBuilder) {
-        super(jexlBuilder);
+        super(DatawaveJexlPermissions.configure(jexlBuilder));
+    }
+
+    @Override
+    protected ASTJexlScript parse(JexlInfo info, JexlFeatures features, String source, Scope scope) {
+        JexlFeatures executionFeatures = new JexlFeatures(features == null ? JexlASTHelper.jexlFeatures() : features)
+                        .newInstance(false).pragma(false).namespacePragma(false).importPragma(false);
+        ASTJexlScript script = super.parse(info, executionFeatures, source, scope);
+        ValidateJexlExecutionVisitor.validate(script, functions);
+        return script;
     }
 
     @Override

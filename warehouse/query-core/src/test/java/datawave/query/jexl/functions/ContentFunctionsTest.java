@@ -17,7 +17,6 @@ import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlExpression;
 import org.apache.commons.jexl3.MapContext;
-import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -60,7 +59,7 @@ public class ContentFunctionsTest {
         functions.put("geo", GeoFunctions.class);
         functions.put("content", ContentFunctions.class);
         engine = new DatawaveJexlEngine(
-                        new JexlBuilder().debug(false).namespaces(functions).arithmetic(new DefaultArithmetic()).permissions(JexlPermissions.UNRESTRICTED));
+                        new JexlBuilder().debug(false).namespaces(functions).arithmetic(new DefaultArithmetic()));
     }
 
     @Before
