@@ -1,6 +1,8 @@
 package datawave.query.util;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -16,8 +18,16 @@ public class AccumuloExceptionCheckerTest {
         assertTrue(AccumuloExceptionChecker.isTabletClosedException(new TabletClosedException()));
         assertFalse(AccumuloExceptionChecker.isTabletClosedException(new RuntimeException()));
         assertFalse(AccumuloExceptionChecker.isTabletClosedException(null));
-        // only the throwable itself is checked, callers walk the cause chain
-        assertFalse(AccumuloExceptionChecker.isTabletClosedException(new RuntimeException(new TabletClosedException())));
+        assertTrue(AccumuloExceptionChecker.isTabletClosedException(new RuntimeException(new TabletClosedException())));
+    }
+
+    @Test
+    public void testFindTabletClosedException() {
+        TabletClosedException tce = new TabletClosedException();
+        assertSame(tce, AccumuloExceptionChecker.findTabletClosedException(tce));
+        assertSame(tce, AccumuloExceptionChecker.findTabletClosedException(new IOException(new RuntimeException(tce))));
+        assertNull(AccumuloExceptionChecker.findTabletClosedException(new IOException(new RuntimeException())));
+        assertNull(AccumuloExceptionChecker.findTabletClosedException(null));
     }
 
     @Test
@@ -25,6 +35,7 @@ public class AccumuloExceptionCheckerTest {
         assertTrue(AccumuloExceptionChecker.isScanTimedOutException(new ScanTimedOutException("timed out")));
         assertFalse(AccumuloExceptionChecker.isScanTimedOutException(new IOException()));
         assertFalse(AccumuloExceptionChecker.isScanTimedOutException(null));
-        assertFalse(AccumuloExceptionChecker.isScanTimedOutException(new IOException(new ScanTimedOutException("timed out"))));
+        assertTrue(AccumuloExceptionChecker.isScanTimedOutException(new IOException(new ScanTimedOutException("timed out"))));
+        assertFalse(AccumuloExceptionChecker.isScanTimedOutException(new IOException(new RuntimeException())));
     }
 }
