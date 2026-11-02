@@ -9,6 +9,12 @@
     </parent>
     <artifactId>annotation-api</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+    <scm>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
+    </scm>
     <properties>
         <version.datawave>8.2.0</version.datawave>
     </properties>
