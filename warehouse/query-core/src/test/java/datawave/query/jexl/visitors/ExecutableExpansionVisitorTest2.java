@@ -1,15 +1,15 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -28,7 +28,7 @@ public class ExecutableExpansionVisitorTest2 {
     private ShardQueryConfiguration config;
     private MockMetadataHelper metadataHelper;
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         config = new ShardQueryConfiguration();
         config.setIndexedFields(indexedFields);

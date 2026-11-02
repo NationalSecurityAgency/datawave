@@ -1,12 +1,12 @@
 package datawave.ingest.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 
 class GenerateShardSplitsTest {
@@ -24,7 +24,7 @@ class GenerateShardSplitsTest {
         assertEquals(expected, results, "Sort order was incorrect");
 
         for (Text element : files) {
-            Assert.assertTrue(expected.contains(element));
+            assertTrue(expected.contains(element));
         }
 
     }

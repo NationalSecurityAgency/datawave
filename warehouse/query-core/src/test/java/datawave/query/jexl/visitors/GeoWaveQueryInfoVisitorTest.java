@@ -1,12 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor.GeoWaveQueryInfo;
@@ -47,11 +48,11 @@ public class GeoWaveQueryInfoVisitorTest {
         assertEquals(31, queryInfo.getMaxTier());
     }
 
-    @Test(expected = NumberFormatException.class)
+    @Test
     public void testOtherField() throws Exception {
         ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(COMBINED_FIELDS_QUERY);
 
-        new GeoWaveQueryInfoVisitor(Arrays.asList("NAME")).parseGeoWaveQueryInfo(queryTree);
+        assertThrows(NumberFormatException.class, () -> new GeoWaveQueryInfoVisitor(Arrays.asList("NAME")).parseGeoWaveQueryInfo(queryTree));
     }
 
     @Test

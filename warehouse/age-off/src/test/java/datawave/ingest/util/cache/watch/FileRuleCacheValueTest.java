@@ -1,5 +1,14 @@
 package datawave.ingest.util.cache.watch;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -9,9 +18,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import datawave.iterators.filter.AgeOffConfigParams;
@@ -30,16 +38,16 @@ public class FileRuleCacheValueTest {
     private Collection<FilterRule> rules;
     private Map<String,TestFilter> rulesByMatchPattern;
 
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         rulesByMatchPattern = new HashMap<>();
         filePath = new Path(this.getClass().getResource(FILTER_CONFIGURATION_FILE).toString());
         fs = filePath.getFileSystem(new Configuration());
         ruleValue = new FileRuleCacheValue(fs, filePath, 1);
         rules = ruleValue.loadFilterRules(null);
-        Assert.assertEquals(5, rules.size());
+        assertEquals(5, rules.size());
         for (FilterRule rule : rules) {
-            Assert.assertEquals(TestFilter.class, rule.getClass());
+            assertEquals(TestFilter.class, rule.getClass());
             TestFilter testFilter = (TestFilter) rule;
             String matchPattern = testFilter.options.getOption(AgeOffConfigParams.MATCHPATTERN);
             rulesByMatchPattern.put(matchPattern, testFilter);
@@ -48,35 +56,35 @@ public class FileRuleCacheValueTest {
 
     @Test
     public void verifyNoBleedOverOfTTlValue() {
-        Assert.assertEquals(10, rulesByMatchPattern.get("1").options.getTTL());
-        Assert.assertEquals(-1, rulesByMatchPattern.get("A").options.getTTL());
-        Assert.assertEquals(50, rulesByMatchPattern.get("B").options.getTTL());
-        Assert.assertEquals(-1, rulesByMatchPattern.get("C").options.getTTL());
-        Assert.assertEquals(10, rulesByMatchPattern.get("D").options.getTTL());
+        assertEquals(10, rulesByMatchPattern.get("1").options.getTTL());
+        assertEquals(-1, rulesByMatchPattern.get("A").options.getTTL());
+        assertEquals(50, rulesByMatchPattern.get("B").options.getTTL());
+        assertEquals(-1, rulesByMatchPattern.get("C").options.getTTL());
+        assertEquals(10, rulesByMatchPattern.get("D").options.getTTL());
     }
 
     @Test
     public void verifyNoBleedOverOfTTlUnits() {
-        Assert.assertEquals("ms", rulesByMatchPattern.get("1").options.getTTLUnits());
-        Assert.assertEquals(DEFAULT_UNITS, rulesByMatchPattern.get("A").options.getTTLUnits());
-        Assert.assertEquals("d", rulesByMatchPattern.get("B").options.getTTLUnits());
-        Assert.assertEquals(DEFAULT_UNITS, rulesByMatchPattern.get("C").options.getTTLUnits());
-        Assert.assertEquals("ms", rulesByMatchPattern.get("D").options.getTTLUnits());
+        assertEquals("ms", rulesByMatchPattern.get("1").options.getTTLUnits());
+        assertEquals(DEFAULT_UNITS, rulesByMatchPattern.get("A").options.getTTLUnits());
+        assertEquals("d", rulesByMatchPattern.get("B").options.getTTLUnits());
+        assertEquals(DEFAULT_UNITS, rulesByMatchPattern.get("C").options.getTTLUnits());
+        assertEquals("ms", rulesByMatchPattern.get("D").options.getTTLUnits());
     }
 
     @Test
     public void verifyNoBleedOverOfExtendedOptions() {
-        Assert.assertEquals("false", rulesByMatchPattern.get("1").options.getOption("filtersWater"));
-        Assert.assertNull(rulesByMatchPattern.get("A").options.getOption("filtersWater"));
-        Assert.assertEquals("true", rulesByMatchPattern.get("B").options.getOption("filtersWater"));
-        Assert.assertNull(rulesByMatchPattern.get("C").options.getOption("filtersWater"));
-        Assert.assertEquals("false", rulesByMatchPattern.get("D").options.getOption("filtersWater"));
+        assertEquals("false", rulesByMatchPattern.get("1").options.getOption("filtersWater"));
+        assertNull(rulesByMatchPattern.get("A").options.getOption("filtersWater"));
+        assertEquals("true", rulesByMatchPattern.get("B").options.getOption("filtersWater"));
+        assertNull(rulesByMatchPattern.get("C").options.getOption("filtersWater"));
+        assertEquals("false", rulesByMatchPattern.get("D").options.getOption("filtersWater"));
 
-        Assert.assertEquals("1234", rulesByMatchPattern.get("1").options.getOption("myTagName.ttl"));
-        Assert.assertNull(rulesByMatchPattern.get("A").options.getOption("myTagName.ttl"));
-        Assert.assertNull(rulesByMatchPattern.get("B").options.getOption("myTagName.ttl"));
-        Assert.assertNull(rulesByMatchPattern.get("C").options.getOption("myTagName.ttl"));
-        Assert.assertNull(rulesByMatchPattern.get("D").options.getOption("myTagName.ttl"));
+        assertEquals("1234", rulesByMatchPattern.get("1").options.getOption("myTagName.ttl"));
+        assertNull(rulesByMatchPattern.get("A").options.getOption("myTagName.ttl"));
+        assertNull(rulesByMatchPattern.get("B").options.getOption("myTagName.ttl"));
+        assertNull(rulesByMatchPattern.get("C").options.getOption("myTagName.ttl"));
+        assertNull(rulesByMatchPattern.get("D").options.getOption("myTagName.ttl"));
     }
 
     @Test
@@ -88,31 +96,31 @@ public class FileRuleCacheValueTest {
 
         // check to ensure the applied rules returned are different objects
         // but the underlying rule reference is not changing
-        Assert.assertNotSame(v1, v2);
-        Assert.assertSame(r1, r2);
+        assertNotSame(v1, v2);
+        assertSame(r1, r2);
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void verifyFilterClass() throws IOException {
         Path fileWithMissingClassname = new Path(this.getClass().getResource(FILE_WITH_MISSING_FILTER_CLASS).toString());
         FileRuleCacheValue exValue = new FileRuleCacheValue(fs, fileWithMissingClassname, 1);
-        rules = exValue.loadFilterRules(null);
+        assertThrows(IOException.class, () -> exValue.loadFilterRules(null));
     }
 
     @Test
     public void verifyNumericFieldInOptions() {
         // backwards compatibility
-        Assert.assertEquals("2468", rulesByMatchPattern.get("D").options.getOption("last.ttl"));
-        Assert.assertEquals(10, rulesByMatchPattern.get("D").options.getTTL());
-        Assert.assertEquals("ms", rulesByMatchPattern.get("D").options.getTTLUnits());
+        assertEquals("2468", rulesByMatchPattern.get("D").options.getOption("last.ttl"));
+        assertEquals(10, rulesByMatchPattern.get("D").options.getTTL());
+        assertEquals("ms", rulesByMatchPattern.get("D").options.getTTLUnits());
         // revised options
-        Assert.assertEquals("first,last", rulesByMatchPattern.get("D").options.getOption("fields"));
-        Assert.assertEquals("1234", rulesByMatchPattern.get("D").options.getOption("field.middle.ttl"));
-        Assert.assertEquals("m", rulesByMatchPattern.get("D").options.getOption("field.middle.ttlUnits"));
-        Assert.assertEquals("10", rulesByMatchPattern.get("D").options.getOption("field.suffix.ttl"));
-        Assert.assertEquals("d", rulesByMatchPattern.get("D").options.getOption("field.suffix.ttlUnits"));
-        Assert.assertEquals("77", rulesByMatchPattern.get("D").options.getOption("datatype.012345.ttl"));
-        Assert.assertEquals("ms", rulesByMatchPattern.get("D").options.getOption("datatype.012345.ttlUnits"));
+        assertEquals("first,last", rulesByMatchPattern.get("D").options.getOption("fields"));
+        assertEquals("1234", rulesByMatchPattern.get("D").options.getOption("field.middle.ttl"));
+        assertEquals("m", rulesByMatchPattern.get("D").options.getOption("field.middle.ttlUnits"));
+        assertEquals("10", rulesByMatchPattern.get("D").options.getOption("field.suffix.ttl"));
+        assertEquals("d", rulesByMatchPattern.get("D").options.getOption("field.suffix.ttlUnits"));
+        assertEquals("77", rulesByMatchPattern.get("D").options.getOption("datatype.012345.ttl"));
+        assertEquals("ms", rulesByMatchPattern.get("D").options.getOption("datatype.012345.ttlUnits"));
     }
 
     @Test
@@ -120,7 +128,7 @@ public class FileRuleCacheValueTest {
         FileSystem fs = Mockito.mock(FileSystem.class);
         Path path = new Path("hdfs://path/to/file");
         FileRuleCacheValue val = new FileRuleCacheValue(fs, path, 1L);
-        Assert.assertTrue(val.hasChanges());
+        assertTrue(val.hasChanges());
     }
 
     @Test
@@ -128,7 +136,7 @@ public class FileRuleCacheValueTest {
         FileSystem fsSpy = Mockito.spy(fs);
         Mockito.when(fsSpy.getFileStatus(filePath)).thenThrow(new IllegalStateException("Unable to fetch status"));
         FileRuleCacheValue val = new FileRuleCacheValue(fs, filePath, 1L);
-        Assert.assertTrue(val.hasChanges());
+        assertTrue(val.hasChanges());
     }
 
     @Test
@@ -147,21 +155,21 @@ public class FileRuleCacheValueTest {
         FileRuleCacheValue val = new FileRuleCacheValue(fsSpy, filePath, configuredDiff);
         val.newRulesetView(0L, null);
 
-        Assert.assertNotNull(val.getRuleRef());
+        assertNotNull(val.getRuleRef());
 
         // assert no changes after loading
-        Assert.assertFalse("Expected no changes initial evaluation", val.hasChanges());
+        assertFalse(val.hasChanges(), "Expected no changes initial evaluation");
 
         // reset status to be unchanged (more than baseline)
         Mockito.when(fsSpy.getFileStatus(filePath)).thenReturn(statusUnchanged);
 
         // assert no changes after loading
-        Assert.assertFalse("Expected no changes at threshold evaluation", val.hasChanges());
+        assertFalse(val.hasChanges(), "Expected no changes at threshold evaluation");
 
         // reset status to be changed
         Mockito.when(fsSpy.getFileStatus(filePath)).thenReturn(statusChanged);
 
         // assert changes now detected when (modificationTime - baseline) > configuredDiff
-        Assert.assertTrue("Expected evaluation has changes", val.hasChanges());
+        assertTrue(val.hasChanges(), "Expected evaluation has changes");
     }
 }

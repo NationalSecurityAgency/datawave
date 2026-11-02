@@ -1,13 +1,13 @@
 package datawave.query.common.grouping;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -21,7 +21,7 @@ public class SumAggregatorTest {
 
     private SumAggregator aggregator;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         aggregator = new SumAggregator("FIELD");
     }
@@ -41,7 +41,7 @@ public class SumAggregatorTest {
     public void testNonNumericValue() {
         Content content = new Content("i am content", new Key(), true);
 
-        IllegalArgumentException exception = Assert.assertThrows(IllegalArgumentException.class, () -> aggregator.aggregate(content));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> aggregator.aggregate(content));
         assertEquals("Unable to calculate a sum with non-numerical value 'i am content'", exception.getMessage());
     }
 

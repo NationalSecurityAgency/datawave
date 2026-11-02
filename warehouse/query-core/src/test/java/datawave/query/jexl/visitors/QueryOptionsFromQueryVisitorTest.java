@@ -1,8 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +11,7 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.QueryParameters;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -587,7 +587,7 @@ public class QueryOptionsFromQueryVisitorTest {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expected));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
         }
-        assertTrue(comparison.getReason(), comparison.isEqual());
+        assertTrue(comparison.isEqual(), comparison.getReason());
     }
 
     private void assertLineage(JexlNode node) {

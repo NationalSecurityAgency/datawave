@@ -1,13 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -340,7 +340,7 @@ public class ValidateFilterFunctionVisitorTest {
                 fail("Expected failure for query: " + query);
             }
         } catch (DatawaveFatalQueryException e) {
-            assertTrue("Received an unexpected exception when validating query: " + query, exceptionExpected);
+            assertTrue(exceptionExpected, "Received an unexpected exception when validating query: " + query);
         } catch (ParseException e) {
             fail("Failed to parse query: " + query);
         }

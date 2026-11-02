@@ -1,5 +1,10 @@
 package datawave.ingest.table.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,10 +20,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler;
 
@@ -206,7 +210,7 @@ public class DateIndexTableConfigHelperTest {
         return log;
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         Level desiredLevel = Level.ALL;
 
@@ -215,7 +219,7 @@ public class DateIndexTableConfigHelperTest {
         log.setLevel(desiredLevel);
     }
 
-    @After
+    @AfterEach
     public void teardown() {
 
         DateIndexTableConfigHelperTest.logger.setLevel(DateIndexTableConfigHelperTest.testDriverLevel);
@@ -239,8 +243,8 @@ public class DateIndexTableConfigHelperTest {
 
             String msg = iae.getMessage();
 
-            Assert.assertEquals("DateIndexTableConfigHelper .setup threw the expected exception, but the message was not the expected message.",
-                            "No DateIndex Table Defined", msg);
+            assertEquals("No DateIndex Table Defined", msg,
+                            "DateIndexTableConfigHelper .setup threw the expected exception, but the message was not the expected message.");
 
         } finally {
 
@@ -294,8 +298,8 @@ public class DateIndexTableConfigHelperTest {
 
                 String msg = iae.getMessage();
 
-                Assert.assertTrue("DateIndexTableConfigHelper.setup threw the expected exception, but the message was not the expected message.",
-                                msg.startsWith("Invalid DateIndex Table Definition For: "));
+                assertTrue(msg.startsWith("Invalid DateIndex Table Definition For: "),
+                                "DateIndexTableConfigHelper.setup threw the expected exception, but the message was not the expected message.");
             }
 
             this.configuration.clear();
@@ -306,7 +310,7 @@ public class DateIndexTableConfigHelperTest {
 
     }
 
-    @Test(expected = TableNotFoundException.class)
+    @Test
     public void testConfigureCalledBeforeSetup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
 
         DateIndexTableConfigHelperTest.logger.info("DateIndexTableConfigHelperTest.testConfigureCalledBeforeSetup called.");
@@ -317,9 +321,7 @@ public class DateIndexTableConfigHelperTest {
 
             TableOperations tops = mockUpTableOperations();
 
-            uut.configure(tops);
-
-            Assert.fail("DateIndexTableConfigHelper.configure failed to throw expected exception.");
+            assertThrows(TableNotFoundException.class, () -> uut.configure(tops));
         } finally {
 
             DateIndexTableConfigHelperTest.logger.info("DateIndexTableConfigHelperTest.testConfigureCalledBeforeSetup completed.");
@@ -348,10 +350,9 @@ public class DateIndexTableConfigHelperTest {
 
             uut.configure(tops);
 
-            Assert.assertFalse("DateIndexTableConfigHelper.configureDateIndexTable failed to populate the Table Properties collection.",
-                            this.tableProperties.isEmpty());
-            Assert.assertFalse("DateIndexTableConfigHelper.configureDateIndexTable failed to populate the Locality Groups collection.",
-                            this.localityGroups.isEmpty());
+            assertFalse(this.tableProperties.isEmpty(),
+                            "DateIndexTableConfigHelper.configureDateIndexTable failed to populate the Table Properties collection.");
+            assertFalse(this.localityGroups.isEmpty(), "DateIndexTableConfigHelper.configureDateIndexTable failed to populate the Locality Groups collection.");
         } finally {
 
             DateIndexTableConfigHelperTest.logger.info("DateIndexTableConfigHelperTest.testConfigureDateIndexTable completed.");

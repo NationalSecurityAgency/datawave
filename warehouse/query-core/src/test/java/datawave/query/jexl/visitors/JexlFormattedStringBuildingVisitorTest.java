@@ -1,9 +1,10 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 
@@ -15,7 +16,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -25,7 +26,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -35,7 +36,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -45,7 +46,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -56,7 +57,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -87,7 +88,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -99,7 +100,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -110,7 +111,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -121,7 +122,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -132,7 +133,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -143,7 +144,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -154,7 +155,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -166,7 +167,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -177,7 +178,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -188,7 +189,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -198,7 +199,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -209,7 +210,7 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 
     @Test
@@ -220,6 +221,6 @@ public class JexlFormattedStringBuildingVisitorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
 
-        Assert.assertEquals(expected, builtQuery);
+        assertEquals(expected, builtQuery);
     }
 }

@@ -8,13 +8,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -26,16 +26,16 @@ import datawave.query.testframework.GroupsIndexConfiguration;
 /**
  * Tests for tokenized fields. The {@link GroupField#TOKENS} field was added to the {@link GroupsDataType} data. It is the only tokenized event.
  */
-public class TokensQueryTest extends AbstractFunctionalQuery {
+public class TokensQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(TokensQueryTest.class);
 
     private static final String[] TEST_CITIES = new String[] {"'salem'", "'olympia'", "'yuma'"};
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig fields = new GroupsIndexConfiguration();

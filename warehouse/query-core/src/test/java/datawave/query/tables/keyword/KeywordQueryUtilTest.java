@@ -1,16 +1,16 @@
 package datawave.query.tables.keyword;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.NoOpType;
 import datawave.query.attributes.Attribute;
@@ -29,7 +29,7 @@ public class KeywordQueryUtilTest {
     Attribute<?> attributesHetOne;
     Attribute<?> attributesHetTwo;
 
-    @Before
+    @BeforeEach
     public void setupTestData() {
         Key docKey = new Key("shard", "datatype\0uid");
 
@@ -68,20 +68,20 @@ public class KeywordQueryUtilTest {
     }
 
     public static void assertSingleValue(String expectedValue, List<String> results) {
-        assertNotNull("results should not have been null", results);
-        assertFalse("results should not have been empty", results.isEmpty());
-        assertEquals("results should have been size 1", 1, results.size());
-        assertEquals("results did not contain the expected value: " + expectedValue, expectedValue, results.get(0));
+        assertNotNull(results, "results should not have been null");
+        assertFalse(results.isEmpty(), "results should not have been empty");
+        assertEquals(1, results.size(), "results should have been size 1");
+        assertEquals(expectedValue, results.get(0), "results did not contain the expected value: " + expectedValue);
     }
 
     public static void assertMultipleValues(List<String> expectedValues, List<String> results) {
-        assertNotNull("results should not have been null", results);
-        assertFalse("results should not have been empty", results.isEmpty());
-        assertEquals("results did not have the expected size: " + results, expectedValues.size(), results.size());
+        assertNotNull(results, "results should not have been null");
+        assertFalse(results.isEmpty(), "results should not have been empty");
+        assertEquals(expectedValues.size(), results.size(), "results did not have the expected size: " + results);
         final List<String> unseen = new ArrayList<>(expectedValues);
         for (String seen : results) {
             unseen.remove(seen);
         }
-        assertTrue("results did not contain the value: " + unseen, unseen.isEmpty());
+        assertTrue(unseen.isEmpty(), "results did not contain the value: " + unseen);
     }
 }

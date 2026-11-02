@@ -41,7 +41,7 @@ import datawave.microservice.annotation.writers.log.config.LogAnnotationWriterPr
 @ContextConfiguration(classes = {LogAnnotationWriterProperties.class, AccumuloAnnotationWriterConfig.class, AccumuloConfiguration.class,
         AnnotationSerializerConfiguration.class, WriterTopologyBothEnabledTest.WriterTopologyTestConfiguration.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = "spring.main.allow-bean-definition-overriding=true")
-@ActiveProfiles({"WriterTopologyBothEnabledTest", "log-enabled", "accumulo-enabled"})
+@ActiveProfiles({"combined", "WriterTopologyBothEnabledTest", "log-enabled", "accumulo-enabled"})
 public class WriterTopologyBothEnabledTest {
 
     @Autowired

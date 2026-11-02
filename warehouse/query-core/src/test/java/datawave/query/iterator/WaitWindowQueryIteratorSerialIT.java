@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Integration test for WaitWindowObserver using the QueryIteratorIT and the SerialIterator
@@ -24,7 +24,7 @@ public class WaitWindowQueryIteratorSerialIT extends QueryIteratorIT {
         return WaitWindowQueryIterator.class;
     }
 
-    @Before
+    @BeforeEach
     public void setCollectDetails() {
         options.put(COLLECT_TIMING_DETAILS, "true");
     }

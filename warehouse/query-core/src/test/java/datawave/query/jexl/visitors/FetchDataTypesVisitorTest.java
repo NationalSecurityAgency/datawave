@@ -1,6 +1,6 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
 import java.util.Date;
@@ -8,8 +8,8 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -30,7 +30,7 @@ public class FetchDataTypesVisitorTest {
 
     private Set<String> dataTypeFilter = Collections.singleton("datatype1");
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         // 1. Configure the ShardQueryConfig
         config.setBeginDate(new Date(0));

@@ -6,12 +6,12 @@ import static datawave.data.hash.UIDConstants.HOST_INDEX_OPT;
 import static datawave.data.hash.UIDConstants.PROCESS_INDEX_OPT;
 import static datawave.data.hash.UIDConstants.THREAD_INDEX_OPT;
 import static datawave.data.hash.UIDConstants.UID_TYPE_OPT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.commons.cli.Option;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class UIDTest {
     @Test
