@@ -111,8 +111,9 @@ public class GenerateShardSplits {
                 }
                 try {
                     splitsPerBatch = Integer.parseInt(args[++i]);
-                    if (splitsPerBatch < 0) {
-                        System.out.println("splitsPerBatch cannot be less than 0");
+                    // batches start at a tenth of splitsPerBatch, so anything under 10 would make empty batches forever
+                    if (splitsPerBatch < 10) {
+                        System.out.println("splitsPerBatch cannot be less than 10");
                         System.exit(-2);
                     }
                 } catch (NumberFormatException e) {
