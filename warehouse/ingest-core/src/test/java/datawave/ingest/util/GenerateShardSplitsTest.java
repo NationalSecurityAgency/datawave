@@ -40,7 +40,7 @@ class GenerateShardSplitsTest {
         assertEquals(List.of("20260101_0", "20260101_2"), plain);
 
         // the value must be consumed, not treated as the start of <username> <password> <tableName>
-        assertEquals(plain, run("20260101", "1", "4", "2", "-splitsPerBatch", "5"));
+        assertEquals(plain, run("20260101", "1", "4", "2", "-splitsPerBatch", "10"));
     }
 
     @Test
@@ -50,7 +50,7 @@ class GenerateShardSplitsTest {
 
     @Test
     void optionsAfterValuedOptionsAreStillParsed() throws Exception {
-        List<String> output = run("20260101", "1", "4", "2", "-splitsPerBatch", "5", "-pctBatchBalanceRequired", "0.5", "-addShardMarkers");
+        List<String> output = run("20260101", "1", "4", "2", "-splitsPerBatch", "10", "-pctBatchBalanceRequired", "0.5", "-addShardMarkers");
         assertEquals("20260101_0", output.get(0));
         assertEquals("20260101_2", output.get(1));
         assertEquals(4, output.size(), "expected a shard marker for each split: " + output);
@@ -60,7 +60,7 @@ class GenerateShardSplitsTest {
 
     @Test
     void markersOnlyAfterValuedOptionSkipsSplits() throws Exception {
-        List<String> output = run("20260101", "1", "4", "2", "-splitsPerBatch", "5", "-markersOnly", "-addShardMarkers");
+        List<String> output = run("20260101", "1", "4", "2", "-splitsPerBatch", "10", "-markersOnly", "-addShardMarkers");
         assertEquals(2, output.size(), "expected only shard markers: " + output);
         assertTrue(output.get(0).startsWith("20260101_0 :"), output.get(0));
     }
