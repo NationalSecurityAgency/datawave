@@ -8,9 +8,10 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -24,7 +25,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 
 public class PushdownMissingIndexRangeNodesVisitorTest {
-    private static final Logger log = Logger.getLogger(PushdownMissingIndexRangeNodesVisitorTest.class);
+    private static final Logger log = LoggerFactory.getLogger(PushdownMissingIndexRangeNodesVisitorTest.class);
 
     private MockMetadataHelper helper = null;
     private ShardQueryConfiguration config = null;

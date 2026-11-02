@@ -11,7 +11,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.DefaultJexlNodeComparator;
@@ -35,7 +36,7 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
  */
 public class OrderByCostVisitor extends BaseVisitor {
 
-    private static final Logger log = Logger.getLogger(OrderByCostVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(OrderByCostVisitor.class);
 
     private JexlNodeComparator comparator;
     private final boolean isFieldMap;

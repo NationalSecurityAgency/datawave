@@ -13,7 +13,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import au.com.bytecode.opencsv.CSVReader;
 import datawave.query.testframework.AbstractDataManager;
@@ -23,7 +24,7 @@ import datawave.query.testframework.cardata.CarsDataType.CarField;
 
 public class CarDataManager extends AbstractDataManager {
 
-    private static final Logger log = Logger.getLogger(CarDataManager.class);
+    private static final Logger log = LoggerFactory.getLogger(CarDataManager.class);
     private static CarDataManager INSTANCE = new CarDataManager();
 
     private CarDataManager() {

@@ -8,7 +8,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.authorization.remote.RemoteAuthorizationException;
 import datawave.core.common.logging.ThreadConfigurableLogger;

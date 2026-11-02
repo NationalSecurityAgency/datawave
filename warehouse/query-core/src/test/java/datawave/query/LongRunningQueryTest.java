@@ -18,10 +18,11 @@ import java.util.concurrent.Executors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -59,7 +60,7 @@ public class LongRunningQueryTest {
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     private static MockAccumuloRecordWriter recordWriter;
     private DatawavePrincipal datawavePrincipal;
-    private static final Logger log = Logger.getLogger(LongRunningQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(LongRunningQueryTest.class);
     private static AccumuloClient client = null;
     private ShardQueryLogic logic;
     private ExecutorService executor;

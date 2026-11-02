@@ -6,14 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.jexl.JexlASTHelper;
 
 public class AddShardsAndDaysVisitorTest {
 
-    private static final Logger log = Logger.getLogger(AddShardsAndDaysVisitorTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AddShardsAndDaysVisitorTest.class);
 
     @Test
     public void testNullNode() {

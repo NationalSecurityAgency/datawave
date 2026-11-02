@@ -5,10 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -20,7 +21,7 @@ import datawave.query.jexl.JexlASTHelper;
 
 public class FixUnindexedNumericTermsTest {
 
-    private static final Logger log = Logger.getLogger(FixUnindexedNumericTermsTest.class);
+    private static final Logger log = LoggerFactory.getLogger(FixUnindexedNumericTermsTest.class);
 
     private Multimap<String,Type<?>> datatypes;
 

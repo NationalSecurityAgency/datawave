@@ -8,14 +8,15 @@ package datawave.data.type;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.type.util.IpV4Address;
 
 public class IpAddressTypeTest {
-    private static final Logger log = Logger.getLogger(IpAddressTypeTest.class);
+    private static final Logger log = LoggerFactory.getLogger(IpAddressTypeTest.class);
 
     @Test
     public void testIpNormalizer01() {
@@ -39,12 +40,12 @@ public class IpAddressTypeTest {
         IpAddressType norm = new IpAddressType();
         if (log.isDebugEnabled()) {
             log.debug("testIpNormalizer03");
-            log.debug(norm.normalize("1.2.3.*"));
-            log.debug(norm.normalize("1.2.3..*"));
-            log.debug(norm.normalize("1.2.*"));
-            log.debug(norm.normalize("1.2..*"));
-            log.debug(norm.normalize("1.*"));
-            log.debug(norm.normalize("1..*"));
+            log.debug(String.valueOf(norm.normalize("1.2.3.*")));
+            log.debug(String.valueOf(norm.normalize("1.2.3..*")));
+            log.debug(String.valueOf(norm.normalize("1.2.*")));
+            log.debug(String.valueOf(norm.normalize("1.2..*")));
+            log.debug(String.valueOf(norm.normalize("1.*")));
+            log.debug(String.valueOf(norm.normalize("1..*")));
 
         }
         assertEquals("001.002.003.*", norm.normalize("1.2.3.*"));
@@ -59,8 +60,12 @@ public class IpAddressTypeTest {
     public void testIpNormalizer04() {
         log.debug("testIpNormalizer04");
         IpAddressType norm = new IpAddressType();
-        log.debug(norm.normalize("*.2.13.4"));
-        log.debug(norm.normalize("*.13.4"));
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(norm.normalize("*.2.13.4")));
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(norm.normalize("*.13.4")));
+        }
         assertEquals("*.002.013.004", norm.normalize("*.2.13.4"));
         assertEquals("*.013.004", norm.normalize("*.13.4"));
     }
@@ -73,9 +78,9 @@ public class IpAddressTypeTest {
         IpV4Address ip = IpV4Address.parse("*.2.13.4");
         if (log.isDebugEnabled()) {
             log.debug(ip.toString());
-            log.debug(ip.toZeroPaddedString());
-            log.debug(ip.toReverseString());
-            log.debug(ip.toReverseZeroPaddedString());
+            log.debug(String.valueOf(ip.toZeroPaddedString()));
+            log.debug(String.valueOf(ip.toReverseString()));
+            log.debug(String.valueOf(ip.toReverseZeroPaddedString()));
         }
     }
 
@@ -90,9 +95,9 @@ public class IpAddressTypeTest {
         IpV4Address ip = IpV4Address.parse("1.2.*");
         if (log.isDebugEnabled()) {
             log.debug(ip.toString());
-            log.debug(ip.toZeroPaddedString());
-            log.debug(ip.toReverseString());
-            log.debug(ip.toReverseZeroPaddedString());
+            log.debug(String.valueOf(ip.toZeroPaddedString()));
+            log.debug(String.valueOf(ip.toReverseString()));
+            log.debug(String.valueOf(ip.toReverseZeroPaddedString()));
         }
     }
 }

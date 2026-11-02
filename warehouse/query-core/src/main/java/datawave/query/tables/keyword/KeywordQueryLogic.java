@@ -25,7 +25,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.IteratorChain;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -97,7 +98,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
      */
     public static final String TAG_CLOUD_LANGUAGE = "tag.cloud.language";
 
-    private static final Logger log = Logger.getLogger(KeywordQueryLogic.class);
+    private static final Logger log = LoggerFactory.getLogger(KeywordQueryLogic.class);
 
     /**
      * Used to pull back specific views of the data - expected to be a comma-delimited list of one or more views, if present.

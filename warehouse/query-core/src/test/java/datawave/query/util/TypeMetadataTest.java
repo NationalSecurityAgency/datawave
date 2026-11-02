@@ -12,11 +12,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -29,7 +30,7 @@ public class TypeMetadataTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private static final Logger log = Logger.getLogger(TypeMetadataTest.class);
+    private static final Logger log = LoggerFactory.getLogger(TypeMetadataTest.class);
 
     /**
      * Test of getDataType method, of class DatawaveShardedTableFieldIndexKeyParser.

@@ -10,11 +10,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.helpers.PrintUtility;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -40,11 +42,11 @@ public class RegexQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(RegexQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(RegexQueryTest.class);
 
     @BeforeAll
     public static void filterSetup() throws Exception {
-        Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(PrintUtility.class.getName(), Level.DEBUG);
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
 
@@ -134,7 +136,7 @@ public class RegexQueryTest extends AbstractFunctionalQueryJUnit5 {
     @Test
     public void testMissingReverseIndex() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
-        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(DefaultQueryPlanner.class.getName(), Level.DEBUG);
         // should at least match usa, fra, and ita
         String regex = "'.*?a'";
         for (final TestCities city : TestCities.values()) {
@@ -146,10 +148,10 @@ public class RegexQueryTest extends AbstractFunctionalQueryJUnit5 {
     @Test
     public void testMissingReverseIndexPlus() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
-        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
-        Logger.getLogger(RegexIndexExpansionVisitor.class).setLevel(Level.DEBUG);
-        Logger.getLogger(ShardIndexQueryTableStaticMethods.class).setLevel(Level.DEBUG);
-        Logger.getLogger(AllFieldMetadataHelper.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(DefaultQueryPlanner.class.getName(), Level.DEBUG);
+        Configurator.setLevel(RegexIndexExpansionVisitor.class.getName(), Level.DEBUG);
+        Configurator.setLevel(ShardIndexQueryTableStaticMethods.class.getName(), Level.DEBUG);
+        Configurator.setLevel(AllFieldMetadataHelper.class.getName(), Level.DEBUG);
         // should at least match usa, fra, and ita
         String regex = "'.*?a'";
         for (final TestCities city : TestCities.values()) {
@@ -477,7 +479,7 @@ public class RegexQueryTest extends AbstractFunctionalQueryJUnit5 {
     @Test
     public void testErrorMissingReverseIndex() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
-        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(DefaultQueryPlanner.class.getName(), Level.DEBUG);
         // should at least match usa, fra, and ita
         String regex = "'.*?a'";
         assertThrows(FullTableScansDisallowedException.class, () -> {

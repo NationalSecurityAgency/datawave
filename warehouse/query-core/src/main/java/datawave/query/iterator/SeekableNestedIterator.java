@@ -6,7 +6,8 @@ import java.util.Collection;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.attributes.Document;
 
@@ -14,7 +15,7 @@ import datawave.query.attributes.Document;
  * This class is a delegate/base class now that the SeekableIterator was merged into the NestedIterator interface
  */
 public class SeekableNestedIterator<T> implements NestedIterator<T> {
-    private static final Logger log = Logger.getLogger(SeekableNestedIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(SeekableNestedIterator.class);
     private final NestedIterator<T> source;
     protected Range totalRange = null;
     protected Collection<ByteSequence> columnFamilies = null;

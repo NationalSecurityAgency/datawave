@@ -12,7 +12,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.tables.keyword.KeywordQueryUtil;
@@ -22,7 +23,7 @@ import datawave.util.keyword.TagCloudInput;
 import datawave.util.keyword.TagCloudPartition;
 
 public class FieldedTagCloudInputExtractor implements TagCloudInputExtractor {
-    private static final Logger log = Logger.getLogger(FieldedTagCloudInputExtractor.class);
+    private static final Logger log = LoggerFactory.getLogger(FieldedTagCloudInputExtractor.class);
     private static final String DEFAULT_SCORE = "1.0";
     private static final double DEFAULT_MIN_SCORE = .6;
 

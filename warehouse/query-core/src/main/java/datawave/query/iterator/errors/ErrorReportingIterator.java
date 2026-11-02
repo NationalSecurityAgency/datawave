@@ -10,7 +10,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.iterator.QueryInformationIterator;
 
@@ -20,7 +21,7 @@ import datawave.query.iterator.QueryInformationIterator;
  */
 public class ErrorReportingIterator extends QueryInformationIterator {
 
-    private static final Logger log = Logger.getLogger(ErrorReportingIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(ErrorReportingIterator.class);
 
     public ErrorReportingIterator() {
         super();

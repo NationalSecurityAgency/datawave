@@ -5,7 +5,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.math.LongRange;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Predicate;
 
@@ -15,7 +16,7 @@ import datawave.util.CompositeTimestamp;
  * Excludes documents which do not fall within the given time range
  */
 public class TimeFilter {
-    private static final Logger log = Logger.getLogger(TimeFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(TimeFilter.class);
 
     protected final LongRange acceptedRange;
     protected final KeyTimeFilter keyTimeFilter;

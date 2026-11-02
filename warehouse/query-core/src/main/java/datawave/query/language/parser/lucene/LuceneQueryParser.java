@@ -10,12 +10,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.Constants;
 import datawave.query.language.builder.lucene.AccumuloQueryTreeBuilder;
@@ -32,7 +33,7 @@ import datawave.query.search.RangeFieldedTerm;
 import datawave.query.search.Term;
 
 public class LuceneQueryParser implements LuceneSyntaxQueryParser {
-    private static Logger log = Logger.getLogger(LuceneQueryParser.class.getName());
+    private static Logger log = LoggerFactory.getLogger(LuceneQueryParser.class.getName());
     private Map<String,String> filters = new HashMap<>();
     private List<LuceneQueryFunction> allowedFunctions = null;
 

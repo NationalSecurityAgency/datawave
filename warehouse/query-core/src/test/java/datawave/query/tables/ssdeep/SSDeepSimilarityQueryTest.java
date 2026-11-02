@@ -27,10 +27,11 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -55,7 +56,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 /** Additional unit test against the SSDeepIndex / SSDeepSimilarityLogic code */
 public class SSDeepSimilarityQueryTest {
 
-    private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(SSDeepSimilarityQueryTest.class);
 
     private static final Authorizations auths = AbstractDataTypeConfig.getTestAuths();
 
@@ -150,7 +151,9 @@ public class SSDeepSimilarityQueryTest {
         log.debug("*************** ssdeepIndex ********************");
         while (iterator.hasNext()) {
             Map.Entry<Key,Value> entry = iterator.next();
-            log.debug(entry);
+            if (log.isDebugEnabled()) {
+                log.debug(String.valueOf(entry));
+            }
         }
         scanner.close();
     }

@@ -27,8 +27,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -41,7 +43,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     private MultiTableBatchWriter mtbw = null;
     private HashMap<Text,BatchWriter> bws = null;
     private Text defaultTableName = null;
-    private Logger log = Logger.getLogger(AccumuloRecordWriter.class);
+    private Logger log = LoggerFactory.getLogger(AccumuloRecordWriter.class);
 
     private boolean simulate = false;
     private boolean createTables = false;
@@ -79,7 +81,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
                     throws AccumuloException, AccumuloSecurityException, IOException {
         Level l = getLogLevel(conf);
         if (l != null) {
-            log.setLevel(getLogLevel(conf));
+            Configurator.setLevel(log.getName(), getLogLevel(conf));
         }
         this.simulate = getSimulationMode(conf);
         this.createTables = canCreateTables(conf);
@@ -143,7 +145,9 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
             try {
                 addTable(table);
             } catch (Exception e) {
-                log.error(e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(e));
+                }
                 throw new IOException(e);
             }
         }
@@ -293,7 +297,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
 
     public static void setLogLevel(Configuration conf, Level level) {
         ArgumentChecker.notNull(level);
-        conf.setInt(LOGLEVEL, level.toInt());
+        conf.setInt(LOGLEVEL, toLegacyLogLevel(level));
     }
 
     public static void setSimulationMode(Configuration conf) {
@@ -349,9 +353,54 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
         return conf.getInt(NUM_WRITE_THREADS, DEFAULT_NUM_WRITE_THREADS);
     }
 
+    // Keep the Log4j 1 integer encoding used by existing Hadoop job configurations.
+    private static int toLegacyLogLevel(Level level) {
+        switch (level.name()) {
+            case "ALL":
+                return Integer.MIN_VALUE;
+            case "TRACE":
+                return 5000;
+            case "DEBUG":
+                return 10000;
+            case "INFO":
+                return 20000;
+            case "WARN":
+                return 30000;
+            case "ERROR":
+                return 40000;
+            case "FATAL":
+                return 50000;
+            case "OFF":
+                return Integer.MAX_VALUE;
+            default:
+                return 20000;
+        }
+    }
+
+    private static Level fromLegacyLogLevel(int level) {
+        switch (level) {
+            case Integer.MIN_VALUE:
+                return Level.ALL;
+            case 5000:
+                return Level.TRACE;
+            case 10000:
+                return Level.DEBUG;
+            case 30000:
+                return Level.WARN;
+            case 40000:
+                return Level.ERROR;
+            case 50000:
+                return Level.FATAL;
+            case Integer.MAX_VALUE:
+                return Level.OFF;
+            default:
+                return Level.INFO;
+        }
+    }
+
     protected static Level getLogLevel(Configuration conf) {
         if (conf.get(LOGLEVEL) != null) {
-            return Level.toLevel(conf.getInt(LOGLEVEL, Level.INFO.toInt()));
+            return fromLegacyLogLevel(conf.getInt(LOGLEVEL, 20000));
         }
         return null;
     }

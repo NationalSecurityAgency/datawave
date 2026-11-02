@@ -29,9 +29,12 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -169,7 +172,7 @@ public class GlobalIndexUidAggregatorTest {
 
     @Test
     public void testSeenIgnore() throws Exception {
-        Logger.getRootLogger().setLevel(Level.ALL);
+        Configurator.setRootLevel(Level.ALL);
         agg.reset();
         Builder b = createNewUidList();
         b.setIGNORE(true);
@@ -189,9 +192,9 @@ public class GlobalIndexUidAggregatorTest {
 
     @Test
     public void testInvalidValueType() throws Exception {
-        Logger log = Logger.getLogger(GlobalIndexUidAggregator.class);
-        Level origLevel = log.getLevel();
-        log.setLevel(Level.FATAL);
+        Logger log = LoggerFactory.getLogger(GlobalIndexUidAggregator.class);
+        Level origLevel = LogManager.getLogger(log.getName()).getLevel();
+        Configurator.setLevel(log.getName(), Level.FATAL);
         Collection<Value> values = Lists.newArrayList();
         agg.reset();
         Value val = new Value(UUID.randomUUID().toString().getBytes());
@@ -202,7 +205,7 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(0, resultList.getUIDCount());
         assertEquals(0, resultList.getCOUNT());
 
-        log.setLevel(origLevel);
+        Configurator.setLevel(log.getName(), origLevel);
     }
 
     @Test

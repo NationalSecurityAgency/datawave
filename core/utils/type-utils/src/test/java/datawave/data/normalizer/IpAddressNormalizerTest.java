@@ -9,9 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.type.util.IpV4Address;
 
@@ -19,7 +20,7 @@ import datawave.data.type.util.IpV4Address;
  *
  */
 public class IpAddressNormalizerTest {
-    private static Logger log = Logger.getLogger(IpAddressNormalizerTest.class);
+    private static Logger log = LoggerFactory.getLogger(IpAddressNormalizerTest.class);
 
     @Test
     public void testIpNormalizer01() {
@@ -43,12 +44,12 @@ public class IpAddressNormalizerTest {
         IpAddressNormalizer norm = new IpAddressNormalizer();
         if (log.isDebugEnabled()) {
             log.debug("testIpNormalizer03");
-            log.debug(norm.normalize("1.2.3.*"));
-            log.debug(norm.normalize("1.2.3..*"));
-            log.debug(norm.normalize("1.2.*"));
-            log.debug(norm.normalize("1.2..*"));
-            log.debug(norm.normalize("1.*"));
-            log.debug(norm.normalize("1..*"));
+            log.debug(String.valueOf(norm.normalize("1.2.3.*")));
+            log.debug(String.valueOf(norm.normalize("1.2.3..*")));
+            log.debug(String.valueOf(norm.normalize("1.2.*")));
+            log.debug(String.valueOf(norm.normalize("1.2..*")));
+            log.debug(String.valueOf(norm.normalize("1.*")));
+            log.debug(String.valueOf(norm.normalize("1..*")));
 
         }
         assertEquals("001.002.003.*", norm.normalize("1.2.3.*"));
@@ -63,8 +64,12 @@ public class IpAddressNormalizerTest {
     public void testIpNormalizer04() {
         log.debug("testIpNormalizer04");
         IpAddressNormalizer norm = new IpAddressNormalizer();
-        log.debug(norm.normalize("*.2.13.4"));
-        log.debug(norm.normalize("*.13.4"));
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(norm.normalize("*.2.13.4")));
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(norm.normalize("*.13.4")));
+        }
         assertEquals("*.002.013.004", norm.normalize("*.2.13.4"));
         assertEquals("*.013.004", norm.normalize("*.13.4"));
     }
@@ -77,9 +82,9 @@ public class IpAddressNormalizerTest {
         IpV4Address ip = IpV4Address.parse("*.2.13.4");
         if (log.isDebugEnabled()) {
             log.debug(ip.toString());
-            log.debug(ip.toZeroPaddedString());
-            log.debug(ip.toReverseString());
-            log.debug(ip.toReverseZeroPaddedString());
+            log.debug(String.valueOf(ip.toZeroPaddedString()));
+            log.debug(String.valueOf(ip.toReverseString()));
+            log.debug(String.valueOf(ip.toReverseZeroPaddedString()));
         }
     }
 
@@ -94,9 +99,9 @@ public class IpAddressNormalizerTest {
         IpV4Address ip = IpV4Address.parse("1.2.*");
         if (log.isDebugEnabled()) {
             log.debug(ip.toString());
-            log.debug(ip.toZeroPaddedString());
-            log.debug(ip.toReverseString());
-            log.debug(ip.toReverseZeroPaddedString());
+            log.debug(String.valueOf(ip.toZeroPaddedString()));
+            log.debug(String.valueOf(ip.toReverseString()));
+            log.debug(String.valueOf(ip.toReverseZeroPaddedString()));
         }
     }
 
@@ -104,8 +109,12 @@ public class IpAddressNormalizerTest {
     public void testIpNormalizer07() {
         log.debug("testIpNormalizer07");
         IpAddressNormalizer norm = new IpAddressNormalizer();
-        log.debug(norm.normalize(" *.2. 13.4"));
-        log.debug(norm.normalize(" *.13.4 "));
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(norm.normalize(" *.2. 13.4")));
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(norm.normalize(" *.13.4 ")));
+        }
         assertEquals("*.002.013.004", norm.normalize(" *.2. 13.4"));
         assertEquals("*.013.004", norm.normalize(" *.13.4 "));
     }

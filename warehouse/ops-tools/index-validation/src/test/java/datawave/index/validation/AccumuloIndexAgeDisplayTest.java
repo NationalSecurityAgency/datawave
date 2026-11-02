@@ -24,10 +24,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -37,7 +38,7 @@ import datawave.accumulo.inmemory.InMemoryInstance;
  * data in the proper buckets.
  */
 public class AccumuloIndexAgeDisplayTest {
-    private static final Logger log = Logger.getLogger(AccumuloIndexAgeDisplayTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AccumuloIndexAgeDisplayTest.class);
 
     private static final long MILLIS_IN_DAY = 86400000;
     private static final long ONE_HOUR = 3600000;

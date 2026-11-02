@@ -21,7 +21,8 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 
@@ -42,7 +43,7 @@ import datawave.table.constants.TableName;
  */
 class GroupingAccumuloWriter {
 
-    private static final Logger log = Logger.getLogger(GroupingAccumuloWriter.class);
+    private static final Logger log = LoggerFactory.getLogger(GroupingAccumuloWriter.class);
 
     private static final String NULL_SEP = "\u0000";
     private static final String FIELD_INDEX = "fi" + NULL_SEP;

@@ -10,7 +10,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.normalizer.Normalizer;
@@ -21,7 +22,7 @@ import datawave.data.normalizer.NumberNormalizer;
  */
 public abstract class AbstractDataManager implements RawDataManager {
 
-    private static final Logger log = Logger.getLogger(AbstractDataManager.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractDataManager.class);
 
     /**
      * Defines the key field name.
@@ -88,7 +89,9 @@ public abstract class AbstractDataManager implements RawDataManager {
                         raw.addAll(matchers);
                     }
                 } catch (ParseException pe) {
-                    log.error(pe);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(pe));
+                    }
                     fail("invalid shard date value(" + dateStr + ")");
                 }
             }

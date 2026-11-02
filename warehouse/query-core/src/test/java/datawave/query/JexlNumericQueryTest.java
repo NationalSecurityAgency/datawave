@@ -15,10 +15,11 @@ import java.util.Collection;
 
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTReference;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
@@ -38,7 +39,7 @@ public class JexlNumericQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(JexlNumericQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(JexlNumericQueryTest.class);
 
     @BeforeAll
     public static void filterSetup() throws Exception {

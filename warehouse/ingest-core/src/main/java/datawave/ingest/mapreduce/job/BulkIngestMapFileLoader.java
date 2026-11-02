@@ -61,8 +61,9 @@ import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.tools.DistCp;
 import org.apache.hadoop.tools.DistCpOptions;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
@@ -77,7 +78,7 @@ import datawave.util.cli.PasswordConverter;
  * various tablet servers.
  */
 public final class BulkIngestMapFileLoader implements Runnable {
-    private static final Logger log = Logger.getLogger(BulkIngestMapFileLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(BulkIngestMapFileLoader.class);
     public static final String LOADPLAN_FILE_GLOB = "accumulo-bulk-loadplan*.json";
     private static int SLEEP_TIME = 30000;
     private static int FAILURE_SLEEP_TIME = 10 * 60 * 1000; // 10 minutes
@@ -706,10 +707,10 @@ public final class BulkIngestMapFileLoader implements Runnable {
     public boolean canBringMapFilesOnline(long lastOnlineTime, boolean logInfo) {
         Level level = (logInfo ? Level.INFO : Level.DEBUG);
         int majC = getMajorCompactionCount();
-        log.log(level, "There are " + majC + " compactions currently running or queued.");
+        log.atLevel(level).log("There are " + majC + " compactions currently running or queued.");
 
         long delta = System.currentTimeMillis() - lastOnlineTime;
-        log.log(level, "Time since map files last brought online: " + (delta / 1000) + "s");
+        log.atLevel(level).log("Time since map files last brought online: " + (delta / 1000) + "s");
 
         return (delta > MAJC_WAIT_TIMEOUT) && (majC < MAJC_THRESHOLD);
     }
@@ -976,7 +977,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         Path failuresPath = new Path(failuresDir);
                         FileSystem fileSystem = FileSystem.get(srcHdfs, new Configuration());
                         if (fileSystem.exists(failuresPath)) {
-                            log.fatal("Cannot bring map files online because a failures directory already exists: " + failuresDir);
+                            log.error("Cannot bring map files online because a failures directory already exists: " + failuresDir);
                             throw new IOException("Cannot bring map files online because a failures directory already exists: " + failuresDir);
                         }
                         fileSystem.mkdirs(failuresPath);
@@ -1067,7 +1068,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                     }
                     // verify the directory is empty
                     if (fileSystem.listStatus(filePath).length > 0) {
-                        log.fatal("Failed to collapse subdirectory " + filePath);
+                        log.error("Failed to collapse subdirectory " + filePath);
                         throw new IOException("Failed to collapse subdirectory " + filePath);
                     }
                     fileSystem.delete(filePath, false);
@@ -1095,7 +1096,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             FileSystem fileSystem = FileSystem.get(srcHdfs, new Configuration());
             // Make sure all rfiles are processed, disregarding any accumulo-bulk-loadplan*.json files
             if (fileSystem.globStatus(new Path(tableDir, "*.rf")).length > 0) {
-                log.fatal("Failed to completely import " + tableDir);
+                log.error("Failed to completely import " + tableDir);
                 throw new IOException("Failed to completely import " + tableDir);
             }
         }

@@ -8,6 +8,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -15,7 +17,7 @@ import org.apache.hadoop.fs.Path;
  * config default values or add them to the Configuration object that is passed in
  */
 public class ConfigurationFileHelper {
-    private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(ConfigurationFileHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(ConfigurationFileHelper.class);
 
     /**
      *

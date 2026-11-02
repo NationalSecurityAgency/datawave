@@ -36,8 +36,9 @@ import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.CharMatcher;
@@ -110,7 +111,7 @@ import datawave.util.StringUtils;
  * Some options are passed through from the QueryParameters.
  */
 public class QueryOptions implements OptionDescriber {
-    private static final Logger log = Logger.getLogger(QueryOptions.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryOptions.class);
 
     public static final Charset UTF8 = StandardCharsets.UTF_8;
 

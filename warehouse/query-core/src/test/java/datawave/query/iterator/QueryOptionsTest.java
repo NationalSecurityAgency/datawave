@@ -25,8 +25,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +44,7 @@ public class QueryOptionsTest {
 
     @BeforeAll
     public static void setupClass() {
-        Logger.getLogger(QueryOptions.class).setLevel(Level.TRACE);
+        Configurator.setLevel(QueryOptions.class.getName(), Level.TRACE);
     }
 
     @Test

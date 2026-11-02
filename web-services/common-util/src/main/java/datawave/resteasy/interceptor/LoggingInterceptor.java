@@ -12,13 +12,14 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Provider
 @Priority(Priorities.USER)
 public class LoggingInterceptor extends BaseMethodStatsInterceptor {
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Override
     public void aroundWriteTo(WriterInterceptorContext context) throws IOException, WebApplicationException {
@@ -42,7 +43,9 @@ public class LoggingInterceptor extends BaseMethodStatsInterceptor {
         message.append(" Login Time: ").append(stats.getLoginTime()).append("ms");
         message.append(" Call Time: ").append(stats.getCallTime()).append("ms");
 
-        log.trace(message);
+        if (log.isTraceEnabled()) {
+            log.trace(String.valueOf(message));
+        }
     }
 
     @Override

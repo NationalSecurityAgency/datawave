@@ -28,11 +28,12 @@ import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.MapWritable;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
@@ -47,7 +48,7 @@ import datawave.table.constants.TableName;
 
 public class DiscoveryLogicTest {
 
-    private static final Logger log = Logger.getLogger(DiscoveryLogicTest.class);
+    private static final Logger log = LoggerFactory.getLogger(DiscoveryLogicTest.class);
 
     private static final Value BLANK_VALUE = new Value(new byte[0]);
     private static final Set<Authorizations> AUTHS = Collections.singleton(new Authorizations("FOO", "BAR"));

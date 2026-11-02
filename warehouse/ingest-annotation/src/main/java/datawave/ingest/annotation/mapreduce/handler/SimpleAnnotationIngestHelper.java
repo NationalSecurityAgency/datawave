@@ -3,7 +3,8 @@ package datawave.ingest.annotation.mapreduce.handler;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -28,7 +29,7 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
  * parses the json data and extracts a few required fields to the event
  */
 public class SimpleAnnotationIngestHelper extends BaseIngestHelper {
-    private static final Logger log = Logger.getLogger(SimpleAnnotationIngestHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(SimpleAnnotationIngestHelper.class);
 
     private static final VisibilityTransformer DEFAULT_VISIBILITY_TRANSFORMER = new DefaultVisibilityTransformer();
     private static final TimestampTransformer DEFAULT_TIMESTAMP_TRANSFORMER = new DefaultTimestampTransformer();
@@ -56,7 +57,9 @@ public class SimpleAnnotationIngestHelper extends BaseIngestHelper {
                 fields.put(entry.getKey().getName(), new NormalizedFieldAndValue(entry.getKey().getName(), entry.getValue().toString()));
             }
         } catch (InvalidProtocolBufferException | AnnotationTransformException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             throw new RuntimeException(e);
         }
 

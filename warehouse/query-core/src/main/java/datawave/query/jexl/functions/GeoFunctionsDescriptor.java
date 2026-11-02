@@ -18,7 +18,6 @@ import org.apache.commons.jexl3.parser.ASTNumberLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.CoordinateXY;
 import org.locationtech.jts.geom.Envelope;
@@ -26,6 +25,8 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.util.GeometricShapeFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
@@ -58,7 +59,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  */
 public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
 
-    private static final Logger log = Logger.getLogger(GeoFunctionsDescriptor.class);
+    private static final Logger log = LoggerFactory.getLogger(GeoFunctionsDescriptor.class);
 
     private static final int NUM_CIRCLE_POINTS = 60;
     private static final String WITHIN_BOUNDING_BOX = "within_bounding_box";

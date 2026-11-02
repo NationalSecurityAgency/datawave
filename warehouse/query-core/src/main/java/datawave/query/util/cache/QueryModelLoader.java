@@ -12,7 +12,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.model.FieldMapping;
 import datawave.query.model.ModelKeyParser;
@@ -23,7 +24,7 @@ import datawave.query.model.QueryModel;
  */
 public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,QueryModel> {
 
-    private static final Logger log = Logger.getLogger(NormalizerLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(NormalizerLoader.class);
 
     protected Set<String> allFields = null;
 

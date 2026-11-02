@@ -13,7 +13,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -36,7 +37,7 @@ public class RangeRecordReader extends RFileRecordReader {
 
     protected RecordIterator splitReference = null;
 
-    private static final Logger log = Logger.getLogger(RangeRecordReader.class);
+    private static final Logger log = LoggerFactory.getLogger(RangeRecordReader.class);
 
     protected static final String PREFIX = BulkInputFormat.class.getSimpleName();
     protected static final String ITERATORS = PREFIX + ".iterators";
@@ -55,7 +56,9 @@ public class RangeRecordReader extends RFileRecordReader {
                 splitReference = new RecordIterator(tabletSplit, context.getConfiguration());
             } catch (RuntimeException e) {
 
-                log.info(e);
+                if (log.isInfoEnabled()) {
+                    log.info(String.valueOf(e));
+                }
 
                 splitReference = null;
                 // an exception has occurred that won't allow us to open the files. perhaps one was moved

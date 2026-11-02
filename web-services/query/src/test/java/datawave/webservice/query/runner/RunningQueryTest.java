@@ -3,6 +3,7 @@ package datawave.webservice.query.runner;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,12 +31,16 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.slf4j.MDC;
 
 import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.logging.NestedDiagnosticContext;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.exception.EmptyObjectException;
@@ -156,6 +161,31 @@ public class RunningQueryTest {
         RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
 
         assertEquals(client, query.getClient());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void closeRestoresOuterDiagnosticContextWhenLogicThrows(boolean hasUserDn) throws Exception {
+        expect(logic.getCollectQueryMetrics()).andReturn(false);
+        expect(logic.getResultLimit(settings)).andReturn(-1L);
+        expect(logic.getMaxResults()).andReturn(-1L);
+        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
+        expect(logic.getUserOperations()).andReturn(null);
+        logic.close();
+        expectLastCall().andThrow(new RuntimeException("close failure"));
+        replay(logic);
+
+        RunningQuery query = new RunningQuery(null, connectionPriority, logic, settings, methodAuths, null, new QueryMetricFactoryImpl());
+        settings.setUserDN(hasUserDn ? "userDn" : null);
+        NestedDiagnosticContext.push("outer");
+        try {
+            query.closeConnection(null);
+            assertEquals("outer", NestedDiagnosticContext.peek());
+            assertEquals("outer", MDC.get("NDC"));
+            verify(logic);
+        } finally {
+            NestedDiagnosticContext.pop();
+        }
     }
 
     @Test

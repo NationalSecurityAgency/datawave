@@ -2,7 +2,8 @@ package datawave.data.normalizer;
 
 import java.math.BigDecimal;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.regex.NumericRegexEncoder;
 import datawave.data.type.util.NumericalEncoder;
@@ -10,7 +11,7 @@ import datawave.data.type.util.NumericalEncoder;
 public class NumberNormalizer extends AbstractNormalizer<BigDecimal> {
 
     private static final long serialVersionUID = -2781476072987375820L;
-    private static final Logger log = Logger.getLogger(NumberNormalizer.class);
+    private static final Logger log = LoggerFactory.getLogger(NumberNormalizer.class);
 
     public String normalize(String fv) {
         if (NumericalEncoder.isPossiblyEncoded(fv)) {

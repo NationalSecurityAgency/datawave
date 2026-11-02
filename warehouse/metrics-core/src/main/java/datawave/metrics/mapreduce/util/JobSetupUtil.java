@@ -23,7 +23,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.metrics.analytic.DateConverter;
 import datawave.metrics.config.MetricsConfig;
@@ -103,7 +103,7 @@ public class JobSetupUtil {
             if (log.isInfoEnabled()) {
                 BufferedReader in = new BufferedReader(new InputStreamReader(pr.getInputStream()));
                 while (in.ready()) {
-                    log.info(in.readLine());
+                    log.info(String.valueOf(in.readLine()));
                 }
             }
 

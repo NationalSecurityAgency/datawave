@@ -11,7 +11,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
@@ -23,7 +24,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 public class RowHashingPartitioner extends Partitioner<BulkIngestKey,Value> implements DelegatePartitioner {
     public static final String COLUMN_FAMILIES = "datawave.partitioner.rr.colfams";
 
-    private static Logger log = Logger.getLogger(RowHashingPartitioner.class);
+    private static Logger log = LoggerFactory.getLogger(RowHashingPartitioner.class);
 
     private Configuration conf;
     private Set<Text> colFams = Collections.emptySet();

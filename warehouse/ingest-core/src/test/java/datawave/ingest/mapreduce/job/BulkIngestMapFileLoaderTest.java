@@ -72,8 +72,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -86,6 +87,8 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 
@@ -107,7 +110,7 @@ public class BulkIngestMapFileLoaderTest {
 
     protected static final URI FILE_SYSTEM_URI = URI.create("file:///");
 
-    protected static final Logger logger = Logger.getLogger(BulkIngestMapFileLoaderTest.class);
+    protected static final Logger logger = LoggerFactory.getLogger(BulkIngestMapFileLoaderTest.class);
 
     private static final String PASSWORD = "secret";
 
@@ -801,13 +804,13 @@ public class BulkIngestMapFileLoaderTest {
     public void setup() throws Exception {
         systemProperties = new ArrayList<>();
 
-        testDriverLevel = BulkIngestMapFileLoaderTest.logger.getLevel();
-        BulkIngestMapFileLoaderTest.logger.setLevel(Level.ALL);
+        testDriverLevel = LogManager.getLogger(BulkIngestMapFileLoaderTest.logger.getName()).getLevel();
+        Configurator.setLevel(BulkIngestMapFileLoaderTest.logger.getName(), Level.ALL);
     }
 
     @After
     public void teardown() {
-        BulkIngestMapFileLoaderTest.logger.setLevel(testDriverLevel);
+        Configurator.setLevel(BulkIngestMapFileLoaderTest.logger.getName(), testDriverLevel);
     }
 
     @Test

@@ -26,9 +26,11 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.javatuples.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
@@ -55,7 +57,7 @@ public class CardinalityScanner {
 
     private static final String HELP_OPT = "help";
 
-    private static final Logger log = Logger.getLogger(CardinalityScanner.class);
+    private static final Logger log = LoggerFactory.getLogger(CardinalityScanner.class);
     private CardinalityScannerConfiguration config = null;
 
     public enum DateAggregationType {
@@ -68,7 +70,7 @@ public class CardinalityScanner {
 
     public static void main(String[] args) {
 
-        Logger.getRootLogger().setLevel(Level.ERROR);
+        Configurator.setRootLevel(Level.ERROR);
 
         Options opts = getConfigurationOptions();
         CommandLine cl = null;
@@ -229,7 +231,9 @@ public class CardinalityScanner {
                 }
             }
         } catch (Exception e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
         }
         return cardinalityMap.keySet();
     }

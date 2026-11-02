@@ -6,10 +6,11 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.GroupQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.lucene.visitors.GroupedInterpretationVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
@@ -22,7 +23,7 @@ import datawave.query.lucene.visitors.QueryNodeType;
  */
 public class GroupedInterpretationRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(GroupedInterpretationRule.class);
+    private static final Logger log = LoggerFactory.getLogger(GroupedInterpretationRule.class);
 
     public GroupedInterpretationRule() {}
 

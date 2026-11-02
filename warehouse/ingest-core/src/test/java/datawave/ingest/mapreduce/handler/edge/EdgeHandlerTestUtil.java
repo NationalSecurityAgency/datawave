@@ -14,7 +14,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -44,7 +45,7 @@ public class EdgeHandlerTestUtil {
     public static ListMultimap<String,String> edgeValueResults = ArrayListMultimap.create();
     public static ListMultimap<Key,Value> metaData = ArrayListMultimap.create();
 
-    private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
+    private static Logger log = LoggerFactory.getLogger(EdgeHandlerTestUtil.class);
 
     public static boolean isDocumentKey(Key k) {
         return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT);
@@ -111,14 +112,18 @@ public class EdgeHandlerTestUtil {
         try {
             if (!printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
-                    log.info(keyString.trim());
+                    if (log.isInfoEnabled()) {
+                        log.info(String.valueOf(keyString.trim()));
+                    }
                 }
             }
             assertEquals((int) countMap.get(edgeTableName), expectedEdgeKeys);
         } catch (AssertionError ae) {
             if (printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
-                    log.info(keyString.trim());
+                    if (log.isInfoEnabled()) {
+                        log.info(String.valueOf(keyString.trim()));
+                    }
                 }
             }
             final Text shardTableName = new Text(TableName.SHARD);

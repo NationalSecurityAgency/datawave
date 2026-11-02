@@ -56,7 +56,8 @@ import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Ascii;
 import com.google.common.base.Preconditions;
@@ -94,7 +95,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class JexlASTHelper {
 
-    protected static final Logger log = Logger.getLogger(JexlASTHelper.class);
+    protected static final Logger log = LoggerFactory.getLogger(JexlASTHelper.class);
 
     // Compile patterns once up front.
     private static Pattern AND_PATTERN = Pattern.compile("\\s+[Aa][Nn][Dd]\\s+");

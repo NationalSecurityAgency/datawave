@@ -24,13 +24,15 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
@@ -51,7 +53,7 @@ import datawave.table.constants.TableName;
 @ContextConfiguration(locations = {"classpath:/MetadataHelperContext.xml", "classpath:/CacheContext.xml"})
 public class DateIndexHelperTest implements ApplicationContextAware {
     private static AccumuloClient client = null;
-    private static final Logger log = Logger.getLogger(DateIndexHelperTest.class);
+    private static final Logger log = LoggerFactory.getLogger(DateIndexHelperTest.class);
     private static MockAccumuloRecordWriter recordWriter;
     private static final Authorizations auths = new Authorizations("A", "BB", "CCCC", "DDD", "E");
     // added to look at the cache
@@ -77,7 +79,7 @@ public class DateIndexHelperTest implements ApplicationContextAware {
     @BeforeClass
     public static void setUp() throws Exception {
         // Set logging levels
-        Logger.getRootLogger().setLevel(Level.OFF);
+        Configurator.setRootLevel(Level.OFF);
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", "UTF8");

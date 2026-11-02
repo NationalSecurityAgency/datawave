@@ -22,11 +22,12 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -82,7 +83,7 @@ import datawave.query.testframework.GenericCityFields;
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "FindWorkTest", "use-test"})
 @ContextConfiguration(classes = FindWorkTest.FindWorkTestConfiguration.class)
 public class FindWorkTest {
-    private static final Logger log = Logger.getLogger(FindWorkTest.class);
+    private static final Logger log = LoggerFactory.getLogger(FindWorkTest.class);
 
     private static DataTypeHadoopConfig dataType;
     private static List<TestAccumuloSetup> dataToCleanup = new ArrayList<>();

@@ -12,7 +12,8 @@ import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.cache.CacheBuilder;
@@ -28,7 +29,7 @@ import datawave.data.type.Type;
 import datawave.query.util.TypeMetadata;
 
 public class AttributeFactory {
-    private static final Logger log = Logger.getLogger(AttributeFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(AttributeFactory.class);
 
     protected static final LoadingCache<String,Class<?>> clazzCache = CacheBuilder.newBuilder().maximumSize(128).expireAfterAccess(1, TimeUnit.HOURS)
                     .build(new CacheLoader<String,Class<?>>() {

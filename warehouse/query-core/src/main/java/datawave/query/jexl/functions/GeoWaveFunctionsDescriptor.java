@@ -21,7 +21,6 @@ import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
 import org.locationtech.geowave.core.geotime.util.GeometryUtils;
 import org.locationtech.geowave.core.index.ByteArrayRange;
 import org.locationtech.geowave.core.index.sfc.data.MultiDimensionalNumericData;
@@ -30,6 +29,8 @@ import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -73,7 +74,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
     protected static final String[] SPATIAL_RELATION_OPERATIONS = new String[] {"contains", "covers", "covered_by", "crosses", "intersects", "overlaps",
             "within"};
 
-    private static final Logger LOGGER = Logger.getLogger(GeoWaveFunctionsDescriptor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeoWaveFunctionsDescriptor.class);
 
     public static class GeoWaveJexlArgumentDescriptor implements JexlArgumentDescriptor {
         protected final String name;

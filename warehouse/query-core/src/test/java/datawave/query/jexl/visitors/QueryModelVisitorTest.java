@@ -18,9 +18,10 @@ import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -37,7 +38,7 @@ import datawave.test.JexlNodeAssert;
 
 public class QueryModelVisitorTest {
 
-    private final Logger log = org.apache.log4j.Logger.getLogger(QueryModelVisitorTest.class);
+    private final Logger log = LoggerFactory.getLogger(QueryModelVisitorTest.class);
 
     private QueryModel model;
     private Set<String> allFields;

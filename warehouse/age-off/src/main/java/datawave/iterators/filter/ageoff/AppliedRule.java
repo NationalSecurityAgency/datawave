@@ -6,7 +6,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 
@@ -34,7 +35,7 @@ public abstract class AppliedRule implements FilterRule {
 
     protected IteratorEnvironment iterEnv;
 
-    private static final Logger log = Logger.getLogger(AppliedRule.class);
+    private static final Logger log = LoggerFactory.getLogger(AppliedRule.class);
 
     /*
      * (non-Javadoc)
@@ -117,7 +118,9 @@ public abstract class AppliedRule implements FilterRule {
             }
             return newFilter;
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
         }
         return null;
     }
@@ -144,7 +147,9 @@ public abstract class AppliedRule implements FilterRule {
             }
             return newFilter;
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
         }
         return null;
     }

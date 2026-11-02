@@ -10,9 +10,10 @@ import java.text.ParseException;
 import java.util.Date;
 
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -46,7 +47,7 @@ public class QueryParametersTest {
     private String headerName = "Header-name1";
     private String headerValue = "headervalue1";
 
-    private static final Logger log = Logger.getLogger(QueryParametersTest.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryParametersTest.class);
 
     @BeforeEach
     public void beforeTests() {
@@ -111,7 +112,9 @@ public class QueryParametersTest {
             assertEquals(formatDateCheck, DefaultQueryParameters.formatDate(beginDate));
             assertEquals(parseDateCheck, DefaultQueryParameters.parseStartDate(DefaultQueryParameters.formatDate(beginDate)));
         } catch (ParseException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
         }
 
         // Test the QueryParametersImpl.validate(QueryParametersImpl params) method
@@ -131,7 +134,9 @@ public class QueryParametersTest {
             params.add(QueryParameters.QUERY_PARAMS, "params");
             params.add(QueryParameters.QUERY_LOGIC_NAME, "logicName");
         } catch (ParseException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
         }
 
         // Add an unknown parameter

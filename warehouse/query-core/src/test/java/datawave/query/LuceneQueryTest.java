@@ -6,10 +6,11 @@ import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.language.functions.jexl.EvaluationOnly;
@@ -31,7 +32,7 @@ public class LuceneQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(LuceneQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(LuceneQueryTest.class);
 
     @BeforeAll
     public static void filterSetup() throws Exception {

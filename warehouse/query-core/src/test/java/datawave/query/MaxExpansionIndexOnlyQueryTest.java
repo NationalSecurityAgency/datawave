@@ -9,10 +9,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
@@ -32,7 +33,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQueryJUnit
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(MaxExpansionIndexOnlyQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(MaxExpansionIndexOnlyQueryTest.class);
 
     @BeforeAll
     public static void filterSetup() throws Exception {

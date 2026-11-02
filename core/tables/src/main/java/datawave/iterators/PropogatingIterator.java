@@ -19,7 +19,8 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
@@ -91,7 +92,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
      */
     protected Map<String,String> options = Maps.newHashMap();
 
-    private static final Logger log = Logger.getLogger(PropogatingIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(PropogatingIterator.class);
 
     /**
      * Deep copy implementation

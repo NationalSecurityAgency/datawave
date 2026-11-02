@@ -16,7 +16,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl3.MapContext;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -46,7 +47,7 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
      */
     public static final String TF_COLUMN_FAMILY = "tf";
 
-    private static Logger LOG = Logger.getLogger(IndexOnlyFunctionIterator.class);
+    private static Logger LOG = LoggerFactory.getLogger(IndexOnlyFunctionIterator.class);
 
     private final IndexOnlyContextCreator contextCreator;
 
@@ -97,7 +98,9 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
         Function<Range,Key> getDocumentKey = contextCreator.getGetDocumentKey();
         if (null == getDocumentKey) {
             final String message = this.getClass().getSimpleName() + " cannot function properly with a null getDocumentKey value";
-            LOG.warn(message, new IllegalArgumentException());
+            if (LOG.isWarnEnabled()) {
+                LOG.warn(String.valueOf(message), new IllegalArgumentException());
+            }
         }
         this.indexOnlySeeker = documentIterator;
         this.contextCreator = contextCreator;
@@ -156,7 +159,9 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
             documents = Iterators.transform(keyToDocumentData, aggregation);
         } catch (final Exception e) {
             final String message = "Could not perform function on index-only field '" + fieldName + "\' for range " + this.parentRange;
-            LOG.error(message, e);
+            if (LOG.isErrorEnabled()) {
+                LOG.error(String.valueOf(message), e);
+            }
         }
 
         return documents;
@@ -178,7 +183,9 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
             }
         } catch (final Exception e) {
             final String message = "Could not perform function on index-only field '" + fieldName + "\' for range " + this.parentRange;
-            LOG.error(message, e);
+            if (LOG.isErrorEnabled()) {
+                LOG.error(String.valueOf(message), e);
+            }
         }
 
         return values;
@@ -257,7 +264,9 @@ public class IndexOnlyFunctionIterator<T> extends WrappingIterator<T> {
             iterator = (Iterator<E>) Iterators.transform(itrWithDatawaveJexlContext, new TupleToGenericFunction(fieldName));
         } catch (final Exception e) {
             final String message = "Could not perform function on index-only field '" + fieldName + "\' for range " + this.parentRange;
-            LOG.error(message, e);
+            if (LOG.isErrorEnabled()) {
+                LOG.error(String.valueOf(message), e);
+            }
         }
 
         return iterator;

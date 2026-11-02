@@ -16,12 +16,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
@@ -60,7 +61,7 @@ import datawave.util.TextUtil;
  */
 public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractColumnBasedHandler<KEYIN> implements TermFrequencyIngestHelperInterface {
 
-    private static final Logger log = Logger.getLogger(ContentIndexingColumnBasedHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentIndexingColumnBasedHandler.class);
 
     public abstract AbstractContentIngestHelper getContentIndexingDataTypeHelper();
 
@@ -183,7 +184,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
                     createEventColumn(event, tokenMap, values, this.shardId, fieldVisibility, nfav);
                 }
             } catch (IOException ex) {
-                log.fatal("IOException", ex);
+                log.error("IOException", ex);
             } catch (InterruptedException ex) {
                 log.warn("Interrupted!", ex);
                 Thread.currentThread().interrupt();

@@ -22,7 +22,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -40,7 +41,7 @@ import datawave.webservice.query.exception.QueryException;
 public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Iterator<Entry<DocumentData,Document>> {
     private static final Collection<ByteSequence> COLUMN_FAMILIES = Lists.newArrayList(new ArrayByteSequence("d"));
 
-    private static final Logger LOG = Logger.getLogger(IndexOnlyKeyToDocumentData.class);
+    private static final Logger LOG = LoggerFactory.getLogger(IndexOnlyKeyToDocumentData.class);
 
     private static final Entry<Key,Value> INVALID_COLUMNQUALIFIER_FORMAT_KEY = Maps.immutableEntry(new Key("INVALID_COLUMNQUALIFIER_FORMAT_KEY"), EMPTY_VALUE);
 
@@ -281,7 +282,9 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
         if (null == newCf) {
             final String message = "Unable to perform tf shard table seek for index-only " + this.fieldName + " field. Could not "
                             + "determine the column family for range " + this.parent;
-            LOG.trace(message);
+            if (LOG.isTraceEnabled()) {
+                LOG.trace(String.valueOf(message));
+            }
         }
 
         return newCf;
@@ -540,7 +543,9 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
         if ((null == this.iteratorStartKey) || (null == this.iteratorConversionAttributes)) {
             final String message = "Unable to seek tf section of shard table for index-only " + this.fieldName + " records,"
                             + "possibly due to an invalid Range " + this.parent;
-            LOG.error(message, new IllegalStateException(this.getClass().getSimpleName() + " has not been initialized"));
+            if (LOG.isErrorEnabled()) {
+                LOG.error(String.valueOf(message), new IllegalStateException(this.getClass().getSimpleName() + " has not been initialized"));
+            }
             next = ITERATOR_COMPLETE_KEY;
             this.nextSeek = ITERATOR_COMPLETE_KEY;
         }

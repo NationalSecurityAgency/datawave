@@ -4,7 +4,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -18,7 +19,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.metadata.RawRecordMetadata;
 
 public class SimpleAnnotationDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
-    private static final Logger log = Logger.getLogger(SimpleAnnotationDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(SimpleAnnotationDataTypeHandler.class);
 
     protected Configuration conf = null;
 

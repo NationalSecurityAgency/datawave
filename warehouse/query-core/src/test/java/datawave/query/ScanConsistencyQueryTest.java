@@ -17,11 +17,13 @@ import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -50,7 +52,7 @@ public class ScanConsistencyQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(ScanConsistencyQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ScanConsistencyQueryTest.class);
 
     @BeforeAll
     public static void filterSetup() throws Exception {
@@ -61,7 +63,7 @@ public class ScanConsistencyQueryTest extends AbstractFunctionalQueryJUnit5 {
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
+        Configurator.setLevel(PrintUtility.class.getName(), Level.DEBUG);
         client = accumuloSetup.loadTables(log);
     }
 

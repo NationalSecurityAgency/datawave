@@ -9,10 +9,11 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
@@ -31,7 +32,7 @@ public class PushdownQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(PushdownQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(PushdownQueryTest.class);
 
     @BeforeAll
     public static void filterSetup() throws Exception {

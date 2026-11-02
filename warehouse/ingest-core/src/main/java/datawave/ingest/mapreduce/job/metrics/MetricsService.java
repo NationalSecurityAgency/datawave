@@ -8,7 +8,8 @@ import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
@@ -40,7 +41,7 @@ import datawave.util.time.DateHelper;
  */
 public class MetricsService<OK,OV> implements AutoCloseable {
 
-    private static final Logger logger = Logger.getLogger(MetricsService.class);
+    private static final Logger logger = LoggerFactory.getLogger(MetricsService.class);
 
     public static final String WILDCARD = "*";
 

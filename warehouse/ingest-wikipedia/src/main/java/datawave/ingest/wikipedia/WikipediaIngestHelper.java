@@ -7,7 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
@@ -28,7 +29,7 @@ import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIngestHelper;
  *
  */
 public class WikipediaIngestHelper extends ExtendedContentIngestHelper implements TermFrequencyIngestHelperInterface, IndexOnlyIngestHelperInterface {
-    private static final Logger log = Logger.getLogger(WikipediaIngestHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(WikipediaIngestHelper.class);
 
     private static final String LANGUAGE = "LANGUAGE";
     private static final String WIKI = "wiki";

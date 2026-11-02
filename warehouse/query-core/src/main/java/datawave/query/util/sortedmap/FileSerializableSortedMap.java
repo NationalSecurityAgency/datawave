@@ -11,7 +11,8 @@ import java.util.Map;
 import java.util.SortedMap;
 
 import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.util.sortedset.FileSortedSet;
 
@@ -27,7 +28,7 @@ import datawave.query.util.sortedset.FileSortedSet;
  *            value of the map
  */
 public class FileSerializableSortedMap<K extends Serializable,V extends Serializable> extends FileSortedMap<K,V> {
-    private static Logger log = Logger.getLogger(FileSerializableSortedMap.class);
+    private static Logger log = LoggerFactory.getLogger(FileSerializableSortedMap.class);
 
     /**
      * Create a file sorted map from another one

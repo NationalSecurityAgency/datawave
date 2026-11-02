@@ -18,7 +18,8 @@ import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheLoader;
@@ -35,7 +36,7 @@ import datawave.scan.ScannerBuilder;
  */
 public class MetadataCacheLoader extends CacheLoader<Range,Set<Tuple2<String,Set<String>>>> {
 
-    private static final Logger log = Logger.getLogger(MetadataCacheLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(MetadataCacheLoader.class);
     protected AccumuloClient client;
 
     public MetadataCacheLoader(AccumuloClient client) {

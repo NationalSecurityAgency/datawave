@@ -11,10 +11,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.config.IndexValueHole;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -39,7 +40,7 @@ public class IndexValueHoleQueryTest extends AbstractFunctionalQueryJUnit5 {
     @RegisterExtension
     public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
-    private static final Logger log = Logger.getLogger(IndexValueHoleQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(IndexValueHoleQueryTest.class);
 
     private static final List<IndexValueHole> INDEX_HOLE = new ArrayList<>();
     static {

@@ -5,10 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.MetadataCardinalityCounts;
 import datawave.query.config.ShardQueryConfiguration;
@@ -18,7 +19,7 @@ import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import datawave.query.util.MockMetadataHelper;
 
 public class PushdownLowSelectivityNodesVisitorTest {
-    private static final Logger log = Logger.getLogger(PushdownLowSelectivityNodesVisitorTest.class);
+    private static final Logger log = LoggerFactory.getLogger(PushdownLowSelectivityNodesVisitorTest.class);
 
     private MockMetadataHelper helper = null;
     private ShardQueryConfiguration config = null;

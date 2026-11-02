@@ -18,7 +18,7 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.ingest.table.aggregator.CombinerConfiguration;
 import datawave.iterators.PropogatingIterator;

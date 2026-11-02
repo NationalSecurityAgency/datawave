@@ -26,7 +26,8 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -39,7 +40,7 @@ import datawave.query.Constants;
 
 public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
-    private static final Logger log = Logger.getLogger(DiscoveryIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(DiscoveryIterator.class);
 
     private Key key;
     private Value value;
@@ -159,7 +160,9 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
                     }
                 } catch (Exception e) {
                     // If an exception occurs, skip to the next entry.
-                    log.trace(e);
+                    if (log.isTraceEnabled()) {
+                        log.trace(String.valueOf(e));
+                    }
                     continue;
                 }
                 // Increment the overall count.
