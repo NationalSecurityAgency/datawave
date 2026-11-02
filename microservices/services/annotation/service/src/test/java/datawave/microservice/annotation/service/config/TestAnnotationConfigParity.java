@@ -29,6 +29,10 @@ public class TestAnnotationConfigParity {
     public void testPackagedBootstrapConfigurationLoads() throws Exception {
         var propertySources = loadYaml("bootstrap", projectDirectory().resolve("src/main/resources/config/bootstrap.yml"));
         assertEquals(4, propertySources.size(), "bootstrap.yml should contain its base, dev, consul, and nomessaging documents");
+        assertEquals("correlated", propertySources.get(0).getProperty("spring.rabbitmq.publisher-confirm-type"));
+        assertEquals(true, propertySources.get(0).getProperty("spring.rabbitmq.publisher-returns"));
+        assertEquals(true, propertySources.get(0).getProperty("spring.cloud.stream.rabbit.bindings.annotationSource-out-0.producer.useConfirmHeader"));
+        assertNull(propertySources.get(0).getProperty("spring.cloud.stream.rabbit.bindings.annotationSource-out-0.producer.confirmAckChannel"));
     }
 
     @Test
@@ -36,7 +40,21 @@ public class TestAnnotationConfigParity {
         PropertySource<?> serviceConfig = loadYaml("service-config", projectDirectory().resolve("src/main/config/annotation.yml")).get(0);
         PropertySource<?> dockerConfig = loadYaml("docker-config", projectDirectory().resolve("../../../../docker/config/annotation.yml")).get(0);
 
-        assertEquals(serviceConfig.getProperty("spring.cloud.function.definition"), dockerConfig.getProperty("spring.cloud.function.definition"));
+        for (PropertySource<?> config : List.of(serviceConfig, dockerConfig)) {
+            assertNull(config.getProperty("spring.cloud.function.definition"), "the role and backend flags select functions automatically");
+            assertNull(config.getProperty("spring.cloud.stream.function.definition"), "explicit function lists are unsupported");
+        }
+        for (PropertySource<?> config : List.of(serviceConfig, dockerConfig)) {
+            assertEquals("correlated", config.getProperty("spring.rabbitmq.publisher-confirm-type"));
+            assertEquals(true, config.getProperty("spring.rabbitmq.publisher-returns"));
+            assertEquals(true, config.getProperty("spring.cloud.stream.rabbit.bindings.annotationSource-out-0.producer.useConfirmHeader"));
+            assertNull(config.getProperty("spring.cloud.stream.rabbit.bindings.annotationSource-out-0.producer.confirmAckChannel"));
+        }
+        for (String binding : List.of("annotationSource-out-0", "logAnnotationSink-in-0", "accumuloAnnotationSink-in-0", "dumpAnnotationSink-in-0")) {
+            String contentType = "spring.cloud.stream.bindings." + binding + ".content-type";
+            assertEquals("application/x-protobuf", serviceConfig.getProperty(contentType));
+            assertEquals(serviceConfig.getProperty(contentType), dockerConfig.getProperty(contentType));
+        }
         assertEquals(serviceConfig.getProperty("annotation.system-from"), dockerConfig.getProperty("annotation.system-from"));
         assertEquals(serviceConfig.getProperty("annotation.writers.accumulo.enabled"), dockerConfig.getProperty("annotation.writers.accumulo.enabled"));
         assertEquals(serviceConfig.getProperty("annotation.writers.accumulo.health.enabled"),

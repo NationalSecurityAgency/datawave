@@ -7,8 +7,10 @@ import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_2_OVER
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_3_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_4_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,10 +28,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -64,7 +65,7 @@ public class SSDeepSimilarityQueryTest {
 
     protected DatawavePrincipal principal;
 
-    @BeforeClass
+    @BeforeAll
     public static void loadData() throws Exception {
         final String tableName = SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME;
 
@@ -85,7 +86,7 @@ public class SSDeepSimilarityQueryTest {
         logSSDeepTestData();
     }
 
-    @Before
+    @BeforeEach
     public void setUpQuery() {
         logic = new SSDeepSimilarityQueryLogic();
         logic.setTableName(SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME);
@@ -111,17 +112,17 @@ public class SSDeepSimilarityQueryTest {
         runSingleQuery(true);
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testMaxResultsLimit() throws Exception {
         logic.setMaxResults(2);
-        runSingleQuery(false);
+        assertThrows(DatawaveFatalQueryException.class, () -> runSingleQuery(false));
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testMaxHashLimit() throws Exception {
         logic.setMaxHashes(1);
         String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2] + " OR CHECKSUM_SSDEEP:" + TEST_SSDEEPS[3];
-        runSSDeepQuery(query, 0);
+        assertThrows(DatawaveFatalQueryException.class, () -> runSSDeepQuery(query, 0));
     }
 
     @Test
@@ -167,7 +168,7 @@ public class SSDeepSimilarityQueryTest {
             List<EventBase> events = response.getEvents();
             int eventCount = events.size();
 
-            Assert.assertEquals(expectedEventCount, eventCount);
+            assertEquals(expectedEventCount, eventCount);
         }
     }
 
@@ -183,7 +184,7 @@ public class SSDeepSimilarityQueryTest {
         int eventCount = events.size();
         Map<String,Map<String,String>> observedEvents = SSDeepTestUtil.extractObservedEvents(events);
 
-        Assert.assertEquals(expectedEventCount, eventCount);
+        assertEquals(expectedEventCount, eventCount);
 
         // find the fields for the self match example.
         SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "67", EXPECTED_2_2_OVERLAPS, "100", observedEvents);
