@@ -6,8 +6,9 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -19,12 +20,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
-import org.easymock.EasyMockRule;
+import org.easymock.EasyMockExtension;
 import org.easymock.Mock;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -42,10 +43,8 @@ import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
 import datawave.ingest.mapreduce.job.metrics.TestEventCountMetricsReceiver;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 
+@ExtendWith(EasyMockExtension.class)
 public class EventMapperTest {
-
-    @Rule
-    public EasyMockRule easyMockRule = new EasyMockRule(this);
 
     @Mock
     private Mapper.Context mapContext;
@@ -55,7 +54,7 @@ public class EventMapperTest {
     private SimpleRawRecord errorRecord;
     private EventMapper<LongWritable,RawRecordContainer,BulkIngestKey,Value> eventMapper;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         long eventTime = System.currentTimeMillis();
 
@@ -117,7 +116,7 @@ public class EventMapperTest {
         replay(mapContext);
     }
 
-    @After
+    @AfterEach
     public void checkMock() {
         verify(mapContext);
     }
@@ -313,12 +312,14 @@ public class EventMapperTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFailedPredicates() throws IOException, InterruptedException {
         try {
             conf.set("file." + EventMapper.RECORD_PREDICATES, CantConfigureEventPredicate.class.getName());
-            eventMapper.setup(mapContext);
-            eventMapper.map(new LongWritable(1), record, mapContext);
+            assertThrows(IllegalArgumentException.class, () -> {
+                eventMapper.setup(mapContext);
+                eventMapper.map(new LongWritable(1), record, mapContext);
+            });
         } finally {
             TestPredicate.reset();
         }

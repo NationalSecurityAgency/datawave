@@ -1,8 +1,8 @@
 package datawave.query.iterator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -16,7 +16,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -148,7 +148,7 @@ public class ParentQueryIteratorTest {
             System.out.println("begin loop1: " + expectation);
 
             Key tk = qi.getTopKey();
-            assertTrue("Could not remove " + tk + " from " + expectation.size(), expectation.remove(tk));
+            assertTrue(expectation.remove(tk), "Could not remove " + tk + " from " + expectation.size());
 
             String cf = tk.getColumnFamily().toString();
 
@@ -169,11 +169,11 @@ public class ParentQueryIteratorTest {
 
         while (qi.hasTop()) {
             Key tk = qi.getTopKey();
-            assertTrue("Could not remove " + tk + " from " + expectation, expectation.remove(tk));
+            assertTrue(expectation.remove(tk), "Could not remove " + tk + " from " + expectation);
             qi.next();
         }
 
-        assertTrue("Still had expected keys: " + expectation, expectation.isEmpty());
+        assertTrue(expectation.isEmpty(), "Still had expected keys: " + expectation);
     }
 
     private void driveIterator(ParentQueryIterator iter, Range range, String expectedRecordId, Set<Key> expectedTopKeys) throws IOException {
@@ -182,7 +182,7 @@ public class ParentQueryIteratorTest {
 
         while (iter.hasTop()) {
             Key tk = iter.getTopKey();
-            assertTrue("unexpected top key was found: " + tk.toStringNoTime(), expectedTopKeys.remove(tk));
+            assertTrue(expectedTopKeys.remove(tk), "unexpected top key was found: " + tk.toStringNoTime());
 
             Document d = deserializer.apply(Maps.immutableEntry(tk, iter.getTopValue())).getValue();
             assertEquals(expectedRecordId, getRecordId(d));
@@ -191,7 +191,7 @@ public class ParentQueryIteratorTest {
         }
 
         assertFalse(iter.hasTop());
-        assertTrue("expected top keys remain: " + expectedTopKeys, expectedTopKeys.isEmpty());
+        assertTrue(expectedTopKeys.isEmpty(), "expected top keys remain: " + expectedTopKeys);
     }
 
     private String getRecordId(Document d) {

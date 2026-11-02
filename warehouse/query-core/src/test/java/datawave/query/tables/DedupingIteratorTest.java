@@ -1,7 +1,7 @@
 package datawave.query.tables;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -11,9 +11,9 @@ import java.util.Map;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.Result;
 import datawave.query.Constants;
@@ -27,7 +27,7 @@ public class DedupingIteratorTest {
     private int bloomExpected;
     private double bloomFpp;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         DUPS_LIST = new ArrayList<>(DUPS_LIST_SZ);
         Text commonCF = new Text("enwiki" + Constants.NULL_BYTE_STRING + "-376vy6.-ywf5yh.-3p9u87");
@@ -50,7 +50,7 @@ public class DedupingIteratorTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         bloomExpected = 2000;
         bloomFpp = 1e-15;

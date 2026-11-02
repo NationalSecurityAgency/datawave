@@ -7,9 +7,9 @@ import static datawave.query.testframework.RawDataManager.NOT_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.net.URI;
@@ -18,15 +18,14 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -39,14 +38,14 @@ import datawave.query.testframework.MaxExpandCityFields;
  * multiple values (versus having a single value), the expected query may be significantly different from the original query. Thus the addition, modification,
  * or deletion of data could cause one or more test cases to fail.
  */
-public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
+public class MaxExpansionRegexQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(MaxExpansionRegexQueryTest.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig max = new MaxExpandCityFields();
@@ -81,7 +80,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(1);
         try {
             runTest(query, expect);
-            Assert.fail("exception condition expected");
+            fail("exception condition expected");
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
@@ -107,7 +106,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         // set regex to match more fields than are specified for the unified expansion
         try {
             runTest(query, expect);
-            Assert.fail("exception condition expected");
+            fail("exception condition expected");
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
@@ -173,7 +172,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setMaxValueExpansionThreshold(4);
         try {
             runTest(query, expect);
-            Assert.fail("exception expected");
+            fail("exception expected");
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
@@ -350,7 +349,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         // verify we still get our expected results
         runTest(query, expect);
         // and verify that the ivarators indeed persisted
-        assertTrue("Expected at least one ivarator to complete and persist", countComplete(dirs) >= 1);
+        assertTrue(countComplete(dirs) >= 1, "Expected at least one ivarator to complete and persist");
     }
 
     private int countComplete(List<String> dirs) throws Exception {

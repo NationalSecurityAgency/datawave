@@ -2,13 +2,14 @@ package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.JexlNodeFactory.buildEQNode;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.Arrays;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -22,7 +23,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
     public void testSimpleEquality() throws Exception {
         String queryA = "FOO == 'abc'";
         String queryB = "FOO == 'abc'";
-        Assert.assertEquals(nodeToKey(JexlASTHelper.parseJexlQuery(queryA)), nodeToKey(JexlASTHelper.parseJexlQuery(queryB)));
+        assertEquals(nodeToKey(JexlASTHelper.parseJexlQuery(queryA)), nodeToKey(JexlASTHelper.parseJexlQuery(queryB)));
 
     }
 
@@ -30,7 +31,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
     public void testSubExpression() throws Exception {
         String queryA = "(FOO == 'abc' || CAR == 'carA')";
         String queryB = "(CAR == 'carA' || FOO == 'abc')";
-        Assert.assertEquals(nodeToKey(JexlASTHelper.parseJexlQuery(queryA)), nodeToKey(JexlASTHelper.parseJexlQuery(queryB)));
+        assertEquals(nodeToKey(JexlASTHelper.parseJexlQuery(queryA)), nodeToKey(JexlASTHelper.parseJexlQuery(queryB)));
 
     }
 
@@ -38,7 +39,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
     public void testExpressionDelayed() throws Exception {
         JexlNode queryA = JexlASTHelper.parseJexlQuery("FOO == 'abc'");
         JexlNode queryB = QueryPropertyMarker.create(JexlASTHelper.parseJexlQuery("FOO == 'abc'"), DELAYED);
-        Assert.assertNotEquals(nodeToKey(queryA), nodeToKey(queryB));
+        assertNotEquals(nodeToKey(queryA), nodeToKey(queryB));
 
     }
 
@@ -46,7 +47,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
     public void testRange() throws Exception {
         JexlNode queryA = JexlASTHelper.parseJexlQuery("FOO >= 'abc' && FOO >= 'bcd'");
         JexlNode queryB = JexlASTHelper.parseJexlQuery("FOO >= 'bcd' && FOO >= 'abc'");
-        Assert.assertEquals(nodeToKey(queryA), nodeToKey(queryB));
+        assertEquals(nodeToKey(queryA), nodeToKey(queryB));
 
     }
 
@@ -54,7 +55,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
     public void testRangeFalse() throws Exception {
         JexlNode queryA = JexlASTHelper.parseJexlQuery("(FOO >= 'abc' && FOO >= 'bcd') && CAR=='wagon'");
         JexlNode queryB = JexlASTHelper.parseJexlQuery("FOO >= 'bcd' && FOO >= 'abc'");
-        Assert.assertNotEquals(nodeToKey(queryA), nodeToKey(queryB));
+        assertNotEquals(nodeToKey(queryA), nodeToKey(queryB));
 
     }
 
@@ -62,7 +63,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
     public void testFunction() throws Exception {
         JexlNode queryA = JexlASTHelper.parseJexlQuery("(FOO == 'blah1' && FOO == 'blah2' && content:phrase(termOffsetMap, 'twisted', 'pair'))");
         JexlNode queryB = JexlASTHelper.parseJexlQuery("(content:phrase(termOffsetMap, 'twisted', 'pair') && FOO == 'blah1' && FOO == 'blah2')");
-        Assert.assertEquals(nodeToKey(queryA), nodeToKey(queryB));
+        assertEquals(nodeToKey(queryA), nodeToKey(queryB));
 
     }
 
@@ -70,7 +71,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
     public void testSimpleEqualityNegative() throws Exception {
         String queryA = "FOO == 'ab2c'";
         String queryB = "FOO == 'abc'";
-        Assert.assertNotEquals(nodeToKey(JexlASTHelper.parseJexlQuery(queryA)), nodeToKey(JexlASTHelper.parseJexlQuery(queryB)));
+        assertNotEquals(nodeToKey(JexlASTHelper.parseJexlQuery(queryA)), nodeToKey(JexlASTHelper.parseJexlQuery(queryB)));
 
     }
 
@@ -79,7 +80,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
         JexlNode eq01 = buildEQNode("FOO", "bar");
         JexlNode eq02 = buildEQNode("FOO", "bar");
 
-        Assert.assertEquals(nodeToKey(eq01), nodeToKey(eq02));
+        assertEquals(nodeToKey(eq01), nodeToKey(eq02));
     }
 
     @Test
@@ -91,7 +92,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
         JexlNode or01 = JexlNodeFactory.createOrNode(Arrays.asList(eq01, eq02));
         JexlNode or02 = JexlNodeFactory.createOrNode(Arrays.asList(eq01, eq02, eq03));
 
-        Assert.assertNotEquals(nodeToKey(or01), nodeToKey(or02));
+        assertNotEquals(nodeToKey(or01), nodeToKey(or02));
     }
 
     @Test
@@ -100,7 +101,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
         JexlNode or02 = JexlASTHelper.parseJexlQuery("FOO == 'bar' || FOO == 'baz' || FOO == 'baz'");
 
         // OR nodes with the same, but unordered children WILL match.
-        Assert.assertEquals(nodeToKey(or01), nodeToKey(or02));
+        assertEquals(nodeToKey(or01), nodeToKey(or02));
     }
 
     @Test
@@ -112,13 +113,13 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
         JexlNode or02 = JexlNodeFactory.createOrNode(Lists.newArrayList(eq02, eq01));
 
         // Same ORNode should match
-        Assert.assertEquals(nodeToKey(or01), nodeToKey(or02));
+        assertEquals(nodeToKey(or01), nodeToKey(or02));
 
         JexlNode or03 = JexlNodeFactory.createOrNode(Lists.newArrayList(or01, or02));
         JexlNode or04 = JexlNodeFactory.createOrNode(Lists.newArrayList(or02, or01));
 
         // OR nodes with the same, but unordered children WILL match.
-        Assert.assertEquals(nodeToKey(or03), nodeToKey(or04));
+        assertEquals(nodeToKey(or03), nodeToKey(or04));
     }
 
     private static String nodeToKey(JexlNode node) {

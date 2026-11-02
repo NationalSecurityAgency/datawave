@@ -5,20 +5,21 @@ import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.NE_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
@@ -28,10 +29,10 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 
-public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
+public class FilterFunctionQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(FilterFunctionQueryTest.class);
 
@@ -43,7 +44,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
     private static final String MatchesAtLeastCountOf = "filter:matchesAtLeastCountOf(";
     private static final String Occurrence = "filter:occurrence(";
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
@@ -326,7 +327,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
 
     // ============================================
     // error conditions
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorFilterOnly() throws Exception {
         log.info("------  testFilterOnly  ------");
 
@@ -334,25 +335,25 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
 
         String query = IncludeRegex + CityField.STATE.name() + "," + state + ")";
         String expectQuery = CityField.STATE.name() + RE_OP + state;
-        runTest(query, expectQuery);
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, expectQuery));
     }
 
-    @Test(expected = InvalidQueryException.class)
+    @Test
     public void testErrorIndexDatatype() throws Exception {
         log.info("------  testErrorDatatype  ------");
 
         String query = CityField.CODE.name() + RE_OP + "'ab.*?'" + AND_OP + IncludeRegex + "NONE, 'xx') " + AND_OP + IsNotNull + CityField.STATE.name() + ")";
         String expectQuery = CityField.CODE.name() + EQ_OP + "'xxx'";
-        runTest(query, expectQuery);
+        assertThrows(InvalidQueryException.class, () -> runTest(query, expectQuery));
     }
 
-    @Test(expected = InvalidQueryException.class)
+    @Test
     public void testErrorNoIndexDatatype() throws Exception {
         log.info("------  testErrorNoIndexDatatype  ------");
 
         String query = "Unindex" + RE_OP + "'ab.*?'" + AND_OP + IncludeRegex + "NONE, 'ab') " + AND_OP + IsNotNull + CityField.STATE.name() + ")";
         String expectQuery = CityField.CODE.name() + EQ_OP + "'xxx'";
-        runTest(query, expectQuery);
+        assertThrows(InvalidQueryException.class, () -> runTest(query, expectQuery));
     }
 
     // ============================================

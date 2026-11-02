@@ -6,8 +6,8 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATIO
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,7 +61,7 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.commons.jexl3.parser.RandomTreeBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.NodeTypeCount;
@@ -332,16 +332,16 @@ public class NodeTypeCountVisitorTest {
         ASTJexlScript tree = createMassiveTree(expected);
         NodeTypeCount counts = NodeTypeCountVisitor.countNodes(tree);
         for (Map.Entry<String,Integer> expectedEntry : expected.entrySet()) {
-            assertTrue("Missing type " + expectedEntry.getKey(), counts.hasAny(expectedEntry.getKey()));
-            assertEquals("Counts mismatch for " + expectedEntry.getKey(), expectedEntry.getValue().intValue(), counts.getTotal(expectedEntry.getKey()));
+            assertTrue(counts.hasAny(expectedEntry.getKey()), "Missing type " + expectedEntry.getKey());
+            assertEquals(expectedEntry.getValue().intValue(), counts.getTotal(expectedEntry.getKey()), "Counts mismatch for " + expectedEntry.getKey());
         }
         assertEquals(expected.size(), counts.getTotalDistinctTypes());
 
         // now try it again but specify the types
         counts = NodeTypeCountVisitor.countNodes(tree, expected.keySet());
         for (Map.Entry<String,Integer> expectedEntry : expected.entrySet()) {
-            assertTrue("Missing type " + expectedEntry.getKey(), counts.hasAny(expectedEntry.getKey()));
-            assertEquals("Counts mismatch for " + expectedEntry.getKey(), expectedEntry.getValue().intValue(), counts.getTotal(expectedEntry.getKey()));
+            assertTrue(counts.hasAny(expectedEntry.getKey()), "Missing type " + expectedEntry.getKey());
+            assertEquals(expectedEntry.getValue().intValue(), counts.getTotal(expectedEntry.getKey()), "Counts mismatch for " + expectedEntry.getKey());
         }
         assertEquals(expected.size(), counts.getTotalDistinctTypes());
     }
