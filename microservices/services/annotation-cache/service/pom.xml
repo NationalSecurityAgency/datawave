@@ -21,7 +21,7 @@
 
     <properties>
         <start-class>datawave.microservice.annotationCache.AnnotationCacheService</start-class>
-        <version.datawave>8.1.0</version.datawave>
+        <version.datawave>8.2.0</version.datawave>
         <version.datawave.annotation-cache-api>1.0.0-SNAPSHOT</version.datawave.annotation-cache-api>
         <version.datawave.annotation-messaging>1.0.0-SNAPSHOT</version.datawave.annotation-messaging>
         <version.datawave.hazelcast-service>4.0.7</version.datawave.hazelcast-service>
