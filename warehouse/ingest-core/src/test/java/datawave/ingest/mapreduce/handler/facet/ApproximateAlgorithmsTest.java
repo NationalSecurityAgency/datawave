@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.handler.facet;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,9 +32,9 @@ public class ApproximateAlgorithmsTest {
         log.debug("A card: " + hllA.cardinality());
         log.debug("B card: " + hllB.cardinality());
         log.debug("AB card: " + hllABp.cardinality());
-        assertEquals("Cardinality for a set of a single entry should be 1", 1, hllA.cardinality());
-        assertEquals("Cardinality for a set of a single entry should be 1", 1, hllB.cardinality());
-        assertEquals("Cardinality for a merged set single entries should be 1", 1, hllABp.cardinality());
+        assertEquals(1, hllA.cardinality(), "Cardinality for a set of a single entry should be 1");
+        assertEquals(1, hllB.cardinality(), "Cardinality for a set of a single entry should be 1");
+        assertEquals(1, hllABp.cardinality(), "Cardinality for a merged set single entries should be 1");
 
     }
 
@@ -62,9 +62,9 @@ public class ApproximateAlgorithmsTest {
         log.debug("A card: " + hllA.cardinality());
         log.debug("B card: " + hllB.cardinality());
         log.debug("AB card: " + hllABp.cardinality());
-        assertEquals("Cardinality for a set A (1,2,3,4,5) should be 5", 5, hllA.cardinality());
-        assertEquals("Cardinality for a set B (2,3,4,5,6) should be 5", 5, hllB.cardinality());
-        assertEquals("Cardinality for a merged set (1,2,3,4,5,6) should be 6", 6, hllABp.cardinality());
+        assertEquals(5, hllA.cardinality(), "Cardinality for a set A (1,2,3,4,5) should be 5");
+        assertEquals(5, hllB.cardinality(), "Cardinality for a set B (2,3,4,5,6) should be 5");
+        assertEquals(6, hllABp.cardinality(), "Cardinality for a merged set (1,2,3,4,5,6) should be 6");
     }
 
     @Test
@@ -87,9 +87,9 @@ public class ApproximateAlgorithmsTest {
         log.debug("A sketch: " + sketchA.size());
         log.debug("B sketch: " + sketchB.size());
         log.debug("AB sketch: " + sketchABp.size());
-        assertEquals("Size of A sketch should be 100", 100, sketchA.size());
-        assertEquals("Size of B sketch should be 100", 100, sketchB.size());
-        assertEquals("Size of merged sketch should be 200", 200, sketchABp.size());
+        assertEquals(100, sketchA.size(), "Size of A sketch should be 100");
+        assertEquals(100, sketchB.size(), "Size of B sketch should be 100");
+        assertEquals(200, sketchABp.size(), "Size of merged sketch should be 200");
     }
 
     @Test

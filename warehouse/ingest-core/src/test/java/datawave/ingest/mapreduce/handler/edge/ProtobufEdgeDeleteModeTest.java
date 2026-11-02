@@ -26,10 +26,10 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +68,7 @@ public class ProtobufEdgeDeleteModeTest {
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private static final Now now = Now.getInstance();
 
-    @BeforeClass
+    @BeforeAll
     public static void setupSystemSettings() throws Exception {
 
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -106,7 +106,7 @@ public class ProtobufEdgeDeleteModeTest {
         fields.put("MD5", new BaseNormalizedContent("MD5", "715555845289dd6ba0f4cbb8a02e5052"));
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         logContext.getRootLogger().getAppenders().values().forEach(logContext.getRootLogger()::removeAppender);
         rootAppenders.values().forEach(logContext.getRootLogger()::addAppender);
@@ -117,7 +117,7 @@ public class ProtobufEdgeDeleteModeTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         TypeRegistry.reset();
         conf = new Configuration();

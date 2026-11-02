@@ -1,5 +1,9 @@
 package datawave.ingest.mapreduce.handler.edge;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
@@ -10,7 +14,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +58,7 @@ public class EdgeHandlerTestUtil {
     public static void processEvent(Multimap<String,NormalizedContentInterface> eventFields, ExtendedDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler,
                     RawRecordContainer event, int expectedEdgeKeys, boolean printKeysOnlyOnFail, boolean edgeDeleteMode) {
 
-        Assert.assertNotNull("Event was null.", event);
+        assertNotNull(event, "Event was null.");
         Set<Key> edgeKeys = new HashSet<>();
         Map<Text,Integer> countMap = Maps.newHashMap();
 
@@ -114,7 +117,7 @@ public class EdgeHandlerTestUtil {
                     }
                 }
             }
-            Assert.assertEquals((int) countMap.get(edgeTableName), expectedEdgeKeys);
+            assertEquals((int) countMap.get(edgeTableName), expectedEdgeKeys);
         } catch (AssertionError ae) {
             if (printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
@@ -124,7 +127,7 @@ public class EdgeHandlerTestUtil {
                 }
             }
             final Text shardTableName = new Text(TableName.SHARD);
-            Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
+            fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
         }
     }
 

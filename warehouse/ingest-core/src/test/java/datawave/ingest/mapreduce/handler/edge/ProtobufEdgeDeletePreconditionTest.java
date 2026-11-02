@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.handler.edge;
 
 import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_VERSION_CACHE_DIR;
 import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_VERSION_DIST_CACHE_DIR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -14,9 +15,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -39,7 +39,7 @@ public class ProtobufEdgeDeletePreconditionTest {
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private Configuration conf;
 
-    @Before
+    @BeforeEach
     public void setup() {
         TypeRegistry.reset();
         conf = new Configuration();
@@ -102,7 +102,7 @@ public class ProtobufEdgeDeletePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 8, true, true);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -143,7 +143,7 @@ public class ProtobufEdgeDeletePreconditionTest {
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 12, true, true);
 
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -188,7 +188,7 @@ public class ProtobufEdgeDeletePreconditionTest {
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 12, true, true);
 
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 

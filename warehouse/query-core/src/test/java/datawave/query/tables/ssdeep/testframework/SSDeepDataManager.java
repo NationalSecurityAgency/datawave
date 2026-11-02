@@ -1,5 +1,7 @@
 package datawave.query.tables.ssdeep.testframework;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -9,7 +11,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +47,7 @@ public class SSDeepDataManager extends AbstractDataManager {
 
     @Override
     public void addTestData(final URI file, final String datatype, final Set<String> indexes) throws IOException {
-        Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
+        assertFalse(this.rawData.containsKey(datatype), "datatype has already been configured(" + datatype + ")");
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader, ',', '\"', '\0')) {
             String[] data;
             int count = 0;
