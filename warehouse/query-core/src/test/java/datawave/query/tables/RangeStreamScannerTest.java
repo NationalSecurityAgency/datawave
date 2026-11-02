@@ -1,10 +1,10 @@
 package datawave.query.tables;
 
 import static datawave.table.constants.TableName.SHARD_INDEX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,8 +33,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.hadoop.io.Text;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
@@ -98,7 +98,7 @@ public class RangeStreamScannerTest {
         return mutation;
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws Exception {
         InMemoryInstance instance = new InMemoryInstance();
         client = new InMemoryAccumuloClient("", instance);
@@ -260,7 +260,7 @@ public class RangeStreamScannerTest {
         int documentCount = 0;
         while (scannerStream.hasNext()) {
             Tuple2<String,IndexInfo> entry = scannerStream.next();
-            assertEquals("Expected shard to start with '20190314' but was: " + entry.first(), "20190314", entry.first());
+            assertEquals("20190314", entry.first(), "Expected shard to start with '20190314' but was: " + entry.first());
             assertEquals(2, entry.second().count());
             shardCount++;
             documentCount += entry.second().count();
@@ -293,7 +293,7 @@ public class RangeStreamScannerTest {
         int documentCount = 0;
         while (scannerStream.hasNext()) {
             Tuple2<String,IndexInfo> entry = scannerStream.next();
-            assertTrue("Expected shard to start with '20190317_' but was: " + entry.first(), entry.first().startsWith("20190317_"));
+            assertTrue(entry.first().startsWith("20190317_"), "Expected shard to start with '20190317_' but was: " + entry.first());
             assertEquals(2, entry.second().count());
             shardCount++;
             documentCount += entry.second().count();
@@ -327,7 +327,7 @@ public class RangeStreamScannerTest {
         int documentCount = 0;
         while (scannerStream.hasNext()) {
             Tuple2<String,IndexInfo> entry = scannerStream.next();
-            assertTrue("Expected shard to start with '20190319_' but was: " + entry.first(), entry.first().startsWith("20190319_"));
+            assertTrue(entry.first().startsWith("20190319_"), "Expected shard to start with '20190319_' but was: " + entry.first());
             assertEquals(15, entry.second().count());
             shardCount++;
             documentCount += entry.second().count();
@@ -472,7 +472,7 @@ public class RangeStreamScannerTest {
 
         Result topShard = buildEntry("20190314_0", "FOO", "bar");
         scanner.currentEntry = topShard;
-        assertNull("20190314_0", scanner.currentEntryMatchesShard("20190315_0"));
+        assertNull(scanner.currentEntryMatchesShard("20190315_0"), "20190314_0");
     }
 
     // Assumes entries have the datatype stripped off, per the CreateUidsIterator contract.

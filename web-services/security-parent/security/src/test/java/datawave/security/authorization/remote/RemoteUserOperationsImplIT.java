@@ -1,35 +1,35 @@
 package datawave.security.authorization.remote;
 
 import static datawave.webservice.common.remote.RemoteServiceUtil.NON_ROUTABLE_HOST;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.Collections;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
 import datawave.authorization.remote.RemoteAuthorizationException;
-import datawave.common.test.integration.IntegrationTest;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 
-@Category(IntegrationTest.class)
+@Tag("datawave.common.test.integration.IntegrationTest")
 public class RemoteUserOperationsImplIT {
     private RemoteUserOperationsUtil remoteUtil;
     private RemoteUserOperationsImpl userOperations;
     private DatawavePrincipal datawavePrincipal;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException, CertificateException, NoSuchAlgorithmException {
         remoteUtil = new RemoteUserOperationsUtil();
         remoteUtil.initialize();
@@ -43,25 +43,25 @@ public class RemoteUserOperationsImplIT {
         datawavePrincipal = new DatawavePrincipal(Collections.singleton(user));
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         remoteUtil.stop();
     }
 
-    @Test(expected = RemoteAuthorizationException.class)
+    @Test
     public void testSocketTimeout() throws AuthorizationException {
         userOperations.setSocketTimeout(100);
 
-        userOperations.listEffectiveAuthorizations(datawavePrincipal);
+        assertThrows(RemoteAuthorizationException.class, () -> userOperations.listEffectiveAuthorizations(datawavePrincipal));
     }
 
-    @Test(expected = RemoteAuthorizationException.class)
+    @Test
     public void testConnectTimeout() throws AuthorizationException {
         userOperations.setQueryServiceHost(NON_ROUTABLE_HOST);
 
         userOperations.setConnectTimeout(100);
 
-        userOperations.listEffectiveAuthorizations(datawavePrincipal);
+        assertThrows(RemoteAuthorizationException.class, () -> userOperations.listEffectiveAuthorizations(datawavePrincipal));
     }
 
     @Test

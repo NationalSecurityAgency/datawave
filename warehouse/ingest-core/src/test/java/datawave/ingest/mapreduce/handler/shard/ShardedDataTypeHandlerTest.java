@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.handler.shard;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
@@ -17,8 +17,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -123,7 +123,7 @@ public class ShardedDataTypeHandlerTest {
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_LPRIORITY, "30");
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         configuration = new Configuration();
         setupConfiguration(configuration);
@@ -304,9 +304,9 @@ public class ShardedDataTypeHandlerTest {
         long expectedIndexTimestamp = CompositeTimestamp.getCompositeTimeStamp(tsToDay, tsToDay);
         for (BulkIngestKey key : data.keySet()) {
             if (key.getTableName().toString().toUpperCase().contains("INDEX")) {
-                assertEquals(key.toString(), expectedIndexTimestamp, key.getKey().getTimestamp());
+                assertEquals(expectedIndexTimestamp, key.getKey().getTimestamp(), key.toString());
             } else {
-                assertEquals(key.toString(), expectedTimestamp, key.getKey().getTimestamp());
+                assertEquals(expectedTimestamp, key.getKey().getTimestamp(), key.toString());
             }
         }
 
@@ -325,9 +325,9 @@ public class ShardedDataTypeHandlerTest {
         expectedIndexTimestamp = CompositeTimestamp.getCompositeTimeStamp(tsToDay, ageOffToDay);
         for (BulkIngestKey key : data.keySet()) {
             if (key.getTableName().toString().toUpperCase().contains("INDEX")) {
-                assertEquals(key.toString(), expectedIndexTimestamp, key.getKey().getTimestamp());
+                assertEquals(expectedIndexTimestamp, key.getKey().getTimestamp(), key.toString());
             } else {
-                assertEquals(key.toString(), expectedTimestamp, key.getKey().getTimestamp());
+                assertEquals(expectedTimestamp, key.getKey().getTimestamp(), key.toString());
             }
         }
     }
@@ -734,10 +734,10 @@ public class ShardedDataTypeHandlerTest {
     }
 
     private void assertBulkIngestKey(Multimap<BulkIngestKey,Value> multimap, BulkIngestKey expectedKey, Value expectedValue) {
-        assertTrue("did not find expected BulkIngestKey", multimap.containsKey(expectedKey));
+        assertTrue(multimap.containsKey(expectedKey), "did not find expected BulkIngestKey");
         Collection<Value> values = multimap.get(expectedKey);
         boolean found = values.remove(expectedValue);
-        assertTrue("did not find expected value", found);
+        assertTrue(found, "did not find expected value");
         if (!values.isEmpty()) {
             multimap.putAll(expectedKey, values);
         }

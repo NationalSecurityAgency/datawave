@@ -4,16 +4,17 @@ import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.helpers.PrintUtility;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -22,8 +23,8 @@ import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
@@ -34,14 +35,14 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.util.AllFieldMetadataHelper;
 
-public class RegexQueryTest extends AbstractFunctionalQuery {
+public class RegexQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(RegexQueryTest.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
@@ -106,15 +107,17 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
         }
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testIndexOnlyFails() throws Exception {
         log.info("------  testIndexOnlyFails  ------");
         // should at least match France, but we have no reverse index and the field is indexOnly
         String regex = "'.*?e'";
-        for (final TestCities city : TestCities.values()) {
-            String query = CityField.CITY.name() + " == " + "'" + city.name() + "'" + AND_OP + CityField.COUNTRY.name() + RE_OP + regex;
-            runTest(query, query);
-        }
+        assertThrows(DatawaveFatalQueryException.class, () -> {
+            for (final TestCities city : TestCities.values()) {
+                String query = CityField.CITY.name() + " == " + "'" + city.name() + "'" + AND_OP + CityField.COUNTRY.name() + RE_OP + regex;
+                runTest(query, query);
+            }
+        });
     }
 
     @Test
@@ -442,45 +445,47 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
 
     // ============================================
     // error conditions
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorOptimized() throws Exception {
         String regex = "'.*iss.*'";
         String query = CityField.STATE.name() + RE_OP + regex;
-        runTest(query, query);
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorFullTableScan() throws Exception {
         String regex = "'.*uro.*'";
         String query = CityField.CONTINENT.name() + RE_OP + regex;
-        runTest(query, query);
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorInfinite() throws Exception {
         String regex = "'.*'";
         String query = CityField.STATE.name() + RE_OP + regex;
-        runTest(query, query);
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
 
-    @Test(expected = DoNotPerformOptimizedQueryException.class)
+    @Test
     public void testErrorFullTableInfinite() throws Exception {
         String regex = "'.*'";
         String query = CityField.STATE.name() + RE_OP + regex;
         logic.setFullTableScanEnabled(true);
-        runTest(query, query);
+        assertThrows(DoNotPerformOptimizedQueryException.class, () -> runTest(query, query));
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorMissingReverseIndex() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
         Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
         // should at least match usa, fra, and ita
         String regex = "'.*?a'";
-        for (final TestCities city : TestCities.values()) {
-            String query = CityField.CODE.name() + RE_OP + regex;
-            runTest(query, query);
-        }
+        assertThrows(FullTableScansDisallowedException.class, () -> {
+            for (final TestCities city : TestCities.values()) {
+                String query = CityField.CODE.name() + RE_OP + regex;
+                runTest(query, query);
+            }
+        });
     }
 
     // ============================================

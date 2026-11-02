@@ -7,24 +7,26 @@ import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 import static datawave.query.testframework.RawDataManager.LTE_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.helpers.PrintUtility;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
@@ -37,14 +39,14 @@ import datawave.query.testframework.GenericCityFields;
 /**
  * Tests for different types of string and numeric range specifications.
  */
-public class RangeQueryTest extends AbstractFunctionalQuery {
+public class RangeQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(RangeQueryTest.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
@@ -158,9 +160,9 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
             // Test the plan with all expansions
             try {
                 String plan = getPlan(query, true, true);
-                Assert.fail("Expected FullTableScansDisallowedException but got " + plan);
+                fail("Expected FullTableScansDisallowedException but got " + plan);
             } catch (DatawaveFatalQueryException e) {
-                Assert.assertTrue(e.getMessage().contains("Found incorrectly marked bounded ranges"));
+                assertTrue(e.getMessage().contains("Found incorrectly marked bounded ranges"));
             }
 
             // Test the plan sans value expansion
@@ -170,7 +172,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
                 String plan = getPlan(query, true, false);
                 assertPlanEquals(expected, plan);
             } catch (DatawaveFatalQueryException e) {
-                Assert.assertTrue(e.getMessage().contains("Found incorrectly marked bounded ranges"));
+                assertTrue(e.getMessage().contains("Found incorrectly marked bounded ranges"));
             }
 
             try {
@@ -178,7 +180,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
                 String plan = getPlan(query, false, true);
                 assertPlanEquals(expected, plan);
             } catch (DatawaveFatalQueryException e) {
-                Assert.assertTrue(e.getMessage().contains("Found incorrectly marked bounded ranges"));
+                assertTrue(e.getMessage().contains("Found incorrectly marked bounded ranges"));
             }
 
             try {
@@ -186,7 +188,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
                 expected = query;
                 runTest(query, expected);
             } catch (DatawaveFatalQueryException e) {
-                Assert.assertTrue(e.getMessage().contains("Found incorrectly marked bounded ranges"));
+                assertTrue(e.getMessage().contains("Found incorrectly marked bounded ranges"));
             }
         }
     }
@@ -347,7 +349,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         }
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorRangeOpsInDiffSubTree() throws Exception {
         log.info("------  testErrorRangeOpsInDiffSubTree  ------");
         String city = TestCities.rome.name();
@@ -358,11 +360,11 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         // Test the plan with all expansions
         try {
             String plan = getPlan(query, true, true);
-            Assert.fail("Expected FullTableScanDisallowedException but got plan: " + plan);
+            fail("Expected FullTableScanDisallowedException but got plan: " + plan);
         } catch (FullTableScansDisallowedException e) {
             // expected
         } catch (Exception e) {
-            Assert.fail("Expected FullTableScanDisallowedException but got " + e);
+            fail("Expected FullTableScanDisallowedException but got " + e);
         }
 
         // Test the plan sans value expansion
@@ -376,11 +378,10 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         assertPlanEquals(expected, plan);
 
         // test running the query
-        expected = query;
-        runTest(query, expected);
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
 
-    @Test(expected = FullTableScansDisallowedException.class)
+    @Test
     public void testErrorRangeGTE() throws Exception {
         log.info("------  testErrorRangeGTE  ------");
         String city = TestCities.rome.name();
@@ -389,11 +390,11 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         // Test the plan with all expansions
         try {
             String plan = getPlan(query, true, true);
-            Assert.fail("Expected FullTableScanDisallowedException but got plan: " + plan);
+            fail("Expected FullTableScanDisallowedException but got plan: " + plan);
         } catch (FullTableScansDisallowedException e) {
             // expected
         } catch (Exception e) {
-            Assert.fail("Expected FullTableScanDisallowedException but got " + e);
+            fail("Expected FullTableScanDisallowedException but got " + e);
         }
 
         // Test the plan sans value expansion
@@ -405,8 +406,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         assertPlanEquals(expected, plan);
 
         // test running the query
-        expected = query;
-        runTest(query, expected);
+        assertThrows(FullTableScansDisallowedException.class, () -> runTest(query, query));
     }
 
     // ============================================

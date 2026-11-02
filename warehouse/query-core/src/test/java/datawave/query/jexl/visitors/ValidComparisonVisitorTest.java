@@ -1,8 +1,10 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -23,67 +25,66 @@ public class ValidComparisonVisitorTest {
         ValidComparisonVisitor.check(script);
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testInvalidEQ() throws ParseException {
         String queryString = "'BAR' == 1";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        ValidComparisonVisitor.check(script);
+        assertThrows(DatawaveFatalQueryException.class, () -> ValidComparisonVisitor.check(script));
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testInvalidNE() throws ParseException {
         String queryString = "'BAR' != 1";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        ValidComparisonVisitor.check(script);
+        assertThrows(DatawaveFatalQueryException.class, () -> ValidComparisonVisitor.check(script));
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testInvalidRE() throws ParseException {
         String queryString = "'BAR' =~ 'foo'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        ValidComparisonVisitor.check(script);
+        assertThrows(DatawaveFatalQueryException.class, () -> ValidComparisonVisitor.check(script));
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testInvalidNR() throws ParseException {
         String queryString = "'BAR' !~ 'foo'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        ValidComparisonVisitor.check(script);
+        assertThrows(DatawaveFatalQueryException.class, () -> ValidComparisonVisitor.check(script));
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testInvalidLT() throws ParseException {
         String queryString = "'BAR' < 1";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        ValidComparisonVisitor.check(script);
+        assertThrows(DatawaveFatalQueryException.class, () -> ValidComparisonVisitor.check(script));
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testInvalidLE() throws ParseException {
         String queryString = "'BAR' <= 1";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        ValidComparisonVisitor.check(script);
+        assertThrows(DatawaveFatalQueryException.class, () -> ValidComparisonVisitor.check(script));
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testInvalidGT() throws ParseException {
         String queryString = "'BAR' > 1";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        ValidComparisonVisitor.check(script);
+        assertThrows(DatawaveFatalQueryException.class, () -> ValidComparisonVisitor.check(script));
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testInvalidGE() throws ParseException {
         String queryString = "'BAR' >= 1";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        ValidComparisonVisitor.check(script);
+        assertThrows(DatawaveFatalQueryException.class, () -> ValidComparisonVisitor.check(script));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidAssignment() throws ParseException {
         String queryString = "'_Eval_' = true";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
-        ValidComparisonVisitor.check(script);
+        assertThrows(IllegalArgumentException.class, () -> JexlASTHelper.parseJexlQuery(queryString));
     }
 
     @Test

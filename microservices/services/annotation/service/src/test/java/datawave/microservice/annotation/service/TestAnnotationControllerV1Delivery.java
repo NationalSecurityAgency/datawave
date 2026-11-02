@@ -7,9 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,8 +31,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.integration.IntegrationMessageHeaderAccessor;
-import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 
 import datawave.annotation.data.transform.DefaultTimestampTransformer;
@@ -54,8 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Focused unit tests for the message delivery path in {@link AnnotationControllerV1}: {@code writeAnnotation}, {@code sendAnnotation}, and
- * {@code sendAnnotationMessage}. These methods are package-private (visible for testing), so they are called directly here. The durable-write acknowledgement
- * protocol is simulated by invoking {@link AnnotationControllerV1#processConfirmAck(Message)} directly rather than standing up a real message broker.
+ * {@code sendAnnotationMessage}. These methods are package-private (visible for testing), so they are called directly here. The broker-confirmation protocol is
+ * simulated by completing the broker confirmation future rather than standing up a real message broker.
  */
 @SuppressWarnings("SpellCheckingInspection")
 @ExtendWith(MockitoExtension.class)
@@ -90,10 +89,8 @@ public class TestAnnotationControllerV1Delivery {
         annotationProperties.getRetry().setFailTimeoutMillis(TimeUnit.SECONDS.toMillis(10));
 
         annotationController = new AnnotationControllerV1(connectionFactory, lookupService, annotationProperties, timestampTransformer, visibilityTransformer,
-                        annotationSink, Executors.newCachedThreadPool(), new AnnotationAckTracker());
+                        new AnnotationPublisher(annotationSink, annotationProperties, null), Executors.newCachedThreadPool());
 
-        // ensure no latches leak between tests
-        getAnnotationAckTracker().clear();
     }
 
     /**
@@ -107,18 +104,17 @@ public class TestAnnotationControllerV1Delivery {
             Message<AnnotationMessage> sent = invocation.getArgument(0);
             Object correlationId = sent.getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
             assertNotNull(correlationId);
-            Message<String> ack = MessageBuilder.withPayload("ack").setCorrelationId(correlationId).build();
-            annotationController.processConfirmAck(ack);
+            confirm(sent);
             return true;
         });
     }
 
-    // Use reflection to access the AnnotationAckTracker and assert that no latches leak between test invocations.
-    private AnnotationAckTracker getAnnotationAckTracker() {
+    // Inspect the publisher to verify completed publications do not retain in-flight entries.
+    private AnnotationPublisher getAnnotationPublisher() {
         try {
-            Field field = AnnotationControllerV1.class.getDeclaredField("annotationAckTracker");
+            Field field = AnnotationControllerV1.class.getDeclaredField("annotationPublisher");
             field.setAccessible(true);
-            return (AnnotationAckTracker) field.get(annotationController);
+            return (AnnotationPublisher) field.get(annotationController);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -135,15 +131,15 @@ public class TestAnnotationControllerV1Delivery {
         }
     }
 
-    // healthChecker is normally populated via @Autowired(required = false); inject a mock directly with reflection
     private void setHealthChecker(HealthChecker checker) {
-        try {
-            Field field = AnnotationControllerV1.class.getDeclaredField("healthChecker");
-            field.setAccessible(true);
-            field.set(annotationController, checker);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        annotationController = new AnnotationControllerV1(connectionFactory, lookupService, annotationProperties, timestampTransformer, visibilityTransformer,
+                        new AnnotationPublisher(annotationSink, annotationProperties, checker), mock(ExecutorService.class));
+    }
+
+    private static void confirm(Message<?> sent) {
+        CorrelationData correlation = sent.getHeaders().get(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, CorrelationData.class);
+        assertNotNull(correlation);
+        correlation.getFuture().set(new CorrelationData.Confirm(true, null));
     }
 
     private static AnnotationMessage buildMessage(Annotation annotation) {
@@ -191,7 +187,7 @@ public class TestAnnotationControllerV1Delivery {
             Message<AnnotationMessage> sent = invocation.getArgument(0);
             Object correlationId = sent.getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
             assertNotNull(correlationId);
-            annotationController.processConfirmAck(MessageBuilder.withPayload("ack").setCorrelationId(correlationId).build());
+            confirm(sent);
             return true;
         });
 
@@ -212,82 +208,46 @@ public class TestAnnotationControllerV1Delivery {
         assertFalse(idTwo.isBlank());
         assertNotEquals(idOne, idTwo, "distinct annotation messages must not share a correlation id");
 
-        // and the map should be clean afterward -- no leaked latches
-        assertTrue(getAnnotationAckTracker().isEmpty());
+        // and the map should be clean afterward -- no leaked in-flight entries
+        assertTrue(getAnnotationPublisher().isEmpty());
     }
 
     @Test
     public void testSendAnnotationMessage_DuplicateConcurrentSendsForSameMessageIdShareLatchAndBothSucceed() throws Exception {
-        // Two callers attempt to send the exact same (pre-assigned) annotationMessageId concurrently, simulating a
-        // client retry racing with the original in-flight send. Only one ack ever arrives for that correlation id.
-        // Both callers must be satisfied by that single ack -- the second call must not silently overwrite/orphan
-        // the first caller's latch, which would otherwise leave the first caller waiting out the full ack timeout
-        // and incorrectly reporting failure.
-        //
-        // This is made deterministic (rather than depending on thread-scheduling timing, which previously made this
-        // test intermittently flaky: if the original sender's entire send-ack-remove cycle completed before the
-        // "duplicate" caller's putIfAbsent even ran, the duplicate would legitimately see no in-flight latch and
-        // become a second original sender). A spy around AnnotationAckTracker signals exactly when the duplicate
-        // caller has observed the original sender's in-flight latch, and the mocked send(...) is held open until
-        // that has been confirmed before delivering the single ack.
-        AnnotationMessage annotationMessage = buildMessage(AnnotationUtils.injectAllHashes(generateTestAnnotation())).toBuilder()
-                        .setAnnotationMessageId("DUPLICATE-ID").build();
-
-        AnnotationAckTracker spyTracker = spy(new AnnotationAckTracker());
-        CountDownLatch duplicateObservedExistingLatch = new CountDownLatch(1);
-        doAnswer(invocation -> {
-            CountDownLatch existing = (CountDownLatch) invocation.callRealMethod();
-            if (existing != null) {
-                // this call found an already-registered latch, i.e. it is the "duplicate" caller
-                duplicateObservedExistingLatch.countDown();
-            }
-            return existing;
-        }).when(spyTracker).putIfAbsent(any(), any());
-
-        AnnotationControllerV1 controller = new AnnotationControllerV1(connectionFactory, lookupService, annotationProperties, timestampTransformer,
-                        visibilityTransformer, annotationSink, Executors.newCachedThreadPool(), spyTracker);
-
-        AtomicInteger sendCount = new AtomicInteger(0);
-        CountDownLatch originalSenderReachedSend = new CountDownLatch(1);
-        CountDownLatch releaseAck = new CountDownLatch(1);
+        AnnotationMessage message = buildMessage(AnnotationUtils.injectAllHashes(generateTestAnnotation())).toBuilder().setAnnotationMessageId("DUPLICATE-ID")
+                        .build();
+        annotationProperties.setAnnotationAckTimeoutMillis(10000);
+        CountDownLatch firstSend = new CountDownLatch(1);
+        CountDownLatch releaseConfirm = new CountDownLatch(1);
+        AtomicReference<Thread> duplicateThread = new AtomicReference<>();
         when(annotationSink.send(any())).thenAnswer(invocation -> {
-            // only the original sender should ever reach annotationSink.send(...); a duplicate should observe the
-            // existing latch and skip sending entirely.
-            sendCount.incrementAndGet();
-            Message<AnnotationMessage> sent = invocation.getArgument(0);
-            Object correlationId = sent.getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
-            assertNotNull(correlationId);
-
-            // Let the test know the original sender's latch is registered and it has reached send(...), then hold
-            // the ack back until the test confirms the duplicate caller has observed that latch -- this removes any
-            // dependency on thread-scheduling timing for reliably reproducing the race being tested.
-            originalSenderReachedSend.countDown();
-            assertTrue(releaseAck.await(10, TimeUnit.SECONDS), "test did not release the ack in time");
-
-            controller.processConfirmAck(MessageBuilder.withPayload("ack").setCorrelationId(correlationId).build());
+            firstSend.countDown();
+            assertTrue(releaseConfirm.await(10, TimeUnit.SECONDS));
+            confirm(invocation.getArgument(0));
             return true;
         });
-
         ExecutorService executor = Executors.newFixedThreadPool(2);
         try {
-            Future<Optional<AnnotationMessage>> futureOne = executor.submit(() -> controller.sendAnnotationMessage(annotationMessage));
-
-            assertTrue(originalSenderReachedSend.await(10, TimeUnit.SECONDS), "original sender did not reach send(...) in time");
-
-            Future<Optional<AnnotationMessage>> futureTwo = executor.submit(() -> controller.sendAnnotationMessage(annotationMessage));
-
-            assertTrue(duplicateObservedExistingLatch.await(10, TimeUnit.SECONDS),
-                            "duplicate caller did not observe the original sender's in-flight latch in time");
-            releaseAck.countDown();
-
-            Optional<AnnotationMessage> resultOne = futureOne.get(10, TimeUnit.SECONDS);
-            Optional<AnnotationMessage> resultTwo = futureTwo.get(10, TimeUnit.SECONDS);
-
-            assertTrue(resultOne.isPresent(), "the original sender must be satisfied by the single ack");
-            assertTrue(resultTwo.isPresent(), "the duplicate sender must also be satisfied by the same ack rather than timing out");
-            assertEquals(1, sendCount.get(), "only the original sender should have actually sent a message; the duplicate should reuse its latch");
-            assertTrue(spyTracker.isEmpty(), "no latch should remain once both duplicate callers complete");
+            Future<Optional<AnnotationMessage>> first = executor.submit(() -> annotationController.sendAnnotationMessage(message));
+            assertTrue(firstSend.await(5, TimeUnit.SECONDS));
+            Future<Optional<AnnotationMessage>> second = executor.submit(() -> {
+                duplicateThread.set(Thread.currentThread());
+                return annotationController.sendAnnotationMessage(message);
+            });
+            // The only timed wait in the duplicate task is the shared confirmation future.
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while ((duplicateThread.get() == null || duplicateThread.get().getState() != Thread.State.TIMED_WAITING) && System.nanoTime() < deadline) {
+                Thread.sleep(1);
+            }
+            assertNotNull(duplicateThread.get());
+            assertEquals(Thread.State.TIMED_WAITING, duplicateThread.get().getState());
+            releaseConfirm.countDown();
+            assertTrue(first.get(5, TimeUnit.SECONDS).isPresent());
+            assertTrue(second.get(5, TimeUnit.SECONDS).isPresent());
+            verify(annotationSink, times(1)).send(any());
+            assertTrue(getAnnotationPublisher().isEmpty());
         } finally {
+            releaseConfirm.countDown();
             executor.shutdownNow();
         }
     }
@@ -304,11 +264,11 @@ public class TestAnnotationControllerV1Delivery {
         assertTrue(result.isEmpty());
         // failed sends should short-circuit rather than waiting out the ack timeout
         assertTrue(elapsed < annotationProperties.getAnnotationAckTimeoutMillis(), "send failure should not wait for the ack timeout");
-        assertTrue(getAnnotationAckTracker().isEmpty(), "latch should be cleaned up even when send fails");
+        assertTrue(getAnnotationPublisher().isEmpty(), "in-flight entry should be cleaned up even when send fails");
     }
 
     @Test
-    public void testSendAnnotationMessage_AckTimeoutReturnsEmptyAndCleansUpLatch() {
+    public void testSendAnnotationMessage_AckTimeoutReturnsEmptyAndCleansUpPublication() {
         // send succeeds, but no acknowledgement ever arrives
         when(annotationSink.send(any())).thenReturn(true);
         Annotation annotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());
@@ -319,12 +279,12 @@ public class TestAnnotationControllerV1Delivery {
 
         assertTrue(result.isEmpty());
         assertTrue(elapsed >= annotationProperties.getAnnotationAckTimeoutMillis(), "should have waited for the full ack timeout");
-        assertTrue(getAnnotationAckTracker().isEmpty(), "latch should be removed after timeout");
+        assertTrue(getAnnotationPublisher().isEmpty(), "in-flight entry should be removed after timeout");
     }
 
     @Test
-    public void testSendAnnotationMessage_InterruptedWhileAwaitingAckReturnsEmptyRestoresInterruptStatusAndCleansUpLatch() throws Exception {
-        // send succeeds, but no ack ever arrives -- the calling thread is interrupted while awaiting the latch instead.
+    public void testSendAnnotationMessage_InterruptedWhileAwaitingAckReturnsEmptyRestoresInterruptStatusAndCleansUpPublication() throws Exception {
+        // send succeeds, but no ack ever arrives -- the calling thread is interrupted while awaiting the confirmation future instead.
         annotationProperties.setAnnotationAckTimeoutMillis(TimeUnit.SECONDS.toMillis(30));
         when(annotationSink.send(any())).thenReturn(true);
         Annotation annotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());
@@ -344,7 +304,7 @@ public class TestAnnotationControllerV1Delivery {
             });
 
             assertTrue(threadStarted.await(5, TimeUnit.SECONDS));
-            // give the worker thread a moment to actually enter latch.await(...) before interrupting it
+            // give the worker thread a moment to begin waiting on the confirmation future before interrupting it
             Thread.sleep(50);
             executor.shutdownNow();
 
@@ -353,7 +313,7 @@ public class TestAnnotationControllerV1Delivery {
             assertNotNull(resultRef.get());
             assertTrue(resultRef.get().isEmpty(), "an interrupted wait for the ack must be treated as a failed send");
             assertTrue(interruptedStatusObservedAfterReturn.get(), "the thread's interrupt status must be restored, not swallowed, by sendAnnotationMessage");
-            assertTrue(getAnnotationAckTracker().isEmpty(), "latch should still be cleaned up when the wait is interrupted");
+            assertTrue(getAnnotationPublisher().isEmpty(), "in-flight entry should still be cleaned up when the wait is interrupted");
         } finally {
             executor.shutdownNow();
         }
@@ -362,13 +322,13 @@ public class TestAnnotationControllerV1Delivery {
     @Test
     public void testSendAnnotationMessage_LateAckAfterTimeoutIsNoop() {
         // send succeeds, no ack arrives for the duration of the timeout window,
-        // then a late ack arrives. The late ack must be safely ignored (no NPE,
-        // no exception) because the sender's finally block has already removed the latch.
+        // then a late ack arrives. Completing the old future must be safe
+        // without recreating the completed publication or changing the previous result.
         when(annotationSink.send(any())).thenReturn(true);
         Annotation annotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());
 
-        // Send the message — this will register a latch, wait for the ack timeout,
-        // receive no ack, and remove the latch in the finally block
+        // Send the message — this will register an in-flight entry, wait for the ack timeout,
+        // receive no ack, and remove the in-flight entry in the finally block
         long start = System.currentTimeMillis();
         Optional<AnnotationMessage> result = annotationController.sendAnnotationMessage(buildMessage(annotation));
         long elapsed = System.currentTimeMillis() - start;
@@ -381,13 +341,12 @@ public class TestAnnotationControllerV1Delivery {
         verify(annotationSink, times(1)).send(captor.capture());
         Object correlationId = captor.getValue().getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
         assertNotNull(correlationId);
-        String correlationIdString = correlationId.toString();
 
-        // Now simulate the late ack arriving after the latch was already removed
-        annotationController.processConfirmAck(MessageBuilder.withPayload("late-ack").setCorrelationId(correlationIdString).build());
+        // Now simulate the late ack arriving after the in-flight entry was already removed
+        confirm(captor.getValue());
 
-        // Verify no exceptions were thrown and the tracker is clean
-        assertTrue(getAnnotationAckTracker().isEmpty(), "no latch should remain after late ack");
+        // Verify no exceptions were thrown and no publication remains in flight
+        assertTrue(getAnnotationPublisher().isEmpty(), "no in-flight entry should remain after late ack");
     }
 
     @Test
@@ -399,7 +358,7 @@ public class TestAnnotationControllerV1Delivery {
         Optional<AnnotationMessage> result = annotationController.sendAnnotationMessage(buildMessage(annotation));
 
         assertTrue(result.isPresent());
-        assertTrue(getAnnotationAckTracker().isEmpty(), "no latch should be registered when acks are disabled");
+        assertTrue(getAnnotationPublisher().isEmpty(), "no in-flight entry should be registered when acks are disabled");
     }
 
     @Test
@@ -425,7 +384,7 @@ public class TestAnnotationControllerV1Delivery {
 
         assertTrue(result.isEmpty(), "an unhealthy messaging infrastructure should short-circuit to failure");
         verify(annotationSink, times(0)).send(any());
-        assertTrue(getAnnotationAckTracker().isEmpty(), "no latch should be registered when the send is skipped due to health");
+        assertTrue(getAnnotationPublisher().isEmpty(), "no in-flight entry should be registered when the send is skipped due to health");
     }
 
     @Test
@@ -494,7 +453,7 @@ public class TestAnnotationControllerV1Delivery {
         AnnotationProperties defaultProperties = new AnnotationProperties();
         defaultProperties.setAnnotationAckEnabled(false);
         AnnotationControllerV1 defaultController = new AnnotationControllerV1(connectionFactory, lookupService, defaultProperties, timestampTransformer,
-                        visibilityTransformer, annotationSink, mock(ExecutorService.class), new AnnotationAckTracker());
+                        visibilityTransformer, new AnnotationPublisher(annotationSink, defaultProperties, null), mock(ExecutorService.class));
         when(annotationSink.send(any())).thenReturn(true);
 
         Optional<Annotation> result = defaultController.sendAnnotation(AnnotationUtils.injectAllHashes(generateTestAnnotation()));
@@ -543,7 +502,7 @@ public class TestAnnotationControllerV1Delivery {
                 Message<AnnotationMessage> sent = invocation.getArgument(0);
                 Object correlationId = sent.getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
                 assertNotNull(correlationId);
-                annotationController.processConfirmAck(MessageBuilder.withPayload("ack").setCorrelationId(correlationId).build());
+                confirm(sent);
             }
             return succeeds;
         });
@@ -579,7 +538,7 @@ public class TestAnnotationControllerV1Delivery {
         Optional<Annotation> result = annotationController.writeAnnotation(annotation);
 
         assertTrue(result.isEmpty());
-        assertTrue(getAnnotationAckTracker().isEmpty(), "no latches should remain after exhausting retries");
+        assertTrue(getAnnotationPublisher().isEmpty(), "no in-flight entries should remain after exhausting retries");
     }
 
     @Test
@@ -608,7 +567,7 @@ public class TestAnnotationControllerV1Delivery {
         longBackoffProperties.getRetry().setFailTimeoutMillis(TimeUnit.SECONDS.toMillis(60));
 
         AnnotationControllerV1 controller = new AnnotationControllerV1(connectionFactory, lookupService, longBackoffProperties, timestampTransformer,
-                        visibilityTransformer, annotationSink, Executors.newCachedThreadPool(), new AnnotationAckTracker());
+                        visibilityTransformer, new AnnotationPublisher(annotationSink, longBackoffProperties, null), Executors.newCachedThreadPool());
 
         CountDownLatch firstSendAttempted = new CountDownLatch(1);
         when(annotationSink.send(any())).thenAnswer(invocation -> {
@@ -650,7 +609,7 @@ public class TestAnnotationControllerV1Delivery {
     }
 
     // ----------------------------------------------------------------------------------------------------------------
-    // concurrency: two independent writes must not cross-satisfy each other's latches
+    // concurrency: two independent writes must not cross-satisfy each other's in-flight entries
     // ----------------------------------------------------------------------------------------------------------------
 
     @Test
@@ -663,7 +622,7 @@ public class TestAnnotationControllerV1Delivery {
             sendCounts.merge(String.valueOf(correlationId), 1, Integer::sum);
             Thread.sleep(10);
             assertNotNull(correlationId);
-            annotationController.processConfirmAck(MessageBuilder.withPayload("ack").setCorrelationId(correlationId).build());
+            confirm(sent);
             return true;
         });
 
@@ -681,10 +640,10 @@ public class TestAnnotationControllerV1Delivery {
             assertTrue(resultOne.isPresent());
             assertTrue(resultTwo.isPresent());
             assertNotEquals(resultOne.get().getAnnotationId(), resultTwo.get().getAnnotationId());
-            assertTrue(getAnnotationAckTracker().isEmpty(), "no latches should remain once both concurrent writes complete");
+            assertTrue(getAnnotationPublisher().isEmpty(), "no in-flight entries should remain once both concurrent writes complete");
 
             // each write should have used its own distinct correlation id, and been sent exactly once (no unnecessary retries,
-            // and no cross-talk where one write's ack satisfies the other's latch)
+            // and no cross-talk where one write's ack satisfies the other's confirmation future)
             assertEquals(2, sendCounts.size(), "expected two distinct correlation ids to have been used: " + sendCounts.keySet());
             sendCounts.values().forEach(count -> assertEquals(1, count, "expected each correlation id to have been sent exactly once"));
         } finally {

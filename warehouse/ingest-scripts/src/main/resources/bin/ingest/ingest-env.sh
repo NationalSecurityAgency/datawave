@@ -1,5 +1,8 @@
 #!/bin/bash
 
+INGEST_BIN_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+INGEST_INSTALL_DIR=$(cd -- "$INGEST_BIN_DIR/../.." && pwd)
+
 #Directory in which to place the lock files
 export LOCK_FILE_DIR=${lock.file.dir}
 
@@ -8,9 +11,9 @@ if [[ ! -d ${LOCK_FILE_DIR} || ! -w ${LOCK_FILE_DIR} ]]; then
   exit 1
 fi
 
-. ../system/header.sh
+. "$INGEST_BIN_DIR/../system/header.sh"
 
-. ../ingest/tables-env.sh
+. "$INGEST_BIN_DIR/tables-env.sh"
 
 # regex matching changed since bash 3.1....ensure we are forward compatible
 shopt -s compat31 > /dev/null 2>&1
@@ -136,7 +139,7 @@ CONFIG_DATA_TYPES="${CONFIG_DATA_TYPES}"
 CONFIG_FILES="${CONFIG_FILES}"
 if [[ "$CONFIG_FILES" == "" ]]; then
     # attempt to create the CONFIG_DATA_TYPES and CONFIG_FILES by scanning the config directory
-    for config_file in ../../config/*.xml; do
+    for config_file in "$INGEST_INSTALL_DIR"/config/*.xml; do
         CONFIG_DATA_TYPE=`grep -A 1 -B 1 '>data.name<' $config_file | grep '<value>' | sed 's/.*<value>//' | sed 's/<\/value>.*//' | sed 's/\.//'`
         if [[ "$CONFIG_DATA_TYPE" != "" ]]; then
             CONFIG_DATA_TYPES=$CONFIG_DATA_TYPE,$CONFIG_DATA_TYPES
@@ -223,8 +226,8 @@ findVersion (){
 findHadoopVersion (){
   $1/bin/hadoop version | head -1 | awk '{print $2}'
 }
-METRICS_VERSION=$(findVersion ../../lib datawave-metrics-core)
-INGEST_VERSION=$(findVersion ../../lib datawave-ingest-csv)
+METRICS_VERSION=$(findVersion "$INGEST_INSTALL_DIR/lib" datawave-metrics-core)
+INGEST_VERSION=$(findVersion "$INGEST_INSTALL_DIR/lib" datawave-ingest-csv)
 HADOOP_VERSION=$(findHadoopVersion $INGEST_HADOOP_HOME)
 
 
@@ -332,7 +335,7 @@ flagBasename() {
 }
 
 # Source script containing lock file acquisition logic
-. ../util/file_locker.sh
+. "$INGEST_BIN_DIR/../util/file_locker.sh"
 
 # Call the function to acquire the lock on a lock file with the program name
 # for CRON mutual exclusiveness.

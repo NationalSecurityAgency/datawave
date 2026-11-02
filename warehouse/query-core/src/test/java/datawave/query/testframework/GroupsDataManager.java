@@ -1,5 +1,8 @@
 package datawave.query.testframework;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -11,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import au.com.bytecode.opencsv.CSVReader;
 import datawave.data.normalizer.Normalizer;
@@ -42,7 +44,7 @@ public class GroupsDataManager extends AbstractDataManager {
 
     @Override
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
-        Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
+        assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             String[] data;
             int count = 0;
@@ -64,7 +66,7 @@ public class GroupsDataManager extends AbstractDataManager {
 
         GroupRawData(final String datatype, final String fields[], Map<String,RawMetaData> metaDataMap) {
             super(datatype, fields, GroupField.headers(), metadata);
-            Assert.assertEquals("group ingest data field count is invalid", GroupField.headers().size(), fields.length);
+            assertEquals("group ingest data field count is invalid", GroupField.headers().size(), fields.length);
         }
 
         @Override

@@ -1,12 +1,12 @@
 package datawave.ingest.mapreduce.handler.shard;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Pins the UTF-8 encoding fidelity of {@link ShardUtil#utf8(String)} against {@link Text}, which is the type it replaced at call sites throughout
@@ -34,7 +34,7 @@ public class ShardUtilTest {
     @Test
     public void utf8_matchesTextConstructor() {
         for (String s : CORPUS) {
-            assertArrayEquals("utf8(String) mismatch for " + describe(s), new Text(s).copyBytes(), ShardUtil.utf8(s));
+            assertArrayEquals(new Text(s).copyBytes(), ShardUtil.utf8(s), "utf8(String) mismatch for " + describe(s));
         }
     }
 
@@ -48,7 +48,7 @@ public class ShardUtilTest {
             java.nio.ByteBuffer buffer = Text.encode(s, true);
             byte[] expectedBytes = new byte[buffer.limit()];
             System.arraycopy(buffer.array(), 0, expectedBytes, 0, expectedBytes.length);
-            assertArrayEquals("utf8(String) mismatch for " + describe(s), expectedBytes, ShardUtil.utf8(s));
+            assertArrayEquals(expectedBytes, ShardUtil.utf8(s), "utf8(String) mismatch for " + describe(s));
         }
     }
 
@@ -119,7 +119,7 @@ public class ShardUtilTest {
         for (boolean delete : new boolean[] {false, true}) {
             Key expected = ShardUtil.createIndexKey(row, colfText, colqText, vis, ts, delete);
             Key actual = ShardUtil.createIndexKey(row, colf, colq, vis, ts, delete);
-            assertEquals("createIndexKey(byte[], byte[], byte[], ...) mismatch for delete=" + delete, expected, actual);
+            assertEquals(expected, actual, "createIndexKey(byte[], byte[], byte[], ...) mismatch for delete=" + delete);
         }
     }
 

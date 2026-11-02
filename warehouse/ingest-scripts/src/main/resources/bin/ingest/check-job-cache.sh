@@ -8,11 +8,10 @@ else
     MKTEMP="mktemp -t $(basename $0).XXXXXXXX"
 fi
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR || exit
 
-. ../ingest/ingest-env.sh
-. ../ingest/job-cache-env.sh
-. ../ingest/ingest-libs.sh
+. "$THIS_DIR/ingest-env.sh"
+. "$THIS_DIR/job-cache-env.sh"
+. "$THIS_DIR/ingest-libs.sh"
 
 echo "Checking the consistency of $JOB_CACHE_DIR"
 

@@ -1,5 +1,7 @@
 package datawave.query.iterator;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,9 +10,8 @@ import java.util.Map;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class FieldIndexOnlyQueryCompressedOptionsTest {
@@ -23,7 +24,7 @@ public class FieldIndexOnlyQueryCompressedOptionsTest {
     private ByteSequence mockSeq;
     private Collection<ByteSequence> byteSeq;
 
-    @Before
+    @BeforeEach
     public void setup() {
 
         mockIterator = new FieldIndexOnlyQueryIterator();
@@ -66,7 +67,7 @@ public class FieldIndexOnlyQueryCompressedOptionsTest {
             e.getMessage();
         }
 
-        Assert.assertTrue(mockIterator.validateOptions(optionsMap));
+        assertTrue(mockIterator.validateOptions(optionsMap));
     }
 
     @Test
@@ -78,7 +79,7 @@ public class FieldIndexOnlyQueryCompressedOptionsTest {
             e.getMessage();
         }
 
-        Assert.assertTrue(mockIterator.compressedMappings);
+        assertTrue(mockIterator.compressedMappings);
 
     }
 

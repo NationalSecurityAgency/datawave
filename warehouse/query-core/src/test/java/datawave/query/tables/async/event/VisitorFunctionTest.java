@@ -1,5 +1,12 @@
 package datawave.query.tables.async.event;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -22,9 +29,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.LcNoDiacriticsType;
@@ -50,7 +56,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         config = new ShardQueryConfiguration();
         helper = createMock(MetadataHelper.class);
@@ -170,15 +176,15 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         verifyAll();
 
-        Assert.assertNotEquals(chunk, updatedChunk);
+        assertNotEquals(chunk, updatedChunk);
         String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
-        Assert.assertNotEquals(query, updatedQuery);
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("values\":[\"a\",\"b\"]"));
+        assertNotEquals(query, updatedQuery);
+        assertTrue(updatedQuery.contains("_List_"), updatedQuery);
+        assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
+        assertTrue(updatedQuery.contains("values\":[\"a\",\"b\"]"), updatedQuery);
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void overIvaratorTermThresholdTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
 
@@ -222,7 +228,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         try {
             function.apply(chunk);
         } catch (Exception e) {
-            Assert.fail("Expected the ivarator threshold to pass");
+            fail("Expected the ivarator threshold to pass");
         }
 
         verifyAll();
@@ -230,10 +236,10 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setMaxIvaratorTerms(1);
 
         function = new VisitorFunction(config, helper);
-        function.apply(chunk);
+        assertThrows(DatawaveFatalQueryException.class, () -> function.apply(chunk));
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void overTermThresholdCantReduceTest() throws IOException, TableNotFoundException, URISyntaxException {
         setupExpects();
 
@@ -274,7 +280,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         replayAll();
 
         function = new VisitorFunction(config, helper);
-        function.apply(chunk);
+        assertThrows(DatawaveFatalQueryException.class, () -> function.apply(chunk));
     }
 
     @Test
@@ -322,14 +328,14 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         verifyAll();
 
-        Assert.assertNotEquals(chunk, updatedChunk);
+        assertNotEquals(chunk, updatedChunk);
         String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
-        Assert.assertNotEquals(query, updatedQuery);
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("values\":[\"a\",\"b\",\"c\",\"d\",\"e\"]"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("FIELD1 == 'x' || FIELD1 == 'y'"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("&& (field = 'FIELD2') && (params = '{\"values\":[\"a\",\"b\",\"c\",\"d\"]}')"));
+        assertNotEquals(query, updatedQuery);
+        assertTrue(updatedQuery.contains("_List_"), updatedQuery);
+        assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
+        assertTrue(updatedQuery.contains("values\":[\"a\",\"b\",\"c\",\"d\",\"e\"]"), updatedQuery);
+        assertTrue(updatedQuery.contains("FIELD1 == 'x' || FIELD1 == 'y'"), updatedQuery);
+        assertTrue(updatedQuery.contains("&& (field = 'FIELD2') && (params = '{\"values\":[\"a\",\"b\",\"c\",\"d\"]}')"), updatedQuery);
     }
 
     @Test
@@ -376,12 +382,12 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         verifyAll();
 
-        Assert.assertNotEquals(chunk, updatedChunk);
+        assertNotEquals(chunk, updatedChunk);
         String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
-        Assert.assertNotEquals(query, updatedQuery);
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
-        Assert.assertTrue(updatedQuery, updatedQuery.contains("ranges\":[[\"(a\",\"z)\"]"));
+        assertNotEquals(query, updatedQuery);
+        assertTrue(updatedQuery.contains("_List_"), updatedQuery);
+        assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
+        assertTrue(updatedQuery.contains("ranges\":[[\"(a\",\"z)\"]"), updatedQuery);
     }
 
     @Test
@@ -400,15 +406,15 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         // assert initial state
         Set<String> keys = settings.getOptions().keySet();
-        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
-        Assert.assertTrue(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
+        assertTrue(keys.contains(QueryOptions.QUERY));
+        assertTrue(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
 
         function.pruneIvaratorConfigs(script, settings);
 
         // verify ivarator config was pruned
         keys = settings.getOptions().keySet();
-        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
-        Assert.assertFalse(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
+        assertTrue(keys.contains(QueryOptions.QUERY));
+        assertFalse(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
     }
 
     @Test
@@ -429,8 +435,8 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         // verify ivarator config were not pruned
         Set<String> keys = settings.getOptions().keySet();
-        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
-        Assert.assertTrue(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
+        assertTrue(keys.contains(QueryOptions.QUERY));
+        assertTrue(keys.contains(QueryOptions.IVARATOR_NUM_RETRIES));
     }
 
     @Test
@@ -445,15 +451,15 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         // assert initial state
         Set<String> keys = settings.getOptions().keySet();
-        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
-        Assert.assertTrue(keys.contains(QueryOptions.COMPOSITE_FIELDS));
+        assertTrue(keys.contains(QueryOptions.QUERY));
+        assertTrue(keys.contains(QueryOptions.COMPOSITE_FIELDS));
 
         function.pruneEmptyOptions(settings);
 
         // assert option with empty value was pruned
         keys = settings.getOptions().keySet();
-        Assert.assertTrue(keys.contains(QueryOptions.QUERY));
-        Assert.assertFalse(keys.contains(QueryOptions.COMPOSITE_FIELDS));
+        assertTrue(keys.contains(QueryOptions.QUERY));
+        assertFalse(keys.contains(QueryOptions.COMPOSITE_FIELDS));
     }
 
     @Test
@@ -472,13 +478,13 @@ public class VisitorFunctionTest extends EasyMockSupport {
         function.reduceTypeMetadata(script, settings);
 
         Map<String,String> options = settings.getOptions();
-        Assert.assertTrue(options.containsKey(QueryOptions.TYPE_METADATA));
+        assertTrue(options.containsKey(QueryOptions.TYPE_METADATA));
 
         String option = options.get(QueryOptions.TYPE_METADATA);
-        Assert.assertTrue(StringUtils.isNotBlank(option));
+        assertTrue(StringUtils.isNotBlank(option));
 
         TypeMetadata metadata = new TypeMetadata(option);
-        Assert.assertEquals(Set.of("FIELD_A", "FIELD_B"), metadata.keySet());
+        assertEquals(Set.of("FIELD_A", "FIELD_B"), metadata.keySet());
     }
 
     @Test
@@ -497,13 +503,13 @@ public class VisitorFunctionTest extends EasyMockSupport {
         function.reduceTypeMetadata(script, settings);
 
         Map<String,String> options = settings.getOptions();
-        Assert.assertTrue(options.containsKey(QueryOptions.TYPE_METADATA));
+        assertTrue(options.containsKey(QueryOptions.TYPE_METADATA));
 
         String option = options.get(QueryOptions.TYPE_METADATA);
-        Assert.assertTrue(StringUtils.isNotBlank(option));
+        assertTrue(StringUtils.isNotBlank(option));
 
         TypeMetadata metadata = new TypeMetadata(option);
-        Assert.assertEquals(Set.of("FIELD_A", "FIELD_C"), metadata.keySet());
+        assertEquals(Set.of("FIELD_A", "FIELD_C"), metadata.keySet());
     }
 
     /**
@@ -527,7 +533,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         function.reduceIngestTypes(script, settings);
 
-        Assert.assertEquals("type-a", settings.getOptions().get(QueryOptions.DATATYPE_FILTER));
+        assertEquals("type-a", settings.getOptions().get(QueryOptions.DATATYPE_FILTER));
     }
 
     private void loadSettings(IteratorSetting settings) {
@@ -594,8 +600,8 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
     private void assertUniqueSettings(IteratorSetting setting, boolean present) {
         Map<String,String> options = setting.getOptions();
-        Assert.assertEquals(present, options.containsKey(QueryOptions.UNIQUE_FIELDS));
-        Assert.assertEquals(present, options.containsKey(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE));
-        Assert.assertEquals(present, options.containsKey(QueryOptions.MOST_RECENT_UNIQUE));
+        assertEquals(present, options.containsKey(QueryOptions.UNIQUE_FIELDS));
+        assertEquals(present, options.containsKey(QueryOptions.UNIQUE_CACHE_BUFFER_SIZE));
+        assertEquals(present, options.containsKey(QueryOptions.MOST_RECENT_UNIQUE));
     }
 }

@@ -1,7 +1,8 @@
 package datawave.util.ssdeep;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.Test;
 
 public class SSDeepHashEditDistanceScorerTest {
 
@@ -34,7 +35,7 @@ public class SSDeepHashEditDistanceScorerTest {
             SSDeepHash queryHash = SSDeepHash.parse(testData[i][0]);
             SSDeepHash targetHash = SSDeepHash.parse(testData[i][1]);
             int score = scorer.apply(queryHash, targetHash);
-            Assert.assertEquals("Expected score of " + expectedScores[i] + " for query: " + queryHash + ", target: " + targetHash, expectedScores[i], score);
+            assertEquals(expectedScores[i], score, "Expected score of " + expectedScores[i] + " for query: " + queryHash + ", target: " + targetHash);
         }
     }
 }

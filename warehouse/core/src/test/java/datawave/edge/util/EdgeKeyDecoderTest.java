@@ -1,17 +1,19 @@
 package datawave.edge.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class EdgeKeyDecoderTest {
     private EdgeTableTestKeyHelper testKeyHelper;
     private EdgeKeyDecoder decoder;
     private EdgeKey.EdgeKeyBuilder edgeKeyBuilder;
 
-    @Before
+    @BeforeEach
     public void before() {
         testKeyHelper = new EdgeTableTestKeyHelper();
         decoder = new EdgeKeyDecoder();
@@ -51,7 +53,7 @@ public class EdgeKeyDecoderTest {
     public void testDecodeAndEncodeIsIdentical() throws Exception {
         EdgeKey originalKey = edgeKeyBuilder.build();
         EdgeKey newKey = copyEncodeDecode(originalKey);
-        Assert.assertEquals(originalKey, newKey);
+        assertEquals(originalKey, newKey);
     }
 
     private EdgeKey decodeStandardKey(Key key) {
@@ -80,56 +82,56 @@ public class EdgeKeyDecoderTest {
 
     @Test
     public void validDateExtractionForAllCqTypes() {
-        Assert.assertEquals("20160822", EdgeKeyDecoder.getYYYYMMDD(new Text("20160822")));
-        Assert.assertEquals("20160822", EdgeKeyDecoder.getYYYYMMDD(new Text("20160822/CATEGORY/ATTRIBUTE2/ATTRIBUTE3")));
-        Assert.assertEquals("20160822", EdgeKeyDecoder.getYYYYMMDD(new Text("20160822/CATEGORY/ATTRIBUTE2/ATTRIBUTE3/DATETYPE")));
-        Assert.assertEquals("20160822", EdgeKeyDecoder.getYYYYMMDD(new Text("20160822/CATEGORY/ATTRIBUTE2/ATTRIBUTE3")));
-        Assert.assertEquals("20160822", EdgeKeyDecoder.getYYYYMMDD(new Text("20160822/CATEGORY/ATTRIBUTE2/ATTRIBUTE3/DATETYPE")));
+        assertEquals("20160822", EdgeKeyDecoder.getYYYYMMDD(new Text("20160822")));
+        assertEquals("20160822", EdgeKeyDecoder.getYYYYMMDD(new Text("20160822/CATEGORY/ATTRIBUTE2/ATTRIBUTE3")));
+        assertEquals("20160822", EdgeKeyDecoder.getYYYYMMDD(new Text("20160822/CATEGORY/ATTRIBUTE2/ATTRIBUTE3/DATETYPE")));
+        assertEquals("20160822", EdgeKeyDecoder.getYYYYMMDD(new Text("20160822/CATEGORY/ATTRIBUTE2/ATTRIBUTE3")));
+        assertEquals("20160822", EdgeKeyDecoder.getYYYYMMDD(new Text("20160822/CATEGORY/ATTRIBUTE2/ATTRIBUTE3/DATETYPE")));
     }
 
     @Test
     public void dateExtractionForMissingDates() {
-        Assert.assertEquals("", EdgeKeyDecoder.getYYYYMMDD(new Text("")));
-        Assert.assertEquals("", EdgeKeyDecoder.getYYYYMMDD(new Text("/CATEGORY/ATTRIBUTE2/ATTRIBUTE3")));
-        Assert.assertEquals("", EdgeKeyDecoder.getYYYYMMDD(new Text("/CATEGORY/ATTRIBUTE2/ATTRIBUTE3/DATETYPE")));
-        Assert.assertEquals("", EdgeKeyDecoder.getYYYYMMDD(new Text("/CATEGORY/ATTRIBUTE2/ATTRIBUTE3")));
-        Assert.assertEquals("", EdgeKeyDecoder.getYYYYMMDD(new Text("/CATEGORY/ATTRIBUTE2/ATTRIBUTE3/DATETYPE")));
+        assertEquals("", EdgeKeyDecoder.getYYYYMMDD(new Text("")));
+        assertEquals("", EdgeKeyDecoder.getYYYYMMDD(new Text("/CATEGORY/ATTRIBUTE2/ATTRIBUTE3")));
+        assertEquals("", EdgeKeyDecoder.getYYYYMMDD(new Text("/CATEGORY/ATTRIBUTE2/ATTRIBUTE3/DATETYPE")));
+        assertEquals("", EdgeKeyDecoder.getYYYYMMDD(new Text("/CATEGORY/ATTRIBUTE2/ATTRIBUTE3")));
+        assertEquals("", EdgeKeyDecoder.getYYYYMMDD(new Text("/CATEGORY/ATTRIBUTE2/ATTRIBUTE3/DATETYPE")));
     }
 
     @Test
     public void determinesStatsEdgeFormat() {
-        Assert.assertEquals(EdgeKey.EDGE_FORMAT.STATS, EdgeKeyDecoder.determineEdgeFormat(new Text("STATS/STATTYPE/TYPE/RELATIONSHIP/CATEGORY")));
-        Assert.assertEquals(EdgeKey.EDGE_FORMAT.STATS, EdgeKeyDecoder.determineEdgeFormat(new Text("STATS/STATTYPE/TYPE/RELATIONSHIP/CATEGORY/ATTRIBUTE2")));
-        Assert.assertEquals(EdgeKey.EDGE_FORMAT.STATS, EdgeKeyDecoder.determineEdgeFormat(new Text("STATS/STATTYPE/TYPE/RELATIONSHIP/")));
-        Assert.assertEquals(EdgeKey.EDGE_FORMAT.STATS, EdgeKeyDecoder.determineEdgeFormat(new Text("STATS/STATTYPE/TYPE/RELATIONSHIP/")));
+        assertEquals(EdgeKey.EDGE_FORMAT.STATS, EdgeKeyDecoder.determineEdgeFormat(new Text("STATS/STATTYPE/TYPE/RELATIONSHIP/CATEGORY")));
+        assertEquals(EdgeKey.EDGE_FORMAT.STATS, EdgeKeyDecoder.determineEdgeFormat(new Text("STATS/STATTYPE/TYPE/RELATIONSHIP/CATEGORY/ATTRIBUTE2")));
+        assertEquals(EdgeKey.EDGE_FORMAT.STATS, EdgeKeyDecoder.determineEdgeFormat(new Text("STATS/STATTYPE/TYPE/RELATIONSHIP/")));
+        assertEquals(EdgeKey.EDGE_FORMAT.STATS, EdgeKeyDecoder.determineEdgeFormat(new Text("STATS/STATTYPE/TYPE/RELATIONSHIP/")));
     }
 
     @Test
     public void usesStandardForUnknownType() {
         // this was the existing behavior
-        Assert.assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, EdgeKeyDecoder.determineEdgeFormat(new Text("SHAMWOW/STATTYPE/TYPE/RELATIONSHIP/CATEGORY")));
+        assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, EdgeKeyDecoder.determineEdgeFormat(new Text("SHAMWOW/STATTYPE/TYPE/RELATIONSHIP/CATEGORY")));
     }
 
     @Test
     public void determinesStandardEdgeFormat() {
-        Assert.assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, EdgeKeyDecoder.determineEdgeFormat(new Text("TYPE/RELATIONSHIP/CATEGORY")));
-        Assert.assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, EdgeKeyDecoder.determineEdgeFormat(new Text("TYPE/RELATIONSHIP/CATEGORY/ATTRIBUTE2")));
-        Assert.assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, EdgeKeyDecoder.determineEdgeFormat(new Text("TYPE/RELATIONSHIP")));
-        Assert.assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, EdgeKeyDecoder.determineEdgeFormat(new Text("TYPE/RELATIONSHIP")));
+        assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, EdgeKeyDecoder.determineEdgeFormat(new Text("TYPE/RELATIONSHIP/CATEGORY")));
+        assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, EdgeKeyDecoder.determineEdgeFormat(new Text("TYPE/RELATIONSHIP/CATEGORY/ATTRIBUTE2")));
+        assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, EdgeKeyDecoder.determineEdgeFormat(new Text("TYPE/RELATIONSHIP")));
+        assertEquals(EdgeKey.EDGE_FORMAT.STANDARD, EdgeKeyDecoder.determineEdgeFormat(new Text("TYPE/RELATIONSHIP")));
     }
 
     @Test
     public void extractsEachStatsType() {
         for (EdgeKey.STATS_TYPE statsType : EdgeKey.STATS_TYPE.values()) {
-            Assert.assertEquals(statsType, EdgeKeyDecoder.determineStatsType(new Text("STATS/" + statsType.name() + "/CATEGORY")));
-            Assert.assertEquals(statsType, EdgeKeyDecoder.determineStatsType(new Text("STATS/" + statsType.name() + "/TYPE/RELATIONSHIP/CATEGORY/ATTRIBUTE2")));
-            Assert.assertEquals(statsType, EdgeKeyDecoder.determineStatsType(new Text("STATS/" + statsType.name() + "/TYPE/RELATIONSHIP/")));
-            Assert.assertEquals(statsType, EdgeKeyDecoder.determineStatsType(new Text("STATS/" + statsType.name() + "/TYPE/RELATIONSHIP/")));
+            assertEquals(statsType, EdgeKeyDecoder.determineStatsType(new Text("STATS/" + statsType.name() + "/CATEGORY")));
+            assertEquals(statsType, EdgeKeyDecoder.determineStatsType(new Text("STATS/" + statsType.name() + "/TYPE/RELATIONSHIP/CATEGORY/ATTRIBUTE2")));
+            assertEquals(statsType, EdgeKeyDecoder.determineStatsType(new Text("STATS/" + statsType.name() + "/TYPE/RELATIONSHIP/")));
+            assertEquals(statsType, EdgeKeyDecoder.determineStatsType(new Text("STATS/" + statsType.name() + "/TYPE/RELATIONSHIP/")));
         }
     }
 
-    @Test(expected = EnumConstantNotPresentException.class)
+    @Test
     public void throwsExceptionForInvalidStatsType() {
-        EdgeKeyDecoder.determineStatsType(new Text("STATS//CATEGORY"));
+        assertThrows(EnumConstantNotPresentException.class, () -> EdgeKeyDecoder.determineStatsType(new Text("STATS//CATEGORY")));
     }
 }

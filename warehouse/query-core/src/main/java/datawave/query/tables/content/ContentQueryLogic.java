@@ -51,16 +51,19 @@ import datawave.webservice.query.exception.QueryException;
  * </pre>
  *
  * The optional parameter content.view.name can be used to retrieve an alternate view of the document, assuming one is stored with that name. The optional
- * parameter content.view.all can be used to retrieve all documents for the parent and children Both optional parameters can be used together
+ * parameter content.view.all can be used to retrieve all documents for the parent and children Both optional parameters can be used together. Content queries
+ * accept up to 100 record IDs by default; the server-side content.query.max.ids setting controls this limit.
  */
 public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
 
     private static final Logger log = Logger.getLogger(ContentQueryLogic.class);
 
+    public static final String MAX_IDS = "content.query.max.ids";
     private static final String PARENT_ONLY = "\1";
     private static final String ALL = "\u10FFFF";
 
     private int queryThreads = 100;
+    private int maxIds = 100;
     ScannerFactory scannerFactory;
     String viewName = null;
     private boolean decodeView = false;
@@ -74,6 +77,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     public ContentQueryLogic(final ContentQueryLogic contentQueryLogic) {
         super(contentQueryLogic);
         this.queryThreads = contentQueryLogic.queryThreads;
+        this.maxIds = contentQueryLogic.maxIds;
         this.scannerFactory = contentQueryLogic.scannerFactory;
         this.viewName = contentQueryLogic.viewName;
     }
@@ -140,6 +144,17 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         this.queryThreads = queryThreads;
     }
 
+    public int getMaxIds() {
+        return maxIds;
+    }
+
+    public void setMaxIds(int maxIds) {
+        if (maxIds <= 0) {
+            throw new IllegalArgumentException(MAX_IDS + " must be a positive integer");
+        }
+        this.maxIds = maxIds;
+    }
+
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws Exception {
         if (!(genericConfig instanceof ContentQueryConfiguration)) {
@@ -184,6 +199,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         final String query = settings.getQuery().trim();
 
         int termIndex = 0;
+        int recordIds = 0;
         while (termIndex < query.length()) {
             // Get the next term
             int termSeparation = query.indexOf(' ', termIndex);
@@ -198,6 +214,9 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
             // Ignore empty terms
             if (!term.isEmpty()) {
+                if (++recordIds > maxIds) {
+                    throw new IllegalArgumentException("Query has requested greater than " + MAX_IDS + " of " + maxIds + " record IDs");
+                }
                 // Get the next value
                 int fieldSeparation = term.indexOf(':');
                 final String valueIdentifier;

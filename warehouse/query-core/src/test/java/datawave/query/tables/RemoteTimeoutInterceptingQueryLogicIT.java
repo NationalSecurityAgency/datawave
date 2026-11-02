@@ -2,10 +2,11 @@ package datawave.query.tables;
 
 import static datawave.query.tables.RemoteQueryServiceTestUtil.DEFAULT_REMOTE_LOGIC;
 import static datawave.query.tables.RemoteQueryServiceTestUtil.NON_ROUTABLE_HOST;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -17,16 +18,15 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.bouncycastle.operator.OperatorCreationException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 import com.sun.net.httpserver.HttpHandler;
 
 import datawave.authorization.remote.RemoteAuthorizationException;
-import datawave.common.test.integration.IntegrationTest;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.composite.CompositeLogicException;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
@@ -47,7 +47,7 @@ import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.common.remote.RemoteHttpServiceConfiguration;
 import datawave.webservice.result.GenericResponse;
 
-@Category(IntegrationTest.class)
+@Tag("IntegrationTest")
 public class RemoteTimeoutInterceptingQueryLogicIT {
     private static final String QUERY = "Grinning\uD83D\uDE00Face";
 
@@ -58,7 +58,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     private UUID uuid;
     private AtomicBoolean interrupt = new AtomicBoolean(false);
 
-    @Before
+    @BeforeEach
     public void setup() throws CertificateException, NoSuchAlgorithmException, IOException, OperatorCreationException {
         uuid = UUID.randomUUID();
         interrupt.set(false);
@@ -76,7 +76,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         logic.setDelegate(remoteDelegate);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         interrupt.set(true);
     }
@@ -402,11 +402,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         assertEquals("1: " + RemoteTimeoutInterceptingQueryLogic.REMOTE_TIMEOUT_PLAN, r.getPlan());
     }
 
-    @Test(expected = RemoteAuthorizationException.class)
+    @Test
     public void testListEffectiveAuthorizations() throws AuthorizationException {
         ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
 
-        logic.getUserOperations().listEffectiveAuthorizations(null);
+        assertThrows(RemoteAuthorizationException.class, () -> logic.getUserOperations().listEffectiveAuthorizations(null));
     }
 
     @Test
@@ -422,11 +422,11 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         logic.getUserOperations().listEffectiveAuthorizations(datawavePrincipal);
     }
 
-    @Test(expected = RemoteAuthorizationException.class)
+    @Test
     public void testFlushCachedCredentials() throws AuthorizationException {
         ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
 
-        logic.getUserOperations().flushCachedCredentials(null);
+        assertThrows(RemoteAuthorizationException.class, () -> logic.getUserOperations().flushCachedCredentials(null));
     }
 
     @Test
