@@ -30,11 +30,11 @@ public class DateIndexUtilTest {
     public void testGetBits() {
         BitSet bits = DateIndexUtil.getBits(20);
         for (int i = 0; i < 20; i++) {
-            Assert.assertFalse(bits.get(i));
+            assertFalse(bits.get(i));
         }
-        Assert.assertTrue(bits.get(20));
+        assertTrue(bits.get(20));
         for (int i = 21; i < bits.size(); i++) {
-            Assert.assertFalse(bits.get(i));
+            assertFalse(bits.get(i));
         }
     }
 
