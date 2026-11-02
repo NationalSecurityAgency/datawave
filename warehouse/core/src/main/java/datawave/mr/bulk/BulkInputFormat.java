@@ -1103,10 +1103,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             var tops = client.tableOperations();
                             String id = tops.tableIdMap().get(tableName);
-                            if (id == null)
-                                throw new TableDeletedException(tableId == null ? tableName : tableId.canonical());
-                            if (tableId == null)
+                            if (tableId == null) {
+                                if (id == null)
+                                    throw new TableDeletedException(tableName);
                                 tableId = TableId.of(id);
+                            } else if (!tableId.canonical().equals(id)) {
+                                // the table was deleted, or deleted and recreated under the same name
+                                throw new TableDeletedException(tableId.canonical());
+                            }
                             if (!tops.isOnline(tableName))
                                 throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
                         }
