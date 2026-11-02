@@ -1519,6 +1519,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setCollectTimingDetails(this.collectTimingDetails)
                 .setQuerySpanCollector(this.querySpanCollector)
                 .setIndexOnlyFields(this.getAllIndexOnlyFields())
+                .setAllowNullIndexOnlyFields(this.allNullIndexOnlyFields)
                 .setAllowTermFrequencyLookup(this.allowTermFrequencyLookup)
                 .setCompositeMetadata(compositeMetadata)
                 .setFiNextSeek(this.getFiNextSeek())
