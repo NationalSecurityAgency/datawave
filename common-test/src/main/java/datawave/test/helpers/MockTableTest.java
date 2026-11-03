@@ -16,6 +16,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloCache;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 
 /**
@@ -30,7 +31,7 @@ public abstract class MockTableTest {
 
     @Before
     public void setup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
-        InMemoryAccumulo i = InMemoryAccumulo.getInstance(this.getClass().toString());
+        InMemoryAccumulo i = InMemoryAccumuloCache.getCachedInstance(this.getClass().toString());
         client = new InMemoryAccumuloClient("root", i);
         if (client.tableOperations().exists(TABLE_NAME))
             client.tableOperations().delete(TABLE_NAME);

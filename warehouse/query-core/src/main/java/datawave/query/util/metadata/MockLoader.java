@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.ListenableFutureTask;
 import com.google.common.util.concurrent.ListeningExecutorService;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloCache;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 
 /**
@@ -79,7 +80,7 @@ public class MockLoader extends CacheLoader<LoaderKey,InMemoryAccumulo> {
         @Override
         public InMemoryAccumulo call() throws Exception {
 
-            InMemoryAccumulo instance = InMemoryAccumulo.getInstance(UUID.randomUUID() + key.table);
+            InMemoryAccumulo instance = InMemoryAccumuloCache.getCachedInstance(UUID.randomUUID() + key.table);
             Authorizations auths = key.client.securityOperations().getUserAuthorizations(key.user);
 
             if (log.isTraceEnabled()) {
