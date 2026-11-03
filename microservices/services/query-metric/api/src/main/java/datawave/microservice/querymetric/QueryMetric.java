@@ -348,21 +348,15 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                 output.writeString(20, message.queryLogic, false);
             }
 
-            if (message.queryLogic != null) {
-                output.writeInt64(21, message.numUpdates, false);
-            }
+            output.writeInt64(21, message.numUpdates, false);
 
             if (message.userDN != null) {
                 output.writeString(22, message.userDN, false);
             }
 
-            if (message.userDN != null) {
-                output.writeInt64(23, message.numResults, false);
-            }
+            output.writeInt64(23, message.numResults, false);
+            output.writeInt64(24, message.numPages, false);
 
-            if (message.userDN != null) {
-                output.writeInt64(24, message.numPages, false);
-            }
             if (message.errorCode != null) {
                 output.writeString(25, message.errorCode, false);
             }
