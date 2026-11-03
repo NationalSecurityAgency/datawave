@@ -17,6 +17,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -25,9 +26,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.enterprise.concurrent.ManagedExecutorService;
-import javax.inject.Inject;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
@@ -48,7 +46,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.DefaultServiceUnavailableRetryStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
@@ -95,26 +92,22 @@ public abstract class RemoteHttpService {
     private CloseableHttpClient client;
     private AtomicInteger activeExecutions = new AtomicInteger(0);
 
-    @Inject
     private SSLStores sslStores;
-
-    @Resource
-    private ManagedExecutorService executorService;
-
-    @Inject
+    private ExecutorService executorService;
     protected ObjectMapperDecorator objectMapperDecorator;
-
     protected ResponseObjectFactory responseObjectFactory;
 
     protected ObjectReader voidResponseReader;
 
-    private RemoteHttpServiceConfiguration config = new RemoteHttpServiceConfiguration();
+    private RemoteHttpServiceProperties config = new RemoteHttpServiceProperties();
+
+    private DatawaveRetryHandler retryHandler;
 
     public void setSslStores(SSLStores sslStores) {
         this.sslStores = sslStores;
     }
 
-    public void setExecutorService(ManagedExecutorService executorService) {
+    public void setExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
     }
 
@@ -182,8 +175,8 @@ public abstract class RemoteHttpService {
 
             List<Class<? extends IOException>> nonRetriableClasses = getNonRetriableClasses();
             List<Class<? extends IOException>> unavailableRetryClasses = getUnavailableRetryClasses();
-            DefaultHttpRequestRetryHandler datawaveRetryHandler = new DatawaveRetryHandler(retryCount(), unavailableRetryCount(), unavailableRetryDelay(),
-                            retryCounter(), nonRetriableClasses, unavailableRetryClasses);
+            retryHandler = new DatawaveRetryHandler(retryCount(), unavailableRetryCount(), unavailableRetryDelay(), retryCounter(), nonRetriableClasses,
+                            unavailableRetryClasses);
 
             // @formatter:off
             RequestConfig requestConfig = RequestConfig.custom()
@@ -200,7 +193,7 @@ public abstract class RemoteHttpService {
                     .setDefaultHeaders(defaultHeaders)
                     .setMaxConnTotal(maxConnections())
                     .setMaxConnPerRoute(maxConnections())
-                    .setRetryHandler(datawaveRetryHandler)
+                    .setRetryHandler(retryHandler)
                     .setDefaultRequestConfig(requestConfig)
                     .setServiceUnavailableRetryStrategy(new DatawaveUnavailableRetryStrategy(unavailableRetryCount(), unavailableRetryDelay(), retryCounter()))
                     .build();
@@ -604,12 +597,16 @@ public abstract class RemoteHttpService {
         this.responseObjectFactory = responseObjectFactory;
     }
 
-    public RemoteHttpServiceConfiguration getConfig() {
+    public RemoteHttpServiceProperties getConfig() {
         return config;
     }
 
-    public void setConfig(RemoteHttpServiceConfiguration config) {
+    public void setConfig(RemoteHttpServiceProperties config) {
         this.config = config;
+    }
+
+    public DatawaveRetryHandler getRetryHandler() {
+        return retryHandler;
     }
 
     /**
@@ -627,53 +624,6 @@ public abstract class RemoteHttpService {
      */
     protected List<Class<? extends IOException>> getNonRetriableClasses() {
         return Arrays.asList(UnknownHostException.class, SSLException.class);
-    }
-
-    private static class DatawaveRetryHandler extends DefaultHttpRequestRetryHandler {
-        private static final Logger log = LoggerFactory.getLogger(DatawaveRetryHandler.class);
-        private final int unavailableRetryCount;
-        private final int unavailableRetryDelay;
-        private final Counter retryCounter;
-        private List<Class<? extends IOException>> unavailableRetryClasses;
-
-        public DatawaveRetryHandler(int retryCount, int unavailableRetryCount, int unavailableRetryDelay, Counter retryCounter,
-                        List<Class<? extends IOException>> nonRetriableClasses, List<Class<? extends IOException>> unavailableRetryClasses) {
-            super(retryCount, false, nonRetriableClasses);
-            this.unavailableRetryCount = unavailableRetryCount;
-            this.unavailableRetryDelay = unavailableRetryDelay;
-            this.retryCounter = retryCounter;
-            this.unavailableRetryClasses = unavailableRetryClasses;
-        }
-
-        @Override
-        public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
-            boolean shouldRetry = super.retryRequest(exception, executionCount, context);
-            // if any class e is the same as exception or any class e is a superclass of exception then retryWithDelay
-            boolean retryWithDelay = unavailableRetryClasses.stream().anyMatch(e -> e.isAssignableFrom(exception.getClass()));
-            if (retryWithDelay) {
-                shouldRetry = (executionCount <= unavailableRetryCount);
-                if (shouldRetry) {
-                    try {
-                        if (log.isTraceEnabled()) {
-                            log.trace("retrying call after exception {}, executionCount {}, sleeping for {}ms", exception.getClass().getName(), executionCount,
-                                            unavailableRetryDelay);
-                        }
-                        Thread.sleep(unavailableRetryDelay);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        // Ignore -- we'll just end up retrying a little too fast
-                    }
-                }
-            } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("retrying call after exception {}, executionCount {}", exception.getClass().getName(), executionCount);
-                }
-            }
-            if (shouldRetry) {
-                retryCounter.inc();
-            }
-            return shouldRetry;
-        }
     }
 
     private static class DatawaveUnavailableRetryStrategy extends DefaultServiceUnavailableRetryStrategy {

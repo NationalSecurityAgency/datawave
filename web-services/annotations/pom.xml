@@ -64,6 +64,12 @@
             <artifactId>datawave-ws-query</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>gov.nsa.datawave.microservice</groupId>
+                    <artifactId>spring-boot-starter-datawave-query</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>

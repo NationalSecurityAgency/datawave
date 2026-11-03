@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+       http://www.springframework.org/schema/util
+       http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <bean id="datawaveUserService" factory-bean="datawaveUserServiceFactory" factory-method="createDatawaveUserService" />
+
+    <bean id="datawaveUserServiceFactory" class="datawave.security.authorization.DatawaveUserServiceFactory">
+        <property name="activeService" value="${dw.security.activeService}"/>
+        <property name="services">
+            <util:map>
+                <entry key="USER_SERVICE1" value-ref="testDatawaveUserService1"/>
+                <entry key="ALT_USER_SERVICE1" value-ref="AltDatawaveUserService1"/>
+                <entry key="ALT_USER_SERVICE2" value-ref="AltDatawaveUserService2"/>
+                <entry key="ALT_USER_SERVICE3" value-ref="AltDatawaveUserService3"/>
+                <entry key="ALT_USER_SERVICE4" value-ref="AltDatawaveUserService4"/>
+                <entry key="ALT_USER_SERVICE5" value-ref="AltDatawaveUserService5"/>
+            </util:map>
+        </property>
+    </bean>
+
+    <bean id="testDatawaveUserService1" class="datawave.security.authorization.test.AlternateDatawaveUserServices$DatawaveUserService1">
+        <!-- testUsers are autowired from the WebserviceConfiguration class which reads from yml -->
+        <property name="testUsers" ref="testDatawaveUsers"/>
+    </bean>
+
+    <bean id="AltDatawaveUserService1" class="datawave.security.authorization.test.AlternateDatawaveUserServices$AltDatawaveUserService1">
+        <!-- testUsers are autowired from the WebserviceConfiguration class which reads from yml -->
+        <property name="testUsers" ref="testDatawaveUsers"/>
+    </bean>
+
+    <bean id="AltDatawaveUserService2" class="datawave.security.authorization.test.AlternateDatawaveUserServices$AltDatawaveUserService2">
+        <!-- testUsers are autowired from the WebserviceConfiguration class which reads from yml -->
+        <property name="testUsers" ref="testDatawaveUsers"/>
+    </bean>
+
+    <bean id="AltDatawaveUserService3" class="datawave.security.authorization.test.AlternateDatawaveUserServices$AltDatawaveUserService3">
+        <!-- testUsers are autowired from the WebserviceConfiguration class which reads from yml -->
+        <property name="testUsers" ref="testDatawaveUsers"/>
+    </bean>
+
+    <bean id="AltDatawaveUserService4" class="datawave.security.authorization.test.AlternateDatawaveUserServices$AltDatawaveUserService4">
+        <!-- testUsers are autowired from the WebserviceConfiguration class which reads from yml -->
+        <property name="testUsers" ref="testDatawaveUsers"/>
+    </bean>
+
+    <bean id="AltDatawaveUserService5" class="datawave.security.authorization.test.AlternateDatawaveUserServices$AltDatawaveUserService5">
+        <!-- testUsers are autowired from the WebserviceConfiguration class which reads from yml -->
+        <property name="testUsers" ref="testDatawaveUsers"/>
+    </bean>
+</beans>

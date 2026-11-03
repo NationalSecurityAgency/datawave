@@ -5,6 +5,7 @@ import javax.ejb.Singleton;
 import javax.inject.Inject;
 
 import datawave.configuration.spring.BeanProvider;
+import datawave.configuration.spring.SpringBean;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.cache.ElytronCacheManager;
 import datawave.security.cert.SSLStores;
@@ -27,6 +28,7 @@ public class SecurityEJBProviderImpl implements SecurityEJBProvider {
     private boolean injectedBeans = false;
 
     @Inject
+    @SpringBean
     public void setDatawaveUserService(DatawaveUserService datawaveUserService) {
         this.datawaveUserService = datawaveUserService;
     }
@@ -64,7 +66,7 @@ public class SecurityEJBProviderImpl implements SecurityEJBProvider {
      */
     private void injectBeans() {
         if (!injectedBeans) {
-            BeanProvider.injectFields(this);
+            BeanProvider.injectFields(null, this);
             injectedBeans = true;
         }
     }

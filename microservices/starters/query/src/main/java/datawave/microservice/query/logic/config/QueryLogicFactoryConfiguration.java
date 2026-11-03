@@ -2,17 +2,14 @@ package datawave.microservice.query.logic.config;
 
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
@@ -27,11 +24,29 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
-@EnableConfigurationProperties({QueryLogicFactoryProperties.class, QueryParserProperties.class, LookupProperties.class, TranslateIdProperties.class,
-        EdgeModelProperties.class})
 @ImportResource(locations = {"${datawave.query.logic.factory.xmlBeansPath:classpath:QueryLogicFactory.xml}"})
 public class QueryLogicFactoryConfiguration {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    @Bean
+    public QueryLogicFactoryProperties queryLogicFactoryProperties() {
+        return new QueryLogicFactoryProperties();
+    }
+
+    @Bean
+    public LookupProperties lookupProperties() {
+        return new LookupProperties();
+    }
+
+    @Bean
+    public TranslateIdProperties translateIdProperties() {
+        return new TranslateIdProperties();
+    }
+
+    @Bean
+    public QueryParserProperties queryParserProperties() {
+        return new QueryParserProperties();
+    }
 
     @Bean
     @ConditionalOnProperty(name = "datawave.defaults.ResponseObjectFactory.enabled", havingValue = "true", matchIfMissing = true)
@@ -54,7 +69,7 @@ public class QueryLogicFactoryConfiguration {
     public Set<String> skipTokenizeUnfieldedFields(QueryParserProperties queryParserProperties) {
         Set<String> skipTokenizeUnfieldedFields = new HashSet<>();
         if (queryParserProperties.getSkipTokenizeUnfieldedFields() != null) {
-            skipTokenizeUnfieldedFields.addAll(queryParserProperties.getTokenizedFields());
+            skipTokenizeUnfieldedFields.addAll(queryParserProperties.getSkipTokenizeUnfieldedFields());
         }
         return skipTokenizeUnfieldedFields;
     }
@@ -71,12 +86,8 @@ public class QueryLogicFactoryConfiguration {
 
     @Bean
     @Scope(SCOPE_PROTOTYPE)
-    public List<UUIDType> uuidTypes(LookupProperties lookupProperties) {
-        List<UUIDType> uuidTypes = new ArrayList<>();
-        if (lookupProperties.getTypes() != null) {
-            uuidTypes.addAll(lookupProperties.getTypes().values());
-        }
-        return uuidTypes;
+    public Map<String,UUIDType> uuidTypes(LookupProperties lookupProperties) {
+        return lookupProperties.getUuidTypes();
     }
 
     @Bean

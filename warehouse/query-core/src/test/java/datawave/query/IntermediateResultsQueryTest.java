@@ -45,6 +45,8 @@ import datawave.core.query.cache.ResultsPage;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.runner.RunningQuery;
+import datawave.query.runner.RunningQueryTimingImpl;
 import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
@@ -54,12 +56,10 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.runner.RunningQuery;
 
 @ExtendWith(SpringExtension.class)
-@ComponentScan(basePackages = "datawave.query")
+@ComponentScan(basePackages = {"datawave.configuration.spring", "datawave.query"})
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",

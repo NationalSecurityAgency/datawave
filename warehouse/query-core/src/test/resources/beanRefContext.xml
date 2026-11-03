@@ -5,8 +5,15 @@
     xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans-4.0.xsd" default-autowire="no">
 
-    <bean class="org.springframework.context.support.ClassPathXmlApplicationContext" autowire="no">
-        <constructor-arg>
+    <bean class="datawave.configuration.spring.SpringContextProperties" autowire="no">
+        <property name="scanBasePackages">
+            <list>
+                <value>datawave.microservice.config.marking</value>
+                <value>datawave.microservice.query.edge.config</value>
+                <value>datawave.microservice.query.logic.config</value>
+            </list>
+        </property>
+        <property name="sources">
             <list>
                 <value>classpath*:CDIProcessor.xml</value>
                 <value>classpath*:/datawave/query/QueryLogicFactory.xml</value>
@@ -15,6 +22,6 @@
                 <value>classpath*:/JexlFunctionNamespaceRegistryContext.xml</value>
                 <value>classpath*:/CacheContext.xml</value>
             </list>
-        </constructor-arg>
+        </property>
     </bean>
 </beans>

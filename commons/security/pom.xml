@@ -10,6 +10,10 @@
     <artifactId>datawave-commons-security</artifactId>
     <name>${project.artifactId}</name>
 
+    <properties>
+        <version.validation-api>2.0.2</version.validation-api>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -38,6 +42,11 @@
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
             <version>${version.jjwt}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>${version.validation-api}</version>
         </dependency>
         <dependency>
             <groupId>jakarta.xml.bind</groupId>

@@ -1,7 +1,7 @@
 package datawave.query.language.parser.jexl;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,17 +14,17 @@ import datawave.query.language.tree.ServerHeadNode;
 
 public class TestLuceneToJexlUUIDQueryParser {
     private LuceneToJexlUUIDQueryParser parser;
-    private String[] UUID_FIELDS = {"UUID", "UUID_TWO", "UUID_THREE"};
+    private final String[] UUID_FIELDS = {"UUID", "UUID_TWO", "UUID_THREE"};
 
     @Before
     public void setUp() {
         parser = new LuceneToJexlUUIDQueryParser();
-        List<UUIDType> uuidTypes = new ArrayList<>();
+        Map<String,UUIDType> uuidTypes = new HashMap<>();
 
         for (String s : UUID_FIELDS) {
             UUIDType uuidType = new UUIDType();
             uuidType.setFieldName(s);
-            uuidTypes.add(uuidType);
+            uuidTypes.put(s, uuidType);
         }
         parser.setUuidTypes(uuidTypes);
     }

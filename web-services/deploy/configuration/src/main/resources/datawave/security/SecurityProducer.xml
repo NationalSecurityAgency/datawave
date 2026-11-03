@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <bean id="sslStoresBuilder"
+          class="datawave.security.cert.SSLStoresImpl"
+          factory-method="builder"/>
+
+    <bean id="sslStoresBuilderAddKeystore"
+          factory-bean="sslStoresBuilder"
+          factory-method="withKeystore">
+        <constructor-arg index="0" value="file://${KEYSTORE}"/>
+        <constructor-arg index="1" value="${KEYSTORE_PASSWORD}"/>
+        <constructor-arg index="2" value="${KEYSTORE_TYPE}"/>
+    </bean>
+
+    <bean id="sslStoresBuilderAddTruststore"
+          factory-bean="sslStoresBuilderAddKeystore"
+          factory-method="withTruststore">
+        <constructor-arg index="0" value="file://${TRUSTSTORE}"/>
+        <constructor-arg index="1" value="${TRUSTSTORE_PASSWORD}"/>
+        <constructor-arg index="2" value="${TRUSTSTORE_TYPE}"/>
+    </bean>
+
+    <bean id="sslStores"
+          factory-bean="sslStoresBuilderAddTruststore"
+          factory-method="build"/>
+
+    <bean id="serverPrincipalProducer" class="datawave.security.system.ServerPrincipalProducer">
+        <property name="sslStores" ref="sslStores"/>
+        <property name="datawaveUserService" ref="datawaveUserService"/>
+    </bean>
+
+    <bean id="proxiedUserDetailsSupplier" class="java.util.function.Supplier" factory-bean="serverPrincipalProducer" factory-method="serverPrincipalSupplier"/>
+
+</beans>

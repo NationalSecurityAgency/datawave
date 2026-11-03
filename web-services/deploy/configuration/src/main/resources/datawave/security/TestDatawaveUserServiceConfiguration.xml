@@ -59,7 +59,7 @@
 
      -->
     <util:set id="testAuthDatawaveUsers" value-type="java.lang.String">
-    ${security.testauthservice.users}
+        ${security.testauthservice.users}
     </util:set>
 
 </beans>
