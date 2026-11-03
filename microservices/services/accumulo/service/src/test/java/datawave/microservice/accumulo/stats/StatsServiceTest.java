@@ -42,7 +42,6 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.microservice.accumulo.TestHelper;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
@@ -195,7 +194,7 @@ public class StatsServiceTest {
         public AccumuloClient warehouseClient() throws Exception {
             Properties testProperties = new Properties();
             testProperties.setProperty(ClientProperty.INSTANCE_ZOOKEEPERS.getKey(), String.format("localhost:%d", server.getPort()));
-            final AccumuloClient accumuloClient = new InMemoryAccumuloClient("root", new InMemoryInstance("testInstance")) {
+            final AccumuloClient accumuloClient = new InMemoryAccumuloClient("root", InMemoryAccumulo.getInstance("testInstance")) {
                 @Override
                 public Properties properties() {
                     return testProperties;

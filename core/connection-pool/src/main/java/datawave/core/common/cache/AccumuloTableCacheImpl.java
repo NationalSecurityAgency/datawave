@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.TableCacheDescription;
 
@@ -33,7 +33,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
 
     private final ExecutorService executorService;
     private final AccumuloTableCacheProperties accumuloTableCacheProperties;
-    private InMemoryInstance instance;
+    private InMemoryAccumulo instance;
     private Map<String,TableCache> details;
     private List<SharedCacheCoordinator> cacheCoordinators;
     private boolean connectionFactoryProvided = false;
@@ -57,7 +57,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
 
     public void setup() {
         log.debug("accumuloTableCacheConfiguration was setup as: {}", accumuloTableCacheProperties);
-        instance = new InMemoryInstance();
+        instance = new InMemoryAccumulo();
         details = new HashMap<>();
         cacheCoordinators = new ArrayList<>();
 
@@ -132,7 +132,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
     }
 
     @Override
-    public InMemoryInstance getInstance() {
+    public InMemoryAccumulo getInstance() {
         return this.instance;
     }
 

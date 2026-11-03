@@ -18,7 +18,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 
 public class MetricsTableConfigHelperTest {
 
@@ -31,7 +30,7 @@ public class MetricsTableConfigHelperTest {
 
     @Before
     public void setUp() throws Exception {
-        tops = new InMemoryAccumuloClient("root", new InMemoryInstance()).tableOperations();
+        tops = new InMemoryAccumuloClient("root").tableOperations();
 
         String tableName = MetricsConfiguration.getTable(conf);
 

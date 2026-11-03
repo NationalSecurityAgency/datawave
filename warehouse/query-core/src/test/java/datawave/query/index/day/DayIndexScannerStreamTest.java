@@ -25,7 +25,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.QueryPlan;
@@ -50,7 +50,7 @@ class DayIndexScannerStreamTest {
 
     @BeforeAll
     public static void setup() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance(DayIndexScannerStreamTest.class.getName());
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance(DayIndexScannerStreamTest.class.getName());
         ingestUtil = new DayIndexIngestUtil(instance);
         ingestUtil.writeData();
     }

@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.TableCacheDescription;
 
@@ -18,7 +18,7 @@ public interface AccumuloTableCache extends AutoCloseable {
 
     void setConnectionFactory(AccumuloConnectionFactory connectionFactory);
 
-    InMemoryInstance getInstance();
+    InMemoryAccumulo getInstance();
 
     void submitReloadTasks();
 

@@ -37,7 +37,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.annotation.data.AnnotationUpdateException;
 import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
 import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
@@ -321,7 +321,7 @@ public class AccumuloAnnotationWriterTest {
         private final AccumuloClient accumuloClient;
 
         public MockInMemoryAccumuloConnectionFactory(String username, String instanceName) throws Exception {
-            InMemoryInstance inMemoryInstance = new InMemoryInstance(instanceName);
+            InMemoryAccumulo inMemoryInstance = InMemoryAccumulo.getInstance(instanceName);
             this.accumuloClient = new InMemoryAccumuloClient(username, inMemoryInstance);
             accumuloClient.securityOperations().changeUserAuthorizations(username, new Authorizations("PUBLIC", "PRIVATE"));
         }

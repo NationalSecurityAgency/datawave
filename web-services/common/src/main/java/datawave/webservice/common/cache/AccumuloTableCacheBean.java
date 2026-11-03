@@ -31,7 +31,7 @@ import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.annotation.Required;
 import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.cache.AccumuloTableCacheImpl;
@@ -115,7 +115,7 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
     }
 
     @Override
-    public InMemoryInstance getInstance() {
+    public InMemoryAccumulo getInstance() {
         return tableCache.getInstance();
     }
 

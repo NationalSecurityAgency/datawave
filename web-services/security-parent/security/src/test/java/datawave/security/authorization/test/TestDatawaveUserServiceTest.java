@@ -15,8 +15,8 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.security.Authorizations;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.ConnectionPool;
 import datawave.security.authorization.AuthorizationException;
@@ -130,7 +130,7 @@ public class TestDatawaveUserServiceTest {
     }
 
     protected static class MockAccumuloConnectionFactory implements AccumuloConnectionFactory {
-        private InMemoryInstance inMemoryInstance = new InMemoryInstance();
+        private InMemoryAccumulo inMemoryInstance = new InMemoryAccumulo();
 
         public MockAccumuloConnectionFactory() {
             try {

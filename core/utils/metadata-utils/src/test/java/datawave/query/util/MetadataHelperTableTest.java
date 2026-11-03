@@ -40,8 +40,8 @@ import org.junit.jupiter.api.Test;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.LcType;
 import datawave.data.type.Type;
@@ -75,7 +75,7 @@ public class MetadataHelperTableTest {
 
     @BeforeAll
     public static void beforeAll() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance(MetadataHelperTableTest.class.getName());
+        InMemoryAccumulo instance = InMemoryAccumulo.getInstance(MetadataHelperTableTest.class.getName());
         client = new InMemoryAccumuloClient("", instance);
         client.tableOperations().create(METADATA_TABLE_NAME);
         writeData();

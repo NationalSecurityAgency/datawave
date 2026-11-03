@@ -32,8 +32,8 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.query.QueryImpl;
@@ -74,7 +74,7 @@ public class ContentQueryLogicFunctionalTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-        InMemoryAccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance(ContentQueryLogicFunctionalTest.class.toString()));
+        InMemoryAccumuloClient client = new InMemoryAccumuloClient("root", InMemoryAccumulo.getInstance(ContentQueryLogicFunctionalTest.class.toString()));
         QueryTestTableHelper qtth = new QueryTestTableHelper(client, log);
         connector = qtth.client;
         WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
