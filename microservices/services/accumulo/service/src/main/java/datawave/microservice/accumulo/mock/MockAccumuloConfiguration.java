@@ -22,12 +22,12 @@ public class MockAccumuloConfiguration {
     @Bean
     @Qualifier("warehouse")
     public InMemoryAccumulo warehouseInstance(@Qualifier("warehouse") AccumuloProperties warehouseProperties) {
-        return InMemoryAccumuloCache.getCachedInstance(warehouseProperties.getInstanceName());
+        return InMemoryAccumuloCache.getOrCreate(warehouseProperties.getInstanceName());
     }
 
     @Bean
     @Qualifier("warehouse")
     public AccumuloClient warehouseClient(@Qualifier("warehouse") AccumuloProperties warehouseProperties) throws AccumuloSecurityException {
-        return new InMemoryAccumuloClient(warehouseProperties.getUsername(), InMemoryAccumuloCache.getCachedInstance(warehouseProperties.getInstanceName()));
+        return new InMemoryAccumuloClient(warehouseProperties.getUsername(), InMemoryAccumuloCache.getOrCreate(warehouseProperties.getInstanceName()));
     }
 }

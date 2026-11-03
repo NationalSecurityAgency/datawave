@@ -7,8 +7,8 @@ import java.util.Map;
  * A shared, JVM-wide cache of {@link InMemoryAccumulo} instances keyed by instance name.
  * <p>
  * Every caller that asks for the same name gets the same instance, so separate clients (for example a mock bulk ingest job and the code that reads its results)
- * see the same tables and data. Instances stay in the cache until they are removed with {@link #removeCachedInstance(String)} or {@link #clear()}, so tests
- * that use named instances should clean up after themselves.
+ * see the same tables and data. Instances stay in the cache until they are removed with {@link #remove(String)} or {@link #clear()}, so tests that use named
+ * instances should clean up after themselves.
  */
 public final class InMemoryAccumuloCache {
 
@@ -25,7 +25,7 @@ public final class InMemoryAccumuloCache {
      *            the instance name
      * @return the cached InMemoryAccumulo for the given name
      */
-    public static synchronized InMemoryAccumulo getCachedInstance(String instanceName) {
+    public static synchronized InMemoryAccumulo getOrCreate(String instanceName) {
         return instances.computeIfAbsent(instanceName, InMemoryAccumulo::new);
     }
 
@@ -36,7 +36,7 @@ public final class InMemoryAccumuloCache {
      *            the instance name
      * @return the removed instance, or null if there was none
      */
-    public static synchronized InMemoryAccumulo removeCachedInstance(String instanceName) {
+    public static synchronized InMemoryAccumulo remove(String instanceName) {
         return instances.remove(instanceName);
     }
 

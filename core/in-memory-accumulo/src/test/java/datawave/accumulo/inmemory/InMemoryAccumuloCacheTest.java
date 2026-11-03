@@ -19,32 +19,32 @@ public class InMemoryAccumuloCacheTest {
 
     @Test
     public void sameNameReturnsTheSameInstance() {
-        InMemoryAccumulo first = InMemoryAccumuloCache.getCachedInstance("shared");
+        InMemoryAccumulo first = InMemoryAccumuloCache.getOrCreate("shared");
         first.createTable("root", "sharedTable", true, TimeType.LOGICAL);
 
-        InMemoryAccumulo second = InMemoryAccumuloCache.getCachedInstance("shared");
+        InMemoryAccumulo second = InMemoryAccumuloCache.getOrCreate("shared");
         assertSame(first, second);
         assertTrue(new InMemoryAccumuloClient("root", second).tableOperations().exists("sharedTable"));
     }
 
     @Test
     public void differentNamesReturnDifferentInstances() {
-        assertNotSame(InMemoryAccumuloCache.getCachedInstance("one"), InMemoryAccumuloCache.getCachedInstance("two"));
+        assertNotSame(InMemoryAccumuloCache.getOrCreate("one"), InMemoryAccumuloCache.getOrCreate("two"));
         assertEquals(2, InMemoryAccumuloCache.size());
     }
 
     @Test
     public void removedInstanceIsReplacedWithANewOne() {
-        InMemoryAccumulo first = InMemoryAccumuloCache.getCachedInstance("removed");
-        assertSame(first, InMemoryAccumuloCache.removeCachedInstance("removed"));
-        assertNull(InMemoryAccumuloCache.removeCachedInstance("removed"));
-        assertNotSame(first, InMemoryAccumuloCache.getCachedInstance("removed"));
+        InMemoryAccumulo first = InMemoryAccumuloCache.getOrCreate("removed");
+        assertSame(first, InMemoryAccumuloCache.remove("removed"));
+        assertNull(InMemoryAccumuloCache.remove("removed"));
+        assertNotSame(first, InMemoryAccumuloCache.getOrCreate("removed"));
     }
 
     @Test
     public void clearRemovesEveryInstance() {
-        InMemoryAccumuloCache.getCachedInstance("one");
-        InMemoryAccumuloCache.getCachedInstance("two");
+        InMemoryAccumuloCache.getOrCreate("one");
+        InMemoryAccumuloCache.getOrCreate("two");
         InMemoryAccumuloCache.clear();
         assertEquals(0, InMemoryAccumuloCache.size());
     }
