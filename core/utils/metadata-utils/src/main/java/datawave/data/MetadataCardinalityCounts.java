@@ -12,6 +12,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
+import datawave.table.constants.MetadataColumnFamilyConstants;
+
 /**
  * This class can be used to handle the selectivity entries in the metadata table.
  *
@@ -80,7 +82,7 @@ public class MetadataCardinalityCounts implements Serializable {
     }
 
     public Key getKey(ColumnVisibility vis, long timeStamp) {
-        return new Key(field, ColumnFamilyConstants.COLF_COUNT.toString(), value, vis, timeStamp);
+        return new Key(field, MetadataColumnFamilyConstants.COLF_COUNT_STR, value, vis, timeStamp);
     }
 
     public Value getValue() {
