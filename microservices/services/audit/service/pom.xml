@@ -37,7 +37,7 @@
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>
         <version.rabbit.amqp-client>5.14.2</version.rabbit.amqp-client>
-        <version.rabbit.http-client>2.1.0.RELEASE</version.rabbit.http-client>
+        <version.rabbit.http-client>5.7.0</version.rabbit.http-client>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.slf4j>2.0.17</version.slf4j>
         <version.swagger>2.2.42</version.swagger>

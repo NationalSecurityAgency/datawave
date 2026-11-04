@@ -15,6 +15,7 @@ import jakarta.xml.bind.Unmarshaller;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
@@ -93,7 +94,11 @@ public class LookupRequest {
         String rawResponse = null;
         HttpEntity entity = response.getEntity();
         if (entity != null) {
-            rawResponse = EntityUtils.toString(entity, StandardCharsets.UTF_8);
+            try {
+                rawResponse = EntityUtils.toString(entity, StandardCharsets.UTF_8);
+            } catch (ParseException e) {
+                throw new IOException("Unable to parse lookup response", e);
+            }
         }
         validateResponse(response.getCode(), rawResponse);
         return rawResponse;
