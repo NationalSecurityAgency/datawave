@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import java.time.Duration;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -60,7 +61,8 @@ class AnnotationHealthPolicyTest {
                     AvailabilityChangeEvent.publish(context, ReadinessState.ACCEPTING_TRAFFIC);
                     HealthEndpointWebExtension web = new HealthEndpointWebExtension(
                             context.getBean(HealthContributorRegistry.class),
-                            context.getBean(HealthEndpointGroups.class));
+                            context.getBean(HealthEndpointGroups.class),
+                            Duration.ofSeconds(10));
                     backend.set(Status.UNKNOWN);
                     assertHealth(web, null, "RABBITMQ_UNHEALTHY", 503);
                     assertHealth(web, "readiness", "RABBITMQ_UNHEALTHY", 503);

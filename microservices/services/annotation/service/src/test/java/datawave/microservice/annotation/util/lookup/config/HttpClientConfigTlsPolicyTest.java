@@ -18,6 +18,8 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,7 +102,11 @@ class HttpClientConfigTlsPolicyTest {
     void hostnameMismatchIsRealAndWouldBeRejectedByDefaultVerification() throws Exception {
         // Control: build a client identical to the production one, EXCEPT using default (non-Noop) hostname verification, to prove the mismatch
         // above is genuine and that NoopHostnameVerifier is the reason the production client tolerates it.
-        CloseableHttpClient strictHttpClient = HttpClientBuilder.create().setSSLContext(trustingClientSslContext()).build();
+        CloseableHttpClient strictHttpClient = HttpClientBuilder.create()
+                        .setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create()
+                                        .setTlsSocketStrategy(ClientTlsStrategyBuilder.create().setSslContext(trustingClientSslContext()).buildClassic())
+                                        .build())
+                        .build();
 
         HttpGet get = new HttpGet("https://localhost:" + server.getAddress().getPort() + "/");
         try (CloseableHttpResponse ignored = strictHttpClient.execute(get)) {
