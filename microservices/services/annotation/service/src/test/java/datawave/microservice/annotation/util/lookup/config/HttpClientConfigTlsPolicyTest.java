@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
@@ -14,6 +15,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.hc.client5.http.SystemDefaultDnsResolver;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -105,7 +107,14 @@ class HttpClientConfigTlsPolicyTest {
         CloseableHttpClient strictHttpClient = HttpClientBuilder.create()
                         .setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create()
                                         .setTlsSocketStrategy(ClientTlsStrategyBuilder.create().setSslContext(trustingClientSslContext()).buildClassic())
-                                        .build())
+                                        // Resolve "localhost" only to the address the server is bound to. Otherwise httpclient5 moves on to the
+                                        // other loopback address after the handshake fails, and "connection refused" hides the hostname rejection.
+                                        .setDnsResolver(new SystemDefaultDnsResolver() {
+                                            @Override
+                                            public InetAddress[] resolve(String host) {
+                                                return new InetAddress[] {server.getAddress().getAddress()};
+                                            }
+                                        }).build())
                         .build();
 
         HttpGet get = new HttpGet("https://localhost:" + server.getAddress().getPort() + "/");
