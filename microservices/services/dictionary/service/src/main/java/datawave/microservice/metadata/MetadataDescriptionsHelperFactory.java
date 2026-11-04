@@ -7,7 +7,8 @@ import datawave.webservice.dictionary.data.DescriptionBase;
 
 @Component
 public class MetadataDescriptionsHelperFactory<DESC extends DescriptionBase<DESC>> {
-    @Lookup
+    // look up by name: Spring 6 won't match the unresolved DESC type variable against MetadataDescriptionsHelper<DefaultDescription>
+    @Lookup("metadataHelperWithDescriptions")
     public MetadataDescriptionsHelper<DESC> createMetadataDescriptionsHelper() {
         // return nothing since spring will create a proxy for this method
         return null;

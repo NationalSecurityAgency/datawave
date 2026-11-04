@@ -149,7 +149,7 @@ public class ProxiedEntityX509Filter extends AbstractPreAuthenticatedProcessingF
     }
 
     private X509Certificate extractClientCertificate(HttpServletRequest request) {
-        X509Certificate[] certs = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
+        X509Certificate[] certs = (X509Certificate[]) request.getAttribute("jakarta.servlet.request.X509Certificate");
 
         if (certs != null && certs.length > 0) {
             if (logger.isDebugEnabled()) {

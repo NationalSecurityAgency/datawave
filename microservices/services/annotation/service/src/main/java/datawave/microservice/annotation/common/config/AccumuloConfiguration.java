@@ -38,7 +38,8 @@ public class AccumuloConfiguration {
         @Override
         public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
             boolean required = AnnotationRole.from(context.getEnvironment()).includesApi()
-                            || context.getEnvironment().getProperty(ACCUMULO_WRITER_ENABLED, Boolean.class, false);
+                            // match AnnotationRoleConfiguration's flag check rather than converting to Boolean, so an invalid value reaches its clearer error
+                            || "true".equalsIgnoreCase(context.getEnvironment().getProperty(ACCUMULO_WRITER_ENABLED));
             return new ConditionOutcome(required, "Accumulo is required for API reads or an enabled Accumulo writer");
         }
     }
