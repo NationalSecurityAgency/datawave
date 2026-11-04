@@ -1,6 +1,7 @@
 package datawave.microservice.querymetric.config;
 
-import javax.validation.constraints.PositiveOrZero;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -9,9 +10,10 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "datawave.query.metric.cache")
 public class QueryMetricCacheProperties {
 
+    @Valid
     private Cache lastWrittenQueryMetrics = new Cache();
 
-    public void setLastWrittenQueryMetrics(Cache lastWrittenQueryMetrics) {
+    public void setLastWrittenQueryMetrics(@Valid Cache lastWrittenQueryMetrics) {
         this.lastWrittenQueryMetrics = lastWrittenQueryMetrics;
     }
 

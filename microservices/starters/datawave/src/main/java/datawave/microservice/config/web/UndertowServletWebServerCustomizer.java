@@ -2,7 +2,7 @@ package datawave.microservice.config.web;
 
 import static datawave.microservice.config.web.Constants.REQUEST_START_TIME_NS_ATTRIBUTE;
 
-import javax.servlet.ServletRequest;
+import jakarta.servlet.ServletRequest;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

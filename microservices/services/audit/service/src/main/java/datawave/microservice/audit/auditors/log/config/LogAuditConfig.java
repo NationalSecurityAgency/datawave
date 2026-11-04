@@ -1,6 +1,6 @@
 package datawave.microservice.audit.auditors.log.config;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;

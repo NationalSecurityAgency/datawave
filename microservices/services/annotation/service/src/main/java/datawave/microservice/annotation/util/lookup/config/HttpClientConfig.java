@@ -1,16 +1,18 @@
 package datawave.microservice.annotation.util.lookup.config;
 
+import java.util.concurrent.TimeUnit;
+
 import javax.net.ssl.SSLContext;
 
-import org.apache.http.ConnectionReuseStrategy;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.http.ConnectionReuseStrategy;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.core5.http.config.Registry;
+import org.apache.hc.core5.http.config.RegistryBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,9 +36,9 @@ public class HttpClientConfig {
         // set timeouts
         // @formatter:off
         RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectTimeout(60 * 15 * 1000) // 15 minutes
-                .setConnectionRequestTimeout(60 * 1000) // 1 minute
-                .setSocketTimeout(78 * 60 * 1000)
+                .setConnectTimeout(60 * 15 * 1000, TimeUnit.MILLISECONDS) // 15 minutes
+                .setConnectionRequestTimeout(60 * 1000, TimeUnit.MILLISECONDS) // 1 minute
+                .setResponseTimeout(78 * 60 * 1000, TimeUnit.MILLISECONDS)
                 .build();
         // @formatter:on
         // never re-use connections

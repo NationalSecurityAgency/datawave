@@ -1,6 +1,6 @@
 package datawave.microservice.audit.auditors.accumulo.config;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;

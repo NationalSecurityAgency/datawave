@@ -15,8 +15,7 @@ import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationIntrospector;
 import datawave.marking.AccessExpressionMarkings;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.response.objects.DefaultKey;
@@ -61,7 +60,7 @@ public class LookupResponseTest {
         module.addAbstractTypeMapping(KeyBase.class, DefaultKey.class);
         objectMapper.registerModule(module);
         // For testing json deserialization via LR's jaxb annotations
-        objectMapper.setAnnotationIntrospector(new JaxbAnnotationIntrospector(TypeFactory.defaultInstance()));
+        objectMapper.setAnnotationIntrospector(new JakartaXmlBindAnnotationIntrospector(TypeFactory.defaultInstance()));
     }
 
     @Test

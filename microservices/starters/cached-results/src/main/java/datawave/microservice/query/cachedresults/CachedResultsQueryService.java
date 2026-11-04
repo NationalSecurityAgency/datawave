@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
+import org.apache.hc.core5.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

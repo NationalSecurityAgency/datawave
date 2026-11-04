@@ -2,7 +2,7 @@ package datawave.microservice.annotation.writers.accumulo.config;
 
 import static datawave.microservice.annotation.config.AnnotationRoleConstants.ACCUMULO_WRITER_ENABLED;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

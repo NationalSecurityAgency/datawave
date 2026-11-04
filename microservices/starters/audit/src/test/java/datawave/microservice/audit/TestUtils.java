@@ -32,7 +32,7 @@ public class TestUtils {
 
     public static <T extends HttpStatusCodeException> void assertHttpException(Class<T> exceptionClass, int statusCode, Executable executable) {
         HttpStatusCodeException thrown = assertThrows(exceptionClass, executable);
-        assertEquals(statusCode, thrown.getRawStatusCode(), "Unexpected HTTP status code");
+        assertEquals(statusCode, thrown.getStatusCode().value(), "Unexpected HTTP status code");
     }
 
     /**

@@ -56,7 +56,7 @@ public class RemoteAuthServiceSecurityConfigurer extends JWTSecurityConfigurer {
         http.addFilterAfter(proxiedX509Filter, JWTAuthenticationFilter.class);
     }
 
-    @Override
+    /*~~(Migrate manually based on https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter)~~>*/@Override
     protected void configure(@NonNull AuthenticationManagerBuilder auth) throws Exception {
         Preconditions.checkNotNull(auth);
         super.configure(auth);

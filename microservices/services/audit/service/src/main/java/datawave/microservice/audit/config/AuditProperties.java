@@ -3,8 +3,8 @@ package datawave.microservice.audit.config;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.Valid;
-import javax.validation.constraints.PositiveOrZero;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -48,7 +48,7 @@ public class AuditProperties {
         return retry;
     }
 
-    public void setRetry(Retry retry) {
+    public void setRetry(@Valid Retry retry) {
         if (retry == null)
             throw new NullPointerException("Audit Retry properties must not be null.");
         this.retry = retry;

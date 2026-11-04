@@ -5,7 +5,7 @@ import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

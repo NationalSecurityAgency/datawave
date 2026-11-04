@@ -3,7 +3,7 @@ package datawave.microservice.query.web;
 import java.util.Arrays;
 import java.util.UUID;
 
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -82,10 +82,8 @@ public class QuerySessionIdAdvice implements ResponseBodyAdvice<Object> {
                     String path = generateSessionIdAnnotation.cookieBasePath();
                     cookie = new Cookie(Constants.QUERY_COOKIE_NAME, generateCookieValue());
                     cookie.setPath(path + id);
-                    cookie.setVersion(1);
                 } else if (clearSessionIdAnnotation != null) {
                     cookie = new Cookie(Constants.QUERY_COOKIE_NAME, null);
-                    cookie.setVersion(1);
                 }
                 if (cookie != null) {
                     httpServletResponse.getServletResponse().addCookie(cookie);

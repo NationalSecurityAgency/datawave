@@ -1,6 +1,6 @@
 package datawave.microservice.authorization.preauth;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.springframework.security.web.AuthenticationEntryPoint;
 

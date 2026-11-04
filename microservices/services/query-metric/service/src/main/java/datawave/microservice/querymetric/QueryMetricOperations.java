@@ -22,8 +22,8 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.annotation.PreDestroy;
-import javax.annotation.security.PermitAll;
+import jakarta.annotation.PreDestroy;
+import jakarta.annotation.security.PermitAll;
 
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;

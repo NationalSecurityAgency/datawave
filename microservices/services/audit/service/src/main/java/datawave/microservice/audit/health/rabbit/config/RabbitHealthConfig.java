@@ -6,7 +6,7 @@ import java.util.GregorianCalendar;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;

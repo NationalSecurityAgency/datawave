@@ -37,6 +37,7 @@
         <failsafe.minMemory>${surefire.minMemory}</failsafe.minMemory>
         <image.prefix>datawave/</image.prefix>
         <java.version>17</java.version>
+    <maven.compiler.parameters>true</maven.compiler.parameters>
         <maven.compiler.release>17</maven.compiler.release>
         <maven.release.arguments>-Ddist</maven.release.arguments>
         <maven.release.profiles>dist</maven.release.profiles>

@@ -28,8 +28,8 @@
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
-        <version.jakarta>2.3.3</version.jakarta>
-        <version.jaxb-impl>2.3.9</version.jaxb-impl>
+        <version.jakarta>4.0.5</version.jakarta>
+        <version.jaxb-impl>3.0.2</version.jaxb-impl>
         <version.jboss-servlet-api>2.0.0.Final</version.jboss-servlet-api>
         <version.jjwt>0.11.2</version.jjwt>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
@@ -46,14 +46,9 @@
                 <version>${version.guava}</version>
             </dependency>
             <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
                 <version>${version.jaxb-impl}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.commons</groupId>
-                <artifactId>datawave-commons-security</artifactId>
-                <version>${version.datawave-commons-security}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
@@ -92,13 +87,8 @@
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
                 <version>${version.swagger}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.jakarta}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -164,7 +154,7 @@
         <!-- Required to allow the service loader to discover backing implementations for jjwt-api. -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.servlet</groupId>
@@ -177,10 +167,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.spec.javax.servlet</groupId>
@@ -238,6 +224,11 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-web</artifactId>
         </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents.client5</groupId>
+      <artifactId>httpclient5</artifactId>
+      <scope>test</scope>
+    </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>

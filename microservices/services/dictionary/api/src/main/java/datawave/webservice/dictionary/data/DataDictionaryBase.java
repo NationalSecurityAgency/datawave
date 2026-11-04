@@ -4,9 +4,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlSeeAlso;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlSeeAlso;
 
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.metadata.MetadataFieldBase;

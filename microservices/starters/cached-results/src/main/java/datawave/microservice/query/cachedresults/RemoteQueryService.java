@@ -3,7 +3,7 @@ package datawave.microservice.query.cachedresults;
 import java.text.MessageFormat;
 import java.time.Duration;
 
-import org.apache.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

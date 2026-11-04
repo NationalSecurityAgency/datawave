@@ -81,7 +81,7 @@ public class AuthorizationSecurityConfigurer extends JWTSecurityConfigurer {
         http.addFilterAfter(proxiedX509Filter, JWTAuthenticationFilter.class);
     }
 
-    @Override
+    /*~~(Migrate manually based on https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter)~~>*/@Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         super.configure(auth);
 

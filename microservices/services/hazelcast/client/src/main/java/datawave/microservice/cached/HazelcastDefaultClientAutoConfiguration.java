@@ -1,5 +1,6 @@
 package datawave.microservice.cached;
 
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -8,7 +9,6 @@ import org.springframework.boot.autoconfigure.hazelcast.HazelcastAutoConfigurati
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Configuration;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
@@ -18,13 +18,13 @@ import com.hazelcast.core.HazelcastInstance;
  * Auto-configuration necessary to set up a Hazelcast client that connects to a Hazelcast cluster that has been configured using completely custom (or no)
  * configuration.
  */
-@Configuration
+@AutoConfiguration
 @ConditionalOnProperty(name = "hazelcast.client.enabled", matchIfMissing = true)
 @ConditionalOnMissingBean(ClientConfig.class)
 @Conditional(HazelcastCacheCondition.class)
 @AutoConfigureBefore(HazelcastAutoConfiguration.class)
 @AutoConfigureAfter({HazelcastDiscoveryClientAutoConfiguration.class, HazelcastK8sClientAutoConfiguration.class,
-        HazelcastDiscoveryServiceAutoConfiguration.class})
+                HazelcastDiscoveryServiceAutoConfiguration.class})
 @EnableConfigurationProperties(HazelcastClientProperties.class)
 public class HazelcastDefaultClientAutoConfiguration extends HazelcastBaseClientConfiguration {
     @Bean

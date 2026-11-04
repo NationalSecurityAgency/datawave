@@ -11,9 +11,9 @@ import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
@@ -35,8 +35,7 @@ import org.springframework.web.util.UriComponents;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
-
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.authorization.service.RemoteAuthorizationServiceUserDetailsService;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
@@ -303,7 +302,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
 
     private ObjectMapper createJSONObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JaxbAnnotationModule());
+        mapper.registerModule(new JakartaXmlBindAnnotationModule());
         mapper.configure(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME, true);
         return mapper;
     }

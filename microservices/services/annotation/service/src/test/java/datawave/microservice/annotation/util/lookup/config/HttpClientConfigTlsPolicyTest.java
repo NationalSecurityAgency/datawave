@@ -14,10 +14,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ import com.sun.net.httpserver.HttpsServer;
 
 /**
  * Regression/documentation test for T11 (Q06, Option A): the annotation service's outbound HttpClient (wired up in {@link HttpClientConfig}) intentionally
- * registers {@link org.apache.http.conn.ssl.NoopHostnameVerifier} for its "https" scheme, so that it can reach a downstream DataWave query host whose
+ * registers {@link org.apache.hc.core5.ssl.NoopHostnameVerifier} for its "https" scheme, so that it can reach a downstream DataWave query host whose
  * certificate's CN/SAN may not match the configured discovery hostname (a "discovery-compatible" TLS policy). This is a deliberate, retained decision - not a
  * defect - but it was previously untested and undocumented in code. This test proves the policy is in effect by presenting a server certificate (ssl/host.p12,
  * CN=test.testcorp.com) while connecting to a mismatched hostname ("localhost"), and asserting the handshake still succeeds because hostname verification is
@@ -90,7 +90,7 @@ class HttpClientConfigTlsPolicyTest {
 
         HttpGet get = new HttpGet("https://localhost:" + server.getAddress().getPort() + "/");
         try (CloseableHttpResponse response = httpClient.execute(get)) {
-            assertEquals(200, response.getStatusLine().getStatusCode(),
+            assertEquals(200, response.getCode(),
                             "the production HttpClient must accept a certificate whose CN doesn't match the connected hostname, "
                                             + "per the intentional discovery-compatible TLS policy (Q06, Option A)");
         }

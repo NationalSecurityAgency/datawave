@@ -6,7 +6,7 @@ import static datawave.microservice.authorization.preauth.ProxiedEntityX509Filte
 import java.time.Duration;
 import java.util.function.Function;
 
-import org.apache.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;

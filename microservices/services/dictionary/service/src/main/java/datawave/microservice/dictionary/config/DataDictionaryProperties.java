@@ -1,9 +1,9 @@
 package datawave.microservice.dictionary.config;
 
 import java.util.Map;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Positive;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -25,7 +25,9 @@ public class DataDictionaryProperties {
     private String modelTableName;
     @NotBlank
     private String metadataTableName;
+    @Valid
     private Banner banner = new Banner();
+    @Valid
     private HelpMenu helpMenu = new HelpMenu();
     @Positive
     private int numThreads;

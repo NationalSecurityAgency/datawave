@@ -2,7 +2,7 @@ package datawave.microservice.config.web;
 
 public interface Constants {
     /**
-     * An attribute key name to be used on an {@link javax.servlet.ServletRequest} in order to store the {@link System#nanoTime()} when the current request was
+     * An attribute key name to be used on an {@link jakarta.servlet.ServletRequest} in order to store the {@link System#nanoTime()} when the current request was
      * initiated.
      */
     String REQUEST_START_TIME_NS_ATTRIBUTE = "RequestStartTimeNS";

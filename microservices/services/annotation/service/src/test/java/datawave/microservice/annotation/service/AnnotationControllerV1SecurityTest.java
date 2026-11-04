@@ -13,9 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.core.GrantedAuthorityDefaults;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
@@ -36,8 +37,9 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 @ContextConfiguration(classes = AnnotationControllerV1SecurityTest.SecurityConfiguration.class)
 class AnnotationControllerV1SecurityTest {
 
+    @Configuration
     @TestConfiguration
-    @EnableGlobalMethodSecurity(securedEnabled = true)
+    @EnableMethodSecurity(securedEnabled = true, prePostEnabled = false)
     static class SecurityConfiguration {
         @Bean
         AnnotationControllerV1 annotationController() {
@@ -52,7 +54,7 @@ class AnnotationControllerV1SecurityTest {
         }
     }
 
-    @javax.annotation.Resource
+    @jakarta.annotation.Resource
     private AnnotationControllerV1 annotationController;
 
     @AfterEach

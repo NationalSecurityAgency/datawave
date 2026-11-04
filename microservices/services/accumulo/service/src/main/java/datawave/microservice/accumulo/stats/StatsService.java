@@ -3,9 +3,9 @@ package datawave.microservice.accumulo.stats;
 import java.io.StringReader;
 import java.lang.annotation.Annotation;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.UnmarshallerHandler;
-import javax.xml.bind.annotation.XmlSchema;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.UnmarshallerHandler;
+import jakarta.xml.bind.annotation.XmlSchema;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.accumulo.core.client.AccumuloClient;

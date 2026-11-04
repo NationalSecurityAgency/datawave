@@ -24,8 +24,8 @@
         <version.log4j>2.26.1</version.log4j>
         <version.slf4j>2.0.17</version.slf4j>
         <version.snakeyaml>1.33</version.snakeyaml>
-        <version.spring.boot>2.7.1</version.spring.boot>
-        <version.spring.cloud>2021.0.3</version.spring.cloud>
+        <version.spring.boot>3.5.16</version.spring.boot>
+        <version.spring.cloud>2025.0.3</version.spring.cloud>
     </properties>
     <dependencyManagement>
         <dependencies>

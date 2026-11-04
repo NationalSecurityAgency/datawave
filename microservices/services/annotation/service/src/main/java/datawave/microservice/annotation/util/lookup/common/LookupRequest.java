@@ -9,20 +9,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.net.URIBuilder;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.cookie.BasicCookieStore;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.protocol.BasicHttpContext;
+import org.apache.hc.core5.http.protocol.HttpContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -76,7 +75,7 @@ public class LookupRequest {
         HttpContext context = getHttpContext();
 
         try (CloseableHttpResponse response = httpClient.execute(lookupQuery, context)) {
-            int responseCode = response.getStatusLine().getStatusCode();
+            int responseCode = response.getCode();
 
             ParsedResponse parsedResponse = new ParsedResponse();
             parsedResponse.setResponse(processResponse(response));
@@ -96,7 +95,7 @@ public class LookupRequest {
         if (entity != null) {
             rawResponse = EntityUtils.toString(entity, StandardCharsets.UTF_8);
         }
-        validateResponse(response.getStatusLine().getStatusCode(), rawResponse);
+        validateResponse(response.getCode(), rawResponse);
         return rawResponse;
     }
 

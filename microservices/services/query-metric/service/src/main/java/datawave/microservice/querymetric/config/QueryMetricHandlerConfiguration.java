@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
 import com.github.benmanes.caffeine.cache.CaffeineSpec;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -79,7 +79,7 @@ public class QueryMetricHandlerConfiguration {
         module.addAbstractTypeMapping(BaseQueryMetric.class, metricFactory.createMetric().getClass());
         mapper.registerModule(module);
         mapper.registerModule(new GuavaModule());
-        mapper.registerModule(new JaxbAnnotationModule());
+        mapper.registerModule(new JakartaXmlBindAnnotationModule());
         return mapper;
     }
 

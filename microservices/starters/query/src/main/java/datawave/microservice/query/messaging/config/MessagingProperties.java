@@ -4,11 +4,11 @@ import static datawave.microservice.query.messaging.config.MessagingProperties.A
 import static datawave.microservice.query.messaging.hazelcast.HazelcastQueryResultsManager.HAZELCAST;
 import static datawave.microservice.query.messaging.kafka.KafkaQueryResultsManager.KAFKA;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.PositiveOrZero;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -34,6 +34,7 @@ public class MessagingProperties {
     @Valid
     private HazelcastProperties hazelcast = new HazelcastProperties();
 
+    @Valid
     private ClaimCheckProperties claimCheck = new ClaimCheckProperties();
 
     public String getBackend() {
@@ -56,7 +57,7 @@ public class MessagingProperties {
         return kafka;
     }
 
-    public void setKafka(KafkaProperties kafka) {
+    public void setKafka(@Valid KafkaProperties kafka) {
         this.kafka = kafka;
     }
 
@@ -64,7 +65,7 @@ public class MessagingProperties {
         return rabbitmq;
     }
 
-    public void setRabbitmq(RabbitMQProperties rabbitmq) {
+    public void setRabbitmq(@Valid RabbitMQProperties rabbitmq) {
         this.rabbitmq = rabbitmq;
     }
 
@@ -72,7 +73,7 @@ public class MessagingProperties {
         return hazelcast;
     }
 
-    public void setHazelcast(HazelcastProperties hazelcast) {
+    public void setHazelcast(@Valid HazelcastProperties hazelcast) {
         this.hazelcast = hazelcast;
     }
 
@@ -80,7 +81,7 @@ public class MessagingProperties {
         return claimCheck;
     }
 
-    public void setClaimCheck(ClaimCheckProperties claimCheck) {
+    public void setClaimCheck(@Valid ClaimCheckProperties claimCheck) {
         this.claimCheck = claimCheck;
     }
 
@@ -98,6 +99,7 @@ public class MessagingProperties {
         private int replicas = -1;
 
         private boolean useDedicatedInstance = false;
+        @Valid
         private KafkaInstanceSettings instanceSettings = new KafkaInstanceSettings();
 
         public long getPollTimeoutMillis() {
@@ -144,7 +146,7 @@ public class MessagingProperties {
             return instanceSettings;
         }
 
-        public void setInstanceSettings(KafkaInstanceSettings instanceSettings) {
+        public void setInstanceSettings(@Valid KafkaInstanceSettings instanceSettings) {
             this.instanceSettings = instanceSettings;
         }
     }
@@ -159,6 +161,7 @@ public class MessagingProperties {
         private long maxMessageSizeBytes = 536870912L;
 
         private boolean useDedicatedInstance = false;
+        @Valid
         private RabbitMQInstanceSettings instanceSettings = new RabbitMQInstanceSettings();
 
         public boolean isDurable() {
@@ -189,7 +192,7 @@ public class MessagingProperties {
             return instanceSettings;
         }
 
-        public void setInstanceSettings(RabbitMQInstanceSettings instanceSettings) {
+        public void setInstanceSettings(@Valid RabbitMQInstanceSettings instanceSettings) {
             this.instanceSettings = instanceSettings;
         }
     }
@@ -200,6 +203,7 @@ public class MessagingProperties {
         private String username = null;
         private String password = null;
         private String virtualHost = null;
+        @Valid
         private CachingConnectionFactory.ConfirmType publisherConfirmType = CachingConnectionFactory.ConfirmType.SIMPLE;
         private boolean publisherConfirms = true;
         private boolean publisherReturns = true;
@@ -248,7 +252,7 @@ public class MessagingProperties {
             return publisherConfirmType;
         }
 
-        public void setPublisherConfirmType(CachingConnectionFactory.ConfirmType publisherConfirmType) {
+        public void setPublisherConfirmType(@Valid CachingConnectionFactory.ConfirmType publisherConfirmType) {
             this.publisherConfirmType = publisherConfirmType;
         }
 
@@ -271,6 +275,7 @@ public class MessagingProperties {
 
     public final static class KafkaInstanceSettings {
         private String bootstrapServers = null;
+        @Valid
         private AutoOffsetReset autoOffsetReset = EARLIEST;
         private Boolean enableAutoCommit = false;
         private Boolean allowAutoCreateTopics = false;
@@ -287,7 +292,7 @@ public class MessagingProperties {
             return autoOffsetReset;
         }
 
-        public void setAutoOffsetReset(AutoOffsetReset autoOffsetReset) {
+        public void setAutoOffsetReset(@Valid AutoOffsetReset autoOffsetReset) {
             this.autoOffsetReset = autoOffsetReset;
         }
 

@@ -10,7 +10,7 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 
-import javax.xml.bind.JAXB;
+import jakarta.xml.bind.JAXB;
 
 import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.BeforeEach;

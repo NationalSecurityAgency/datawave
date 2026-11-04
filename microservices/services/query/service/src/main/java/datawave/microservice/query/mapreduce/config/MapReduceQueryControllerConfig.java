@@ -17,7 +17,7 @@ public class MapReduceQueryControllerConfig {
 
     @Bean
     public WebSecurityCustomizer ignoreMapReduceUpdateState() {
-        return (web) -> web.ignoring().antMatchers("/v1/mapreduce/updateState");
+        return (web) -> web.ignoring().requestMatchers("/v1/mapreduce/updateState");
     }
 
     @Bean

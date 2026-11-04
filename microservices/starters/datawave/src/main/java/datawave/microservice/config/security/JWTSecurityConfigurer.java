@@ -1,5 +1,8 @@
 package datawave.microservice.config.security;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
+
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -50,38 +53,38 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         // Allow unauthenticated access to actuator info and health endpoints.
-        http.authorizeRequests().requestMatchers(EndpointRequest.to("info", "health")).permitAll();
+        http.authorizeHttpRequests(requests -> requests.requestMatchers(EndpointRequest.to("info", "health")).permitAll());
 
         // Require users to have one of the defined manager roles for accessing any actuator endpoint other
         // than info or health (see above).
         if (!securityProperties.getManagerRoles().isEmpty()) {
-            http = http.authorizeRequests().requestMatchers(EndpointRequest.toAnyEndpoint())
-                            .hasAnyAuthority(securityProperties.getManagerRoles().toArray(new String[0])).and();
+            http = http.authorizeHttpRequests(requests -> requests.requestMatchers(EndpointRequest.toAnyEndpoint())
+                            .hasAnyAuthority(securityProperties.getManagerRoles().toArray(new String[0])));
         }
 
         // Apply this configuration to all requests...
         http = http.requestMatchers().anyRequest().and();
 
         if (securityProperties.isRequireSsl()) {
-            http.requiresChannel().anyRequest().requiresSecure();
+            http.requiresChannel(channel -> channel.anyRequest().requiresSecure());
         }
 
         JWTAuthenticationFilter jwtFilter = new JWTAuthenticationFilter(false, authenticationManager(), authenticationEntryPoint);
 
         // Allow CORS requests
-        http.cors();
+        http.cors(withDefaults());
         // Disable CSRF protection since we're not using cookies anyway
-        http.csrf().disable();
+        http.csrf(csrf -> csrf.disable());
         // Send the Referrer-Policy header in the response
-        http.headers().referrerPolicy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN);
+        http.headers(headers -> headers.referrerPolicy(policy -> policy.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)));
         // Set the Content-Security-Policy header
-        http.headers().contentSecurityPolicy("frame-ancestors 'self'");
+        http.headers(headers -> headers.contentSecurityPolicy(policy -> policy.policyDirectives("frame-ancestors 'self'")));
         // All requests (subject to the matcher patterns above) must be authenticated
-        http.authorizeRequests().anyRequest().fullyAuthenticated();
+        http.authorizeHttpRequests(requests -> requests.anyRequest().fullyAuthenticated());
         // Ensure that we never create a session--we always want to get the latest information from the certificate/headers
-        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+        http.sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         // Send unauthenticated people a 403 response without redirecting to a failure page
-        http.exceptionHandling().authenticationEntryPoint(authenticationEntryPoint).accessDeniedPage(null);
+        http.exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint).accessDeniedPage(null));
         // Extract principal information from incoming certificates so that we can limit access to specific DNs
         AllowedCallersFilter allowedCallersFilter = getAllowedCallersFilter(securityProperties);
         http.addFilterBefore(allowedCallersFilter, X509AuthenticationFilter.class);
@@ -96,7 +99,7 @@ public class JWTSecurityConfigurer extends WebSecurityConfigurerAdapter {
         return new AllowedCallersFilter(securityProperties, authenticationEntryPoint);
     }
 
-    @Override
+    /*~~(Migrate manually based on https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter)~~>*/@Override
     protected void configure(@NonNull AuthenticationManagerBuilder auth) throws Exception {
         Preconditions.checkNotNull(auth);
         auth.authenticationProvider(jwtAuthenticationProvider);

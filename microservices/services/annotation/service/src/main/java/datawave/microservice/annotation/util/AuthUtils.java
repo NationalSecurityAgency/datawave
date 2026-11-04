@@ -4,7 +4,7 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpHeaders;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 
 import datawave.microservice.annotation.util.exceptions.AuthenticationException;

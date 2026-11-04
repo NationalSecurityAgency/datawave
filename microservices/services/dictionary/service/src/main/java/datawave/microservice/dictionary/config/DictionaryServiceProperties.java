@@ -1,6 +1,6 @@
 package datawave.microservice.dictionary.config;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -16,6 +16,7 @@ import lombok.Setter;
 public class DictionaryServiceProperties {
     @Valid
     private AccumuloProperties accumuloProperties = new AccumuloProperties();
+    @Valid
     private System system = new System();
 
     public AccumuloProperties getAccumuloProperties() {

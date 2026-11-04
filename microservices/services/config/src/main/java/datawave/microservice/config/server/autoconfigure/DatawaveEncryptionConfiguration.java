@@ -1,6 +1,7 @@
 package datawave.microservice.config.server.autoconfigure;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -9,7 +10,6 @@ import org.springframework.cloud.bootstrap.encrypt.RsaProperties;
 import org.springframework.cloud.config.server.encryption.KeyStoreTextEncryptorLocator;
 import org.springframework.cloud.config.server.encryption.TextEncryptorLocator;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.rsa.crypto.RsaAlgorithm;
 import org.springframework.security.rsa.crypto.RsaSecretEncryptor;
 
@@ -17,7 +17,7 @@ import org.springframework.security.rsa.crypto.RsaSecretEncryptor;
  * Overrides {@link org.springframework.cloud.config.server.config.EncryptionAutoConfiguration} to provide a {@link TextEncryptorLocator} that uses a
  * {@link DatawaveKeyStoreKeyFactory} instead of a {@link org.springframework.security.rsa.crypto.KeyStoreKeyFactory}.
  */
-@Configuration
+@AutoConfiguration
 @ConditionalOnClass(RsaSecretEncryptor.class)
 @ConditionalOnProperty(prefix = "encrypt.key-store", value = "location", matchIfMissing = false)
 public class DatawaveEncryptionConfiguration {
