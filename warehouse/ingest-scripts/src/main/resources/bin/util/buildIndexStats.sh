@@ -120,7 +120,7 @@ function setMapperJVMParameters() {
     # NOTE: there should only be one mapper; same file is used for all mappers
     if [[ -n "${_GCLog}" || -n "${_GCMapperLog}" ]]; then
         local -r _logFile="-Xloggc:${_GCLogDir}/gcMap-$$-${_dateStr}.log"
-        local -r _gcLog="${_GCLogOpts} ${_logFile}"
+        local -r _gcLog="${_GCLogOpts}:file=${_logFile}:time,uptime"
     fi
 
     _ChildMapOpts="\
@@ -137,7 +137,7 @@ function setReducerJVMParameters() {
     # enable GC logging if requested - typically for debug purposes
     if [[ -n "${_GCLog}" || -n "${_GCMapperLog}" ]]; then
         local -r _logFile="-Xloggc:${_GCLogDir}/gcReduce-$$-${_dateStr}.log"
-        local -r _gcLog="${_GCLogOpts} ${_logFile}"
+        local -r _gcLog="${_GCLogOpts}:file=${_logFile}:time,uptime"
     fi
 
     _ChildReduceOpts="\
@@ -258,17 +258,13 @@ fi
 #================================================
 # initialize map/reduce JVM settings
 test -n "${_HeapDump}" && declare -r _heap="-XX:-HeapDumpOnOutOfMemoryError"
-declare -r _DefaultJVMArgs="-XX:+UseConcMarkSweepGC \
--Dfile.encoding=UTF8 \
+declare -r _DefaultJVMArgs="-Dfile.encoding=UTF8 \
 -Duser.timezone=GMT \
 -XX:+UseNUMA \
 ${_heap} \
 -XX:NewRatio=2"
 declare -r _dateStr=$(date "+%Y_%m_%d-%H_%M_%S")
-declare -r _GCLogOpts="-XX:+PrintGC \
--XX:+PrintGCTimeStamps \
--XX:+PrintGCDateStamps \
--XX:+PrintGCDetails"
+declare -r _GCLogOpts="-Xlog:gc*"
 # set mapper/reducer log directory
 _GCLogDir="${_GCLogDir:-/tmp}"
 
