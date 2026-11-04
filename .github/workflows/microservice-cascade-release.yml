@@ -45,6 +45,9 @@ on:
           - microservices/starters/query-metric
           - microservices/services/accumulo/api
           - microservices/services/accumulo/service
+          - microservices/services/annotation/api
+          - microservices/services/annotation/messaging
+          - microservices/services/annotation/service
           - microservices/services/annotation-cache/api
           - microservices/services/annotation-cache/service
           - microservices/services/audit/api
