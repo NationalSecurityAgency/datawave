@@ -1,0 +1,5 @@
+# PermitAllSecurityConfigurer supplies the only filter chain for this profile.
+# Spring Security 6 rejects a second chain that also matches any request, so turn off the JWT chain.
+security:
+  jwt:
+    enabled: false
