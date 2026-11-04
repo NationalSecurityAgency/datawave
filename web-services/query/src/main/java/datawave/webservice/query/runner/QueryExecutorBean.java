@@ -4005,7 +4005,8 @@ public class QueryExecutorBean implements QueryExecutor {
             // Check if submitting a new query would exceed any configured concurrent query limits.
             QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(userDn, systemFrom, queryLogicName);
             if (limiterResponse.metLimit()) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
+
+                BadRequestQueryException qe = new BadRequestQueryException(limiterResponse.getLimitOwner().getErrorCode(), limiterResponse.getMessage());
                 response.addException(qe);
                 throw new BadRequestException(qe, response);
             }
