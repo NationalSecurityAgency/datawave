@@ -19,12 +19,12 @@
     <properties>
         <!-- delimiter that doesn't clash with Spring ${} placeholders -->
         <resource.delimiter>@</resource.delimiter>
-        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
-        <version.jackson>2.14.3</version.jackson>
+        <!-- keep jackson and snakeyaml in step with spring-boot-dependencies -->
+        <version.jackson>2.21.4</version.jackson>
         <version.dropwizard-metrics>4.2.40</version.dropwizard-metrics>
         <version.log4j>2.26.1</version.log4j>
         <version.slf4j>2.0.17</version.slf4j>
-        <version.snakeyaml>1.33</version.snakeyaml>
+        <version.snakeyaml>2.4</version.snakeyaml>
         <version.spring.boot>3.5.16</version.spring.boot>
         <!-- keep in step with the spring-cloud-function version in version.spring.cloud -->
         <version.spring-cloud-function>4.3.4</version.spring-cloud-function>
@@ -50,7 +50,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- snakeyaml >= 1.33 needed for jackson-dataformat-yaml 2.14.X -->
+            <!-- snakeyaml 2.x is required by spring-boot 3 (YamlPropertySourceLoader) -->
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>

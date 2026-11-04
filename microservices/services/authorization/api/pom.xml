@@ -19,8 +19,8 @@
         <datawave.webservice.namespace>http://webservice.datawave.nsa/v1</datawave.webservice.namespace>
         <version.accumulo>2.1.5</version.accumulo>
         <version.guava>31.1-jre</version.guava>
-        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
-        <version.jackson>2.14.3</version.jackson>
+        <!-- keep jackson and snakeyaml in step with spring-boot-dependencies -->
+        <version.jackson>2.21.4</version.jackson>
         <version.jakarta>4.0.5</version.jakarta>
         <version.jaxb>2.3.3</version.jaxb>
         <version.jaxb-impl>3.0.2</version.jaxb-impl>

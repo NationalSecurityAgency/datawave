@@ -26,8 +26,8 @@
         <version.datawave.starter>9.0.0-SNAPSHOT</version.datawave.starter>
         <version.guava>31.1-jre</version.guava>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
-        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
-        <version.jackson>2.14.3</version.jackson>
+        <!-- keep jackson and snakeyaml in step with spring-boot-dependencies -->
+        <version.jackson>2.21.4</version.jackson>
         <version.jakarta>4.0.5</version.jakarta>
         <version.jaxb-impl>3.0.2</version.jaxb-impl>
         <version.jboss-servlet-api>2.0.0.Final</version.jboss-servlet-api>
