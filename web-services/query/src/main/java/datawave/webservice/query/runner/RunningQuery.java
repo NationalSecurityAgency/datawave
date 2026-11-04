@@ -59,6 +59,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
     private static final long serialVersionUID = -8812242917762274469L;
 
+    /**
+     * Keep a small, bounded number of transformed results ready for the request thread. A capacity of one effectively serializes the producer and consumer and
+     * used to require the producer to poll the queue every millisecond. Keeping this bounded limits the amount of result data retained per running query.
+     */
+    private static final int RESULTS_THREAD_QUEUE_CAPACITY = 3;
+
     private static Logger log = Logger.getLogger(RunningQuery.class);
 
     private transient AccumuloClient client = null;
@@ -76,7 +82,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
-    private final BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(1);
+    private final BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(RESULTS_THREAD_QUEUE_CAPACITY);
     private transient volatile Thread currentThread;
     private volatile Exception resultsThreadException = null;
     private final AtomicInteger hasNext = new AtomicInteger(0);
@@ -250,10 +256,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     }
 
     /**
-     * This is the results thread which will pull results from the iterator and add them to a blocking queue. The blocking queue will be of size 1 which means
-     * that the main RunningQuery.next() loop will have to pull the results before the next one can be retrieved. The hasNext and gotNext counters keep track of
-     * the calls to hasNext and next on the underlying iterator. They will be decremented once a result is acknowledged in the RunningQuery.next() loop. The
-     * running boolean will allow the graceful termination of this thread.
+     * This is the results thread which will pull results from the iterator and add them to a bounded blocking queue. The queue allows a small amount of
+     * read-ahead while applying backpressure when the request thread is not consuming results. The hasNext and gotNext counters keep track of the calls to
+     * hasNext and next on the underlying iterator. They will be decremented once a result is acknowledged in the RunningQuery.next() loop. The running boolean
+     * will allow the graceful termination of this thread.
      *
      * @return running (with a value of false)
      */
@@ -264,76 +270,65 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     hasNext.incrementAndGet();
                     hasNext.notifyAll();
                 }
-                // wait until the queue is emptied
-                if (log.isDebugEnabled()) {
-                    log.debug(this.settings.getId() + " : Waiting for resultsThreadQueue to be emptied or termination");
-                }
-                while (running.get() && !this.finished && !this.canceled && !resultsThreadQueue.isEmpty()) {
-                    try {
-                        Thread.sleep(1);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
-                    }
-                }
-                // if the queue is available and we are still running, then get the next result
-                if (running.get() && !this.finished && !this.canceled && resultsThreadQueue.isEmpty()) {
+
+                if (running.get() && !this.finished && !this.canceled) {
                     if (log.isDebugEnabled()) {
                         log.debug(this.settings.getId() + " : Get next async result");
                     }
                     Object o = this.iter.next();
                     if (o != null) {
                         if (log.isDebugEnabled()) {
-                            log.debug(this.settings.getId() + " : Offering result to resultsThreadQueue");
+                            log.debug(this.settings.getId() + " : Adding result to resultsThreadQueue");
                         }
-                        resultsThreadQueue.offer(o);
+                        // Block without polling when the bounded read-ahead queue is full. terminateResultsThread interrupts this wait.
+                        resultsThreadQueue.put(o);
                         synchronized (gotNext) {
                             gotNext.incrementAndGet();
                             gotNext.notifyAll();
                         }
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug(this.settings.getId() + " : Null result returned");
-                        }
+                    } else if (log.isDebugEnabled()) {
+                        log.debug(this.settings.getId() + " : Null result returned");
                     }
 
                     // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
                     if (iter.getTransformer() instanceof WritesQueryMetrics) {
                         ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
                     }
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug(this.settings.getId() + " : running:" + running.get() + " finished:" + this.finished + " canceled:" + this.canceled);
-                    }
+                } else if (log.isDebugEnabled()) {
+                    log.debug(this.settings.getId() + " : running:" + running.get() + " finished:" + this.finished + " canceled:" + this.canceled);
                 }
             }
+        } catch (InterruptedException e) {
+            // Interruption is the normal way terminateResultsThread releases a producer blocked on a full queue.
+            Thread.currentThread().interrupt();
+            if (running.get() && !this.finished && !this.canceled) {
+                recordResultsThreadException(e);
+            }
         } catch (Exception e) {
-            log.error(this.settings.getId() + " : Results thread exception", e);
-            resultsThreadException = e;
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
-            if (settings.getUncaughtExceptionHandler() != null) {
-                settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
-            }
+            recordResultsThreadException(e);
+        } finally {
             running.set(false);
-            synchronized (hasNext) {
-                hasNext.notifyAll();
-            }
-            synchronized (gotNext) {
-                gotNext.notifyAll();
-            }
+            signalResultsThreadWaiters();
         }
 
-        running.set(false);
+        return running;
+    }
+
+    private void recordResultsThreadException(Exception e) {
+        log.error(this.settings.getId() + " : Results thread exception", e);
+        resultsThreadException = e;
+        if (settings.getUncaughtExceptionHandler() != null) {
+            settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
+        }
+    }
+
+    private void signalResultsThreadWaiters() {
         synchronized (hasNext) {
             hasNext.notifyAll();
         }
         synchronized (gotNext) {
             gotNext.notifyAll();
         }
-
-        return running;
     }
 
     public boolean isUseResultsThread() {
@@ -447,13 +442,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      */
     public void terminateResultsThread() {
         running.set(false);
-        if (future != null) {
-            future.cancel(false);
-            while (!future.isDone()) {
-                future.cancel(true);
-            }
-            future = null;
+        Future<Object> resultsFuture = future;
+        future = null;
+        if (resultsFuture != null) {
+            // In particular, release the producer if it is blocked adding to a full results queue.
+            resultsFuture.cancel(true);
         }
+        signalResultsThreadWaiters();
     }
 
     /**
