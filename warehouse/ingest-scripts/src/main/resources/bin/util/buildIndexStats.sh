@@ -119,7 +119,7 @@ function setMapperJVMParameters() {
     # enable GC logging if requested - typically for debug purposes
     # NOTE: there should only be one mapper; same file is used for all mappers
     if [[ -n "${_GCLog}" || -n "${_GCMapperLog}" ]]; then
-        local -r _logFile="-Xloggc:${_GCLogDir}/gcMap-$$-${_dateStr}.log"
+        local -r _logFile="${_GCLogDir}/gcMap-$$-${_dateStr}.log"
         local -r _gcLog="${_GCLogOpts}:file=${_logFile}:time,uptime"
     fi
 
@@ -136,7 +136,7 @@ function setReducerJVMParameters() {
 
     # enable GC logging if requested - typically for debug purposes
     if [[ -n "${_GCLog}" || -n "${_GCMapperLog}" ]]; then
-        local -r _logFile="-Xloggc:${_GCLogDir}/gcReduce-$$-${_dateStr}.log"
+        local -r _logFile="${_GCLogDir}/gcReduce-$$-${_dateStr}.log"
         local -r _gcLog="${_GCLogOpts}:file=${_logFile}:time,uptime"
     fi
 
