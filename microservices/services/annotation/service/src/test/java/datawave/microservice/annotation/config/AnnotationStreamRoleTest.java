@@ -248,7 +248,7 @@ class AnnotationStreamRoleTest {
                         assertThat(AnnotationMessage.parseFrom((byte[]) wire.getPayload())).isEqualTo(expected);
                         CorrelationData correlation = wire.getHeaders().get(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, CorrelationData.class);
                         assertThat(correlation).isNotNull();
-                        correlation.getFuture().set(new CorrelationData.Confirm(true, null));
+                        correlation.getFuture().complete(new CorrelationData.Confirm(true, null));
                         assertThat(result.get(3, TimeUnit.SECONDS)).contains(expected);
                     } finally {
                         executor.shutdownNow();

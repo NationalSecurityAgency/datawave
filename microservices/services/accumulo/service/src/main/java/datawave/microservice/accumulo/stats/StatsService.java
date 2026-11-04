@@ -120,8 +120,9 @@ public class StatsService implements InitializingBean {
                 nsFilter.parse(new InputSource(new StringReader(monitorResponse.getBody())));
                 response = (StatsResponse) umHandler.getResult();
             } else {
-                String errorMessage = String.format("Monitor request failed. Http Status: (%s, %s)", monitorResponse.getStatusCodeValue(),
-                                monitorResponse.getStatusCode().getReasonPhrase());
+                HttpStatus status = HttpStatus.resolve(monitorResponse.getStatusCode().value());
+                String errorMessage = String.format("Monitor request failed. Http Status: (%s, %s)", monitorResponse.getStatusCode().value(),
+                                status != null ? status.getReasonPhrase() : "");
                 log.error(errorMessage);
                 response.addException(new RuntimeException(errorMessage));
 

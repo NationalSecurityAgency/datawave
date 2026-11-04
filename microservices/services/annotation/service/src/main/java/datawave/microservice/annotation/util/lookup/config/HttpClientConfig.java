@@ -42,11 +42,11 @@ public class HttpClientConfig {
                 .build();
         // @formatter:on
         // never re-use connections
-        ConnectionReuseStrategy connectionReuseStrategy = (httpResponse, httpContext) -> false;
+        ConnectionReuseStrategy connectionReuseStrategy = (httpRequest, httpResponse, httpContext) -> false;
 
         // set retry strategy to max interval of five minutes
         int maxInterval = 5 * 60 * 1000;
-        return HttpClientBuilder.create().setSSLContext(sslContext).setConnectionManager(manager).setDefaultRequestConfig(requestConfig)
+        return HttpClientBuilder.create().setConnectionManager(manager).setDefaultRequestConfig(requestConfig)
                         .setConnectionReuseStrategy(connectionReuseStrategy).build();
     }
 }

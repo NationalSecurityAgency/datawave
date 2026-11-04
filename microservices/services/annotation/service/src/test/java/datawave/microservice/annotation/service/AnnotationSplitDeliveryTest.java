@@ -81,7 +81,7 @@ class AnnotationSplitDeliveryTest {
                         message.getHeaders()
                                         .get(org.springframework.amqp.support.AmqpHeaders.PUBLISH_CONFIRM_CORRELATION,
                                                         org.springframework.amqp.rabbit.connection.CorrelationData.class)
-                                        .getFuture().set(new org.springframework.amqp.rabbit.connection.CorrelationData.Confirm(true, null));
+                                        .getFuture().complete(new org.springframework.amqp.rabbit.connection.CorrelationData.Confirm(true, null));
                     });
                     try {
                         Optional<Annotation> accepted = controller.writeAnnotation(AnnotationTestDataUtil.generateTestAnnotation());

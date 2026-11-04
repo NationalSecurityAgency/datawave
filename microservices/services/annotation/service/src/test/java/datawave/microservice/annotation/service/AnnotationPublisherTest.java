@@ -40,7 +40,7 @@ class AnnotationPublisherTest {
     @Test
     void positiveConfirmSucceeds() {
         when(source.send(any())).thenAnswer(invocation -> {
-            correlation(invocation.getArgument(0)).getFuture().set(new CorrelationData.Confirm(true, null));
+            correlation(invocation.getArgument(0)).getFuture().complete(new CorrelationData.Confirm(true, null));
             return true;
         });
         assertThat(publisher.publishAndConfirm(message)).contains(message);
@@ -50,7 +50,7 @@ class AnnotationPublisherTest {
     @Test
     void nackFails() {
         when(source.send(any())).thenAnswer(invocation -> {
-            correlation(invocation.getArgument(0)).getFuture().set(new CorrelationData.Confirm(false, "broker rejection"));
+            correlation(invocation.getArgument(0)).getFuture().complete(new CorrelationData.Confirm(false, "broker rejection"));
             return true;
         });
         assertThat(publisher.publishAndConfirm(message)).isEmpty();
@@ -63,7 +63,7 @@ class AnnotationPublisherTest {
             CorrelationData correlation = correlation(invocation.getArgument(0));
             correlation.setReturned(new ReturnedMessage(new org.springframework.amqp.core.Message(new byte[0], new MessageProperties()), 312, "NO_ROUTE",
                             "annotation", "annotation"));
-            correlation.getFuture().set(new CorrelationData.Confirm(true, null));
+            correlation.getFuture().complete(new CorrelationData.Confirm(true, null));
             return true;
         });
         assertThat(publisher.publishAndConfirm(message)).isEmpty();
@@ -73,7 +73,7 @@ class AnnotationPublisherTest {
     @Test
     void failedConfirmationFutureFails() {
         when(source.send(any())).thenAnswer(invocation -> {
-            correlation(invocation.getArgument(0)).getFuture().setException(new IllegalStateException("connection closed"));
+            correlation(invocation.getArgument(0)).getFuture().completeExceptionally(new IllegalStateException("connection closed"));
             return true;
         });
         assertThat(publisher.publishAndConfirm(message)).isEmpty();
@@ -110,10 +110,10 @@ class AnnotationPublisherTest {
             Future<Optional<AnnotationMessage>> retry = executor.submit(() -> publisher.publishAndConfirm(message));
             assertThat(retryPublished.await(5, TimeUnit.SECONDS)).isTrue();
             assertThat(retryCorrelation.get().getId()).isNotEqualTo(firstAttempt.getId());
-            firstAttempt.getFuture().set(new CorrelationData.Confirm(true, null));
+            firstAttempt.getFuture().complete(new CorrelationData.Confirm(true, null));
             assertThat(retryCorrelation.get().getFuture().isDone()).isFalse();
             assertThat(retry.isDone()).isFalse();
-            retryCorrelation.get().getFuture().set(new CorrelationData.Confirm(false, "retry rejected"));
+            retryCorrelation.get().getFuture().complete(new CorrelationData.Confirm(false, "retry rejected"));
             assertThat(retry.get(5, TimeUnit.SECONDS)).isEmpty();
             assertThat(publisher.isEmpty()).isTrue();
         } finally {

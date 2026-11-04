@@ -41,7 +41,7 @@ class AnnotationPublisherSecurityTest {
                                     SecurityContextHolder.clearContext();
                                     assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
                                     sent.getHeaders().get(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, CorrelationData.class).getFuture()
-                                                    .set(new CorrelationData.Confirm(true, null));
+                                                    .complete(new CorrelationData.Confirm(true, null));
                                 });
                             });
                             try {

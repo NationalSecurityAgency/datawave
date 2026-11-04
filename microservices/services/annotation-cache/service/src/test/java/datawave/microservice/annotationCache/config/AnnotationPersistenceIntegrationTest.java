@@ -57,7 +57,7 @@ class AnnotationPersistenceIntegrationTest {
         when(publisher.send(any(Message.class))).thenAnswer(invocation -> {
             Message<?> message = invocation.getArgument(0);
             CorrelationData correlationData = (CorrelationData) message.getHeaders().get("amqp_publishConfirmCorrelation");
-            correlationData.getFuture().set(new CorrelationData.Confirm(true, null));
+            correlationData.getFuture().complete(new CorrelationData.Confirm(true, null));
             return true;
         });
         // @formatter:on

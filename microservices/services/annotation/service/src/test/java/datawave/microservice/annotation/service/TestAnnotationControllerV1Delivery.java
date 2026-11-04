@@ -139,7 +139,7 @@ public class TestAnnotationControllerV1Delivery {
     private static void confirm(Message<?> sent) {
         CorrelationData correlation = sent.getHeaders().get(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, CorrelationData.class);
         assertNotNull(correlation);
-        correlation.getFuture().set(new CorrelationData.Confirm(true, null));
+        correlation.getFuture().complete(new CorrelationData.Confirm(true, null));
     }
 
     private static AnnotationMessage buildMessage(Annotation annotation) {
