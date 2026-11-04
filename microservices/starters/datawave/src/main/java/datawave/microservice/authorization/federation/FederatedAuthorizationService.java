@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
@@ -169,8 +170,8 @@ public class FederatedAuthorizationService implements UserOperations {
                 .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .retrieve()
                 // don't retry on 4xx errors
-                .onStatus(HttpStatus::is5xxServerError,
-                        clientResponse -> Mono.error(new ServiceException("Service Error", clientResponse.rawStatusCode())))
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        clientResponse -> Mono.error(new ServiceException("Service Error", clientResponse.statusCode().value())))
                 .toEntity(entityClass)
                 .retryWhen(Retry
                         .fixedDelay(retry.getRetries(), Duration.ofMillis(retry.getRetryDelayMillis()))

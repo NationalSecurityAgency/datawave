@@ -2,7 +2,7 @@ package datawave.microservice.annotation.client;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -23,6 +23,6 @@ public class AnnotationTestClient {
     public void testAnnotationServiceCall() {
         WebClient webClient = webClientBuilder.baseUrl("https://localhost:" + port + path).build();
         ResponseEntity<VoidResponse> responseEntity = webClient.get().uri("/testSingleQueryException").retrieve()
-                        .onStatus(HttpStatus::isError, response -> Mono.empty()).toEntity(VoidResponse.class).block();
+                        .onStatus(HttpStatusCode::isError, response -> Mono.empty()).toEntity(VoidResponse.class).block();
     }
 }
