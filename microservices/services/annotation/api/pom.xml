@@ -8,7 +8,7 @@
         <relativePath>../../../microservice-parent/pom.xml</relativePath>
     </parent>
     <artifactId>annotation-api</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
