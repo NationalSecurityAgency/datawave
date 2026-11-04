@@ -20,7 +20,6 @@ final class CacheConfigurations {
     static {
         Map<CacheType,Class<?>> mappings = new EnumMap<>(CacheType.class);
         mappings.put(CacheType.GENERIC, GenericCacheConfiguration.class);
-        mappings.put(CacheType.EHCACHE, EhCacheCacheConfiguration.class);
         mappings.put(CacheType.HAZELCAST, HazelcastCacheConfiguration.class);
         mappings.put(CacheType.CACHE2K, Cache2kCacheConfiguration.class);
         mappings.put(CacheType.CAFFEINE, CaffeineCacheConfiguration.class);

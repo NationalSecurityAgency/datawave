@@ -9,11 +9,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
-import org.springframework.security.rsa.crypto.RsaSecretEncryptor;
+import org.springframework.security.crypto.encrypt.RsaSecretEncryptor;
 
 /**
  * Overrides {@link EncryptionBootstrapConfiguration} in order to provide a {@link TextEncryptor} that uses a {@link DatawaveKeyStoreKeyFactory} instead of a
- * {@link org.springframework.security.rsa.crypto.KeyStoreKeyFactory}.
+ * {@link org.springframework.security.crypto.encrypt.KeyStoreKeyFactory}.
  */
 @Configuration
 @Conditional(EncryptionBootstrapConfiguration.KeyCondition.class)

@@ -21,10 +21,13 @@
         <resource.delimiter>@</resource.delimiter>
         <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
         <version.jackson>2.14.3</version.jackson>
+        <version.dropwizard-metrics>4.2.40</version.dropwizard-metrics>
         <version.log4j>2.26.1</version.log4j>
         <version.slf4j>2.0.17</version.slf4j>
         <version.snakeyaml>1.33</version.snakeyaml>
         <version.spring.boot>3.5.16</version.spring.boot>
+        <!-- keep in step with the spring-cloud-function version in version.spring.cloud -->
+        <version.spring-cloud-function>4.3.4</version.spring-cloud-function>
         <version.spring.cloud>2025.0.3</version.spring.cloud>
     </properties>
     <dependencyManagement>
@@ -75,7 +78,27 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- spring-boot-dependencies 3.x no longer manages dropwizard metrics -->
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-bom</artifactId>
+                <version>${version.dropwizard-metrics}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <?SORTPOM RESUME?>
+            <!-- spring-cloud-function-context pulls jackson-datatype-joda, which brings in banned joda-time. Nothing uses it. -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-function-context</artifactId>
+                <version>${version.spring-cloud-function}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.datatype</groupId>
+                        <artifactId>jackson-datatype-joda</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter</artifactId>

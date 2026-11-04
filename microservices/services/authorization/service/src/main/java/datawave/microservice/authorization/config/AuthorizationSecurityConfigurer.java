@@ -1,12 +1,18 @@
 package datawave.microservice.authorization.config;
 
+import java.util.List;
+
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 
@@ -14,7 +20,7 @@ import datawave.microservice.authorization.jwt.JWTAuthenticationFilter;
 import datawave.microservice.authorization.jwt.JWTAuthenticationProvider;
 import datawave.microservice.authorization.preauth.AuthorizationProxiedEntityX509Filter;
 import datawave.microservice.config.security.AllowedCallersFilter;
-import datawave.microservice.config.security.JWTSecurityConfigurer;
+import datawave.microservice.config.security.AbstractJWTSecurityConfigurer;
 
 /**
  * <p>
@@ -52,10 +58,9 @@ import datawave.microservice.config.security.JWTSecurityConfigurer;
  * AuthorizationProxiedEntityPreauthPrincipal which contains the HttpServletRequest. This allows ProxiedEntityUserDetailsService to call
  * AuthorizationAllowedCallersFilter.enforceAllowedCallersForRequest() to determine if allowedCallers should enforced for that request.
  */
-@Order(SecurityProperties.BASIC_AUTH_ORDER - 3)
 @Configuration
 @EnableCaching
-public class AuthorizationSecurityConfigurer extends JWTSecurityConfigurer {
+public class AuthorizationSecurityConfigurer extends AbstractJWTSecurityConfigurer {
     private final DatawaveSecurityProperties securityProperties;
     private final AuthenticationUserDetailsService<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService;
 
@@ -67,27 +72,39 @@ public class AuthorizationSecurityConfigurer extends JWTSecurityConfigurer {
         this.authenticationUserDetailsService = authenticationUserDetailsService;
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    @Order(SecurityProperties.BASIC_AUTH_ORDER - 3)
+    public SecurityFilterChain authorizationSecurityFilterChain(HttpSecurity http) throws Exception {
+        return buildSecurityFilterChain(http);
+    }
 
-        super.configure(http);
+    @Bean
+    public WebSecurityCustomizer authorizationWebSecurityCustomizer() {
+        return staticResourcesWebSecurityCustomizer();
+    }
+
+    @Override
+    protected void configure(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+
+        super.configure(http, authenticationManager);
 
         // The parent configures JWT-based security. Add an additional filter here to allow authentication based on the
         // X-ProxiedEntitiesChain/X-ProxiedIssuersChain headers that are supplied by trusted callers.
         AuthorizationProxiedEntityX509Filter proxiedX509Filter = new AuthorizationProxiedEntityX509Filter(securityProperties.isUseTrustedSubjectHeaders(),
                         securityProperties.isProxiedEntitiesRequired(), securityProperties.isIssuersRequired(), getAuthenticationEntryPoint());
-        proxiedX509Filter.setAuthenticationManager(authenticationManager());
+        proxiedX509Filter.setAuthenticationManager(authenticationManager);
         proxiedX509Filter.setContinueFilterChainOnUnsuccessfulAuthentication(false);
         http.addFilterAfter(proxiedX509Filter, JWTAuthenticationFilter.class);
     }
 
-    /*~~(Migrate manually based on https://spring.io/blog/2022/02/21/spring-security-without-the-websecurityconfigureradapter)~~>*/@Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        super.configure(auth);
+    @Override
+    protected List<AuthenticationProvider> getAuthenticationProviders() {
+        List<AuthenticationProvider> providers = super.getAuthenticationProviders();
 
         PreAuthenticatedAuthenticationProvider provider = new PreAuthenticatedAuthenticationProvider();
         provider.setPreAuthenticatedUserDetailsService(authenticationUserDetailsService);
-        auth.authenticationProvider(provider);
+        providers.add(provider);
+        return providers;
     }
 
     @Override
