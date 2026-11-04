@@ -13,6 +13,7 @@ import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.net.URIAuthority;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.ParseException;
@@ -182,7 +183,8 @@ public class LookupRequest {
             // @formatter:off
             URIBuilder builder = new URIBuilder()
                     .setScheme(PROTOCOL)
-                    .setHost(lookupProperties.getDatawaveQueryHost())
+                    // the configured host may include a port; httpcore5's setHost would percent-encode the ':'
+                    .setAuthority(URIAuthority.create(lookupProperties.getDatawaveQueryHost()))
                     .setPath(uri + lookupPath)
                     .setParameter(PARAM_KEY, queryParams);
             // @formatter:on

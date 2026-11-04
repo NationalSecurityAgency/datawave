@@ -22,6 +22,7 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.client5.http.ssl.HostnameVerificationPolicy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,7 +103,8 @@ class LookupRequestCookieIsolationTest {
         CloseableHttpClient httpClient = HttpClientBuilder.create()
                         .setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create()
                                         .setTlsSocketStrategy(ClientTlsStrategyBuilder.create().setSslContext(clientSslContext)
-                                                        .setHostnameVerifier(NoopHostnameVerifier.INSTANCE).buildClassic())
+                                                        .setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                                                        .setHostVerificationPolicy(HostnameVerificationPolicy.CLIENT).buildClassic())
                                         .build())
                         .build();
 

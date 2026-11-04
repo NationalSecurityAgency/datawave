@@ -36,7 +36,6 @@
         <version.jboss-servlet-api>2.0.0.Final</version.jboss-servlet-api>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>
-        <version.rabbit.amqp-client>5.14.2</version.rabbit.amqp-client>
         <version.rabbit.http-client>5.7.0</version.rabbit.http-client>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.slf4j>2.0.17</version.slf4j>
@@ -54,11 +53,6 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${version.guava}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.rabbitmq</groupId>
-                <artifactId>amqp-client</artifactId>
-                <version>${version.rabbit.amqp-client}</version>
             </dependency>
             <dependency>
                 <groupId>com.rabbitmq</groupId>
