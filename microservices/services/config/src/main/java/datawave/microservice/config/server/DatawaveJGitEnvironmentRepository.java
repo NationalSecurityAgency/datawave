@@ -13,6 +13,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 
+import io.micrometer.observation.ObservationRegistry;
+
 /**
  * An extension of {@link MultipleJGitEnvironmentRepository} that sets up JGit to handle encrypted private keys for git.
  */
@@ -21,8 +23,9 @@ import com.jcraft.jsch.UserInfo;
 public class DatawaveJGitEnvironmentRepository extends MultipleJGitEnvironmentRepository {
     private boolean initialized = false;
 
-    public DatawaveJGitEnvironmentRepository(ConfigurableEnvironment environment, MultipleJGitEnvironmentProperties properties) {
-        super(environment, properties);
+    public DatawaveJGitEnvironmentRepository(ConfigurableEnvironment environment, MultipleJGitEnvironmentProperties properties,
+                    ObservationRegistry observationRegistry) {
+        super(environment, properties, observationRegistry);
     }
 
     @Override

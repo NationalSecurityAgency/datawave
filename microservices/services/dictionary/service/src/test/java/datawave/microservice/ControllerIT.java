@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.ResponseErrorHandler;
@@ -58,7 +58,7 @@ public class ControllerIT {
         // Allow 403 responses through without throwing an exception so tests can assert the response appropriately.
         ResponseErrorHandler errorHandler = new DefaultResponseErrorHandler() {
             @Override
-            protected boolean hasError(HttpStatus statusCode) {
+            protected boolean hasError(HttpStatusCode statusCode) {
                 return super.hasError(statusCode) && statusCode.value() != 403;
             }
         };
