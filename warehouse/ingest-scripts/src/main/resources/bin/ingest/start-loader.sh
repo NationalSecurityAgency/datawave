@@ -30,7 +30,7 @@ fi
 PATH="${PATH}:/usr/sbin"
 export PATH
 
-MAPFILE_LOADER_CMD=$THIS_DIR/map-file-bulk-loader.sh
+MAP_FILE_BULK_LOADER_CMD=$THIS_DIR/map-file-bulk-loader.sh
 PIDS=$($MAP_FILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader")
 COUNT=0
 IFS=';' read -r -a values <<<$MAP_LOADER_HDFS_NAME_NODES_CONFIG
@@ -105,7 +105,7 @@ if [[ ${TOTAL} -gt 0 ]]; then
           portUsed=$(ps -eaf | grep "[b]ulkIngestMap" | grep $SHUTDOWN_PORT)
       done
       echo starting map file loader with log file $LOG_DIR/map-file-loader.$LOADER-$SHUTDOWN_PORT.log
-      $MAPFILE_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} >> $LOG_DIR/map-file-loader.$LOADER-$SHUTDOWN_PORT.log 2>&1 &
+      $MAP_FILE_BULK_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} >> $LOG_DIR/map-file-loader.$LOADER-$SHUTDOWN_PORT.log 2>&1 &
       SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
       portInUse=$(lsof -i:${SHUTDOWN_PORT} | grep $SHUTDOWN_PORT)
       portUsed=$(ps -eaf | grep "[b]ulkIngestMap" | grep $SHUTDOWN_PORT)
@@ -120,8 +120,6 @@ if [[ ${TOTAL} -gt 0 ]]; then
   elif [[ ${EXTRA_MAP} == 0 ]]; then
     echo "Extra map loader already running."
   else
-    # set LOADER to use the number after the previous loader
-    LOADER=${#MAP_LOADER_HDFS_NAME_NODES[@]}
     export MAP_LOADER_WORKDIR=${BASE_WORK_DIR}
     echo "starting 1 extra map file loader for ${EXTRA_MAP_LOADER} ..."
     SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
@@ -135,7 +133,7 @@ if [[ ${TOTAL} -gt 0 ]]; then
         portUsed=$(ps -eaf | grep "[b]ulkIngestMap" | grep $SHUTDOWN_PORT)
     done
     echo starting extra map file loader with log file $LOG_DIR/map-file-loader-extra.$SHUTDOWN_PORT.log
-    $MAPFILE_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader-extra.$SHUTDOWN_PORT.log 2>&1 &
+    $MAP_FILE_BULK_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader-extra.$SHUTDOWN_PORT.log 2>&1 &
   fi
 
   if [[ ! -z $MAP_LOADER_CUSTOM ]]; then
