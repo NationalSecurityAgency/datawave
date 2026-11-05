@@ -2,12 +2,12 @@ package datawave.microservice.fileProvider.config;
 
 import java.util.List;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 
 @Validated
 @Configuration

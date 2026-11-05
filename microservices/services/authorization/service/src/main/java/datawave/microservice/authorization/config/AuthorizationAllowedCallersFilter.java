@@ -4,14 +4,13 @@ import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.springframework.security.web.AuthenticationEntryPoint;
+
+import datawave.microservice.config.security.AllowedCallersFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.springframework.security.web.AuthenticationEntryPoint;
-
-import datawave.microservice.config.security.AllowedCallersFilter;
 
 public class AuthorizationAllowedCallersFilter extends AllowedCallersFilter {
     private static final Set<String> allowAllUsersPaths = new LinkedHashSet<>();

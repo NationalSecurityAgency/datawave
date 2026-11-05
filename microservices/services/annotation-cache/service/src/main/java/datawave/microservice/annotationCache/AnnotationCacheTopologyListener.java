@@ -5,8 +5,6 @@ import static datawave.microservice.annotationCache.api.Constants.FETCH_MAP;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jakarta.annotation.PreDestroy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -28,6 +26,7 @@ import com.hazelcast.partition.ReplicaMigrationEvent;
 import datawave.microservice.annotationCache.api.FetchKey;
 import datawave.microservice.annotationCache.api.FetchRecord;
 import datawave.microservice.annotationCache.config.AnnotationCacheProperties;
+import jakarta.annotation.PreDestroy;
 
 /**
  * Clears transient fetch-freshness markers after topology events that may leave annotation maps incomplete. Clearing the shared fetch map after the cluster

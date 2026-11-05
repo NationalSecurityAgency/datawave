@@ -2,15 +2,15 @@ package datawave.webservice.request.objects;
 
 import java.nio.charset.StandardCharsets;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.xerces.util.XMLChar;
+
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlValue;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.xerces.util.XMLChar;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)

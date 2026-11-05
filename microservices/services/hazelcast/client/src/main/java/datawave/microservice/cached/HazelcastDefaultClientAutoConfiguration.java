@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 @Conditional(HazelcastCacheCondition.class)
 @AutoConfigureBefore(HazelcastAutoConfiguration.class)
 @AutoConfigureAfter({HazelcastDiscoveryClientAutoConfiguration.class, HazelcastK8sClientAutoConfiguration.class,
-                HazelcastDiscoveryServiceAutoConfiguration.class})
+        HazelcastDiscoveryServiceAutoConfiguration.class})
 @EnableConfigurationProperties(HazelcastClientProperties.class)
 public class HazelcastDefaultClientAutoConfiguration extends HazelcastBaseClientConfiguration {
     @Bean

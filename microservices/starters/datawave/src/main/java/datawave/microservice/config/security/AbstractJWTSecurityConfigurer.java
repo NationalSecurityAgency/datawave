@@ -29,8 +29,8 @@ import datawave.microservice.authorization.jwt.JWTAuthenticationProvider;
  * proxied users/servers using the supplied authorization service.
  * <p>
  * Each concrete subclass registers its own {@link SecurityFilterChain} bean (with its own name and order) by calling {@link #buildSecurityFilterChain}. The
- * bean methods live in the subclasses rather than here so that a service can have more than one of these configurations active without the inherited bean
- * names colliding.
+ * bean methods live in the subclasses rather than here so that a service can have more than one of these configurations active without the inherited bean names
+ * colliding.
  */
 public abstract class AbstractJWTSecurityConfigurer {
     private final DatawaveSecurityProperties securityProperties;

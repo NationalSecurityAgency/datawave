@@ -1,8 +1,8 @@
 package datawave.microservice.authorization.preauth;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.springframework.security.web.AuthenticationEntryPoint;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public class AuthorizationProxiedEntityX509Filter extends ProxiedEntityX509Filter {
 

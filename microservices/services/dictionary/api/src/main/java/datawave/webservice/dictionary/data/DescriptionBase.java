@@ -1,11 +1,10 @@
 package datawave.webservice.dictionary.data;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-
 import datawave.marking.Markings;
 import datawave.webservice.query.result.event.HasMarkings;
 import io.protostuff.Message;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class DescriptionBase<T> implements HasMarkings, Message<T> {

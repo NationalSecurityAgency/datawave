@@ -2,8 +2,6 @@ package datawave.microservice.config.web;
 
 import java.util.List;
 
-import jakarta.servlet.DispatcherType;
-
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -24,6 +22,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
+
 import datawave.microservice.config.web.DatawaveServerProperties.Cors;
 import datawave.microservice.config.web.filter.ResponseHeaderServletFilter;
 import datawave.microservice.config.web.filter.ResponseHeaderWebFilter;
@@ -33,6 +32,7 @@ import datawave.microservice.http.converter.html.VoidResponseHttpMessageConverte
 import datawave.microservice.http.converter.protostuff.ProtostuffHttpMessageConverter;
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.result.VoidResponse;
+import jakarta.servlet.DispatcherType;
 
 /**
  * Web configuration for Datawave microservices. TODO: We have only setup configuration here for a servlet-based web application. Additional work needs to be
@@ -43,8 +43,8 @@ import datawave.webservice.result.VoidResponse;
 public class WebConfig {
     /**
      * Creates a {@link JakartaXmlBindAnnotationModule} bean, which will be added automatically to any {@link ObjectMapper} created by Spring. The
-     * {@link JakartaXmlBindAnnotationModule} causes Jackson to honor JAX-B annotations on object when producing JSON. This default behavior can be disabled by setting
-     * the property {@code spring.jackson.module.jaxb-annotation-module} to {@code false}.
+     * {@link JakartaXmlBindAnnotationModule} causes Jackson to honor JAX-B annotations on object when producing JSON. This default behavior can be disabled by
+     * setting the property {@code spring.jackson.module.jaxb-annotation-module} to {@code false}.
      *
      * @return a new {@link JakartaXmlBindAnnotationModule}
      */

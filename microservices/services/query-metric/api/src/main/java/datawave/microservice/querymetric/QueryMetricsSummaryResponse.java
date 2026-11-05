@@ -6,6 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.web.servlet.ModelAndView;
+
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.result.BaseResponse;
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
@@ -13,11 +17,6 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
-
-import org.springframework.web.servlet.ModelAndView;
-
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "QueryMetricsSummaryResponse")
 @XmlAccessorType(XmlAccessType.NONE)

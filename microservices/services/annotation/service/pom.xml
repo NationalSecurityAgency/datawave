@@ -58,14 +58,14 @@
                 <version>${version.guava}</version>
             </dependency>
             <dependency>
-                <groupId>com.rabbitmq</groupId>
-                <artifactId>http-client</artifactId>
-                <version>${version.rabbitmq-http-client}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${version.protobuf-java}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rabbitmq</groupId>
+                <artifactId>http-client</artifactId>
+                <version>${version.rabbitmq-http-client}</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -500,14 +500,14 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+        </dependency>
         <!-- RabbitHealthChecker uses the management HTTP client; spring-cloud-stream-binder-rabbit 4.x no longer brings it in -->
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>http-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
@@ -558,10 +558,10 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
         </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents.client5</groupId>
-      <artifactId>httpclient5</artifactId>
-    </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

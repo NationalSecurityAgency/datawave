@@ -3,14 +3,13 @@ package datawave.microservice.annotation.service.config;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.PositiveOrZero;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -4,8 +4,6 @@ import java.time.Instant;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import jakarta.annotation.Resource;
-
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,6 +17,7 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
 import datawave.microservice.annotation.health.HealthChecker;
 import datawave.microservice.annotation.health.rabbit.RabbitHealthChecker;
+import jakarta.annotation.Resource;
 
 /**
  * Configuration for the RabbitMQ Health Checker. This configuration is activated via the 'annotation.health.rabbit.enabled' property.

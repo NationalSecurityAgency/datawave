@@ -2,12 +2,12 @@ package datawave.microservice.querymetric;
 
 import java.io.Serializable;
 
+import org.apache.commons.text.StringEscapeUtils;
+
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * This represents a datawave geo function and the associated query geometry in GeoJSON format.

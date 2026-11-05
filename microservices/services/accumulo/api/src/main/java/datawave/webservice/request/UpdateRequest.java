@@ -2,15 +2,14 @@ package datawave.webservice.request;
 
 import java.util.List;
 
+import datawave.webservice.request.objects.ReferencedValue;
+import datawave.webservice.request.objects.TableUpdate;
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import datawave.webservice.request.objects.ReferencedValue;
-import datawave.webservice.request.objects.TableUpdate;
 
 @XmlRootElement(name = "UpdateRequest")
 @XmlAccessorType(XmlAccessType.FIELD)

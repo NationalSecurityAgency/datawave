@@ -8,8 +8,8 @@ import org.springframework.cloud.context.encrypt.EncryptorFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.security.crypto.encrypt.RsaSecretEncryptor;
+import org.springframework.security.crypto.encrypt.TextEncryptor;
 
 /**
  * Overrides {@link EncryptionBootstrapConfiguration} in order to provide a {@link TextEncryptor} that uses a {@link DatawaveKeyStoreKeyFactory} instead of a

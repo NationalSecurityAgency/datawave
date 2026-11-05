@@ -2,9 +2,6 @@ package datawave.microservice.audit.auditors.file.config;
 
 import java.util.List;
 
-import jakarta.annotation.Resource;
-import jakarta.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -16,6 +13,8 @@ import datawave.microservice.audit.common.AuditMessageConsumer;
 import datawave.microservice.audit.config.AuditProperties;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 
 /**
  * Configures a FileAuditor to dump messages to the filesystem by request. This configuration is activated via the 'audit.auditors.dump.enabled' property. When

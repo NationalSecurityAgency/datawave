@@ -19,8 +19,8 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import datawave.microservice.authorization.jwt.JWTAuthenticationFilter;
 import datawave.microservice.authorization.jwt.JWTAuthenticationProvider;
 import datawave.microservice.authorization.preauth.AuthorizationProxiedEntityX509Filter;
-import datawave.microservice.config.security.AllowedCallersFilter;
 import datawave.microservice.config.security.AbstractJWTSecurityConfigurer;
+import datawave.microservice.config.security.AllowedCallersFilter;
 
 /**
  * <p>

@@ -1,7 +1,5 @@
 package datawave.microservice.audit.auditors.accumulo.config;
 
-import jakarta.annotation.Resource;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.slf4j.Logger;
@@ -18,6 +16,7 @@ import datawave.microservice.audit.auditors.accumulo.health.AccumuloHealthChecke
 import datawave.microservice.audit.common.AuditMessageConsumer;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
+import jakarta.annotation.Resource;
 
 /**
  * Configures the AccumuloAuditor to process messages received by the audit service. This configuration is activated via the 'audit.auditors.accumulo.enabled'

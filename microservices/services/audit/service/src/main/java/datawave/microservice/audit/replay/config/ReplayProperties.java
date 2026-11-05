@@ -2,13 +2,13 @@ package datawave.microservice.audit.replay.config;
 
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.validation.annotation.Validated;
 
 @Validated
 @ConfigurationProperties(prefix = "audit.replay")

@@ -12,8 +12,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import jakarta.annotation.PreDestroy;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +31,7 @@ import datawave.microservice.querymetric.QueryMetricType;
 import datawave.microservice.querymetric.QueryMetricUpdate;
 import datawave.microservice.querymetric.QueryMetricUpdateHolder;
 import datawave.microservice.querymetric.handler.ShardTableQueryMetricHandler;
+import jakarta.annotation.PreDestroy;
 
 @Component("store")
 @ConditionalOnProperty(name = "hazelcast.server.enabled")

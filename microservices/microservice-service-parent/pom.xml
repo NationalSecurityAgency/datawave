@@ -19,9 +19,9 @@
     <properties>
         <!-- delimiter that doesn't clash with Spring ${} placeholders -->
         <resource.delimiter>@</resource.delimiter>
+        <version.dropwizard-metrics>4.2.40</version.dropwizard-metrics>
         <!-- keep jackson and snakeyaml in step with spring-boot-dependencies -->
         <version.jackson>2.21.4</version.jackson>
-        <version.dropwizard-metrics>4.2.40</version.dropwizard-metrics>
         <version.log4j>2.26.1</version.log4j>
         <version.slf4j>2.0.17</version.slf4j>
         <version.snakeyaml>2.4</version.snakeyaml>

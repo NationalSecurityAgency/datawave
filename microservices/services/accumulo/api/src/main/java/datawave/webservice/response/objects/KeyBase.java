@@ -1,11 +1,10 @@
 package datawave.webservice.response.objects;
 
+import datawave.marking.Markings;
+import datawave.webservice.query.result.event.HasMarkings;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlSeeAlso;
-
-import datawave.marking.Markings;
-import datawave.webservice.query.result.event.HasMarkings;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultKey.class)

@@ -1,9 +1,9 @@
 package datawave.microservice.accumulo.lookup.config;
 
-import jakarta.validation.constraints.Min;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
+
+import jakarta.validation.constraints.Min;
 
 @Validated
 @ConfigurationProperties(prefix = "accumulo.lookup")

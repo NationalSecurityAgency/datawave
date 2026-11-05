@@ -6,9 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Unmarshaller;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -44,6 +41,8 @@ import datawave.query.model.ModelKeyParser;
 import datawave.webservice.model.Model;
 import datawave.webservice.model.ModelList;
 import datawave.webservice.result.VoidResponse;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
 
 public class ModelControllerTest extends ControllerIT {
 

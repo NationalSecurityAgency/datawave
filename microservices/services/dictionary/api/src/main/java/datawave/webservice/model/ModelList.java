@@ -4,14 +4,13 @@ import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.HashSet;
 
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlElementWrapper;
-import jakarta.xml.bind.annotation.XmlRootElement;
-
 import com.google.common.base.Strings;
 
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.result.BaseResponse;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

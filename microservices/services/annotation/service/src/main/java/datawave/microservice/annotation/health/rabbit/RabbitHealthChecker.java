@@ -12,9 +12,8 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.springframework.amqp.core.Binding;
-
 import org.apache.hc.core5.net.URIBuilder;
+import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;

@@ -6,15 +6,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.TreeMap;
 
+import org.springframework.web.servlet.ModelAndView;
+
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import org.springframework.web.servlet.ModelAndView;
-
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 
 @XmlRootElement(name = "QueryMetricListResponse")
 @XmlAccessorType(XmlAccessType.NONE)

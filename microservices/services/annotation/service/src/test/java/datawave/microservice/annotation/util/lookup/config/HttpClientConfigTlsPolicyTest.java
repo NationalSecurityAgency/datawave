@@ -17,8 +17,8 @@ import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.hc.client5.http.SystemDefaultDnsResolver;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
@@ -94,9 +94,8 @@ class HttpClientConfigTlsPolicyTest {
 
         HttpGet get = new HttpGet("https://localhost:" + server.getAddress().getPort() + "/");
         try (CloseableHttpResponse response = httpClient.execute(get)) {
-            assertEquals(200, response.getCode(),
-                            "the production HttpClient must accept a certificate whose CN doesn't match the connected hostname, "
-                                            + "per the intentional discovery-compatible TLS policy (Q06, Option A)");
+            assertEquals(200, response.getCode(), "the production HttpClient must accept a certificate whose CN doesn't match the connected hostname, "
+                            + "per the intentional discovery-compatible TLS policy (Q06, Option A)");
         }
     }
 

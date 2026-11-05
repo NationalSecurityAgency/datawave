@@ -12,9 +12,8 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-
 import org.apache.hc.core5.net.URIBuilder;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
