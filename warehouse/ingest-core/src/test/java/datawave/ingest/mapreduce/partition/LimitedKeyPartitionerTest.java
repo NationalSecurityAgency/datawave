@@ -1,13 +1,15 @@
 package datawave.ingest.mapreduce.partition;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.lang.reflect.InvocationTargetException;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
@@ -41,8 +43,8 @@ public class LimitedKeyPartitionerTest {
 
     private void assertPartitionsUnderMax(LimitedKeyPartitioner partitioner, int expectedMax) {
         for (int i = 0; i < 1000; i++) {
-            Assert.assertTrue(partitioner.getPartition(createKeyFor(Integer.toString(i)), new Value(), NUM_REDUCERS) >= 0);
-            Assert.assertTrue(partitioner.getPartition(createKeyFor(Integer.toString(i)), new Value(), NUM_REDUCERS) < expectedMax);
+            assertTrue(partitioner.getPartition(createKeyFor(Integer.toString(i)), new Value(), NUM_REDUCERS) >= 0);
+            assertTrue(partitioner.getPartition(createKeyFor(Integer.toString(i)), new Value(), NUM_REDUCERS) < expectedMax);
         }
     }
 
@@ -56,10 +58,10 @@ public class LimitedKeyPartitionerTest {
         assertPartitionsUnderMax(partitioner, NUM_REDUCERS);
     }
 
-    @Test(expected = Exception.class)
+    @Test
     public void testNoMaxPartitions() {
         LimitedKeyPartitioner partitioner = new LimitedKeyPartitioner();
-        partitioner.getPartition(createKeyFor(""), new Value(), NUM_REDUCERS);
+        assertThrows(Exception.class, () -> partitioner.getPartition(createKeyFor(""), new Value(), NUM_REDUCERS));
     }
 
     private BulkIngestKey createKeyFor(String row) {
