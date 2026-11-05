@@ -22,7 +22,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
  */
 public class SortedMapIterator implements SortedKeyValueIterator<Key,Value> {
 
-    private SortedMap<Key,Value> map;
+    private final SortedMap<Key,Value> map;
     private Iterator<Entry<Key,Value>> iter;
     private Entry<Key,Value> entry;
     private Range range;
@@ -66,7 +66,7 @@ public class SortedMapIterator implements SortedKeyValueIterator<Key,Value> {
     }
 
     @Override
-    public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
+    public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) {
         throw new UnsupportedOperationException();
     }
 
