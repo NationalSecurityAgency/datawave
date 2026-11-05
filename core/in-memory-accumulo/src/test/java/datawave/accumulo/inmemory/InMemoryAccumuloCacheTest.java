@@ -6,9 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.accumulo.core.client.admin.TimeType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import com.github.benmanes.caffeine.cache.Cache;
 
 public class InMemoryAccumuloCacheTest {
 
@@ -47,5 +53,27 @@ public class InMemoryAccumuloCacheTest {
         InMemoryAccumuloCache.getOrCreate("two");
         InMemoryAccumuloCache.clear();
         assertEquals(0, InMemoryAccumuloCache.size());
+    }
+
+    @Test
+    public void instancesExpireAfterGoingUnusedForTheConfiguredTime() {
+        AtomicLong nanos = new AtomicLong();
+        Cache<String,InMemoryAccumulo> cache = InMemoryAccumuloCache.newCache(Duration.ofMinutes(10), nanos::get);
+
+        InMemoryAccumulo used = cache.get("used", InMemoryAccumulo::new);
+        InMemoryAccumulo idle = cache.get("idle", InMemoryAccumulo::new);
+
+        // Looking up "used" part way through resets its clock, while "idle" keeps aging.
+        nanos.addAndGet(TimeUnit.MINUTES.toNanos(6));
+        assertSame(used, cache.getIfPresent("used"));
+        nanos.addAndGet(TimeUnit.MINUTES.toNanos(6));
+
+        assertSame(used, cache.getIfPresent("used"));
+        assertNull(cache.getIfPresent("idle"));
+        cache.cleanUp();
+        assertEquals(1, cache.estimatedSize());
+
+        // Once evicted, the next lookup by that name gets a new instance.
+        assertNotSame(idle, cache.get("idle", InMemoryAccumulo::new));
     }
 }
