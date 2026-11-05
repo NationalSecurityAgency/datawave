@@ -53,6 +53,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
 
+import datawave.core.common.util.AccumuloExceptionChecker;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.data.type.Type;
@@ -116,7 +117,6 @@ import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.transformer.ExcerptTransform;
 import datawave.query.transformer.SummaryTransform;
 import datawave.query.transformer.UniqueTransform;
-import datawave.query.util.AccumuloExceptionChecker;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
 import datawave.query.util.TraceIterators;

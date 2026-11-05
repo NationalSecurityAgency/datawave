@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.eventbus.Subscribe;
 
+import datawave.core.common.util.AccumuloExceptionChecker;
 import datawave.core.query.configuration.Result;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.tables.AccumuloResource;
@@ -28,7 +29,6 @@ import datawave.query.tables.BatchResource;
 import datawave.query.tables.ResourceQueue;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
-import datawave.query.util.AccumuloExceptionChecker;
 
 public class Scan implements Callable<Scan> {
 

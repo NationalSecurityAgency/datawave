@@ -24,13 +24,13 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 
+import datawave.core.common.util.AccumuloExceptionChecker;
 import datawave.next.scanner.CandidateResult;
 import datawave.next.scanner.CandidateResultSerializer;
 import datawave.next.stats.DocIdQueryIterStats;
 import datawave.next.stats.DocIterStats;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.AccumuloExceptionChecker;
 
 /**
  * An iterator that runs against the field index and returns all document keys that match the query

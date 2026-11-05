@@ -26,6 +26,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import datawave.core.common.util.AccumuloExceptionChecker;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -37,7 +38,6 @@ import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.postprocessing.tf.TermOffsetMap;
-import datawave.query.util.AccumuloExceptionChecker;
 import datawave.query.util.Tuple3;
 
 /**
