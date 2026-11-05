@@ -24,12 +24,12 @@ import org.junit.jupiter.api.Test;
 import datawave.query.util.TypeMetadata;
 
 /**
- * Compression benchmark for OptionCompressor across generated datasets.
+ * Compression benchmark for each {@link CodecAlgorithm} across generated datasets.
  *
  * - Prints a concise summary table per run (averages over MEASUREMENT_TRIALS) - Optional: dumps the full corpus mapping (fields -> types -> ingests) at the END
  * of each run - Optional: runs multiple exponentially larger datasets to observe scaling trends
  */
-public class OptionCompressorEfficiencyTest {
+public class CodecEfficiencyTest {
 
     private static final Charset UTF8 = StandardCharsets.UTF_8;
 
@@ -65,7 +65,6 @@ public class OptionCompressorEfficiencyTest {
 
     @Test
     void runCompressionBenchmarkSuite() throws IOException {
-        OptionCompressor compressor = new OptionCompressor();
         List<BenchmarkDataset> datasets = new ArrayList<>();
 
         if (SCALE_CORPUS_SIZES && SCALE_STEPS > 0 && SCALE_FACTOR >= 1) {
@@ -84,7 +83,7 @@ public class OptionCompressorEfficiencyTest {
         }
 
         // Warm up the JVM/compressor once across all datasets & algorithms
-        warmupAllMethods(compressor, datasets);
+        warmupAllMethods(datasets);
 
         if (PRINT_SUMMARY_TABLE) {
             printSummaryLegend(MEASUREMENT_TRIALS);
@@ -100,7 +99,7 @@ public class OptionCompressorEfficiencyTest {
                 printSummaryHeader();
             }
 
-            for (OptionCompressor.CompressionMethod method : OptionCompressor.CompressionMethod.values()) {
+            for (CodecAlgorithm method : CodecAlgorithm.values()) {
                 long compressNanosTotal = 0;
                 long decompressNanosTotal = 0;
                 int compressedLenRaw = 0;
@@ -110,21 +109,16 @@ public class OptionCompressorEfficiencyTest {
 
                 for (int i = 0; i < MEASUREMENT_TRIALS; i++) {
                     long t0 = System.nanoTime();
-                    lastEncoded = compressor.compress(dataset.serialized, method, UTF8);
+                    lastEncoded = CodecUtils.compress(dataset.serialized, UTF8, method);
                     long t1 = System.nanoTime();
                     compressNanosTotal += (t1 - t0);
 
-                    if (method == OptionCompressor.CompressionMethod.NONE) {
-                        compressedLenRaw = originalLen;
-                        compressedLenB64 = originalLen;
-                    } else {
-                        byte[] decoded = Base64.decodeBase64(lastEncoded);
-                        compressedLenRaw = decoded.length;
-                        compressedLenB64 = lastEncoded.getBytes(UTF8).length;
-                    }
+                    byte[] decoded = Base64.decodeBase64(lastEncoded);
+                    compressedLenRaw = decoded.length;
+                    compressedLenB64 = lastEncoded.getBytes(UTF8).length;
 
                     long t2 = System.nanoTime();
-                    String restored = compressor.decompress(lastEncoded, method, UTF8);
+                    String restored = CodecUtils.decompress(lastEncoded, UTF8, method);
                     long t3 = System.nanoTime();
                     decompressNanosTotal += (t3 - t2);
 
@@ -157,7 +151,7 @@ public class OptionCompressorEfficiencyTest {
 
     private static void printSummaryLegend(int trials) {
         System.out.println();
-        System.out.println("OptionCompressor Benchmark — averages over " + trials + " trials (lower time is better; higher % saved is better).");
+        System.out.println("Codec Benchmark — averages over " + trials + " trials (lower time is better; higher % saved is better).");
         System.out.println("Columns:");
         System.out.println("  Method         Compression algorithm");
         System.out.println("  Original       Original size");
@@ -295,12 +289,12 @@ public class OptionCompressorEfficiencyTest {
         }
     }
 
-    private static void warmupAllMethods(OptionCompressor compressor, List<BenchmarkDataset> datasets) {
+    private static void warmupAllMethods(List<BenchmarkDataset> datasets) {
         for (BenchmarkDataset ds : datasets) {
-            for (OptionCompressor.CompressionMethod m : OptionCompressor.CompressionMethod.values()) {
+            for (CodecAlgorithm m : CodecAlgorithm.values()) {
                 try {
-                    String enc = compressor.compress(ds.serialized, m, UTF8);
-                    String dec = compressor.decompress(enc, m, UTF8);
+                    String enc = CodecUtils.compress(ds.serialized, UTF8, m);
+                    String dec = CodecUtils.decompress(enc, UTF8, m);
                     assertEquals(ds.serialized, dec);
                 } catch (Exception ignored) {}
             }
