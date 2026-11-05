@@ -131,4 +131,13 @@ public interface IngestHelperInterface extends DataTypeHelper {
 
     // if a field is known to be reverse indexed by some datasource other than our own
     boolean shouldHaveBeenReverseIndexed(String fieldName);
+
+    /**
+     * Returns true if fieldName is a whindex field.
+     *
+     * @param fieldName
+     *            the field to check.
+     * @return true if fieldName is a whindex field.
+     */
+    boolean isWhindexField(String fieldName);
 }
