@@ -1,4 +1,4 @@
-package datawave.query.util;
+package datawave.core.common.util;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;

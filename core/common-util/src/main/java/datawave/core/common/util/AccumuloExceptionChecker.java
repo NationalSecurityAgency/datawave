@@ -1,4 +1,4 @@
-package datawave.query.util;
+package datawave.core.common.util;
 
 import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
