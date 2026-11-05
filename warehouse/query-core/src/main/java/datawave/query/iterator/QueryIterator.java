@@ -583,15 +583,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
-        RuntimeException tce = null;
+        RuntimeException tce = AccumuloExceptionChecker.findTabletClosedException(e);
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
-        }
-        if (AccumuloExceptionChecker.isTabletClosedException(reason)) {
-            tce = (RuntimeException) reason;
         }
 
         int depth = 1;
@@ -602,9 +599,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
-            }
-            if (AccumuloExceptionChecker.isTabletClosedException(reason)) {
-                tce = (RuntimeException) reason;
             }
             depth++;
         }
