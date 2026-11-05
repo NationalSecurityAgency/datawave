@@ -4,11 +4,11 @@ import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getEx
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -23,8 +23,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
@@ -48,7 +48,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     private final MockDateIndexHelper helper2 = new MockDateIndexHelper();
     private final ShardQueryConfiguration config = new ShardQueryConfiguration();
 
-    @Before
+    @BeforeEach
     public void setup() {
         mockScript = createMock(ASTJexlScript.class);
         mockTypeMetadata = createMock(TypeMetadata.class);

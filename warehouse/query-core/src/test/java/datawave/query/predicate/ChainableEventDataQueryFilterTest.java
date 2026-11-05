@@ -1,19 +1,21 @@
 package datawave.query.predicate;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.AbstractMap;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class ChainableEventDataQueryFilterTest {
     private ChainableEventDataQueryFilter filter;
 
-    @Before
+    @BeforeEach
     public void setup() {
         filter = new ChainableEventDataQueryFilter();
     }
@@ -57,7 +59,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).apply(entry);
         Mockito.verify(mockFilter2).apply(entry);
 
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
@@ -79,7 +81,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).apply(entry);
         Mockito.verify(mockFilter2).apply(entry);
 
-        Assert.assertFalse(result);
+        assertFalse(result);
     }
 
     @Test
@@ -97,7 +99,7 @@ public class ChainableEventDataQueryFilterTest {
 
         boolean result = filter.apply(entry);
 
-        Assert.assertFalse(result);
+        assertFalse(result);
     }
 
     @Test
@@ -118,7 +120,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).keep(key);
         Mockito.verify(mockFilter2).keep(key);
 
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
@@ -139,7 +141,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).keep(key);
         Mockito.verify(mockFilter2).keep(key);
 
-        Assert.assertFalse(result);
+        assertFalse(result);
     }
 
     @Test
@@ -158,7 +160,7 @@ public class ChainableEventDataQueryFilterTest {
 
         Mockito.verify(mockFilter1).keep(key);
 
-        Assert.assertFalse(result);
+        assertFalse(result);
     }
 
     @Test
@@ -183,8 +185,8 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).getSeekRange(current, end, true);
         Mockito.verify(mockFilter2).getSeekRange(current, end, true);
 
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter1Result));
+        assertFalse(result == null);
+        assertTrue(result.equals(filter1Result));
     }
 
     @Test
@@ -209,8 +211,8 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).getSeekRange(current, end, true);
         Mockito.verify(mockFilter2).getSeekRange(current, end, true);
 
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter1Result));
+        assertFalse(result == null);
+        assertTrue(result.equals(filter1Result));
     }
 
     @Test
@@ -235,8 +237,8 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).getSeekRange(current, end, true);
         Mockito.verify(mockFilter2).getSeekRange(current, end, true);
 
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter2Result));
+        assertFalse(result == null);
+        assertTrue(result.equals(filter2Result));
     }
 
     @Test
@@ -261,8 +263,8 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).getSeekRange(current, end, true);
         Mockito.verify(mockFilter2).getSeekRange(current, end, true);
 
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.equals(filter2Result));
+        assertFalse(result == null);
+        assertTrue(result.equals(filter2Result));
     }
 
     @Test
@@ -287,11 +289,11 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).getSeekRange(current, end, true);
         Mockito.verify(mockFilter2).getSeekRange(current, end, true);
 
-        Assert.assertFalse(result == null);
-        Assert.assertTrue(result.getStartKey().getRow().toString().equals("1"));
-        Assert.assertFalse(result.isStartKeyInclusive());
-        Assert.assertTrue(result.getEndKey().getRow().toString().equals("9999"));
-        Assert.assertFalse(result.isEndKeyInclusive());
+        assertFalse(result == null);
+        assertTrue(result.getStartKey().getRow().toString().equals("1"));
+        assertFalse(result.isStartKeyInclusive());
+        assertTrue(result.getEndKey().getRow().toString().equals("9999"));
+        assertFalse(result.isEndKeyInclusive());
     }
 
     @Test
@@ -310,7 +312,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).getMaxNextCount();
         Mockito.verify(mockFilter2).getMaxNextCount();
 
-        Assert.assertTrue(result == -1);
+        assertTrue(result == -1);
     }
 
     @Test
@@ -329,7 +331,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).getMaxNextCount();
         Mockito.verify(mockFilter2).getMaxNextCount();
 
-        Assert.assertTrue(result == 10);
+        assertTrue(result == 10);
     }
 
     @Test
@@ -348,7 +350,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).getMaxNextCount();
         Mockito.verify(mockFilter2).getMaxNextCount();
 
-        Assert.assertTrue(result == 10);
+        assertTrue(result == 10);
     }
 
     @Test
@@ -367,7 +369,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).getMaxNextCount();
         Mockito.verify(mockFilter2).getMaxNextCount();
 
-        Assert.assertTrue(result == 8);
+        assertTrue(result == 8);
     }
 
     @Test
@@ -386,7 +388,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).getMaxNextCount();
         Mockito.verify(mockFilter2).getMaxNextCount();
 
-        Assert.assertTrue(result == 8);
+        assertTrue(result == 8);
     }
 
     @Test
@@ -407,7 +409,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).keep(key);
         Mockito.verify(mockFilter2).keep(key);
 
-        Assert.assertTrue(result == null);
+        assertTrue(result == null);
     }
 
     @Test
@@ -432,7 +434,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).transform(key);
         Mockito.verify(mockFilter2).transform(key);
 
-        Assert.assertTrue(result == null);
+        assertTrue(result == null);
     }
 
     @Test
@@ -458,7 +460,7 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).transform(key);
         Mockito.verify(mockFilter2).transform(key);
 
-        Assert.assertTrue(result == key2);
+        assertTrue(result == key2);
     }
 
     @Test
@@ -480,6 +482,6 @@ public class ChainableEventDataQueryFilterTest {
         Mockito.verify(mockFilter1).keep(key);
         Mockito.verify(mockFilter2).transform(key);
 
-        Assert.assertTrue(result == key2);
+        assertTrue(result == key2);
     }
 }

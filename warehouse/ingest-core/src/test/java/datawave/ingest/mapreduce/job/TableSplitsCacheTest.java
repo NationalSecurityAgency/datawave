@@ -1,5 +1,11 @@
 package datawave.ingest.mapreduce.job;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -28,12 +34,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.zookeeper.ZooKeeper;
 import org.easymock.EasyMock;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,7 +144,7 @@ public class TableSplitsCacheTest {
 
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
 
         mockConfiguration.clear();
@@ -169,7 +174,7 @@ public class TableSplitsCacheTest {
 
     public void setSplitsCacheDir() {
         URL url = TableSplitsCacheTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
-        Assert.assertNotNull("TableSplitsCacheTest#setup failed to load test cache directory.", url);
+        assertNotNull(url, "TableSplitsCacheTest#setup failed to load test cache directory.");
         mockConfiguration.put(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
     }
 
@@ -177,7 +182,7 @@ public class TableSplitsCacheTest {
         mockConfiguration.put(TableSplitsCache.SPLITS_CACHE_DIR, splitsCacheDir);
     }
 
-    @After
+    @AfterEach
     public void teardown() {
 
         Configurator.setLevel(logger.getName(), testDriverLevel);
@@ -188,7 +193,7 @@ public class TableSplitsCacheTest {
 
     }
 
-    @AfterClass
+    @AfterAll
     public static void teardownClass() throws Exception {
 
         addFileSystemForTesting(URI.create("file:///localhost"), null, null);
@@ -332,16 +337,14 @@ public class TableSplitsCacheTest {
         return mocked;
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testCtorWithNullArgument() {
         logger.info("testCtorWithNullArgument called...");
         setSplitsCacheDir();
 
         try {
 
-            TableSplitsCache.getCurrentCache(null);
-
-            Assert.fail();
+            assertThrows(IllegalArgumentException.class, () -> TableSplitsCache.getCurrentCache(null));
 
         } finally {
 
@@ -358,29 +361,29 @@ public class TableSplitsCacheTest {
 
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
-            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
+            assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
         } finally {
             logger.info("testCtorWithValidArgument completed.");
         }
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testGetSplitsNoFile() throws IOException {
         logger.info("testGetSplitsNoFile called...");
         setupConfiguration();
 
         try {
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
-            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
-            Assert.assertNull("TableSplitsCache#getSplits() created a map of tables and their splits when no file should exist", uut.getSplits());
+            assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
+            assertThrows(IOException.class, uut::getSplits);
         } finally {
 
             logger.info("testGetSplitsNoFile completed.");
         }
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void testUpdateNoFile() throws IOException {
         logger.info("testUpdateNoFile called...");
         setupConfiguration();
@@ -388,8 +391,8 @@ public class TableSplitsCacheTest {
         try {
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
             uut.update();
-            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
-            Assert.assertNull("TableSplitsCache should have no splits", uut.getSplits());
+            assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
+            assertThrows(IOException.class, uut::getSplits);
         } finally {
 
             logger.info("testUpdateNoFile completed.");
@@ -405,7 +408,7 @@ public class TableSplitsCacheTest {
         try {
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
             FileStatus fileStatus = uut.getFileStatus();
-            Assert.assertNotNull("FileStatus", fileStatus);
+            assertNotNull(fileStatus, "FileStatus");
         } finally {
 
             logger.info("testGetFileStatus completed.");
@@ -423,23 +426,23 @@ public class TableSplitsCacheTest {
 
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
-            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
+            assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
             Map<Integer,List<Text>> resultsSet = uut.getSplits();
 
-            Assert.assertNotNull("TableSplitsCache#getSplits() failed created a map of tables and their splits", resultsSet);
-            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated map of tables and their splits", resultsSet.isEmpty());
-            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated map of tables and their splits", 3, resultsSet.size());
+            assertNotNull(resultsSet, "TableSplitsCache#getSplits() failed created a map of tables and their splits");
+            assertFalse(resultsSet.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated map of tables and their splits");
+            assertEquals(3, resultsSet.size(), "TableSplitsCache#getSplits() incorrectly populated map of tables and their splits");
 
             List<Text> listings = new ArrayList(resultsSet.get(uut.getTableCacheId("shard")));
-            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", listings);
-            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", listings.isEmpty());
-            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 5, listings.size());
+            assertNotNull(listings, "TableSplitsCache#getSplits() failed to a list of splits");
+            assertFalse(listings.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
+            assertEquals(5, listings.size(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
 
             listings = new ArrayList(resultsSet.get(uut.getTableCacheId("shard1")));
-            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", listings);
-            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", listings.isEmpty());
-            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 1, listings.size());
+            assertNotNull(listings, "TableSplitsCache#getSplits() failed to a list of splits");
+            assertFalse(listings.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
+            assertEquals(1, listings.size(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
 
         } finally {
 
@@ -457,13 +460,13 @@ public class TableSplitsCacheTest {
 
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
-            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
+            assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
             List<Text> resultsSet = uut.getSplits().get(uut.getTableCacheId("shard"));
 
-            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
-            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
-            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 5, resultsSet.size());
+            assertNotNull(resultsSet, "TableSplitsCache#getSplits() failed to a list of splits");
+            assertFalse(resultsSet.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
+            assertEquals(5, resultsSet.size(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
         } finally {
 
             logger.info("testGetSplitsWithArgumentThatMatches completed.");
@@ -480,12 +483,12 @@ public class TableSplitsCacheTest {
 
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
 
-            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
+            assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
             List<Text> resultsSet = uut.getSplits("bad-table");
 
-            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
-            Assert.assertTrue("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
+            assertNotNull(resultsSet, "TableSplitsCache#getSplits() failed to a list of splits");
+            assertTrue(resultsSet.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
 
         } finally {
 
@@ -504,13 +507,13 @@ public class TableSplitsCacheTest {
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
             uut.getSplits();
 
-            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
+            assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
             List<Text> resultsSet = uut.getSplits("shard", Integer.MAX_VALUE);
 
-            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
-            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
-            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 5, resultsSet.size());
+            assertNotNull(resultsSet, "TableSplitsCache#getSplits() failed to a list of splits");
+            assertFalse(resultsSet.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
+            assertEquals(5, resultsSet.size(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
 
         } finally {
 
@@ -528,13 +531,13 @@ public class TableSplitsCacheTest {
 
             TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
             uut.getSplits();
-            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
+            assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
             List<Text> resultsSet = uut.getSplits("shard", 2);
 
-            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
-            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
-            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 2, resultsSet.size());
+            assertNotNull(resultsSet, "TableSplitsCache#getSplits() failed to a list of splits");
+            assertFalse(resultsSet.isEmpty(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
+            assertEquals(2, resultsSet.size(), "TableSplitsCache#getSplits() incorrectly populated the list of splits");
 
         } finally {
 
@@ -553,14 +556,14 @@ public class TableSplitsCacheTest {
             splits.add(new Text(Integer.toString(i)));
         }
         List<Text> newSplits = TableSplitsCache.trimSplits(splits, reducers - 1);
-        Assert.assertEquals("split count", (reducers - 1), newSplits.size());
-        Assert.assertEquals("first split", 401, Integer.parseInt(newSplits.get(0).toString()));
-        Assert.assertEquals("num splits - last split", 402, numsplits - Integer.parseInt(newSplits.get(newSplits.size() - 1).toString()));
+        assertEquals((reducers - 1), newSplits.size(), "split count");
+        assertEquals(401, Integer.parseInt(newSplits.get(0).toString()), "first split");
+        assertEquals(402, numsplits - Integer.parseInt(newSplits.get(newSplits.size() - 1).toString()), "num splits - last split");
         int lastsplit = 0;
         for (int i = 0; i < newSplits.size(); i++) {
             int split = Integer.parseInt(newSplits.get(i).toString());
-            Assert.assertTrue("split size", (split - lastsplit) >= 401);
-            Assert.assertTrue("split size", (split - lastsplit) <= 402);
+            assertTrue((split - lastsplit) >= 401, "split size");
+            assertTrue((split - lastsplit) <= 402, "split size");
             lastsplit = split;
         }
     }
@@ -570,13 +573,13 @@ public class TableSplitsCacheTest {
         setSplitsCacheDir();
         TableSplitsCache splitsCache = TableSplitsCache.getCurrentCache(createMockJobConf());
         splitsCache.getSplitsAndLocation();
-        Assert.assertEquals(5, splitsCache.getSplitsAndLocationByTable("shard").size());
-        Assert.assertEquals(1, splitsCache.getSplitsAndLocationByTable("shard1").size());
-        Assert.assertEquals(0, splitsCache.getSplitsAndLocationByTable("someOtherTable").size());
+        assertEquals(5, splitsCache.getSplitsAndLocationByTable("shard").size());
+        assertEquals(1, splitsCache.getSplitsAndLocationByTable("shard1").size());
+        assertEquals(0, splitsCache.getSplitsAndLocationByTable("someOtherTable").size());
 
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testTrieSize() {
         Map<Text,String> map = new HashMap<>();
