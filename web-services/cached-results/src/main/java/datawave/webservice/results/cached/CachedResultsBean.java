@@ -2090,7 +2090,7 @@ public class CachedResultsBean {
 
     @RolesAllowed({"InternalUser"})
     public boolean isQueryLoading(String originalQueryId) {
-        return CachedResultsBean.loadingQueryMap.containsKey(originalQueryId);
+        return originalQueryId != null && CachedResultsBean.loadingQueryMap.containsKey(originalQueryId);
     }
 
     /**
