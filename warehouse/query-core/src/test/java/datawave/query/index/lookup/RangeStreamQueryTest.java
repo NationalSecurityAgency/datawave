@@ -9,10 +9,10 @@ import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELA
 import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
 import static datawave.table.constants.TableName.METADATA;
 import static datawave.table.constants.TableName.SHARD_INDEX;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -28,11 +28,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -40,7 +40,6 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.common.test.integration.IntegrationTest;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
@@ -58,7 +57,7 @@ import datawave.table.constants.TableName;
  * <p>
  * Underlying index streams are assumed to have data based on the field
  */
-@Category(IntegrationTest.class)
+@Tag("datawave.common.test.integration.IntegrationTest")
 public class RangeStreamQueryTest {
 
     private static final Logger log = Logger.getLogger(RangeStreamQueryTest.class);
@@ -86,7 +85,7 @@ public class RangeStreamQueryTest {
         ANCHOR, ANCHOR_INTERSECT, ANCHOR_UNION, DELAYED, DELAYED_INTERSECT, DELAYED_UNION
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setupAccumulo() throws Exception {
         connector = new InMemoryAccumuloClient("root", instance);
         connector.tableOperations().create(SHARD_INDEX);
@@ -146,7 +145,7 @@ public class RangeStreamQueryTest {
         return new Value(list.toByteArray());
     }
 
-    @Before
+    @BeforeEach
     public void setupTest() throws ParseException {
         helper = new MockMetadataHelper();
         helper.setIndexedFields(Sets.newHashSet("FOO", "FOO2", "FOO3"));
@@ -165,7 +164,7 @@ public class RangeStreamQueryTest {
         config.setIndexedFields(fieldToDataType);
     }
 
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         log.info("ran " + count + " queries");
     }
@@ -398,7 +397,7 @@ public class RangeStreamQueryTest {
         // check for a top level union and a delayed term. These queries are not executable
         if (queryContext == QUERY_CONTEXT.UNION
                         && (termContext.equals(DELAYED) || termContext.equals(DELAYED_UNION) || termContext.equals(DELAYED_INTERSECT))) {
-            assertFalse("top level union and delayed term should have produced no query plans, but got one for query " + query, queryPlanIter.hasNext());
+            assertFalse(queryPlanIter.hasNext(), "top level union and delayed term should have produced no query plans, but got one for query " + query);
             queryPlans.close();
             rangeStream.close();
             return;
@@ -408,10 +407,10 @@ public class RangeStreamQueryTest {
             fail("RangeStream context was: " + rangeStream.context() + " for query: " + query);
         }
 
-        assertTrue(query + " did not produce any query plans", queryPlanIter.hasNext());
+        assertTrue(queryPlanIter.hasNext(), query + " did not produce any query plans");
 
         QueryPlan plan = queryPlanIter.next();
-        assertNotNull("expected a query plan, but was null for query: " + query, plan);
+        assertNotNull(plan, "expected a query plan, but was null for query: " + query);
 
         ASTJexlScript plannedScript = JexlNodeFactory.createScript(plan.getQueryTree());
         ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
