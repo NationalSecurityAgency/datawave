@@ -17,7 +17,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
-import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +26,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import datawave.core.common.util.AccumuloExceptionChecker;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -355,15 +355,12 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
-        TabletClosedException tce = null;
+        RuntimeException tce = AccumuloExceptionChecker.findTabletClosedException(e);
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
-        }
-        if (reason instanceof TabletClosedException) {
-            tce = (TabletClosedException) reason;
         }
 
         int depth = 1;
@@ -374,9 +371,6 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
             }
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
-            }
-            if (reason instanceof TabletClosedException) {
-                tce = (TabletClosedException) reason;
             }
             depth++;
         }
