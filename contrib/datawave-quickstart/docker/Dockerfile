@@ -10,7 +10,7 @@ USER root
 # Keep operating-system dependencies ahead of build arguments and source so
 # ordinary DataWave changes can reuse this comparatively expensive layer.
 RUN dnf -y update && \
-    dnf -y install sudo findutils gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs java-11-openjdk-devel which bc wget git iproute && \
+    dnf -y install sudo findutils gcc-c++ openssl python3 openssh openssh-server openssh-clients openssl-libs java-17-openjdk-devel which bc wget git iproute && \
     dnf clean all
 
 ARG DATAWAVE_COMMIT_ID
