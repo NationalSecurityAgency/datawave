@@ -1,12 +1,15 @@
 package datawave.query.iterator.profile;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
@@ -18,10 +21,10 @@ public class QuerySpanTest {
         QuerySpan qs1 = new QuerySpan(null);
         advanceIterators(qs1);
 
-        Assert.assertEquals(7, qs1.getSeekCount());
-        Assert.assertEquals(16, qs1.getNextCount());
-        Assert.assertEquals(4, qs1.getSourceCount());
-        Assert.assertTrue(qs1.getYield());
+        assertEquals(7, qs1.getSeekCount());
+        assertEquals(16, qs1.getNextCount());
+        assertEquals(4, qs1.getSourceCount());
+        assertTrue(qs1.getYield());
     }
 
     @Test
@@ -30,10 +33,10 @@ public class QuerySpanTest {
         QuerySpan qs1 = new QuerySpan(null);
         advanceIteratorsWithoutYield(qs1);
 
-        Assert.assertEquals(1, qs1.getSeekCount());
-        Assert.assertEquals(3, qs1.getNextCount());
-        Assert.assertEquals(1, qs1.getSourceCount());
-        Assert.assertFalse(qs1.getYield());
+        assertEquals(1, qs1.getSeekCount());
+        assertEquals(3, qs1.getNextCount());
+        assertEquals(1, qs1.getSourceCount());
+        assertFalse(qs1.getYield());
     }
 
     @Test
@@ -43,10 +46,10 @@ public class QuerySpanTest {
         advanceIterators(qs1);
 
         // this works because we are in the same thread as when advanceIterators was called
-        Assert.assertEquals(7, qs1.getSeekCount());
-        Assert.assertEquals(16, qs1.getNextCount());
-        Assert.assertEquals(4, qs1.getSourceCount());
-        Assert.assertTrue(qs1.getYield());
+        assertEquals(7, qs1.getSeekCount());
+        assertEquals(16, qs1.getNextCount());
+        assertEquals(4, qs1.getSourceCount());
+        assertTrue(qs1.getYield());
     }
 
     @Test
@@ -63,10 +66,10 @@ public class QuerySpanTest {
         // this works because we are in the same thread as when advanceIterators was called
         QuerySpan qs4 = qsc.getCombinedQuerySpan(null, true);
 
-        Assert.assertEquals(21, qs4.getSeekCount());
-        Assert.assertEquals(48, qs4.getNextCount());
-        Assert.assertEquals(12, qs4.getSourceCount());
-        Assert.assertTrue(qs4.getYield());
+        assertEquals(21, qs4.getSeekCount());
+        assertEquals(48, qs4.getNextCount());
+        assertEquals(12, qs4.getSourceCount());
+        assertTrue(qs4.getYield());
     }
 
     @Test
@@ -107,10 +110,10 @@ public class QuerySpanTest {
         // sources = 4 * 6 = 24
         QuerySpan qs4 = qsc.getCombinedQuerySpan(null, true);
 
-        Assert.assertEquals(42, qs4.getSeekCount());
-        Assert.assertEquals(96, qs4.getNextCount());
-        Assert.assertEquals(24, qs4.getSourceCount());
-        Assert.assertTrue(qs4.getYield());
+        assertEquals(42, qs4.getSeekCount());
+        assertEquals(96, qs4.getNextCount());
+        assertEquals(24, qs4.getSourceCount());
+        assertTrue(qs4.getYield());
     }
 
     private class QSRunnable implements Runnable {
