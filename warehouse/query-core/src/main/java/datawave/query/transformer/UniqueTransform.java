@@ -63,10 +63,14 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private HdfsBackedSortedMap<byte[],Document> map;
     private HdfsBackedSortedMap<Key,Document> returnSet;
     private Iterator<Entry<Key,Document>> setIterator;
+    // Page state is guarded by pageLock; document processing stays outside the lock.
+    private final Object pageLock = new Object();
+    // Identifies the active page-timeout window so stale in-flight work can be rejected.
+    private long pageWindowEpoch;
+    private boolean documentSeenWithinPageTimeout;
 
     /**
-     * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
-     * be returned to signal the request is still in progress.
+     * Page window in milliseconds. An intermediate result is eligible after this window only if a document was seen within it.
      */
     private final long queryExecutionForPageTimeout;
 
@@ -77,8 +81,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @param uniqueFields
      *            The unique fields
      * @param queryExecutionForPageTimeout
-     *            If this timeout is passed before since the last result was returned, then an "intermediate" result is returned denoting we are still looking
-     *            for the next unique result.
+     *            If this timeout is passed after at least one document was seen during the page window, then an "intermediate" result is returned denoting we
+     *            are still looking for the next unique result.
      */
     public UniqueTransform(UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
@@ -138,6 +142,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         return apply(keyDocumentEntry, true);
     }
 
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForPageStartTime) {
+        synchronized (pageLock) {
+            super.setQueryExecutionForPageStartTime(queryExecutionForPageStartTime);
+            // Invalidate snapshots from the previous page window.
+            pageWindowEpoch++;
+            documentSeenWithinPageTimeout = false;
+        }
+    }
+
     /**
      * Apply uniqueness to a document.
      *
@@ -152,6 +166,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Nullable
     private Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry, boolean emitIntermediateResults) {
         if (keyDocumentEntry != null) {
+            long observedPageWindowEpoch = 0;
+            if (emitIntermediateResults) {
+                synchronized (pageLock) {
+                    // Snapshot the window this document belongs to, to avoid crediting a later window.
+                    observedPageWindowEpoch = pageWindowEpoch;
+                }
+            }
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
                 return keyDocumentEntry;
             }
@@ -165,6 +186,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
             if (keyDocumentEntry.getValue().isIntermediateResult()) {
                 return keyDocumentEntry;
+            }
+
+            if (emitIntermediateResults) {
+                synchronized (pageLock) {
+                    long elapsed = clock.millis() - queryExecutionForPageStartTime;
+                    // Only activity from the still-current window can qualify for its keep-alive.
+                    if (observedPageWindowEpoch == pageWindowEpoch && elapsed >= 0 && elapsed <= queryExecutionForPageTimeout) {
+                        documentSeenWithinPageTimeout = true;
+                    }
+                }
             }
 
             try {
@@ -183,12 +214,21 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
 
             if (emitIntermediateResults) {
-                long elapsedExecutionTimeForCurrentPage = clock.millis() - this.queryExecutionForPageStartTime;
-                if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
-                    this.queryExecutionForPageStartTime = clock.millis();
-                    Document intermediateResult = new Document();
-                    intermediateResult.setIntermediateResult(true);
-                    return Maps.immutableEntry(keyDocumentEntry.getKey(), intermediateResult);
+                synchronized (pageLock) {
+                    // Reject this document if its window changed while it was being processed.
+                    if (observedPageWindowEpoch != pageWindowEpoch) {
+                        return null;
+                    }
+                    long now = clock.millis();
+                    if (documentSeenWithinPageTimeout && now - queryExecutionForPageStartTime > queryExecutionForPageTimeout) {
+                        queryExecutionForPageStartTime = now;
+                        // Start a new window and invalidate other work still carrying the old epoch.
+                        pageWindowEpoch++;
+                        documentSeenWithinPageTimeout = false;
+                        Document intermediateResult = new Document();
+                        intermediateResult.setIntermediateResult(true);
+                        return Maps.immutableEntry(keyDocumentEntry.getKey(), intermediateResult);
+                    }
                 }
             }
         }

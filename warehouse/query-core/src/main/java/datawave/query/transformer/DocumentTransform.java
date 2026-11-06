@@ -2,6 +2,7 @@ package datawave.query.transformer;
 
 import java.time.Clock;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
 
@@ -34,6 +35,17 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
         protected MarkingFunctions<?> markingFunctions;
         protected long queryExecutionForPageStartTime;
         protected Clock clock = Clock.systemUTC();
+
+        /**
+         * Set the clock used to determine whether a page has exceeded its execution window. The default is the system UTC clock. Replacing it makes timeout
+         * behavior deterministic in tests.
+         *
+         * @param clock
+         *            the clock to use
+         */
+        public void setClock(Clock clock) {
+            this.clock = Objects.requireNonNull(clock, "clock");
+        }
 
         @Override
         public void initialize(Query settings, MarkingFunctions<?> markingFunctions) {

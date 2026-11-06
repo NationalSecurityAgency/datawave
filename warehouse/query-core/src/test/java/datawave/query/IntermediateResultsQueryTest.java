@@ -1,6 +1,7 @@
 package datawave.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -55,6 +58,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.table.constants.TableName;
 import datawave.test.MacTestUtil;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.runner.RunningQuery;
 
@@ -106,6 +110,7 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
     private int expectedCompletePageSize = 0;
 
     private int intermediatePageCount = 0;
+    private int emptyIntermediatePageCount = 0;
     private int expectedMinimumIntermediatePages = 0;
 
     // slow event aggregation to trigger short circuit timeouts
@@ -122,6 +127,7 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
     private long pageSizeShortCircuitCheckTimeMsOverride = 0;
     private long pageShortCircuitTimeoutMsOverride = 0;
     private int maxLongRunningTimeoutRetriesOverride = 0;
+    private boolean useResultsThreadForTest = false;
 
     // higher order variables required by the RunningQuery
     private final SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDn", "issuerDn");
@@ -213,6 +219,7 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
         pageSizeShortCircuitCheckTimeMsOverride = 0;
         pageShortCircuitTimeoutMsOverride = 0;
         maxLongRunningTimeoutRetriesOverride = 0;
+        useResultsThreadForTest = false;
 
         // reset state for page count, page size, and intermediate page count
 
@@ -223,6 +230,7 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
         expectedCompletePageSize = 0;
 
         intermediatePageCount = 0;
+        emptyIntermediatePageCount = 0;
         expectedMinimumIntermediatePages = 0;
     }
 
@@ -237,14 +245,20 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
 
     @Override
     protected void executeQuery(ShardQueryLogic logic) throws Exception {
+        ExecutorService executor = null;
+        RunningQuery runningQuery = null;
         try {
             results.clear();
 
             logic.setQueryExecutionForPageTimeout(1);
 
             RunningQueryTimingImpl timing = getQueryTiming();
-            RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, getSettings(), "", datawavePrincipal,
-                            timing, null, new QueryMetricFactoryImpl());
+            runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, getSettings(), "", datawavePrincipal, timing, null,
+                            new QueryMetricFactoryImpl());
+            if (useResultsThreadForTest) {
+                executor = Executors.newSingleThreadExecutor();
+                runningQuery.setExecutor(executor);
+            }
 
             while (true) {
                 ResultsPage<?> page = runningQuery.next();
@@ -252,6 +266,9 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
                 switch (page.getStatus()) {
                     case PARTIAL:
                         intermediatePageCount++;
+                        if (page.getResults().isEmpty()) {
+                            emptyIntermediatePageCount++;
+                        }
                         break;
                     case COMPLETE:
                         completePageCount++;
@@ -266,6 +283,12 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
                 }
             }
         } finally {
+            if (runningQuery != null && !runningQuery.isFinished()) {
+                runningQuery.cancel();
+            }
+            if (executor != null) {
+                executor.shutdownNow();
+            }
             logic.close();
             log.info("query retrieved {} results", results.size());
         }
@@ -382,20 +405,35 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
         }
     }
 
-    /**
-     * A single timeout retry and a max call time of 1 ms will trigger a query timeout exception
-     */
+    /** Only maxCallMs changes the result-velocity decision; neither the wait timeout nor retry exhaustion is involved. */
     @Test
-    public void testLongRunningEventQuery_maxCallMs() {
+    public void testMaxCallMsControlsResultVelocityShortCircuit() {
+        RunningQueryTimingImpl shorterCall = new RunningQueryTimingImpl(500, 100, pageShortCircuitTimeoutMsDefault);
+        RunningQueryTimingImpl longerCall = new RunningQueryTimingImpl(1000, 100, pageShortCircuitTimeoutMsDefault);
+
+        // At 100 ms, one of ten results is on pace for a 1000 ms call, but behind pace for a 500 ms call.
+        assertFalse(longerCall.shouldReturnPartialResults(1, 10, 100));
+        assertTrue(shorterCall.shouldReturnPartialResults(1, 10, 100));
+        assertFalse(shorterCall.shouldReturnPartialResults(1, 10, 99), "Do not check velocity before the configured check time");
+        assertFalse(shorterCall.shouldReturnPartialResults(0, 10, 100), "Velocity short-circuiting requires a result");
+    }
+
+    /** An asynchronous wait timeout exhausts the single allowed retry before any results arrive. */
+    @Test
+    public void testLongRunningEventQuery_shortCircuitTimeoutExhaustsRetries() {
         try {
+            useResultsThreadForTest = true;
             addDelayIterator();
             givenParameter(QueryParameters.GROUP_FIELDS, "SHAPE,TYPE");
             givenParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "10");
             givenQuery("SHAPE == 'triangle' || SHAPE == 'square' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
-            givenMaxCallMs(1);
+            givenPageShortCircuitTimeoutMs(1);
             givenMaxLongRunningTimeoutRetries(1);
-            assertThrows(QueryException.class, this::planAndExecuteQuery);
+            QueryException exception = assertThrows(QueryException.class, this::planAndExecuteQuery);
+            assertEquals(DatawaveErrorCode.QUERY_TIMEOUT.getErrorCode(), exception.getErrorCode());
+            assertTrue(exception.getMessage().contains("too many (1) cycles"), "Expected retry exhaustion, not a planning failure");
         } finally {
+            useResultsThreadForTest = false;
             removeDelayIterator();
         }
     }
@@ -422,7 +460,10 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
 
     @Test
     public void testLongRunningEventQuery_shortCircuitOnNextTimeout() throws Exception {
+        int originalMaxPageSize = logic.getMaxPageSize();
         try {
+            useResultsThreadForTest = true;
+            logic.setMaxPageSize(Integer.MAX_VALUE); // use a positive limit without splitting the six results
             addDelayIterator();
             givenParameter(QueryParameters.GROUP_FIELDS, "SHAPE,TYPE");
             givenParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, "10");
@@ -432,8 +473,12 @@ public class IntermediateResultsQueryTest extends AbstractQueryTest {
             expectPlan("SHAPE == 'triangle' || SHAPE == 'square' || SHAPE == 'pentagon' || SHAPE == 'hexagon' || SHAPE == 'octagon'");
             expectCompletePageCount(1);
             expectCompletePageSize(6);
+            expectMinimumIntermediatePages(1);
             planAndExecuteQuery();
+            assertEquals(intermediatePageCount, emptyIntermediatePageCount, "Wait-timeout pages must not contain results");
         } finally {
+            logic.setMaxPageSize(originalMaxPageSize);
+            useResultsThreadForTest = false;
             removeDelayIterator();
         }
     }
