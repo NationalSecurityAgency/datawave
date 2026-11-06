@@ -31,7 +31,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
-import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -54,6 +53,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
 
+import datawave.core.common.util.AccumuloExceptionChecker;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.data.type.Type;
@@ -592,15 +592,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
-        TabletClosedException tce = null;
+        RuntimeException tce = AccumuloExceptionChecker.findTabletClosedException(e);
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
-        }
-        if (reason instanceof TabletClosedException) {
-            tce = (TabletClosedException) reason;
         }
 
         int depth = 1;
@@ -611,9 +608,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
-            }
-            if (reason instanceof TabletClosedException) {
-                tce = (TabletClosedException) reason;
             }
             depth++;
         }
