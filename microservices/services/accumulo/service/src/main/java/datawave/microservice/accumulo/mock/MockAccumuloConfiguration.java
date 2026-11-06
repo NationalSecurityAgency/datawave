@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloCache;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.microservice.config.accumulo.AccumuloProperties;
 
@@ -21,12 +22,12 @@ public class MockAccumuloConfiguration {
     @Bean
     @Qualifier("warehouse")
     public InMemoryAccumulo warehouseInstance(@Qualifier("warehouse") AccumuloProperties warehouseProperties) {
-        return new InMemoryAccumulo(warehouseProperties.getInstanceName());
+        return InMemoryAccumuloCache.getOrCreate(warehouseProperties.getInstanceName());
     }
 
     @Bean
     @Qualifier("warehouse")
     public AccumuloClient warehouseClient(@Qualifier("warehouse") AccumuloProperties warehouseProperties) throws AccumuloSecurityException {
-        return new InMemoryAccumuloClient(warehouseProperties.getUsername(), new InMemoryAccumulo(warehouseProperties.getInstanceName()));
+        return new InMemoryAccumuloClient(warehouseProperties.getUsername(), InMemoryAccumuloCache.getOrCreate(warehouseProperties.getInstanceName()));
     }
 }

@@ -30,7 +30,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloCache;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.common.util.ArgumentChecker;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -329,7 +329,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
 
     protected static AccumuloClient getClient(Configuration conf) throws AccumuloSecurityException, AccumuloException {
         if (conf.getBoolean(MOCK, false)) {
-            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryAccumulo(conf.get(INSTANCE_NAME)));
+            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), InMemoryAccumuloCache.getOrCreate(conf.get(INSTANCE_NAME)));
             client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
             return client;
         } else {
