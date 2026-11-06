@@ -1,14 +1,14 @@
 package datawave.query.function;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.AbstractMap;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class KeyToFieldNameTest {
 
@@ -44,28 +44,24 @@ public class KeyToFieldNameTest {
         assertEquals("FIELD_C.1.2", functionWithGrouping.apply(getEntry(grandChildKey)).getValue());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFunctionGetFieldNameWithMalformedKey() {
-        function.getFieldName(malformedKey);
-        fail("function should have thrown an exception");
+        assertThrows(IllegalArgumentException.class, () -> function.getFieldName(malformedKey));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFunctionWithGroupingGetFieldNameWithMalformedKey() {
-        functionWithGrouping.getFieldName(malformedKey);
-        fail("function should have thrown an exception");
+        assertThrows(IllegalArgumentException.class, () -> functionWithGrouping.getFieldName(malformedKey));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFunctionApplyWithMalformedKey() {
-        function.apply(getEntry(malformedKey));
-        fail("function should have thrown an exception");
+        assertThrows(IllegalArgumentException.class, () -> function.apply(getEntry(malformedKey)));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFunctionApplyWithGroupingWithMalformedKey() {
-        functionWithGrouping.apply(getEntry(malformedKey));
-        fail("function should have thrown an exception");
+        assertThrows(IllegalArgumentException.class, () -> functionWithGrouping.apply(getEntry(malformedKey)));
     }
 
     private Entry<Key,Value> getEntry(Key k) {

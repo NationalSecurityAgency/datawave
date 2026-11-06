@@ -1,10 +1,10 @@
 package datawave.query.transformer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -35,9 +35,9 @@ import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.RandomStringUtils;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -74,7 +74,7 @@ public class UniqueTransformTest {
     protected byte[] expectedOrderedFieldValues = null;
     protected UniqueFields uniqueFields = new UniqueFields();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         for (int i = 0; i < 5; i++) {
             int length = random.nextInt(11) + 10;
@@ -82,7 +82,7 @@ public class UniqueTransformTest {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         inputDocuments.clear();
         expectedUniqueDocuments.clear();
@@ -636,16 +636,16 @@ public class UniqueTransformTest {
         List<Document> documents = getUniqueDocuments(inputDocuments, getUniqueTransform(1L));
 
         for (Document document : documents) {
-            assertFalse("The iterator path must not emit intermediate results", document.isIntermediateResult());
+            assertFalse(document.isIntermediateResult(), "The iterator path must not emit intermediate results");
         }
-        assertEquals("Unexpected number of unique documents", 2, documents.size());
+        assertEquals(2, documents.size(), "Unexpected number of unique documents");
     }
 
     protected void assertUniqueDocuments() {
         List<Document> actual = getUniqueDocumentsWithUpdateConfigCalls(inputDocuments);
         Collections.sort(expectedUniqueDocuments);
         Collections.sort(actual);
-        assertEquals("Unique documents do not match expected", getIds(expectedUniqueDocuments), getIds(actual));
+        assertEquals(getIds(expectedUniqueDocuments), getIds(actual), "Unique documents do not match expected");
     }
 
     protected List<String> getIds(List<Document> docs) {
@@ -692,8 +692,8 @@ public class UniqueTransformTest {
         try {
             UniqueTransform uniqueTransform = getUniqueTransform();
             for (Document d : inputDocuments) {
-                assertEquals("Ordered field sets do not match expected", new String(expectedOrderedFieldValues, StandardCharsets.UTF_8),
-                                new String(uniqueTransform.getBytes(d), StandardCharsets.UTF_8));
+                assertEquals(new String(expectedOrderedFieldValues, StandardCharsets.UTF_8), new String(uniqueTransform.getBytes(d), StandardCharsets.UTF_8),
+                                "Ordered field sets do not match expected");
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
