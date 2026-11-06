@@ -1,4 +1,4 @@
-package datawave.ingest.table.aggregator;
+package datawave.table.iterators;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -13,7 +13,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
-import datawave.util.CompositeTimestamp;
+import datawave.table.util.CompositeTimestamp;
 
 public class TruncatingTimestampIterator implements SortedKeyValueIterator<Key,Value> {
 
