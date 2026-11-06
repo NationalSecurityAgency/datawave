@@ -1,5 +1,9 @@
 package datawave.query.cardinality;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,9 +15,8 @@ import java.util.Set;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.model.Direction;
 import datawave.query.model.FieldMapping;
@@ -25,7 +28,7 @@ public class TestCardinalityConfiguration {
     private QueryModel QUERY_MODEL = null;
     Map<String,String> reverseMap = null;
 
-    @Before
+    @BeforeEach
     public void init() throws Exception {
 
         URL mUrl = TestCardinalityConfiguration.class.getResource("/models/CardinalityModel.xml");
@@ -68,8 +71,8 @@ public class TestCardinalityConfiguration {
         Set<String> originalDisallowlistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_2A", "FIELD3"});
         Set<String> revisedDisallowlist = config.getRevisedDisallowlistFields(QUERY_MODEL, originalDisallowlistFieldsSet);
 
-        Assert.assertEquals(3, revisedDisallowlist.size());
-        Assert.assertFalse(revisedDisallowlist.contains("FIELD_2A"));
+        assertEquals(3, revisedDisallowlist.size());
+        assertFalse(revisedDisallowlist.contains("FIELD_2A"));
     }
 
     @Test
@@ -85,8 +88,8 @@ public class TestCardinalityConfiguration {
         Set<String> originalDisallowlistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_2B", "FIELD3"});
         Set<String> revisedDisallowlist = config.getRevisedDisallowlistFields(QUERY_MODEL, originalDisallowlistFieldsSet);
 
-        Assert.assertEquals(3, revisedDisallowlist.size());
-        Assert.assertFalse(revisedDisallowlist.contains("FIELD_2B"));
+        assertEquals(3, revisedDisallowlist.size());
+        assertFalse(revisedDisallowlist.contains("FIELD_2B"));
     }
 
     @Test
@@ -104,10 +107,10 @@ public class TestCardinalityConfiguration {
         Set<String> originalDisallowlistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_3", "FIELD_2B", "FIELD_3A", "FIELD3"});
         Set<String> revisedDisallowlist = config.getRevisedDisallowlistFields(QUERY_MODEL, originalDisallowlistFieldsSet);
 
-        Assert.assertEquals(3, revisedDisallowlist.size());
-        Assert.assertFalse(revisedDisallowlist.contains("FIELD_2B"));
-        Assert.assertFalse(revisedDisallowlist.contains("FIELD_3A"));
-        Assert.assertFalse(revisedDisallowlist.contains("FIELD_3"));
+        assertEquals(3, revisedDisallowlist.size());
+        assertFalse(revisedDisallowlist.contains("FIELD_2B"));
+        assertFalse(revisedDisallowlist.contains("FIELD_3A"));
+        assertFalse(revisedDisallowlist.contains("FIELD_3"));
     }
 
     @Test
@@ -122,11 +125,11 @@ public class TestCardinalityConfiguration {
         Set<String> originalProjectFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD3"});
         Set<String> revisedProjectFields = config.getRevisedProjectFields(QUERY_MODEL, originalProjectFieldsSet);
 
-        Assert.assertEquals(7, revisedProjectFields.size());
-        Assert.assertTrue(revisedProjectFields.contains("FIELD_2A"));
-        Assert.assertTrue(revisedProjectFields.contains("FIELD_3C"));
-        Assert.assertTrue(revisedProjectFields.contains("FIELD_4A"));
-        Assert.assertTrue(revisedProjectFields.contains("UUID"));
+        assertEquals(7, revisedProjectFields.size());
+        assertTrue(revisedProjectFields.contains("FIELD_2A"));
+        assertTrue(revisedProjectFields.contains("FIELD_3C"));
+        assertTrue(revisedProjectFields.contains("FIELD_4A"));
+        assertTrue(revisedProjectFields.contains("UUID"));
     }
 
     @Test
@@ -140,10 +143,10 @@ public class TestCardinalityConfiguration {
         Set<String> originalProjectFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD3"});
         Set<String> revisedProjectFields = config.getRevisedProjectFields(QUERY_MODEL, originalProjectFieldsSet);
 
-        Assert.assertEquals(6, revisedProjectFields.size());
-        Assert.assertTrue(revisedProjectFields.contains("FIELD_2A"));
-        Assert.assertTrue(revisedProjectFields.contains("FIELD_3C"));
-        Assert.assertTrue(revisedProjectFields.contains("UUID"));
+        assertEquals(6, revisedProjectFields.size());
+        assertTrue(revisedProjectFields.contains("FIELD_2A"));
+        assertTrue(revisedProjectFields.contains("FIELD_3C"));
+        assertTrue(revisedProjectFields.contains("UUID"));
     }
 
     @Test
@@ -157,10 +160,10 @@ public class TestCardinalityConfiguration {
         Set<String> originalProjectFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD3"});
         Set<String> revisedProjectFields = config.getRevisedProjectFields(null, originalProjectFieldsSet);
 
-        Assert.assertEquals(6, revisedProjectFields.size());
-        Assert.assertTrue(revisedProjectFields.contains("FIELD_1"));
-        Assert.assertTrue(revisedProjectFields.contains("FIELD_2"));
-        Assert.assertTrue(revisedProjectFields.contains("FIELD_3"));
+        assertEquals(6, revisedProjectFields.size());
+        assertTrue(revisedProjectFields.contains("FIELD_1"));
+        assertTrue(revisedProjectFields.contains("FIELD_2"));
+        assertTrue(revisedProjectFields.contains("FIELD_3"));
     }
 
     @Test
@@ -174,7 +177,7 @@ public class TestCardinalityConfiguration {
         Set<String> originalProjectFieldsSet = Collections.emptySet();
         Set<String> revisedProjectFields = config.getRevisedProjectFields(QUERY_MODEL, originalProjectFieldsSet);
 
-        Assert.assertEquals(0, revisedProjectFields.size());
+        assertEquals(0, revisedProjectFields.size());
     }
 
 }
