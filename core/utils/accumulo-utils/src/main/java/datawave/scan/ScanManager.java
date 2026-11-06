@@ -1,9 +1,9 @@
 package datawave.scan;
 
 import java.io.Closeable;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.ScannerBase;
@@ -18,7 +18,7 @@ public class ScanManager implements Closeable {
 
     private static final Logger log = LoggerFactory.getLogger(ScanManager.class);
 
-    protected final Set<ScannerBase> baseInstances = Collections.synchronizedSet(new HashSet<>());
+    protected final Set<ScannerBase> baseInstances = ConcurrentHashMap.newKeySet();
 
     protected final AtomicBoolean closed = new AtomicBoolean(false);
 
