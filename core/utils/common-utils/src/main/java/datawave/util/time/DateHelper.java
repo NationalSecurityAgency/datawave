@@ -32,6 +32,8 @@ public class DateHelper {
     public static final String DATE_FORMAT_STRING_TO_DAY = "yyyyMMdd";
     private static final DateTimeFormatter DTF_day = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING_TO_DAY).withZone(ZoneOffset.UTC);
     private static final DateTimeFormatter DTF_day_GMT = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING_TO_DAY).withZone(ZoneOffset.UTC);
+    // astronomical year numbering (uuuu) so that dates before 0001/01/01 are not shown as a year of an era
+    private static final DateTimeFormatter DTF_range = DateTimeFormatter.ofPattern("uuuuMMdd", Locale.US).withZone(ZoneOffset.UTC);
 
     public static final String DATE_FORMAT_STRING_TO_HOUR = "yyyyMMddHH";
     private static final DateTimeFormatter DTF_hour = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING_TO_HOUR).withZone(ZoneOffset.UTC);
@@ -391,9 +393,8 @@ public class DateHelper {
      * @return the formatted dates
      */
     private static String formatDateRange(Date beginDate, Date endDate) {
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd");
-        String beginDateYyyyMMdd = beginDate == null ? "null" : dtf.format(beginDate.toInstant());
-        String endDateYyyyMMdd = endDate == null ? "null" : dtf.format(endDate.toInstant());
+        String beginDateYyyyMMdd = beginDate == null ? "null" : DTF_range.format(beginDate.toInstant());
+        String endDateYyyyMMdd = endDate == null ? "null" : DTF_range.format(endDate.toInstant());
         String beginDateMillis = beginDate == null ? "null" : "" + beginDate.getTime();
         String endDateMillis = endDate == null ? "null" : "" + endDate.getTime();
         return String.format(Locale.US, DATE_RANGE_FORMAT, beginDateYyyyMMdd, beginDateMillis, endDateYyyyMMdd, endDateMillis);
