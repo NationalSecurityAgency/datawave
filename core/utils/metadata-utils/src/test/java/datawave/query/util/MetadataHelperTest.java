@@ -512,5 +512,29 @@ public class MetadataHelperTest {
             assertEquals(Set.of("NAME", "EVENT_DATE"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE"), Set.of("wiki", "data"), "20190101",
                             "20191231", Collections.emptySet()));
         }
+
+        @Test
+        void testFirstDatatypeStaleDoesNotHideLaterDatatypes() throws TableNotFoundException {
+            // Aggregated: first datatype (csv) is stale, later datatype (wiki) has in-range data.
+            givenAggregatedFrequencyRow("NAME", COLF_F, "csv", createDateFrequencyMap("20190101", 1L, "20190115", 1L));
+            givenAggregatedFrequencyRow("NAME", COLF_F, "wiki", createDateFrequencyMap("20200105", 1L, "20200110", 1L));
+            // Non-aggregated: same shape.
+            givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "csv", "20190101", "20190110", 1L);
+            givenNonAggregatedFrequencyRows("EVENT_DATE", COLF_F, "wiki", "20200105", "20200110", 1L);
+            // Control: genuinely missing across all datatypes.
+            givenAggregatedFrequencyRow("FOO", COLF_F, "csv", createDateFrequencyMap("20190101", 1L));
+            givenAggregatedFrequencyRow("FOO", COLF_F, "wiki", createDateFrequencyMap("20190101", 1L));
+            writeMutations();
+
+            // No datatype filter: only FOO should be flagged.
+            assertEquals(Set.of("FOO"), helper.getMissingFieldsInDateRange(Set.of("NAME", "EVENT_DATE", "FOO"), Collections.emptySet(), "20200101", "20200120",
+                            Collections.emptySet()));
+            // With a datatype filter spanning both stale and live datatypes: still not missing.
+            assertEquals(Collections.emptySet(),
+                            helper.getMissingFieldsInDateRange(Set.of("NAME"), Set.of("csv", "wiki"), "20200101", "20200120", Collections.emptySet()));
+            // Filtered to only the stale datatype: correctly reported missing.
+            assertEquals(Set.of("NAME"), helper.getMissingFieldsInDateRange(Set.of("NAME"), Set.of("csv"), "20200101", "20200120", Collections.emptySet()));
+        }
+
     }
 }
