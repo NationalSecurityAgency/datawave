@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URISyntaxException;
+import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -128,6 +130,7 @@ import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.DefaultEventQueryResponse;
+import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -228,6 +231,43 @@ public class QueryExecutorBeanTest {
         dispatcher = MockDispatcherFactory.createDispatcher();
         dispatcher.getRegistry().addSingletonResource(bean, "/DataWave/Query");
         response = new MockHttpResponse();
+    }
+
+    @Test
+    public void testNextWhenLockedKeepsOtherRequestsLock() throws Exception {
+        String id = UUID.randomUUID().toString();
+        Principal principal = mock(Principal.class);
+        when(principal.getName()).thenReturn("owner");
+        when(ctx.getCallerPrincipal()).thenReturn(principal);
+        when(ctx.getUserTransaction()).thenReturn(mock(UserTransaction.class));
+        when(responseObjectFactory.getEventQueryResponse()).thenReturn(mock(EventQueryResponseBase.class));
+
+        // simulate another request holding the lock
+        assertTrue(cache.lock(id));
+
+        assertThrows(DatawaveWebApplicationException.class, () -> bean.next(id));
+        assertFalse(cache.lock(id), "next() released a lock it did not acquire");
+    }
+
+    @Test
+    public void testResetWhenLockedKeepsOtherRequestsLock() throws Exception {
+        String id = UUID.randomUUID().toString();
+        Principal principal = mock(Principal.class);
+        when(principal.getName()).thenReturn("owner");
+        when(ctx.getCallerPrincipal()).thenReturn(principal);
+        when(ctx.getUserTransaction()).thenReturn(mock(UserTransaction.class));
+
+        Query settings = mock(Query.class);
+        when(settings.getOwner()).thenReturn("owner");
+        RunningQuery runningQuery = mock(RunningQuery.class);
+        when(runningQuery.getSettings()).thenReturn(settings);
+        cache.put(id, runningQuery);
+
+        // simulate another request holding the lock
+        assertTrue(cache.lock(id));
+
+        assertThrows(DatawaveWebApplicationException.class, () -> bean.reset(id));
+        assertFalse(cache.lock(id), "reset() released a lock it did not acquire");
     }
 
     @Test

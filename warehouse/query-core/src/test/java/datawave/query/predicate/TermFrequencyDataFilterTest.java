@@ -1,15 +1,15 @@
 package datawave.query.predicate;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -38,7 +38,7 @@ public class TermFrequencyDataFilterTest {
     private final Key tfKey5 = new Key(row, cf, "datatype\0uid\0random\0FIELD2");
     private final Key tfKey6 = new Key(row, cf, "datatype\0uid\0random\0FIELD3");
 
-    @Before
+    @BeforeEach
     public void setup() {
 
         String lcNoDiacritics = LcNoDiacriticsType.class.getName();

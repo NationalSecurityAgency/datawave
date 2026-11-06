@@ -16,7 +16,7 @@ import datawave.microservice.annotation.writers.file.config.FileAnnotationWriter
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = FileAnnotationWriterConfig.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"FileAnnotationWriterConfigDisabledTest", "file-disabled"})
+@ActiveProfiles({"combined", "FileAnnotationWriterConfigDisabledTest", "file-disabled"})
 public class FileAnnotationWriterConfigDisabledTest {
 
     @Autowired
