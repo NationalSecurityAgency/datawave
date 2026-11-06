@@ -2,6 +2,7 @@ package datawave.concurrent;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
@@ -28,7 +29,7 @@ public final class ThreadUtils {
      *            the timeout unit
      * @return true if all tasks completed within the timeout period, or false if the tasks did not finish completing or if the thread was interrupted
      */
-    public static boolean shutdownAndWait(ThreadPoolExecutor executor, long timeout, TimeUnit timeoutUnit) {
+    public static boolean shutdownAndWait(ExecutorService executor, long timeout, TimeUnit timeoutUnit) {
         requireNonNull(executor, "executor cannot be null");
         executor.shutdown();
         try {
