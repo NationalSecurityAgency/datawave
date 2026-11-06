@@ -396,22 +396,24 @@ public class CachedResultsBean {
             try {
                 rq = getQueryById(queryId);
 
-                try {
-                    // Check if submitting a new query would exceed any configured concurrent query limits.
-                    Query settings = rq.getSettings();
-                    QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
-                                    settings.getQueryLogicName());
-                    if (limiterResponse.metLimit()) {
-                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED,
-                                        limiterResponse.getMessage());
+                if (rq.getLogic().isQueryLimiterEnabled()) {
+                    try {
+                        // Check if submitting a new query would exceed any configured concurrent query limits.
+                        Query settings = rq.getSettings();
+                        QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
+                                        settings.getQueryLogicName());
+                        if (limiterResponse.metLimit()) {
+                            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED,
+                                            limiterResponse.getMessage());
+                            response.addException(qe);
+                            throw new BadRequestException(qe, response);
+                        }
+                    } catch (Exception e) {
+                        log.error("Error checking concurrent query limits", e);
+                        QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
                         response.addException(qe);
-                        throw new BadRequestException(qe, response);
+                        throw qe;
                     }
-                } catch (Exception e) {
-                    log.error("Error checking concurrent query limits", e);
-                    QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
-                    response.addException(qe);
-                    throw qe;
                 }
 
                 // prevent duplicate calls to load with the same queryId
@@ -522,7 +524,9 @@ public class CachedResultsBean {
                     query.setMetric(queryMetric);
                     query.setQueryMetrics(metrics);
                     query.setClient(client);
-                    queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
+                    if (logic.isQueryLimiterEnabled()) {
+                        queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
+                    }
                 } finally {
                     qlCache.poll(q.getId().toString());
                 }
@@ -761,10 +765,12 @@ public class CachedResultsBean {
                 } catch (Exception e) {
                     response.addException(new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e).getBottomQueryException());
                 }
-                try {
-                    queryLimiter.stopCountingQueryTowardsLimits(query.getSettings().getId().toString());
-                } catch (Exception e) {
-                    log.error("Failed to stop counting query " + query.getSettings().getId().toString() + " towards limits", e);
+                if (query.getLogic().isQueryLimiterEnabled()) {
+                    try {
+                        queryLimiter.stopCountingQueryTowardsLimits(query.getSettings().getId().toString());
+                    } catch (Exception e) {
+                        log.error("Failed to stop counting query " + query.getSettings().getId().toString() + " towards limits", e);
+                    }
                 }
             } else if (client != null) {
                 try {
@@ -2203,7 +2209,9 @@ public class CachedResultsBean {
                                 MessageFormat.format("{0} != {1}", owner, query.getSettings().getOwner()));
             }
         }
+
         query.setActiveCall(false);
+
         return query;
     }
 

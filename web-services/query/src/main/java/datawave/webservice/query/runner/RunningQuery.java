@@ -13,6 +13,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
@@ -58,14 +59,21 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
     private static final long serialVersionUID = -8812242917762274469L;
 
+    /**
+     * Keep a small, bounded number of transformed results ready for the request thread. A capacity of one effectively serializes the producer and consumer and
+     * used to require the producer to poll the queue every millisecond. Keeping this bounded limits the amount of result data retained per running query.
+     */
+    private static final int RESULTS_THREAD_QUEUE_CAPACITY = 3;
+
     private static Logger log = Logger.getLogger(RunningQuery.class);
 
     private transient AccumuloClient client = null;
     private AccumuloConnectionFactory.Priority connectionPriority = null;
     private transient QueryLogic<?> logic = null;
     private Query settings = null;
+    private volatile int currentPageCount = 0;
     private long numResults = 0;
-    private long lastPageNumber = 0;
+    private volatile AtomicLong lastPageNumber = new AtomicLong(0);
     private volatile transient TransformIterator iter = null;
     private Set<Authorizations> calculatedAuths = null;
     private volatile boolean finished = false;
@@ -74,16 +82,18 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
-    private final BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(1);
+    private final BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(RESULTS_THREAD_QUEUE_CAPACITY);
+    private transient volatile Thread currentThread;
     private volatile Exception resultsThreadException = null;
     private final AtomicInteger hasNext = new AtomicInteger(0);
     private final AtomicInteger gotNext = new AtomicInteger(0);
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean forcedReturn = new AtomicBoolean(false);
     private QueryPredictor predictor = null;
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
     private boolean allowIntermediateEmptyPages = false;
-    private boolean useResultsThread = false;
+    private boolean useResultsThread = true;
 
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -112,7 +122,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, QueryMetricFactory metricFactory)
                     throws Exception {
-        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, null, null, metricFactory);
+        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, predictor, null, metricFactory);
     }
 
     public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
@@ -202,13 +212,18 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
             long start = System.currentTimeMillis();
             GenericQueryConfiguration configuration = this.logic.initialize(this.client, this.settings, this.calculatedAuths);
-            this.lastPageNumber = 0;
+            this.lastPageNumber.set(0);
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
-            this.allowIntermediateEmptyPages = logic.isLongRunningQuery();
+            this.allowIntermediateEmptyPages = logic.isIntermediateEmptyPagesEnabled();
             // force us to use asynchronous results thread to allow intermediate empty pages
             if (this.allowIntermediateEmptyPages) {
                 this.useResultsThread = true;
+            } else {
+                // force us to not use asynchronous results thread if synchronous is requested
+                if (logic.isUseSynchronousRunningQuery()) {
+                    this.useResultsThread = false;
+                }
             }
             // the configuration query string should now hold the initial planned query
             this.getMetric().setPlan(configuration.getQueryString());
@@ -241,10 +256,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     }
 
     /**
-     * This is the results thread which will pull results from the iterator and add them to a blocking queue. The blocking queue will be of size 1 which means
-     * that the main RunningQuery.next() loop will have to pull the results before the next one can be retrieved. The hasNext and gotNext counters keep track of
-     * the calls to hasNext and next on the underlying iterator. They will be decremented once a result is acknowledged in the RunningQuery.next() loop. The
-     * running boolean will allow the graceful termination of this thread.
+     * This is the results thread which will pull results from the iterator and add them to a bounded blocking queue. The queue allows a small amount of
+     * read-ahead while applying backpressure when the request thread is not consuming results. The hasNext and gotNext counters keep track of the calls to
+     * hasNext and next on the underlying iterator. They will be decremented once a result is acknowledged in the RunningQuery.next() loop. The running boolean
+     * will allow the graceful termination of this thread.
      *
      * @return running (with a value of false)
      */
@@ -255,76 +270,65 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     hasNext.incrementAndGet();
                     hasNext.notifyAll();
                 }
-                // wait until the queue is emptied
-                if (log.isDebugEnabled()) {
-                    log.debug(this.settings.getId() + " : Waiting for resultsThreadQueue to be emptied or termination");
-                }
-                while (running.get() && !this.finished && !this.canceled && !resultsThreadQueue.isEmpty()) {
-                    try {
-                        Thread.sleep(1);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException(e);
-                    }
-                }
-                // if the queue is available and we are still running, then get the next result
-                if (running.get() && !this.finished && !this.canceled && resultsThreadQueue.isEmpty()) {
+
+                if (running.get() && !this.finished && !this.canceled) {
                     if (log.isDebugEnabled()) {
                         log.debug(this.settings.getId() + " : Get next async result");
                     }
                     Object o = this.iter.next();
                     if (o != null) {
                         if (log.isDebugEnabled()) {
-                            log.debug(this.settings.getId() + " : Offering result to resultsThreadQueue");
+                            log.debug(this.settings.getId() + " : Adding result to resultsThreadQueue");
                         }
-                        resultsThreadQueue.offer(o);
+                        // Block without polling when the bounded read-ahead queue is full. terminateResultsThread interrupts this wait.
+                        resultsThreadQueue.put(o);
                         synchronized (gotNext) {
                             gotNext.incrementAndGet();
                             gotNext.notifyAll();
                         }
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug(this.settings.getId() + " : Null result returned");
-                        }
+                    } else if (log.isDebugEnabled()) {
+                        log.debug(this.settings.getId() + " : Null result returned");
                     }
 
                     // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
                     if (iter.getTransformer() instanceof WritesQueryMetrics) {
                         ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
                     }
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug(this.settings.getId() + " : running:" + running.get() + " finished:" + this.finished + " canceled:" + this.canceled);
-                    }
+                } else if (log.isDebugEnabled()) {
+                    log.debug(this.settings.getId() + " : running:" + running.get() + " finished:" + this.finished + " canceled:" + this.canceled);
                 }
             }
+        } catch (InterruptedException e) {
+            // Interruption is the normal way terminateResultsThread releases a producer blocked on a full queue.
+            Thread.currentThread().interrupt();
+            if (running.get() && !this.finished && !this.canceled) {
+                recordResultsThreadException(e);
+            }
         } catch (Exception e) {
-            log.error(this.settings.getId() + " : Results thread exception", e);
-            resultsThreadException = e;
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
-            if (settings.getUncaughtExceptionHandler() != null) {
-                settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
-            }
+            recordResultsThreadException(e);
+        } finally {
             running.set(false);
-            synchronized (hasNext) {
-                hasNext.notifyAll();
-            }
-            synchronized (gotNext) {
-                gotNext.notifyAll();
-            }
+            signalResultsThreadWaiters();
         }
 
-        running.set(false);
+        return running;
+    }
+
+    private void recordResultsThreadException(Exception e) {
+        log.error(this.settings.getId() + " : Results thread exception", e);
+        resultsThreadException = e;
+        if (settings.getUncaughtExceptionHandler() != null) {
+            settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
+        }
+    }
+
+    private void signalResultsThreadWaiters() {
         synchronized (hasNext) {
             hasNext.notifyAll();
         }
         synchronized (gotNext) {
             gotNext.notifyAll();
         }
-
-        return running;
     }
 
     public boolean isUseResultsThread() {
@@ -438,12 +442,35 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      */
     public void terminateResultsThread() {
         running.set(false);
-        if (future != null) {
-            future.cancel(false);
-            while (!future.isDone()) {
-                future.cancel(true);
+        Future<Object> resultsFuture = future;
+        future = null;
+        if (resultsFuture != null) {
+            // In particular, release the producer if it is blocked adding to a full results queue.
+            resultsFuture.cancel(true);
+        }
+        signalResultsThreadWaiters();
+    }
+
+    /**
+     * This is a method exposed for the QueryExpirationBean when it detects that we may be stuck in the next() call with currentPageCount &gt; 0. It attempts to
+     * force the page to be returned by triggering any of the monitors that we may be waiting on and setting the forced return flag.
+     */
+    public void attemptForcedPageReturn() {
+        // if we are still in an active call, then try to force a return
+        if (hasActiveCall()) {
+            synchronized (forcedReturn) {
+                // if we have a current page count, then continue with the forced page return
+                // otherwise we are already out of the results loop and are returning
+                if (currentPageCount > 0) {
+                    forcedReturn.set(true);
+                    synchronized (hasNext) {
+                        hasNext.notifyAll();
+                    }
+                    synchronized (gotNext) {
+                        gotNext.notifyAll();
+                    }
+                }
             }
-            future = null;
         }
     }
 
@@ -461,14 +488,21 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (log.isDebugEnabled()) {
             log.debug("Starting next call at " + pageStartTime);
         }
+        this.currentThread = Thread.currentThread();
         this.logic.setPageProcessingStartTime(pageStartTime);
         List<Object> resultList = new ArrayList<>();
         boolean hitIntermediateResult = false;
         boolean hitShortCircuitForLongRunningQuery = false;
 
-        int currentPageCount = 0;
+        synchronized (forcedReturn) {
+            currentPageCount = 0;
+            forcedReturn.set(false);
+        }
+
         long currentPageBytes = 0;
         int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
+
+        int returnPageCount = 0;
 
         try {
             addNDC();
@@ -534,6 +568,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                         log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
                                         + pageTimeInCall + " " + timing);
+                        break;
+                    }
+
+                    // if the forced return has been triggered, then return this page immediately
+                    if (forcedReturn.get()) {
+                        log.info("Query forced return detected with " + currentPageCount + " results");
                         break;
                     }
 
@@ -603,7 +643,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     this.getMetric().setPlan(baseLogic.getConfig().getQueryString());
                 }
             }
-            this.lastPageNumber++;
+            this.lastPageNumber.incrementAndGet();
             if (!resultList.isEmpty()) {
                 this.getMetric().setLifecycle(QueryMetric.Lifecycle.RESULTS);
             }
@@ -613,6 +653,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             terminateResultsThread();
             throw e;
         } finally {
+            synchronized (forcedReturn) {
+                returnPageCount = currentPageCount;
+                currentPageCount = 0;
+                forcedReturn.set(false);
+            }
+
             // update AbstractRunningQuery.lastUsed in case this operation took a long time
             touch();
             removeNDC();
@@ -629,9 +675,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (!resultList.isEmpty()) {
             log.info("Returning page of results");
             // we have results!
+
             // we also indicate whether we returned less than the requested page size in the response
-            return new ResultsPage(resultList, ((hasNext.get() > 0 && numResults < this.maxResults && currentPageCount < maxPageSize) || hitIntermediateResult
-                            || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE);
+            ResultsPage resultsPage = new ResultsPage(resultList, ((hasNext.get() > 0 && numResults < this.maxResults && returnPageCount < maxPageSize)
+                            || hitIntermediateResult || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE);
+
+            return resultsPage;
         } else {
             // we have no results. Let us determine whether we are done or not.
 
@@ -764,7 +813,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
     @Override
     public long getLastPageNumber() {
-        return this.lastPageNumber;
+        return this.lastPageNumber.get();
     }
 
     @Override
@@ -862,4 +911,15 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.executor = executor;
     }
 
+    public Thread getCurrentThread() {
+        return currentThread;
+    }
+
+    public int getCurrentPageCount() {
+        return currentPageCount;
+    }
+
+    public RunningQueryTiming getTiming() {
+        return timing;
+    }
 }
