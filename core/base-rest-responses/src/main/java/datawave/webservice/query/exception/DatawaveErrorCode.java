@@ -277,7 +277,8 @@ public enum DatawaveErrorCode {
     CURRENT_AND_NEXT_EVENT_ORDER_INVALID(412, 17, "Current event and next event are not in chronological order"),
     FIELD_PHRASE_QUERY_NOT_INDEXED(412, 18, "Field cannot be queried as a phrase since it was not indexed as such."),
     NO_QUERY_VALIDATION_RULES_CONFIGURED(412, 19, "No query validation rules configured for the query logic."),
-    CONCURRENT_QUERY_LIMIT_EXCEEDED(412, 20, "Concurrent query limit exceeded.");
+    CONCURRENT_USER_QUERY_LIMIT_EXCEEDED(412, 20, "Concurrent user query limit exceeded."),
+    CONCURRENT_SYSTEM_QUERY_LIMIT_EXCEEDED(412, 21, "Concurrent system query limit exceeded.");
 
     private String message;
     private int httpCode;
