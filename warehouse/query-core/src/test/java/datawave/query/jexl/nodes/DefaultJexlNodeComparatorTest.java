@@ -1,6 +1,6 @@
 package datawave.query.jexl.nodes;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DefaultJexlNodeComparatorTest extends NodeComparatorTestUtil {
 

@@ -1,5 +1,8 @@
 package datawave.ingest.mapreduce.job.util;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.List;
 import java.util.Map;
 
@@ -11,10 +14,9 @@ import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -23,7 +25,7 @@ public class AccumuloUtilTest {
     private InMemoryInstance instance;
     private AccumuloClient accumuloClient;
 
-    @Before
+    @BeforeEach
     public void setup() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException {
         instance = new InMemoryInstance(this.getClass().toString());
         accumuloClient = new InMemoryAccumuloClient("root", instance);
@@ -54,7 +56,7 @@ public class AccumuloUtilTest {
         accumuloClient.tableOperations().flush("test1");
     }
 
-    @After
+    @AfterEach
     public void shutdown() throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         accumuloClient.tableOperations().delete("test1");
         accumuloClient.tableOperations().delete("test2");
@@ -64,38 +66,38 @@ public class AccumuloUtilTest {
     @Test
     public void getFilesFromMetadataBySplitTest_aOnly() throws AccumuloException {
         List<Map.Entry<String,List<String>>> splits = AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test1", "test1", "a", "a");
-        Assert.assertTrue(splits.size() == 1);
-        Assert.assertTrue(splits.get(0).getKey().equals("a"));
-        Assert.assertTrue(splits.get(0).getValue().size() == 3);
+        assertTrue(splits.size() == 1);
+        assertTrue(splits.get(0).getKey().equals("a"));
+        assertTrue(splits.get(0).getValue().size() == 3);
     }
 
     @Test
     public void getFilesFromMetadataBySplitTest_nobound() throws AccumuloException {
         List<Map.Entry<String,List<String>>> splits = AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test1", "test1", null, null);
-        Assert.assertTrue(splits.size() == 3);
-        Assert.assertTrue(splits.get(0).getKey().equals("a"));
-        Assert.assertTrue(splits.get(0).getValue().size() == 3);
-        Assert.assertTrue(splits.get(1).getKey().equals("b"));
-        Assert.assertTrue(splits.get(1).getValue().size() == 1);
-        Assert.assertTrue(splits.get(2).getKey().equals("c"));
-        Assert.assertTrue(splits.get(2).getValue().size() == 2);
+        assertTrue(splits.size() == 3);
+        assertTrue(splits.get(0).getKey().equals("a"));
+        assertTrue(splits.get(0).getValue().size() == 3);
+        assertTrue(splits.get(1).getKey().equals("b"));
+        assertTrue(splits.get(1).getValue().size() == 1);
+        assertTrue(splits.get(2).getKey().equals("c"));
+        assertTrue(splits.get(2).getValue().size() == 2);
     }
 
     @Test
     public void getFilesFromMetadataBySplitTest_defaultTablet() throws AccumuloException {
         List<Map.Entry<String,List<String>>> splits = AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test1", "test2", null, null);
-        Assert.assertTrue(splits.size() == 1);
-        Assert.assertTrue(splits.get(0).getKey(), splits.get(0).getKey().equals(""));
-        Assert.assertTrue(splits.get(0).getValue().size() == 1);
+        assertTrue(splits.size() == 1);
+        assertTrue(splits.get(0).getKey().equals(""), splits.get(0).getKey());
+        assertTrue(splits.get(0).getValue().size() == 1);
     }
 
-    @Test(expected = AccumuloException.class)
+    @Test
     public void getFilesFromMetadataBySplitTest_nonExistentMetadata() throws AccumuloException {
-        AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test3", "test2", null, null);
+        assertThrows(AccumuloException.class, () -> AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test3", "test2", null, null));
     }
 
-    @Test(expected = AccumuloException.class)
+    @Test
     public void getFilesFromMetadataBySplitTest_nonExistentTable() throws AccumuloException {
-        AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test3", null, null);
+        assertThrows(AccumuloException.class, () -> AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test3", null, null));
     }
 }
