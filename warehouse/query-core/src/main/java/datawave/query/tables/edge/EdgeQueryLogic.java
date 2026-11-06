@@ -31,9 +31,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlInfo;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.DatawaveJexlParser;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.Parser;
-import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -380,7 +380,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      */
     protected Set<Range> configureRanges(String queryString) throws ParseException {
         queryString = EdgeQueryLogic.fixQueryString(queryString);
-        Parser parser = new Parser(new StringProvider(";"));
+        Parser parser = DatawaveJexlParser.create();
         ASTJexlScript script;
         try {
             JexlInfo jexlInfo = JexlASTHelper.jexlInfo("configureRanges");
