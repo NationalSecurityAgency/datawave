@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>8.6.0-SNAPSHOT</version>
+        <version>9.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ingest-json</artifactId>
     <packaging>jar</packaging>
@@ -116,7 +116,7 @@
     <build>
         <plugins>
             <plugin>
-                <!-- 
+                <!--
                      To ease the burden of setting java classpath when testing JsonIngestFlattener. E.g.,
 
                      $ cd warehouse/ingest-json
