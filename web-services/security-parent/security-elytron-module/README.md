@@ -1,6 +1,6 @@
 # Overview
 
-Datawave leverages Wildfly's Elytron framework for authenticating and authorizing users within the Datawave EAR deployment. The full documentation for Wildfly is available via the [Wildfly docs](https://docs.wildfly.org/26/). There are several key concepts to understand when discussing Elytron, and for the sake of brevity, this README will only touch on concepts that are used by the Datawave security configuration.
+Datawave leverages Wildfly's Elytron framework for authenticating and authorizing users within the Datawave EAR deployment. The full documentation for Wildfly is available via the [Wildfly docs](https://docs.wildfly.org/39/). There are several key concepts to understand when discussing Elytron, and for the sake of brevity, this README will only touch on concepts that are used by the Datawave security configuration.
 
 ## Key Concepts
 * `HttpServerAuthenticationMechanismFactory`
