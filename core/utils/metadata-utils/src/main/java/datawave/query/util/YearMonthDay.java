@@ -1,33 +1,48 @@
 package datawave.query.util;
 
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
 
 import datawave.util.time.DateHelper;
 
 public class YearMonthDay implements Comparable<YearMonthDay> {
     public static final int DAYS_IN_LEAP_YEAR = 366;
-    private String yyyymmdd;
-    private Calendar cal = Calendar.getInstance();
+    private final String yyyymmdd;
+    private final int year;
+    private final int julian;
 
     public YearMonthDay(String value) {
+        LocalDate date = parse(value);
         yyyymmdd = value;
-        cal.clear();
-        cal.set(Integer.parseInt(value.substring(0, 4)), Integer.parseInt(value.substring(4, 6)) - 1, Integer.parseInt(value.substring(6)));
+        year = date.getYear();
+        julian = date.getDayOfYear();
     }
 
     public YearMonthDay(int year, int julian) {
-        cal.clear();
-        cal.set(Calendar.YEAR, year);
-        cal.set(Calendar.DAY_OF_YEAR, julian);
-        yyyymmdd = DateHelper.format(cal.getTime());
+        this(LocalDate.of(year, 1, 1).plusDays((long) julian - 1));
+    }
+
+    private YearMonthDay(LocalDate date) {
+        year = date.getYear();
+        julian = date.getDayOfYear();
+        yyyymmdd = DateHelper.format(Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+    }
+
+    private static LocalDate parse(String value) {
+        int year = Integer.parseInt(value.substring(0, 4));
+        int month = Integer.parseInt(value.substring(4, 6));
+        int day = Integer.parseInt(value.substring(6));
+        return LocalDate.of(year, 1, 1).plusMonths((long) month - 1).plusDays((long) day - 1);
     }
 
     public int getYear() {
-        return cal.get(Calendar.YEAR);
+        return year;
     }
 
     public int getJulian() {
-        return cal.get(Calendar.DAY_OF_YEAR);
+        return julian;
     }
 
     public String getYyyymmdd() {
@@ -97,36 +112,20 @@ public class YearMonthDay implements Comparable<YearMonthDay> {
     }
 
     public static YearMonthDay nextDay(String value) {
-        YearMonthDay ymd = new YearMonthDay(value);
-        ymd.cal.add(Calendar.DATE, 1);
-        ymd.yyyymmdd = DateHelper.format(ymd.cal.getTime());
-        return ymd;
+        return new YearMonthDay(parse(value).plusDays(1));
     }
 
     public static YearMonthDay previousDay(String value) {
-        YearMonthDay ymd = new YearMonthDay(value);
-        ymd.cal.add(Calendar.DATE, -1);
-        ymd.yyyymmdd = DateHelper.format(ymd.cal.getTime());
-        return ymd;
+        return new YearMonthDay(parse(value).minusDays(1));
     }
 
     public static String calculateMMDD(int ordinal, int year) {
-        Calendar c = Calendar.getInstance();
-        c.set(Calendar.YEAR, year);
-        c.set(Calendar.DAY_OF_YEAR, ordinal);
-        return DateHelper.format(c.getTime());
+        ZonedDateTime date = ZonedDateTime.now().withDayOfYear(1).withYear(year).plusDays((long) ordinal - 1);
+        return DateHelper.format(Date.from(date.toInstant()));
     }
 
     public static int calculateJulian(String value) {
-        int year = Integer.parseInt(value.substring(0, 4));
-        String month = value.substring(4, 6);
-        String day = value.substring(6, 8);
-        int nmonth = month.charAt(0) == '0' ? Integer.parseInt(month.substring(1, 2)) : Integer.parseInt(month);
-        int nday = day.charAt(0) == '0' ? Integer.parseInt(day.substring(1, 2)) : Integer.parseInt(day);
-        Calendar cal = Calendar.getInstance();
-        cal.clear();
-        cal.set(year, nmonth - 1, nday);
-        return cal.get(Calendar.DAY_OF_YEAR);
+        return parse(value.substring(0, 8)).getDayOfYear();
     }
 
 }
