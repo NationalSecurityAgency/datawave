@@ -1,5 +1,6 @@
 package datawave.ingest.util;
 
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -163,7 +164,7 @@ public class GenerateShardSplits {
                     printUsageAndExit();
                 } else {
                     username = args[i];
-                    password = PasswordConverter.parseArg(args[i + 1]).getBytes();
+                    password = PasswordConverter.parseArg(args[i + 1]).getBytes(StandardCharsets.UTF_8);
                     tableName = args[i + 2];
                     // skip over args
                     i += 3;

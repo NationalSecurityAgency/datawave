@@ -1,5 +1,6 @@
 package datawave.iterators.filter.ageoff;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -254,13 +255,13 @@ public class FieldAgeOffFilter extends AppliedRule {
         if (null != fieldsTypeOption) {
             String[] fieldsArray = fieldsTypeOption.split(",");
             for (String dt : fieldsArray)
-                fields.add(new ArrayByteSequence(dt.trim().getBytes()));
+                fields.add(new ArrayByteSequence(dt.trim().getBytes(StandardCharsets.UTF_8)));
         }
 
         for (String optionKey : options.options.keySet()) {
             if (optionKey.startsWith(OPTION_PREFIX)) {
                 String anotherField = optionKey.substring(OPTION_PREFIX.length(), optionKey.indexOf('.', OPTION_PREFIX.length() + 1));
-                fields.add(new ArrayByteSequence(anotherField.trim().getBytes()));
+                fields.add(new ArrayByteSequence(anotherField.trim().getBytes(StandardCharsets.UTF_8)));
             }
         }
 

@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -630,7 +631,7 @@ public class IngestJob implements Tool {
                 userName = args[++i];
                 AccumuloHelper.setUsername(conf, userName);
             } else if (args[i].equals("-pass")) {
-                password = PasswordConverter.parseArg(args[++i]).getBytes();
+                password = PasswordConverter.parseArg(args[++i]).getBytes(StandardCharsets.UTF_8);
                 AccumuloHelper.setPassword(conf, password);
             } else if (args[i].equals("-flagFile")) {
                 flagFile = args[++i];

@@ -1,5 +1,6 @@
 package datawave.ingest.data.config.ingest;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import org.apache.accumulo.core.client.Accumulo;
@@ -32,7 +33,7 @@ public class AccumuloHelper {
 
     public void setup(Configuration config) throws IllegalArgumentException {
         username = ConfigurationHelper.isNull(config, USERNAME, String.class);
-        byte[] pw = Base64.decodeBase64(ConfigurationHelper.isNull(config, PASSWORD, String.class).getBytes());
+        byte[] pw = Base64.decodeBase64(ConfigurationHelper.isNull(config, PASSWORD, String.class).getBytes(StandardCharsets.UTF_8));
         password = new PasswordToken(pw);
         instanceName = ConfigurationHelper.isNull(config, INSTANCE_NAME, String.class);
         zooKeepers = ConfigurationHelper.isNull(config, ZOOKEEPERS, String.class);
@@ -97,7 +98,7 @@ public class AccumuloHelper {
     }
 
     public static byte[] getPassword(Configuration conf) {
-        return Base64.decodeBase64(ConfigurationHelper.isNull(conf, PASSWORD, String.class).getBytes());
+        return Base64.decodeBase64(ConfigurationHelper.isNull(conf, PASSWORD, String.class).getBytes(StandardCharsets.UTF_8));
     }
 
     public static String getInstanceName(Configuration conf) {

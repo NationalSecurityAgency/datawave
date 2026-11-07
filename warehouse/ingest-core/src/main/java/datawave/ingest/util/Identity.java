@@ -1,5 +1,6 @@
 package datawave.ingest.util;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 import org.apache.log4j.Logger;
@@ -64,14 +65,14 @@ public class Identity {
     }
 
     public void updateId(String value) {
-        md.update(value.getBytes());
+        md.update(value.getBytes(StandardCharsets.UTF_8));
     }
 
     public void updateId(String[] value) {
         sb.setLength(0);
         for (int i = 0; i < value.length; i++)
             sb.append(value[i]);
-        md.update(sb.toString().getBytes());
+        md.update(sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     public byte[] getDigest(byte esc) {
@@ -104,7 +105,7 @@ public class Identity {
 
     public String getId(String message) {
         clearId();
-        updateId(message.getBytes());
+        updateId(message.getBytes(StandardCharsets.UTF_8));
         return getId();
     }
 
