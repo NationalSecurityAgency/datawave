@@ -4,13 +4,6 @@ import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.Callable;
 
-import jakarta.annotation.security.RunAs;
-import jakarta.ejb.LocalBean;
-import jakarta.ejb.Schedule;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
-import jakarta.inject.Inject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
@@ -21,6 +14,12 @@ import datawave.security.evidence.EvidenceFactory;
 import datawave.security.evidence.X509CertificateEvidence;
 import datawave.security.user.UserOperationsBean;
 import datawave.user.AuthorizationsListBase;
+import jakarta.annotation.security.RunAs;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Schedule;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
+import jakarta.inject.Inject;
 
 /**
  * This class demonstrates an example of how to programmatically obtain a {@link SecurityIdentity} from the current {@link SecurityDomain} in order to execute
