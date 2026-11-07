@@ -93,7 +93,6 @@ public class AnnotationLookupUUIDTest {
                 .addPackages(
                         true,
                         "org.apache.deltaspike",
-                        "io.astefanutti.metrics.cdi",
                         "datawave.query",
                         "org.jboss.logging",
                         "datawave.webservice.query.result.event"
@@ -102,9 +101,11 @@ public class AnnotationLookupUUIDTest {
                 .deleteClass(QueryMetricQueryLogic.class)
                 .addAsManifestResource(
                         new StringAsset(
+                        "<beans xmlns=\"https://jakarta.ee/xml/ns/jakartaee\" version=\"4.0\" bean-discovery-mode=\"all\">" +
                         "<alternatives>" +
                                 "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" +
-                                "</alternatives>"),
+                                "</alternatives>" +
+                        "</beans>"),
                         "beans.xml"
                 );
         //@formatter:on
