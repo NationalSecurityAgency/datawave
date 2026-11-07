@@ -5,9 +5,90 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
+import java.util.Calendar;
+import java.util.TimeZone;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+import datawave.util.time.DateHelper;
+
+@ResourceLock(Resources.TIME_ZONE)
 public class YearMonthDayTest {
+
+    @ParameterizedTest
+    @CsvSource({"20240229, 2024, 60", "20000229, 2000, 60", "21000301, 2100, 60", "20241231, 2024, 366", "20230229, 2023, 60", "20240001, 2023, 335",
+            "20240100, 2023, 365", "202101001, 2021, 1"})
+    public void testDateFieldsAndLenientInput(String value, int year, int ordinal) {
+        YearMonthDay day = new YearMonthDay(value);
+        assertEquals(value, day.getYyyymmdd());
+        assertEquals(year, day.getYear());
+        assertEquals(ordinal, day.getJulian());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2024, 60, 20240229", "2000, 60, 20000229", "2100, 60, 21000301", "2023, 366, 20240101", "2024, 367, 20250101", "2024, 0, 20231231",
+            "2024, -1, 20231230"})
+    public void testOrdinalRollover(int year, int ordinal, String expected) {
+        TimeZone previous = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+            YearMonthDay day = new YearMonthDay(year, ordinal);
+            assertEquals(expected, day.getYyyymmdd());
+            assertEquals(new YearMonthDay(expected).getYear(), day.getYear());
+            assertEquals(new YearMonthDay(expected).getJulian(), day.getJulian());
+            assertEquals(expected, YearMonthDay.calculateMMDD(ordinal, year));
+        } finally {
+            TimeZone.setDefault(previous);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"20240228, 20240229", "20240229, 20240301", "20231231, 20240101", "21000228, 21000301"})
+    public void testDayArithmetic(String previousDay, String nextDay) {
+        TimeZone previous = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+            YearMonthDay next = YearMonthDay.nextDay(previousDay);
+            YearMonthDay before = YearMonthDay.previousDay(nextDay);
+            assertEquals(new YearMonthDay(nextDay), next);
+            assertEquals(new YearMonthDay(nextDay).getJulian(), next.getJulian());
+            assertEquals(new YearMonthDay(previousDay), before);
+            assertEquals(new YearMonthDay(previousDay).getYear(), before.getYear());
+        } finally {
+            TimeZone.setDefault(previous);
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"UTC", "America/New_York", "Pacific/Kiritimati", "Asia/Kathmandu", "America/Sao_Paulo"})
+    public void testCalendarCompatibilityInDefaultTimeZone(String zone) {
+        TimeZone previous = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone(zone));
+            Calendar calendar = Calendar.getInstance();
+            calendar.clear();
+            calendar.set(2024, Calendar.FEBRUARY, 29);
+            YearMonthDay fromOrdinal = new YearMonthDay(2024, 60);
+            assertEquals(calendar.get(Calendar.YEAR), fromOrdinal.getYear());
+            assertEquals(calendar.get(Calendar.DAY_OF_YEAR), fromOrdinal.getJulian());
+            assertEquals(DateHelper.format(calendar.getTime()), fromOrdinal.getYyyymmdd());
+            calendar.add(Calendar.DATE, 1);
+            assertEquals(DateHelper.format(calendar.getTime()), YearMonthDay.nextDay("20240229").getYyyymmdd());
+            calendar.add(Calendar.DATE, -2);
+            assertEquals(DateHelper.format(calendar.getTime()), YearMonthDay.previousDay("20240229").getYyyymmdd());
+            assertEquals(60, YearMonthDay.calculateJulian("20240229"));
+            Calendar current = Calendar.getInstance();
+            current.set(Calendar.YEAR, 2024);
+            current.set(Calendar.DAY_OF_YEAR, 60);
+            assertEquals(DateHelper.format(current.getTime()), YearMonthDay.calculateMMDD(60, 2024));
+        } finally {
+            TimeZone.setDefault(previous);
+        }
+    }
 
     @Test
     public void testGetYear() {
