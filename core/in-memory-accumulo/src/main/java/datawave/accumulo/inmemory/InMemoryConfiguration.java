@@ -48,6 +48,6 @@ class InMemoryConfiguration extends AccumuloConfiguration {
 
     @Override
     public boolean isPropertySet(Property property) {
-        return map.containsKey(property);
+        return map.containsKey(property.getKey());
     }
 }

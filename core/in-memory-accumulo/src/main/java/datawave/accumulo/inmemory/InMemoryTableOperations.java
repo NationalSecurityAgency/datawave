@@ -242,9 +242,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         Map<String,String> conf = new HashMap<>(acu.namespaces.get(namespace).settings);
         Map<String,String> tableConf = acu.tables.get(tableName).settings;
         for (Entry<String,String> e : tableConf.entrySet()) {
-            if (conf.containsKey(e.getKey())) {
-                conf.remove(e);
-            }
+            conf.remove(e.getKey());
             conf.put(e.getKey(), e.getValue());
         }
         return conf;
