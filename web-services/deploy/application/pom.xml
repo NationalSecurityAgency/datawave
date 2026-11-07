@@ -273,6 +273,18 @@
             <scope>runtime</scope>
         </dependency>
         <!--
+            Not bundled: this only orders the build. The unpack-configuration execution unpacks this module's
+            ${build.env} jar, and without a declared dependency a parallel or -pl build resolves that jar from the
+            local repository instead of the reactor, so the server can end up with a stale configuration.
+        -->
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-deploy-configuration</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <!--
             WildFly provides the Jakarta EE APIs, RESTEasy, the JAXB runtime and jboss-logging as modules. Declaring them
             provided here keeps them, and what they drag in (e.g. jaxb-xjc, xsom and codemodel from resteasy-jaxb-provider),
             out of the EAR's lib directory, where they would only shadow or duplicate the server's copies.
