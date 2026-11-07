@@ -25,13 +25,14 @@ We create several JBOSS modules that will be part of Wildfly upon startup. These
 * [datawave.commons.datawave-commons-security](src/main/wildfly/overlay/modules/datawave/commons/datawave-commons-security)
     * Contains security-related artifacts that are commonly used between the Datawave deployment, the module `datawave.webservice.datawave-security-elytron-module`, and the microservices.
 * [com.fasterxml.jackson.datatype.jackson-datatype-guava](src/main/wildfly/overlay/modules/com/fasterxml/jackson/datatype/jackson-datatype-guava)
-* [com.fasterxml.jackson.module.jackson-module-jaxb-annotations](src/main/wildfly/overlay/modules/com/fasterxml/jackson/module/jackson-module-jaxb-annotations)
 * [com.github.ben-manes.caffeine](src/main/wildfly/overlay/modules/com/github/ben-manes/caffeine)
 * [io.jsonwebtoken.jjwt-api](src/main/wildfly/overlay/modules/io/jsonwebtoken/jjwt-api)
 * [io.jsonwebtoken.jjwt-impl](src/main/wildfly/overlay/modules/io/jsonwebtoken/jjwt-impl)
 * [io.jsonwebtoken.jjwt-jackson](src/main/wildfly/overlay/modules/io/jsonwebtoken/jjwt-jackson)
 * [org.apache.commons.commons-text](src/main/wildfly/overlay/modules/org/apache/commons/commons-text)
 * [org.apache.hadoop.common](src/main/wildfly/overlay/modules/org/apache/hadoop/common)
+
+The Jakarta XML Binding annotation support for Jackson (`jackson-module-jakarta-xmlbind-annotations`) is not a custom module: Wildfly ships it inside its `com.fasterxml.jackson.jakarta.jackson-jakarta-json-provider` module, which the deployment and the security modules depend on directly.
 
 ### Overridden Modules
 

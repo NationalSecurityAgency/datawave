@@ -671,25 +671,6 @@
                                 </configuration>
                             </execution>
 
-                            <!-- Copy resources for JBOSS module com.fasterxml.jackson.module.jackson-module-jaxb-annotations -->
-                            <execution>
-                                <id>copy-com-fasterxml-jackson-module-jackson-module-jaxb-annotations</id>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${base.wildfly.modules.dir}/com/fasterxml/jackson/module/jackson-module-jaxb-annotations/main</outputDirectory>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>com.fasterxml.jackson.module</groupId>
-                                            <artifactId>jackson-module-jaxb-annotations</artifactId>
-                                            <version>${version.jackson}</version>
-                                        </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-
                             <!-- Copy resources for JBOSS module datawave.commons.datawave-commons-security. -->
                             <execution>
                                 <id>copy-datawave-commons-security</id>

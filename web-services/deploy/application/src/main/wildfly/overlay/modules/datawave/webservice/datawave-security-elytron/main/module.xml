@@ -11,13 +11,13 @@
         <module name="org.apache.commons.lang3" />
         <module name="org.slf4j"/>
         <module name="com.google.guava"/>
-        <module name="javax.xml.bind.api"/>
+        <module name="jakarta.xml.bind.api"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="com.fasterxml.jackson.core.jackson-databind"/>
         <module name="com.fasterxml.jackson.core.jackson-annotations"/>
         <module name="com.fasterxml.jackson.datatype.jackson-datatype-guava"/>
-        <module name="com.fasterxml.jackson.module.jackson-module-jaxb-annotations"/>
-        <module name="javax.annotation.api"/>
+        <module name="com.fasterxml.jackson.jakarta.jackson-jakarta-json-provider"/>
+        <module name="jakarta.annotation.api"/>
         <module name="org.wildfly.security.elytron"/>
         <module name="org.wildfly.extension.elytron"/>
     </dependencies>
