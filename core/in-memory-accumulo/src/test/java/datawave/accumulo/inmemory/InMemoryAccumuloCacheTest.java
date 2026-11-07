@@ -11,69 +11,72 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.admin.TimeType;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 public class InMemoryAccumuloCacheTest {
 
-    @AfterEach
-    public void clearCache() {
-        InMemoryAccumuloCache.clear();
+    private final InMemoryAccumuloCache instances = new InMemoryAccumuloCache(Caffeine.newBuilder().build());
+
+    @Test
+    public void defaultIsShared() {
+        assertSame(InMemoryAccumuloCache.getDefault(), InMemoryAccumuloCache.getDefault());
     }
 
     @Test
     public void sameNameReturnsTheSameInstance() {
-        InMemoryAccumulo first = InMemoryAccumuloCache.getOrCreate("shared");
+        InMemoryAccumulo first = instances.getOrCreate("shared");
         first.createTable("root", "sharedTable", true, TimeType.LOGICAL);
 
-        InMemoryAccumulo second = InMemoryAccumuloCache.getOrCreate("shared");
+        InMemoryAccumulo second = instances.getOrCreate("shared");
         assertSame(first, second);
         assertTrue(new InMemoryAccumuloClient("root", second).tableOperations().exists("sharedTable"));
     }
 
     @Test
     public void differentNamesReturnDifferentInstances() {
-        assertNotSame(InMemoryAccumuloCache.getOrCreate("one"), InMemoryAccumuloCache.getOrCreate("two"));
-        assertEquals(2, InMemoryAccumuloCache.size());
+        assertNotSame(instances.getOrCreate("one"), instances.getOrCreate("two"));
+        assertEquals(2, instances.size());
     }
 
     @Test
     public void removedInstanceIsReplacedWithANewOne() {
-        InMemoryAccumulo first = InMemoryAccumuloCache.getOrCreate("removed");
-        assertSame(first, InMemoryAccumuloCache.remove("removed"));
-        assertNull(InMemoryAccumuloCache.remove("removed"));
-        assertNotSame(first, InMemoryAccumuloCache.getOrCreate("removed"));
+        InMemoryAccumulo first = instances.getOrCreate("removed");
+        assertSame(first, instances.remove("removed"));
+        assertNull(instances.remove("removed"));
+        assertNotSame(first, instances.getOrCreate("removed"));
     }
 
     @Test
     public void clearRemovesEveryInstance() {
-        InMemoryAccumuloCache.getOrCreate("one");
-        InMemoryAccumuloCache.getOrCreate("two");
-        InMemoryAccumuloCache.clear();
-        assertEquals(0, InMemoryAccumuloCache.size());
+        instances.getOrCreate("one");
+        instances.getOrCreate("two");
+        instances.clear();
+        assertEquals(0, instances.size());
     }
 
     @Test
     public void instancesExpireAfterGoingUnusedForTheConfiguredTime() {
         AtomicLong nanos = new AtomicLong();
-        Cache<String,InMemoryAccumulo> cache = InMemoryAccumuloCache.newCache(Duration.ofMinutes(10), nanos::get);
+        Cache<String,InMemoryAccumulo> cache = Caffeine.newBuilder().expireAfterAccess(Duration.ofMinutes(10)).ticker(nanos::get).build();
+        InMemoryAccumuloCache expiring = new InMemoryAccumuloCache(cache);
 
-        InMemoryAccumulo used = cache.get("used", InMemoryAccumulo::new);
-        InMemoryAccumulo idle = cache.get("idle", InMemoryAccumulo::new);
+        InMemoryAccumulo used = expiring.getOrCreate("used");
+        InMemoryAccumulo idle = expiring.getOrCreate("idle");
 
         // Looking up "used" part way through resets its clock, while "idle" keeps aging.
         nanos.addAndGet(TimeUnit.MINUTES.toNanos(6));
-        assertSame(used, cache.getIfPresent("used"));
+        assertSame(used, expiring.getOrCreate("used"));
         nanos.addAndGet(TimeUnit.MINUTES.toNanos(6));
 
-        assertSame(used, cache.getIfPresent("used"));
-        assertNull(cache.getIfPresent("idle"));
+        // size() does not process pending evictions, so do that through the injected cache before counting.
         cache.cleanUp();
-        assertEquals(1, cache.estimatedSize());
+        assertEquals(1, expiring.size());
+        assertSame(used, expiring.getOrCreate("used"));
 
         // Once evicted, the next lookup by that name gets a new instance.
-        assertNotSame(idle, cache.get("idle", InMemoryAccumulo::new));
+        assertNotSame(idle, expiring.getOrCreate("idle"));
     }
 }
