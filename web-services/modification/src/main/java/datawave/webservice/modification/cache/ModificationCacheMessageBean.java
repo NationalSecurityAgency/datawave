@@ -22,7 +22,7 @@ import datawave.modification.configuration.ModificationServiceConfiguration;
 
 @RunAs("InternalUser")
 @MessageDriven(name = "ModificationCacheMessageBean",
-                activationConfig = {@ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
+                activationConfig = {@ActivationConfigProperty(propertyName = "destinationType", propertyValue = "jakarta.jms.Topic"),
                         @ActivationConfigProperty(propertyName = "destination", propertyValue = "topic/AccumuloTableCache"),
                         @ActivationConfigProperty(propertyName = "useLocalTx", propertyValue = "true"),
                         @ActivationConfigProperty(propertyName = "subscriptionDurability", propertyValue = "Durable"),

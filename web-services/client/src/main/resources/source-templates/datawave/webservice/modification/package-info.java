@@ -1,6 +1,6 @@
 @XmlSchema(namespace="${datawave.webservice.namespace}", elementFormDefault=XmlNsForm.QUALIFIED, xmlns={@XmlNs(prefix = "", namespaceURI = "${datawave.webservice.namespace}")})
 package datawave.webservice.modification;
 
-import javax.xml.bind.annotation.XmlNs;
-import javax.xml.bind.annotation.XmlNsForm;
-import javax.xml.bind.annotation.XmlSchema;
+import jakarta.xml.bind.annotation.XmlNs;
+import jakarta.xml.bind.annotation.XmlNsForm;
+import jakarta.xml.bind.annotation.XmlSchema;

@@ -12,8 +12,8 @@ public class HtmlProviderMessageBodyWriter extends AbstractHtmlProviderMessageBo
     /*
      * (non-Javadoc)
      *
-     * @see javax.ws.rs.ext.MessageBodyWriter#isWriteable(java.lang.Class, java.lang.reflect.Type, java.lang.annotation.Annotation[],
-     * javax.ws.rs.core.MediaType)
+     * @see jakarta.ws.rs.ext.MessageBodyWriter#isWriteable(java.lang.Class, java.lang.reflect.Type, java.lang.annotation.Annotation[],
+     * jakarta.ws.rs.core.MediaType)
      */
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
