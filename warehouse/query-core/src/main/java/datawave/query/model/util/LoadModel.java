@@ -3,8 +3,6 @@ package datawave.query.model.util;
 import java.io.InputStream;
 import java.util.Collection;
 
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Unmarshaller;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
@@ -15,6 +13,8 @@ import org.xml.sax.InputSource;
 import datawave.query.model.FieldMapping;
 import datawave.query.model.QueryModel;
 import datawave.webservice.model.Model;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
 
 /**
  * Utility class to load a model

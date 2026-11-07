@@ -17,8 +17,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import jakarta.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -57,6 +55,7 @@ import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
+import jakarta.inject.Inject;
 
 /**
  * Demonstrates a successful lookupUUID deployment in the context of the annotations package, if this breaks something unexpected has changed with the injection

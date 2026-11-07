@@ -4,16 +4,15 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.XmlType;
-
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
 
 /**
  * This JAXB bean represents some message returned by the iterator or query logic for a selector profile query. It can be used for conveying warnings, messages,

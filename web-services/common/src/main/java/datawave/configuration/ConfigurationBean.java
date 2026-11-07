@@ -1,5 +1,11 @@
 package datawave.configuration;
 
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+
+import com.codahale.metrics.annotation.Timed;
+
+import datawave.webservice.result.GenericResponse;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
@@ -13,13 +19,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-
-import com.codahale.metrics.annotation.Timed;
-
-import datawave.webservice.result.GenericResponse;
 
 @MBean
 @Singleton

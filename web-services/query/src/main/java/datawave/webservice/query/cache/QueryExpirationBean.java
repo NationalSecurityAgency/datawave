@@ -3,19 +3,6 @@ package datawave.webservice.query.cache;
 import java.util.HashSet;
 import java.util.Set;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.annotation.security.DeclareRoles;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.annotation.security.RunAs;
-import jakarta.ejb.DependsOn;
-import jakarta.ejb.Lock;
-import jakarta.ejb.LockType;
-import jakarta.ejb.Schedule;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
-import jakarta.inject.Inject;
-
 import org.apache.log4j.Logger;
 
 import datawave.configuration.spring.SpringBean;
@@ -30,6 +17,18 @@ import datawave.webservice.query.limit.QueryLimiter;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.annotation.security.RunAs;
+import jakarta.ejb.DependsOn;
+import jakarta.ejb.Lock;
+import jakarta.ejb.LockType;
+import jakarta.ejb.Schedule;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
+import jakarta.inject.Inject;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

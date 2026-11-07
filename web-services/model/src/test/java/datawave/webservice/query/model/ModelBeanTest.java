@@ -17,10 +17,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import jakarta.ejb.EJBContext;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Unmarshaller;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.data.Key;
@@ -46,6 +42,9 @@ import datawave.security.util.DnProperties;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.model.ModelList;
+import jakarta.ejb.EJBContext;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
 
 @ExtendWith(MockitoExtension.class)
 public class ModelBeanTest {

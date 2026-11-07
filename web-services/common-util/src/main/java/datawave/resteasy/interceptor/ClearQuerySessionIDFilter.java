@@ -2,16 +2,15 @@ package datawave.resteasy.interceptor;
 
 import java.io.IOException;
 
+import org.jboss.resteasy.util.HttpHeaderNames;
+
+import datawave.Constants;
+import datawave.annotation.ClearQuerySessionId;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.ext.Provider;
-
-import org.jboss.resteasy.util.HttpHeaderNames;
-
-import datawave.Constants;
-import datawave.annotation.ClearQuerySessionId;
 
 /**
  * JAX-RS filter to clear the {@link Constants#QUERY_COOKIE_NAME} cookie value.

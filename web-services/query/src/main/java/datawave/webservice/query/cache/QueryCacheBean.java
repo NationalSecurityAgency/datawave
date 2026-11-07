@@ -2,6 +2,16 @@ package datawave.webservice.query.cache;
 
 import java.util.Map.Entry;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.core.query.logic.QueryLogic;
+import datawave.webservice.query.runner.QueryExecutorBean;
+import datawave.webservice.query.runner.RunningQuery;
+import datawave.webservice.result.VoidResponse;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.annotation.security.RunAs;
@@ -13,17 +23,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.jboss.resteasy.annotations.GZIP;
-
-import datawave.core.query.logic.QueryLogic;
-import datawave.webservice.query.runner.QueryExecutorBean;
-import datawave.webservice.query.runner.RunningQuery;
-import datawave.webservice.result.VoidResponse;
 
 @Path("/Query/Cache")
 @RunAs("InternalUser")

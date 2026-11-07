@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jakarta.xml.bind.JAXBException;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -23,6 +21,7 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.mapreduce.bulkresults.map.SerializationFormat;
 import datawave.microservice.query.Query;
 import datawave.webservice.result.BaseQueryResponse;
+import jakarta.xml.bind.JAXBException;
 
 public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<Key,Value,Text,Mutation> {
 

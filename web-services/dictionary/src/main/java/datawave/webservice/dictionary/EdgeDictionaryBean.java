@@ -2,6 +2,10 @@ package datawave.webservice.dictionary;
 
 import java.net.URISyntaxException;
 
+import org.apache.http.client.utils.URIBuilder;
+import org.xbill.DNS.TextParseException;
+
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import jakarta.annotation.security.PermitAll;
 import jakarta.ejb.LocalBean;
 import jakarta.ejb.Stateless;
@@ -11,11 +15,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-
-import org.apache.http.client.utils.URIBuilder;
-import org.xbill.DNS.TextParseException;
-
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 
 /**
  * A simple proxy that redirects GET requests for the EdgeDictionary to the external dictionary service that is configured in the {@link RemoteEdgeDictionary}.

@@ -32,10 +32,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jakarta.ejb.EJBContext;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.transaction.UserTransaction;
-import jakarta.ws.rs.core.MultivaluedMap;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -116,6 +112,10 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
+import jakarta.ejb.EJBContext;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.UserTransaction;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)

@@ -9,15 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import jakarta.xml.bind.annotation.XmlAccessOrder;
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorOrder;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlElementWrapper;
-import jakarta.xml.bind.annotation.XmlTransient;
-import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
 import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.Markings;
 import datawave.webservice.query.result.event.MapSchema;
@@ -26,6 +17,14 @@ import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
+import jakarta.xml.bind.annotation.XmlAccessOrder;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorOrder;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)

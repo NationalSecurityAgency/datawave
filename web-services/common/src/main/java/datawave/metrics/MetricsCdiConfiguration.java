@@ -3,14 +3,14 @@ package datawave.metrics;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
 
-import jakarta.annotation.PreDestroy;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Produces;
-
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
+
+import jakarta.annotation.PreDestroy;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 
 /**
  * Configuration for the CDI Dropwizard {@link MetricRegistry}.

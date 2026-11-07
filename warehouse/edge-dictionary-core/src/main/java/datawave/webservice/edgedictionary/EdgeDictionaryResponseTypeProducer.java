@@ -1,10 +1,9 @@
 package datawave.webservice.edgedictionary;
 
-import jakarta.enterprise.inject.Produces;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
+import jakarta.enterprise.inject.Produces;
 
 /**
  * A CDI producer bean that produces the response type that we will expect to receive from the Dictionary Service when retrieving the edge dictionary. This type

@@ -7,16 +7,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jakarta.annotation.PreDestroy;
-import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RunAs;
-import jakarta.ejb.ConcurrencyManagement;
-import jakarta.ejb.ConcurrencyManagementType;
-import jakarta.ejb.LocalBean;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
-import jakarta.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.tuple.Pair;
@@ -28,6 +18,15 @@ import com.google.common.collect.Maps;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.QueryLogic;
+import jakarta.annotation.PreDestroy;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RunAs;
+import jakarta.ejb.ConcurrencyManagement;
+import jakarta.ejb.ConcurrencyManagementType;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
+import jakarta.inject.Inject;
 
 @Startup
 @Singleton

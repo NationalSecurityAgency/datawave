@@ -3,6 +3,8 @@ package datawave.webservice.results.mr;
 import java.io.Serializable;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
@@ -11,8 +13,6 @@ import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @XmlRootElement(name = "Algorithm")
 @XmlAccessorType(XmlAccessType.NONE)

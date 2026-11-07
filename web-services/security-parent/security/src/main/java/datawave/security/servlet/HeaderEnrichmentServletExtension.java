@@ -1,10 +1,9 @@
 package datawave.security.servlet;
 
-import jakarta.servlet.ServletContext;
-
 import datawave.security.util.SecurityConstants;
 import io.undertow.servlet.ServletExtension;
 import io.undertow.servlet.api.DeploymentInfo;
+import jakarta.servlet.ServletContext;
 
 /**
  * A {@link ServletExtension} that will enrich incoming requests by adding the following headers:

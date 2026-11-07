@@ -10,9 +10,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.ejb.EJBContext;
-import jakarta.enterprise.inject.Instance;
-
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.AfterEach;
@@ -42,6 +39,8 @@ import datawave.security.cache.ElytronCacheManager;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import jakarta.ejb.EJBContext;
+import jakarta.enterprise.inject.Instance;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {ListEffectiveAuthorizationsTest.Config.class})

@@ -2,6 +2,10 @@ package datawave.interceptor;
 
 import java.io.IOException;
 
+import datawave.Constants;
+import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.BaseResponse;
 import jakarta.annotation.Priority;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.InvocationContext;
@@ -11,11 +15,6 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
-
-import datawave.Constants;
-import datawave.webservice.common.exception.NoResultsException;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.BaseResponse;
 
 /**
  *

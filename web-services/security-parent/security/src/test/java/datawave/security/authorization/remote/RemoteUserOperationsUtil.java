@@ -15,7 +15,6 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.x500.X500Principal;
-import jakarta.ws.rs.core.MediaType;
 
 import org.apache.commons.io.IOUtils;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
@@ -28,6 +27,7 @@ import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.remote.RemoteServiceUtil;
 import datawave.webservice.common.remote.TestSSLStores;
+import jakarta.ws.rs.core.MediaType;
 
 public class RemoteUserOperationsUtil extends RemoteServiceUtil {
     private AtomicBoolean interrupt;

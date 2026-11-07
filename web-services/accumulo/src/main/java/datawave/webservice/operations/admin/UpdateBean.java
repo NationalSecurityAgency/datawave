@@ -1,5 +1,9 @@
 package datawave.webservice.operations.admin;
 
+import datawave.webservice.operations.remote.RemoteAdminService;
+import datawave.webservice.request.UpdateRequest;
+import datawave.webservice.response.UpdateResponse;
+import datawave.webservice.response.ValidateVisibilityResponse;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RolesAllowed;
@@ -16,11 +20,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-
-import datawave.webservice.operations.remote.RemoteAdminService;
-import datawave.webservice.request.UpdateRequest;
-import datawave.webservice.response.UpdateResponse;
-import datawave.webservice.response.ValidateVisibilityResponse;
 
 @Path("/Accumulo")
 @RolesAllowed({"InternalUser", "Administrator"})

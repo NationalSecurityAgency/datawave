@@ -2,14 +2,14 @@ package datawave.webservice.modification;
 
 import java.io.Serializable;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 @XmlRootElement(name = "ModificationOperationImpl")
 @XmlAccessorType(XmlAccessType.FIELD)

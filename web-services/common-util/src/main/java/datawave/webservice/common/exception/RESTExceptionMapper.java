@@ -2,16 +2,6 @@ package datawave.webservice.common.exception;
 
 import java.util.Collections;
 
-import jakarta.ejb.EJBAccessException;
-import jakarta.ejb.EJBException;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
-import jakarta.ws.rs.ext.ExceptionMapper;
-import jakarta.ws.rs.ext.Provider;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.spi.CorsHeaders;
@@ -22,6 +12,15 @@ import datawave.resteasy.interceptor.DatawaveCorsFilter;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
+import jakarta.ejb.EJBAccessException;
+import jakarta.ejb.EJBException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.ResponseBuilder;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 
 @Provider
 public class RESTExceptionMapper implements ExceptionMapper<Exception> {

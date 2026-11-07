@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-
 import org.apache.http.conn.ConnectTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +21,9 @@ import datawave.security.util.SecurityConstants;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.result.GenericResponse;
+import jakarta.annotation.PostConstruct;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 
 @EnableCaching
 public class RemoteUserOperationsImpl extends RemoteHttpService implements UserOperations {

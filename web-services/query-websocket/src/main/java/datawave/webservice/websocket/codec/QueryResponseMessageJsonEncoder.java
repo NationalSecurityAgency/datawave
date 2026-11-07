@@ -3,10 +3,6 @@ package datawave.webservice.websocket.codec;
 import java.io.IOException;
 import java.io.Writer;
 
-import jakarta.websocket.EncodeException;
-import jakarta.websocket.Encoder;
-import jakarta.websocket.EndpointConfig;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
@@ -18,6 +14,9 @@ import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationIntr
 
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.websocket.messages.QueryResponseMessage;
+import jakarta.websocket.EncodeException;
+import jakarta.websocket.Encoder;
+import jakarta.websocket.EndpointConfig;
 
 /**
  * Encodes an object in the {@link BaseResponse} hierarchy into JSON, writing the results to the supplied stream.

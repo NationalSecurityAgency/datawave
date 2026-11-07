@@ -1,11 +1,5 @@
 package datawave.webservice.common.json;
 
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.ext.ContextResolver;
-import jakarta.ws.rs.ext.Provider;
-
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -20,6 +14,11 @@ import datawave.annotation.util.v1.JacksonAnnotationDeserializer;
 import datawave.annotation.util.v1.JacksonAnnotationSerializer;
 import datawave.annotation.util.v1.JacksonSegmentDeserializer;
 import datawave.annotation.util.v1.JacksonSegmentSerializer;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.ext.ContextResolver;
+import jakarta.ws.rs.ext.Provider;
 
 /**
  * Configures JSON serialization via Jackson to honor JAXB annotations. This provider must be listed in the value of a {@code resteasy.providers} servlet

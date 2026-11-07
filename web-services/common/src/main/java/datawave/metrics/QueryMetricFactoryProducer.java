@@ -1,10 +1,9 @@
 package datawave.metrics;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Produces;
-
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 
 /**
  * A CDI producer class whose purposes is to produce an implementation of {@link QueryMetricFactory}. The default implementation is not in a library that is

@@ -19,10 +19,6 @@
             <artifactId>stream</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.timgroup</groupId>
             <artifactId>java-statsd-client</artifactId>
         </dependency>
@@ -137,6 +133,10 @@
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>

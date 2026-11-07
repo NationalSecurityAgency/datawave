@@ -6,21 +6,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.security.DeclareRoles;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.annotation.security.RunAs;
-import jakarta.ejb.LocalBean;
-import jakarta.ejb.Lock;
-import jakarta.ejb.LockType;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
-import jakarta.inject.Inject;
-import jakarta.interceptor.Interceptors;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
 import org.apache.hadoop.io.Text;
@@ -35,6 +20,20 @@ import datawave.modification.cache.ModificationCache;
 import datawave.modification.configuration.ModificationConfiguration;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.MutableFieldListResponse;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.annotation.security.RunAs;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Lock;
+import jakarta.ejb.LockType;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
+import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptors;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 
 @Path("/Modification")
 @RunAs("InternalUser")

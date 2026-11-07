@@ -5,6 +5,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import datawave.microservice.query.Query;
+import datawave.webservice.query.exception.QueryExceptionType;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
@@ -12,13 +18,6 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
-
-import datawave.microservice.query.Query;
-import datawave.webservice.query.exception.QueryExceptionType;
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
 
 @XmlRootElement(name = "QueryImplListResponse")
 @XmlAccessorType(XmlAccessType.NONE)

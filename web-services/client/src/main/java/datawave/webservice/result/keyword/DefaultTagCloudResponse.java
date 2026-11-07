@@ -6,6 +6,11 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import datawave.webservice.query.exception.QueryExceptionType;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
@@ -14,12 +19,6 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
-
-import datawave.webservice.query.exception.QueryExceptionType;
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
 
 @XmlRootElement(name = "DefaultTagCloudResponse")
 @XmlAccessorType(XmlAccessType.NONE)

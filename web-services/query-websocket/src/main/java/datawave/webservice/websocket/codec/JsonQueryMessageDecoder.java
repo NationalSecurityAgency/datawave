@@ -2,6 +2,11 @@ package datawave.webservice.websocket.codec;
 
 import java.io.StringReader;
 
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import datawave.webservice.websocket.messages.CancelMessage;
+import datawave.webservice.websocket.messages.CreateQueryMessage;
+import datawave.webservice.websocket.messages.QueryMessage;
 import jakarta.json.Json;
 import jakarta.json.JsonException;
 import jakarta.json.JsonReader;
@@ -10,12 +15,6 @@ import jakarta.websocket.DecodeException;
 import jakarta.websocket.Decoder;
 import jakarta.websocket.EndpointConfig;
 import jakarta.ws.rs.core.MultivaluedMap;
-
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-
-import datawave.webservice.websocket.messages.CancelMessage;
-import datawave.webservice.websocket.messages.CreateQueryMessage;
-import datawave.webservice.websocket.messages.QueryMessage;
 
 /**
  * Decodes incoming JSON text into a {@link QueryMessage}. Based on the message content, the returned object will be one of the known types of query messages.

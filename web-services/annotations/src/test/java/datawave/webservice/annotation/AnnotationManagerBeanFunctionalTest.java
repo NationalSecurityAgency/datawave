@@ -21,23 +21,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import jakarta.ejb.EJBContext;
-import jakarta.enterprise.concurrent.ContextService;
-import jakarta.enterprise.concurrent.ManagedExecutorService;
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.core.Response;
+import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -90,6 +83,12 @@ import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 import datawave.webservice.query.runner.QueryExecutorBean;
+import jakarta.ejb.EJBContext;
+import jakarta.enterprise.concurrent.ContextService;
+import jakarta.enterprise.concurrent.ManagedExecutorService;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Response;
 
 @SuppressWarnings({"unused", "unchecked", "SpellCheckingInspection"})
 @ExtendWith(ArquillianExtension.class)

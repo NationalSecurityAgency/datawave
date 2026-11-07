@@ -2,11 +2,10 @@ package datawave.webservice.result.keyword;
 
 import java.util.Collection;
 
+import io.protostuff.Message;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlSeeAlso;
-
-import io.protostuff.Message;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultTagCloudEntry.class)

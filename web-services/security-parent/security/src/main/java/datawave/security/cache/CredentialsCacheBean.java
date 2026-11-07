@@ -9,24 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.security.DeclareRoles;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.annotation.security.RunAs;
-import jakarta.ejb.LocalBean;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
-import jakarta.ejb.TransactionAttribute;
-import jakarta.ejb.TransactionAttributeType;
-import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.Instance;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
@@ -44,6 +26,23 @@ import datawave.security.authorization.DatawaveUserInfo;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.GenericResponse;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.annotation.security.RunAs;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
+import jakarta.ejb.TransactionAttribute;
+import jakarta.ejb.TransactionAttributeType;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 
 /**
  * A service for managing cached {@link DatawaveUser} objects. It should be noted that there are potentially two caches in use. The first is a general Wildfly

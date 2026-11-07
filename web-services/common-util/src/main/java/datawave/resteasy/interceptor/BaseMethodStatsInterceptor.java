@@ -9,6 +9,14 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
+import org.jboss.resteasy.specimpl.MultivaluedTreeMap;
+import org.jboss.resteasy.spi.Failure;
+import org.jboss.resteasy.util.CaseInsensitiveMap;
+
+import com.google.common.io.CountingOutputStream;
+
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -20,14 +28,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.WriterInterceptor;
 import jakarta.ws.rs.ext.WriterInterceptorContext;
-
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
-import org.jboss.resteasy.specimpl.MultivaluedTreeMap;
-import org.jboss.resteasy.spi.Failure;
-import org.jboss.resteasy.util.CaseInsensitiveMap;
-
-import com.google.common.io.CountingOutputStream;
 
 public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilter, ContainerResponseFilter, WriterInterceptor {
     protected static final Logger log = Logger.getLogger(BaseMethodStatsInterceptor.class);

@@ -6,14 +6,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Priority;
-import jakarta.enterprise.inject.Alternative;
-import jakarta.inject.Inject;
-import jakarta.interceptor.Interceptor;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.utils.URIBuilder;
@@ -36,6 +28,13 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.result.VoidResponse;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.inject.Alternative;
+import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptor;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * Sends query metric updates to a remote microservice.

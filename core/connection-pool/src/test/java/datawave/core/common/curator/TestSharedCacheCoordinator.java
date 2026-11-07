@@ -10,8 +10,6 @@ import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import jakarta.annotation.PreDestroy;
-
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -34,6 +32,7 @@ import com.google.common.base.Preconditions;
 import datawave.core.common.cache.SharedBoolean;
 import datawave.core.common.cache.SharedBooleanListener;
 import datawave.core.common.cache.SharedCacheCoordinator.ArgumentChecker;
+import jakarta.annotation.PreDestroy;
 
 /**
  * Coordinates operations on a shared cache. That is, this coordinates operations where an in-memory cache may be running on multiple servers and each in-memory

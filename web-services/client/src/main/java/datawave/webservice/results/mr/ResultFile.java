@@ -3,17 +3,16 @@ package datawave.webservice.results.mr;
 import java.io.IOException;
 import java.io.Serializable;
 
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlTransient;
-
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)

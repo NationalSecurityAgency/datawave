@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.reflect.Method;
 
-import jakarta.interceptor.InvocationContext;
-
 import org.easymock.EasyMock;
 import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
@@ -15,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import datawave.annotation.Required;
+import jakarta.interceptor.InvocationContext;
 
 @ExtendWith(EasyMockExtension.class)
 public class RequiredInterceptorTest extends EasyMockSupport {

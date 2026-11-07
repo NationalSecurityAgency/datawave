@@ -7,9 +7,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.log4j.Logger;
@@ -25,6 +22,8 @@ import datawave.query.jexl.visitors.GeoFeatureVisitor;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.metrics.ShardTableQueryMetricHandler;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 /**
  * This class is used to extract query geometries from the query metrics in an effort to provide those geometries for subsequent display to the user.

@@ -5,16 +5,15 @@ import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Inject;
-
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.cert.SSLStores;
 import datawave.security.user.UserOperationsBean;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 
 /**
  * A producer class for generating server-security related artifacts. For one, we produce the server DN of the server that we are running inside of.

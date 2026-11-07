@@ -11,6 +11,16 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.google.common.collect.Sets;
+
+import datawave.configuration.ConfigurationEvent;
+import datawave.configuration.RefreshableScope;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
@@ -27,17 +37,6 @@ import jakarta.enterprise.inject.spi.InjectionTarget;
 import jakarta.enterprise.inject.spi.PassivationCapable;
 import jakarta.enterprise.inject.spi.ProcessInjectionTarget;
 import jakarta.enterprise.util.AnnotationLiteral;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import com.google.common.collect.Sets;
-
-import datawave.configuration.ConfigurationEvent;
-import datawave.configuration.RefreshableScope;
 
 /**
  * A portable CDI extension that exposes Spring Beans as CDI beans. This extension expects to find a beanRefContext.xml file on the classpath. This file should
@@ -114,7 +113,6 @@ public class SpringCDIExtension implements Extension {
             public Set<InjectionPoint> getInjectionPoints() {
                 return it.getInjectionPoints();
             }
-
 
             @Override
             public Set<Type> getTypes() {
@@ -218,7 +216,6 @@ public class SpringCDIExtension implements Extension {
         public Set<InjectionPoint> getInjectionPoints() {
             return injectionTarget.getInjectionPoints();
         }
-
 
         @Override
         public Set<Type> getTypes() {

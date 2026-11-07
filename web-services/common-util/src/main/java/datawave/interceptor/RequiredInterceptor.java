@@ -2,14 +2,13 @@ package datawave.interceptor;
 
 import java.lang.annotation.Annotation;
 
-import jakarta.interceptor.AroundInvoke;
-import jakarta.interceptor.InvocationContext;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import datawave.annotation.Required;
+import jakarta.interceptor.AroundInvoke;
+import jakarta.interceptor.InvocationContext;
 
 /**
  * Used to make sure that method parameters that are annotated with the Required.class annotation are not null

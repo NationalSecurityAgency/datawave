@@ -7,9 +7,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import jakarta.ws.rs.core.MediaType;
-
 import datawave.webservice.util.AbstractHtmlProviderMessageBodyWriter;
+import jakarta.ws.rs.core.MediaType;
 
 public class DatawaveUserHtmlMessageBodyWriter extends AbstractHtmlProviderMessageBodyWriter<DatawaveUser> {
     protected static final String TITLE = "Datawave User", EMPTY = "";

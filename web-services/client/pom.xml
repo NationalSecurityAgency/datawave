@@ -107,6 +107,10 @@
             <artifactId>protostuff-yaml</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>java3d</groupId>
             <artifactId>vecmath</artifactId>
         </dependency>
@@ -158,11 +162,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
             <version>${project.version}</version>
@@ -178,8 +177,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>

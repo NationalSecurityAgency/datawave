@@ -10,12 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Marshaller;
-import jakarta.xml.bind.Unmarshaller;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.codec.binary.Base64;
@@ -33,6 +27,11 @@ import datawave.microservice.mapreduce.bulkresults.map.SerializationFormat;
 import datawave.microservice.query.Query;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.util.ProtostuffMessageBodyWriter;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 
 public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<Key,Value,Key,Value> {
 

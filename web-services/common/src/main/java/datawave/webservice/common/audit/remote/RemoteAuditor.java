@@ -4,13 +4,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.annotation.Priority;
-import jakarta.annotation.Resource;
-import jakarta.ejb.EJBContext;
-import jakarta.enterprise.inject.Alternative;
-import jakarta.inject.Inject;
-import jakarta.interceptor.Interceptor;
-
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.http.Consts;
@@ -28,6 +21,12 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditService;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
+import jakarta.annotation.Priority;
+import jakarta.annotation.Resource;
+import jakarta.ejb.EJBContext;
+import jakarta.enterprise.inject.Alternative;
+import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptor;
 
 /**
  * This default auditor sends audits to a remote audit microservice.

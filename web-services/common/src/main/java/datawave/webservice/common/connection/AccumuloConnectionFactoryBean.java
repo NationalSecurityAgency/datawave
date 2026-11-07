@@ -5,6 +5,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloConnectionFactoryImpl;
+import datawave.core.common.result.ConnectionFactoryResponse;
+import datawave.core.common.result.ConnectionPool;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
@@ -26,21 +40,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
-
-import datawave.core.common.cache.AccumuloTableCache;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.core.common.connection.AccumuloConnectionFactoryImpl;
-import datawave.core.common.result.ConnectionFactoryResponse;
-import datawave.core.common.result.ConnectionPool;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 
 @Path("/Common/AccumuloConnectionFactory")
 @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})

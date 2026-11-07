@@ -8,15 +8,14 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-import jakarta.annotation.security.PermitAll;
-import jakarta.ejb.Singleton;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
 import datawave.security.authorization.DatawaveUser;
+import jakarta.annotation.security.PermitAll;
+import jakarta.ejb.Singleton;
 
 /**
  * Implementation of {@link ElytronCacheManager} that is expected to be injected into a {@link CredentialsCacheBean}. In order to allow the methods here to be

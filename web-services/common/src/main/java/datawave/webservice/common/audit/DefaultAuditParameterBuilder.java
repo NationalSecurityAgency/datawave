@@ -2,8 +2,6 @@ package datawave.webservice.common.audit;
 
 import java.util.Map;
 
-import jakarta.ws.rs.core.MultivaluedMap;
-
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +9,7 @@ import org.springframework.util.MultiValueMap;
 
 import datawave.core.common.audit.PrivateAuditConstants;
 import datawave.microservice.query.QueryParameters;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 public class DefaultAuditParameterBuilder implements AuditParameterBuilder {
     private Logger log = LoggerFactory.getLogger(getClass().getName());

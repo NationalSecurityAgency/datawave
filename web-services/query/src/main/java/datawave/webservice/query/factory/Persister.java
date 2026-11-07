@@ -12,16 +12,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import jakarta.annotation.Resource;
-import jakarta.annotation.security.DeclareRoles;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.ejb.EJBContext;
-import jakarta.ejb.EJBException;
-import jakarta.ejb.LocalBean;
-import jakarta.ejb.Stateless;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.core.MultivaluedMap;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -60,6 +50,15 @@ import datawave.security.util.ScannerHelper;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import jakarta.annotation.Resource;
+import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ejb.EJBContext;
+import jakarta.ejb.EJBException;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  * Object that creates and updates QueryImpl objects using a table structure:

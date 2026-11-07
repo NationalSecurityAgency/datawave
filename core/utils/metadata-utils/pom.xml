@@ -38,10 +38,6 @@
             <artifactId>caffeine</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-        </dependency>
-        <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>accumulo-utils</artifactId>
         </dependency>
@@ -61,6 +57,10 @@
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

@@ -9,11 +9,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Priority;
-import jakarta.enterprise.inject.Alternative;
-import jakarta.inject.Inject;
-import jakarta.interceptor.Interceptor;
 import javax.net.ssl.SSLException;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
@@ -35,6 +30,11 @@ import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.inject.Alternative;
+import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptor;
 
 /**
  * A {@link CachedDatawaveUserService} that delegates all methods to a remote authorization microservice.

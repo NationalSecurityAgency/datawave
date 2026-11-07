@@ -20,10 +20,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -101,6 +97,9 @@ import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.EventQueryResponseBase;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 @SuppressWarnings("unused")

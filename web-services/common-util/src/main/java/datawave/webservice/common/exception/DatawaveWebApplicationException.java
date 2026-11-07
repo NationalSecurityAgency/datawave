@@ -1,11 +1,10 @@
 package datawave.webservice.common.exception;
 
+import datawave.webservice.result.BaseResponse;
 import jakarta.ejb.ApplicationException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import datawave.webservice.result.BaseResponse;
 
 @ApplicationException(inherited = true, rollback = true)
 public class DatawaveWebApplicationException extends WebApplicationException {

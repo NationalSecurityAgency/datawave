@@ -1,11 +1,10 @@
 package datawave.webservice.query.util;
 
-import jakarta.ws.rs.core.HttpHeaders;
-
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import datawave.microservice.query.Query;
+import jakarta.ws.rs.core.HttpHeaders;
 
 /**
  * Abstract implementation of criteria used for UUID lookup queries

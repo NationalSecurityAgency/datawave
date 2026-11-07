@@ -23,11 +23,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.annotation.Resource;
-import jakarta.enterprise.concurrent.ManagedExecutorService;
-import jakarta.inject.Inject;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
@@ -82,6 +77,11 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.VoidResponse;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.annotation.Resource;
+import jakarta.enterprise.concurrent.ManagedExecutorService;
+import jakarta.inject.Inject;
 
 /**
  * A base class for services that need to use HTTPClient to make remote calls to a microservice.

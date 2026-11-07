@@ -11,10 +11,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Marshaller;
-import jakarta.xml.bind.Unmarshaller;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
@@ -22,6 +18,11 @@ import javax.xml.transform.sax.SAXSource;
 
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 
 /**
  * Simple util to generate sample flag config file and has utility methods to serialize/deserialize <code>FlagMakerConfig</code> objects.

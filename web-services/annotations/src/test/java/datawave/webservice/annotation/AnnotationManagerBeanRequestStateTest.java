@@ -10,9 +10,6 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 
-import jakarta.ejb.EJBContext;
-import jakarta.ws.rs.core.Response;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +24,8 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
+import jakarta.ejb.EJBContext;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Unit tests verifying that per-request state in {@link AnnotationManagerBean} is properly implemented by observing interactions with the Accumulo connection

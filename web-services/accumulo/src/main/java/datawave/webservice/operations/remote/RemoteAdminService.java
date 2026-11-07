@@ -8,13 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Priority;
-import jakarta.enterprise.inject.Alternative;
-import jakarta.interceptor.Interceptor;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -33,6 +26,12 @@ import datawave.webservice.response.ListUsersResponse;
 import datawave.webservice.response.UpdateResponse;
 import datawave.webservice.response.ValidateVisibilityResponse;
 import datawave.webservice.result.VoidResponse;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.inject.Alternative;
+import jakarta.interceptor.Interceptor;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 
 @RefreshableScope
 @Alternative

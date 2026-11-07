@@ -5,15 +5,15 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.apache.commons.lang.builder.CompareToBuilder;
+
+import com.google.common.base.Objects;
+
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import org.apache.commons.lang.builder.CompareToBuilder;
-
-import com.google.common.base.Objects;
 
 @XmlRootElement(name = "Connection")
 @XmlAccessorType(XmlAccessType.NONE)

@@ -11,6 +11,29 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+import org.springframework.http.MediaType;
+import org.xbill.DNS.TextParseException;
+
+import datawave.annotation.DateFormat;
+import datawave.annotation.Required;
+import datawave.configuration.spring.SpringBean;
+import datawave.core.query.map.QueryGeometryHandler;
+import datawave.core.query.metric.QueryMetricHandler;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.metrics.remote.RemoteQueryMetricService;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import jakarta.annotation.Resource;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.PermitAll;
@@ -36,30 +59,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
-import org.springframework.http.MediaType;
-import org.xbill.DNS.TextParseException;
-
-import datawave.annotation.DateFormat;
-import datawave.annotation.Required;
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.map.QueryGeometryHandler;
-import datawave.core.query.metric.QueryMetricHandler;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.metrics.remote.RemoteQueryMetricService;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
-import datawave.microservice.querymetric.BaseQueryMetricListResponse;
-import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
 
 @Path("/Query/Metrics")
 @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})

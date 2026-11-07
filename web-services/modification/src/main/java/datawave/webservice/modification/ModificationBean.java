@@ -2,25 +2,6 @@ package datawave.webservice.modification;
 
 import java.util.List;
 
-import jakarta.annotation.Resource;
-import jakarta.annotation.security.DeclareRoles;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.ejb.EJBContext;
-import jakarta.ejb.LocalBean;
-import jakarta.ejb.Stateless;
-import jakarta.ejb.TransactionAttribute;
-import jakarta.ejb.TransactionAttributeType;
-import jakarta.ejb.TransactionManagement;
-import jakarta.ejb.TransactionManagementType;
-import jakarta.inject.Inject;
-import jakarta.interceptor.Interceptors;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
@@ -39,6 +20,24 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.ModificationConfigurationResponse;
+import jakarta.annotation.Resource;
+import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ejb.EJBContext;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Stateless;
+import jakarta.ejb.TransactionAttribute;
+import jakarta.ejb.TransactionAttributeType;
+import jakarta.ejb.TransactionManagement;
+import jakarta.ejb.TransactionManagementType;
+import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptors;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 
 @Path("/Modification")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

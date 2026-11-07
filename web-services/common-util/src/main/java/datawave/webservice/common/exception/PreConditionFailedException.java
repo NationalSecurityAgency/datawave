@@ -1,9 +1,8 @@
 package datawave.webservice.common.exception;
 
+import datawave.webservice.result.BaseResponse;
 import jakarta.ejb.ApplicationException;
 import jakarta.ws.rs.core.Response;
-
-import datawave.webservice.result.BaseResponse;
 
 @ApplicationException(rollback = true)
 public class PreConditionFailedException extends DatawaveWebApplicationException {

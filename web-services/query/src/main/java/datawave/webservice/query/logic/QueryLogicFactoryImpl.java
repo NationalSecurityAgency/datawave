@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jakarta.inject.Inject;
-
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 
@@ -20,6 +18,7 @@ import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.system.ServerPrincipal;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.result.VoidResponse;
+import jakarta.inject.Inject;
 
 public class QueryLogicFactoryImpl implements QueryLogicFactory {
 

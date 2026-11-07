@@ -8,20 +8,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import jakarta.annotation.Resource;
-import jakarta.annotation.security.DeclareRoles;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.ejb.EJBContext;
-import jakarta.ejb.LocalBean;
-import jakarta.ejb.Stateless;
-import jakarta.inject.Inject;
-import jakarta.interceptor.Interceptors;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -39,6 +25,19 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
 import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.query.runner.QueryExecutorBean;
+import jakarta.annotation.Resource;
+import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ejb.EJBContext;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptors;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
 
 @Path("/Query/Metrics/dashboard")
 @GZIP

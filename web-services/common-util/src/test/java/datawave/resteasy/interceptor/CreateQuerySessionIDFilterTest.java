@@ -6,10 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.lang.annotation.Annotation;
 
-import jakarta.ws.rs.container.ContainerResponseFilter;
-import jakarta.ws.rs.core.NewCookie;
-import jakarta.ws.rs.core.Response;
-
 import org.easymock.EasyMock;
 import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
@@ -26,6 +22,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import datawave.annotation.GenerateQuerySessionId;
+import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
 
 /**
  *

@@ -46,10 +46,6 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-        </dependency>
-        <dependency>
             <groupId>gov.nsa.datawave.commons</groupId>
             <artifactId>datawave-commons-security</artifactId>
         </dependency>
@@ -72,6 +68,10 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

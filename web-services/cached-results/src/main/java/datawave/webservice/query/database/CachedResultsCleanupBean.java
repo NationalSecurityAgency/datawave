@@ -8,6 +8,15 @@ import java.sql.Statement;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.sql.DataSource;
+import javax.sql.rowset.CachedRowSet;
+import javax.sql.rowset.RowSetFactory;
+import javax.sql.rowset.RowSetProvider;
+
+import org.apache.log4j.Logger;
+
+import datawave.configuration.spring.SpringBean;
+import datawave.core.query.cachedresults.CachedResultsQueryParameters;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import jakarta.annotation.security.DeclareRoles;
@@ -20,15 +29,6 @@ import jakarta.ejb.Schedule;
 import jakarta.ejb.Singleton;
 import jakarta.ejb.Startup;
 import jakarta.inject.Inject;
-import javax.sql.DataSource;
-import javax.sql.rowset.CachedRowSet;
-import javax.sql.rowset.RowSetFactory;
-import javax.sql.rowset.RowSetProvider;
-
-import org.apache.log4j.Logger;
-
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.cachedresults.CachedResultsQueryParameters;
 
 /**
  * Removes tables and views from the MySQL database that have been there for 24 hours so that we don't have to purge data from them.

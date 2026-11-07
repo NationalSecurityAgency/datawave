@@ -7,16 +7,15 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
-
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
 
 /**
  * A simple JAXB result holder for user authorizations. This class is intended to contain a string of ACCUMULO user authorizations.

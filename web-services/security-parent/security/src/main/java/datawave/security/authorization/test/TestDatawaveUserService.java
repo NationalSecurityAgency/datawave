@@ -12,16 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.annotation.Priority;
-import jakarta.enterprise.context.spi.CreationalContext;
-import jakarta.enterprise.inject.Alternative;
-import jakarta.enterprise.inject.spi.Bean;
-import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.inject.Inject;
-import jakarta.interceptor.Interceptor;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.deltaspike.core.api.exclude.Exclude;
@@ -40,6 +30,15 @@ import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.inject.Alternative;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptor;
 
 /**
  * A {@link CachedDatawaveUserService} for testing purposes. This version will only be active if the system property {@code dw.security.use.testuserservice} is

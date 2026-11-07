@@ -2,12 +2,11 @@ package datawave.webservice.result.keyword;
 
 import java.util.List;
 
+import datawave.webservice.result.BaseQueryResponse;
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
 import jakarta.xml.bind.annotation.XmlAccessorType;
-
-import datawave.webservice.result.BaseQueryResponse;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)

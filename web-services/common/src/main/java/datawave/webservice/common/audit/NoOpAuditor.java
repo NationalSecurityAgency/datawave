@@ -3,11 +3,10 @@ package datawave.webservice.common.audit;
 import java.util.Map;
 import java.util.UUID;
 
+import datawave.configuration.RefreshableScope;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.inject.Alternative;
 import jakarta.interceptor.Interceptor;
-
-import datawave.configuration.RefreshableScope;
 
 /**
  * This auditor is injected when remote auditing is disabled.

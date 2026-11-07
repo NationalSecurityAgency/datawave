@@ -12,9 +12,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Unmarshaller;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +19,8 @@ import datawave.query.model.Direction;
 import datawave.query.model.FieldMapping;
 import datawave.query.model.QueryModel;
 import datawave.webservice.model.Model;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
 
 public class TestCardinalityConfiguration {
 

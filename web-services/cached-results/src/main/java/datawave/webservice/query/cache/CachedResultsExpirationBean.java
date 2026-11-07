@@ -2,6 +2,11 @@ package datawave.webservice.query.cache;
 
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
+import datawave.configuration.spring.SpringBean;
+import datawave.webservice.results.cached.CachedResultsBean;
+import datawave.webservice.results.cached.CachedRunningQuery;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RolesAllowed;
@@ -16,12 +21,6 @@ import jakarta.ejb.TransactionAttributeType;
 import jakarta.ejb.TransactionManagement;
 import jakarta.ejb.TransactionManagementType;
 import jakarta.inject.Inject;
-
-import org.apache.log4j.Logger;
-
-import datawave.configuration.spring.SpringBean;
-import datawave.webservice.results.cached.CachedResultsBean;
-import datawave.webservice.results.cached.CachedRunningQuery;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

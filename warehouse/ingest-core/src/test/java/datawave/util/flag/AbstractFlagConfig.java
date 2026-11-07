@@ -8,8 +8,6 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import jakarta.xml.bind.JAXBException;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.hadoop.fs.FileSystem;
@@ -21,6 +19,7 @@ import datawave.util.StringUtils;
 import datawave.util.flag.config.ConfigUtil;
 import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
+import jakarta.xml.bind.JAXBException;
 
 public class AbstractFlagConfig {
 

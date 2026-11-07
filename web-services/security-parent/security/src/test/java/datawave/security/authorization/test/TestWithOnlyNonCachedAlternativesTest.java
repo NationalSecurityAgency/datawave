@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 
-import jakarta.inject.Inject;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -17,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import jakarta.inject.Inject;
 
 @ExtendWith(ArquillianExtension.class)
 public class TestWithOnlyNonCachedAlternativesTest extends TestDatawaveUserServiceTest {
@@ -30,7 +29,9 @@ public class TestWithOnlyNonCachedAlternativesTest extends TestDatawaveUserServi
         return ShrinkWrap.create(JavaArchive.class).addPackages(true, "org.apache.deltaspike")
                         .addClasses(TestDatawaveUserService.class, DatawaveUserService1.class, AltDatawaveUserService1.class, AltDatawaveUserService2.class,
                                         MockAccumuloConnectionFactory.class)
-                        .addAsManifestResource(new StringAsset("<beans xmlns=\"https://jakarta.ee/xml/ns/jakartaee\" version=\"4.0\" bean-discovery-mode=\"all\"/>"), "beans.xml");
+                        .addAsManifestResource(
+                                        new StringAsset("<beans xmlns=\"https://jakarta.ee/xml/ns/jakartaee\" version=\"4.0\" bean-discovery-mode=\"all\"/>"),
+                                        "beans.xml");
     }
 
     @Test

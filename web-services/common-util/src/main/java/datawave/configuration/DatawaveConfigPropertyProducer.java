@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.impl.config.DefaultConfigPropertyProducer;
+
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -17,9 +20,6 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.Specializes;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.interceptor.Interceptor;
-
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.impl.config.DefaultConfigPropertyProducer;
 
 /**
  * Extensions to DeltaSpike's {@link ConfigProperty} to handle comma-separated property lists and maps.

@@ -21,9 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import jakarta.enterprise.concurrent.ManagedExecutorService;
 import javax.security.auth.x500.X500Principal;
-import jakarta.ws.rs.core.MediaType;
 
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.IOUtils;
@@ -82,6 +80,8 @@ import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.keyword.TagCloudBase;
 import datawave.webservice.result.keyword.TagCloudEntryBase;
 import datawave.webservice.result.keyword.TagCloudResponseBase;
+import jakarta.enterprise.concurrent.ManagedExecutorService;
+import jakarta.ws.rs.core.MediaType;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration

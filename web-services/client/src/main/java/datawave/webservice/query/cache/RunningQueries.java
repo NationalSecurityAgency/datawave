@@ -3,6 +3,9 @@ package datawave.webservice.query.cache;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
+import datawave.webservice.HtmlProvider;
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
@@ -10,10 +13,6 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import org.apache.commons.lang.StringEscapeUtils;
-
-import datawave.webservice.HtmlProvider;
 
 @XmlRootElement(name = "RunningQueries")
 @XmlAccessorType(XmlAccessType.NONE)

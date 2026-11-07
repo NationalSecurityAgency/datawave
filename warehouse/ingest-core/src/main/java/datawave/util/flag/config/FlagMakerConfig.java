@@ -4,16 +4,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlTransient;
-
 import datawave.util.flag.FlagMaker;
 import datawave.util.flag.processor.DateFlagDistributor;
 import datawave.util.flag.processor.DateFolderFlagDistributor;
 import datawave.util.flag.processor.DateUtils;
 import datawave.util.flag.processor.FlagDistributor;
 import datawave.util.flag.processor.SimpleFlagDistributor;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 
 /**
  * Simple JAXB Wrapper for FlagConfig objects

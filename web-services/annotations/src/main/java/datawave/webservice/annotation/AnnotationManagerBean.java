@@ -10,6 +10,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
+
+import datawave.annotation.data.v1.AnnotationReader;
+import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
+import datawave.annotation.protobuf.v1.Segment;
+import datawave.configuration.spring.SpringBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.rest.ResponseRewriter;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import jakarta.annotation.security.DeclareRoles;
@@ -29,23 +45,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
-
-import datawave.annotation.data.v1.AnnotationReader;
-import datawave.annotation.protobuf.v1.Annotation;
-import datawave.annotation.protobuf.v1.AnnotationSource;
-import datawave.annotation.protobuf.v1.Segment;
-import datawave.configuration.spring.SpringBean;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.rest.ResponseRewriter;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 
 @SuppressWarnings("unused")
 @Path("/Annotations/v1")

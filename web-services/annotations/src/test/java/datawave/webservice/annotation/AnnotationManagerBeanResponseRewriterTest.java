@@ -7,15 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.webservice.common.rest.NoOpResponseRewriter;
 import datawave.webservice.common.rest.ResponseRewriter;
 import datawave.webservice.common.rest.ResponseRewriterContext;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Unit tests verifying that the {@link ResponseRewriter} integration in {@link AnnotationManagerBean} correctly applies the rewriter to success responses and

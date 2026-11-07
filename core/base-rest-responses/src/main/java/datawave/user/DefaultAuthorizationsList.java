@@ -11,6 +11,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.StringUtils;
+
+import io.protostuff.Schema;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -18,10 +21,6 @@ import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
-import org.apache.commons.lang3.StringUtils;
-
-import io.protostuff.Schema;
 
 /**
  * A list representing authorizations to be used with the DataWave web service. User authorizations are not necessarily a single list of authorizations. When a

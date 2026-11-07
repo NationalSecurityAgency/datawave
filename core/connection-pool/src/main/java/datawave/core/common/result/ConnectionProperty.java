@@ -2,12 +2,12 @@ package datawave.core.common.result;
 
 import java.io.Serializable;
 
+import com.google.common.base.Objects;
+
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import com.google.common.base.Objects;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)

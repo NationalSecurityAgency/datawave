@@ -5,6 +5,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.sun.management.OperatingSystemMXBean;
+
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.result.GenericResponse;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RunAs;
 import jakarta.ejb.EJB;
@@ -13,12 +32,6 @@ import jakarta.ejb.TransactionAttribute;
 import jakarta.ejb.TransactionAttributeType;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-import javax.management.ReflectionException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
@@ -35,19 +48,6 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.jboss.resteasy.annotations.GZIP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.sun.management.OperatingSystemMXBean;
-
-import datawave.core.common.cache.AccumuloTableCache;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.result.GenericResponse;
 
 @PermitAll
 @Path("/Common/Health")

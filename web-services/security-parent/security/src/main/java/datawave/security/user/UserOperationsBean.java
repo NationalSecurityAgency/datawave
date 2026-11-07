@@ -7,21 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.annotation.Resource;
-import jakarta.annotation.security.DeclareRoles;
-import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.annotation.security.RunAs;
-import jakarta.ejb.EJBContext;
-import jakarta.ejb.LocalBean;
-import jakarta.ejb.Stateless;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +22,20 @@ import datawave.user.AuthorizationsListBase;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.GenericResponse;
+import jakarta.annotation.Resource;
+import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.annotation.security.RunAs;
+import jakarta.ejb.EJBContext;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 
 @Path("/Security/User")
 @LocalBean

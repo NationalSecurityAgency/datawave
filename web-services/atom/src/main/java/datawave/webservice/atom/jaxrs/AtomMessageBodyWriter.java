@@ -5,17 +5,17 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
+import org.apache.abdera.model.Categories;
+import org.apache.abdera.model.Entry;
+import org.apache.abdera.model.Feed;
+import org.apache.abdera.model.Service;
+
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
-
-import org.apache.abdera.model.Categories;
-import org.apache.abdera.model.Entry;
-import org.apache.abdera.model.Feed;
-import org.apache.abdera.model.Service;
 
 @Provider
 @Produces({"application/atomsvc+xml", "application/atomcat+xml", "application/atom+xml", "application/atom+xml;type=entry"})

@@ -2,15 +2,14 @@ package datawave.webservice.query.result.event;
 
 import java.nio.charset.StandardCharsets;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-
 import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
 import datawave.marking.Markings;
 import datawave.webservice.query.util.TypedValue;
 import io.protostuff.Message;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class FieldBase<T> implements HasMarkings, Message<T> {

@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import jakarta.xml.bind.JAXBException;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.hadoop.conf.Configuration;
@@ -35,6 +33,7 @@ import datawave.util.flag.config.ConfigUtil;
 import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
 import datawave.util.flag.processor.DateUtils;
+import jakarta.xml.bind.JAXBException;
 
 /**
  *

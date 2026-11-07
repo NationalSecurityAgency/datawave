@@ -3,6 +3,8 @@ package datawave.configuration;
 import java.io.InputStream;
 import java.util.Set;
 
+import javax.xml.parsers.SAXParserFactory;
+
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.InjectionException;
@@ -12,7 +14,6 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.InjectionTarget;
 import jakarta.enterprise.inject.spi.ProcessInjectionTarget;
 import jakarta.xml.bind.JAXBContext;
-import javax.xml.parsers.SAXParserFactory;
 
 /**
  * A CDI portable extension to create injection targets via JAX-B deserialization. The injection point must implement {@link Configuration} and we expect to

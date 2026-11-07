@@ -1,5 +1,10 @@
 package datawave.webservice.query.cache;
 
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+
+import datawave.webservice.results.cached.CachedResultsBean;
+import datawave.webservice.results.cached.CachedRunningQuery;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
@@ -9,12 +14,6 @@ import jakarta.ejb.LockType;
 import jakarta.ejb.Singleton;
 import jakarta.ejb.Startup;
 import jakarta.inject.Inject;
-
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-
-import datawave.webservice.results.cached.CachedResultsBean;
-import datawave.webservice.results.cached.CachedRunningQuery;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

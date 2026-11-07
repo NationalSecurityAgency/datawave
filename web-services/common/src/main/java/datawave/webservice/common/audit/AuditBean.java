@@ -1,5 +1,13 @@
 package datawave.webservice.common.audit;
 
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+import org.springframework.util.MultiValueMap;
+
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.result.VoidResponse;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.annotation.security.RunAs;
@@ -11,15 +19,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MultivaluedMap;
-
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
-import org.springframework.util.MultiValueMap;
-
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.result.VoidResponse;
 
 @Path("/Common/Auditor")
 @LocalBean

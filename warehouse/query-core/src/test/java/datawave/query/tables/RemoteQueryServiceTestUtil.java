@@ -29,8 +29,6 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jakarta.ws.rs.core.MediaType;
-
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
@@ -70,6 +68,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
+import jakarta.ws.rs.core.MediaType;
 
 public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
     public static final String COMMON_NAME = "cn=www.test.us";

@@ -1,5 +1,8 @@
 package datawave.webservice.operations.admin;
 
+import datawave.annotation.Required;
+import datawave.webservice.operations.remote.RemoteAdminService;
+import datawave.webservice.result.VoidResponse;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ejb.LocalBean;
@@ -13,10 +16,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-
-import datawave.annotation.Required;
-import datawave.webservice.operations.remote.RemoteAdminService;
-import datawave.webservice.result.VoidResponse;
 
 @Path("/Accumulo")
 @RolesAllowed({"InternalUser", "Administrator"})

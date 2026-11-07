@@ -1,5 +1,11 @@
 package datawave.webservice.modification.cache;
 
+import org.apache.log4j.Logger;
+
+import datawave.configuration.spring.SpringBean;
+import datawave.modification.MutableMetadataHandler;
+import datawave.modification.configuration.ModificationConfiguration;
+import datawave.modification.configuration.ModificationServiceConfiguration;
 import jakarta.annotation.security.RunAs;
 import jakarta.ejb.ActivationConfigProperty;
 import jakarta.ejb.MessageDriven;
@@ -12,13 +18,6 @@ import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.MessageListener;
 import jakarta.jms.TextMessage;
-
-import org.apache.log4j.Logger;
-
-import datawave.configuration.spring.SpringBean;
-import datawave.modification.MutableMetadataHandler;
-import datawave.modification.configuration.ModificationConfiguration;
-import datawave.modification.configuration.ModificationServiceConfiguration;
 
 @RunAs("InternalUser")
 @MessageDriven(name = "ModificationCacheMessageBean",

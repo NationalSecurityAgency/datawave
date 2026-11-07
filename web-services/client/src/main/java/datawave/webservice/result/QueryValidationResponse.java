@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
+import datawave.webservice.query.exception.QueryExceptionType;
 import jakarta.xml.bind.annotation.XmlAccessOrder;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorOrder;
@@ -12,8 +13,6 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
-
-import datawave.webservice.query.exception.QueryExceptionType;
 
 @XmlRootElement(name = "QueryValidationResponse")
 @XmlAccessorType(XmlAccessType.NONE)

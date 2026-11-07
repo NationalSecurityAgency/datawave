@@ -16,21 +16,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.annotation.Resource;
-import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RunAs;
-import jakarta.ejb.LocalBean;
-import jakarta.ejb.Lock;
-import jakarta.ejb.LockType;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
-import jakarta.enterprise.concurrent.ManagedThreadFactory;
-import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.inject.Inject;
-
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -45,6 +30,20 @@ import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.util.timely.UdpClient;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.result.VoidResponse;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.annotation.Resource;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RunAs;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Lock;
+import jakarta.ejb.LockType;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
+import jakarta.enterprise.concurrent.ManagedThreadFactory;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
 
 /**
  * QueryMetricsWriter gets query metric updates from the QueryMetricsBean via a LinkedBlockingQueue. This creates thread separation so that the process of

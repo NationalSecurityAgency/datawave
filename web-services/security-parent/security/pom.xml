@@ -84,11 +84,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.enterprise.concurrent</groupId>
-            <artifactId>jakarta.enterprise.concurrent-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
             <scope>provided</scope>
@@ -129,6 +124,11 @@
             <version>${project.version}</version>
             <classifier>tests</classifier>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.enterprise.concurrent</groupId>
+            <artifactId>jakarta.enterprise.concurrent-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

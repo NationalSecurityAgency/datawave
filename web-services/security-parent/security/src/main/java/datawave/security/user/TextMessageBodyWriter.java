@@ -5,16 +5,15 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
+import datawave.security.DnList;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.user.AuthorizationsListBase;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
-
-import datawave.security.DnList;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.user.AuthorizationsListBase;
 
 /**
  * A simple JAXB output provider that calls {@link Object#toString()} on the message object to serialize it for output.

@@ -2,11 +2,10 @@ package datawave.webservice.query.result.event;
 
 import java.util.List;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-
 import datawave.marking.Markings;
 import io.protostuff.Message;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings, Message<T> {

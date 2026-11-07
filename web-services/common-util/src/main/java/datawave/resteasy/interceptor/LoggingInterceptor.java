@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
+
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.WebApplicationException;
@@ -11,9 +14,6 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.Provider;
 import jakarta.ws.rs.ext.WriterInterceptorContext;
-
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
 
 @Provider
 @Priority(Priorities.USER)

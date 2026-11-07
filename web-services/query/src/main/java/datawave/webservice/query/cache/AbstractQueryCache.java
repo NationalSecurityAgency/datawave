@@ -4,9 +4,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import jakarta.annotation.PostConstruct;
-
 import com.google.common.cache.Cache;
+
+import jakarta.annotation.PostConstruct;
 
 /**
  * A Guava-based cache for storing objects in the {@link AbstractRunningQuery} hierarchy.

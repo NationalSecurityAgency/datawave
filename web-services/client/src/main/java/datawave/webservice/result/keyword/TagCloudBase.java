@@ -3,13 +3,12 @@ package datawave.webservice.result.keyword;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlSeeAlso;
-
 import datawave.marking.Markings;
 import datawave.webservice.query.result.event.HasMarkings;
 import io.protostuff.Message;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlSeeAlso;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultTagCloud.class)
