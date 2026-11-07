@@ -32,10 +32,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.ejb.EJBContext;
-import javax.servlet.http.HttpServletResponse;
-import javax.transaction.UserTransaction;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ejb.EJBContext;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.UserTransaction;
+import jakarta.ws.rs.core.MultivaluedMap;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;

@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
 
-import javax.annotation.PostConstruct;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+import jakarta.annotation.PostConstruct;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 
 import org.apache.http.conn.ConnectTimeoutException;
 import org.slf4j.Logger;

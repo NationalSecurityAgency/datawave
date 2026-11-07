@@ -1,8 +1,8 @@
 package datawave.security.system;
 
-import javax.annotation.security.PermitAll;
-import javax.ejb.Singleton;
-import javax.inject.Inject;
+import jakarta.annotation.security.PermitAll;
+import jakarta.ejb.Singleton;
+import jakarta.inject.Inject;
 
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.authorization.DatawaveUserService;

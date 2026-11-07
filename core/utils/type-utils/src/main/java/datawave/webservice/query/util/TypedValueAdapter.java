@@ -1,6 +1,6 @@
 package datawave.webservice.query.util;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 
 public class TypedValueAdapter extends XmlAdapter<TypedValue,Object> {
 

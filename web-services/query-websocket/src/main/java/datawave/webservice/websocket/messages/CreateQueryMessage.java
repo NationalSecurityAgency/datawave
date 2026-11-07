@@ -1,6 +1,6 @@
 package datawave.webservice.websocket.messages;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  * A query message for clients to send to indicate a query on this websocket should be executed. The client should send a JSON request representing the query

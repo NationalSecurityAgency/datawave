@@ -3,7 +3,7 @@ package datawave.webservice.util;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 
 import datawave.webservice.HtmlProvider;
 

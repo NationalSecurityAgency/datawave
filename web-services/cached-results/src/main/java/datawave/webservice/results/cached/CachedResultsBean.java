@@ -29,38 +29,38 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.AsyncResult;
-import javax.ejb.Asynchronous;
-import javax.ejb.EJBContext;
-import javax.ejb.EJBException;
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.ejb.TransactionManagement;
-import javax.ejb.TransactionManagementType;
-import javax.enterprise.concurrent.ManagedExecutorService;
-import javax.inject.Inject;
-import javax.interceptor.Interceptors;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
+import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ejb.AsyncResult;
+import jakarta.ejb.Asynchronous;
+import jakarta.ejb.EJBContext;
+import jakarta.ejb.EJBException;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Stateless;
+import jakarta.ejb.TransactionAttribute;
+import jakarta.ejb.TransactionAttributeType;
+import jakarta.ejb.TransactionManagement;
+import jakarta.ejb.TransactionManagementType;
+import jakarta.enterprise.concurrent.ManagedExecutorService;
+import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptors;
 import javax.sql.DataSource;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.container.Suspended;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -165,7 +165,7 @@ import datawave.webservice.result.VoidResponse;
  * The object is reusable, so the user could call setQuery again and run a different query against the result set.
  *
  */
-@javax.ws.rs.Path("/CachedResults")
+@jakarta.ws.rs.Path("/CachedResults")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
 @DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
 @Stateless
@@ -796,7 +796,7 @@ public class CachedResultsBean {
      */
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf"})
-    @javax.ws.rs.Path("/{queryId}/status")
+    @jakarta.ws.rs.Path("/{queryId}/status")
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Timed(name = "dw.cachedr.status", absolute = true)
@@ -918,7 +918,7 @@ public class CachedResultsBean {
      */
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
-    @javax.ws.rs.Path("/load")
+    @jakarta.ws.rs.Path("/load")
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/CachedResults/")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public GenericResponse<String> load(@QueryParam("queryId") @Required("queryId") String queryId, @QueryParam("alias") String alias) {
@@ -930,7 +930,7 @@ public class CachedResultsBean {
 
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
-    @javax.ws.rs.Path("/async/load")
+    @jakarta.ws.rs.Path("/async/load")
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/CachedResults/")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Asynchronous
@@ -966,7 +966,7 @@ public class CachedResultsBean {
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
-    @javax.ws.rs.Path("/{queryId}/loadAndCreate")
+    @jakarta.ws.rs.Path("/{queryId}/loadAndCreate")
     @Interceptors(RequiredInterceptor.class)
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/CachedResults/")
     @Timed(name = "dw.cachedr.loadAndCreate", absolute = true)
@@ -1150,7 +1150,7 @@ public class CachedResultsBean {
      */
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf"})
-    @javax.ws.rs.Path("/{id}/describe")
+    @jakarta.ws.rs.Path("/{id}/describe")
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public CachedResultsDescribeResponse describe(@PathParam("id") @Required("id") String id) {
@@ -1237,7 +1237,7 @@ public class CachedResultsBean {
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
-    @javax.ws.rs.Path("/{queryId}/create")
+    @jakarta.ws.rs.Path("/{queryId}/create")
     @Interceptors(RequiredInterceptor.class)
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/CachedResults/")
     @Timed(name = "dw.cachedr.create", absolute = true)
@@ -1412,7 +1412,7 @@ public class CachedResultsBean {
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
-    @javax.ws.rs.Path("/{queryId}/update")
+    @jakarta.ws.rs.Path("/{queryId}/update")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/CachedResults/")
     @Timed(name = "dw.cachedr.update", absolute = true)
@@ -1531,7 +1531,7 @@ public class CachedResultsBean {
      *
      */
     @GET
-    @javax.ws.rs.Path("/{queryId}/previous")
+    @jakarta.ws.rs.Path("/{queryId}/previous")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf"})
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
@@ -1642,7 +1642,7 @@ public class CachedResultsBean {
      */
     @PUT
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
-    @javax.ws.rs.Path("/{queryId}/reset")
+    @jakarta.ws.rs.Path("/{queryId}/reset")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/CachedResults/")
     @Timed(name = "dw.cachedr.close", absolute = true)
@@ -1738,7 +1738,7 @@ public class CachedResultsBean {
      *
      */
     @GET
-    @javax.ws.rs.Path("/{queryId}/next")
+    @jakarta.ws.rs.Path("/{queryId}/next")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf"})
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
@@ -1857,7 +1857,7 @@ public class CachedResultsBean {
      * @HTTP 500 internal server error
      */
     @GET
-    @javax.ws.rs.Path("/{queryId}/getRows")
+    @jakarta.ws.rs.Path("/{queryId}/getRows")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf"})
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
@@ -1998,7 +1998,7 @@ public class CachedResultsBean {
     @PUT
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
-    @javax.ws.rs.Path("/{queryId}/cancel")
+    @jakarta.ws.rs.Path("/{queryId}/cancel")
     @GZIP
     @ClearQuerySessionId
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
@@ -2058,7 +2058,7 @@ public class CachedResultsBean {
     @PUT
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
-    @javax.ws.rs.Path("/Admin/{queryId}/cancel")
+    @jakarta.ws.rs.Path("/Admin/{queryId}/cancel")
     @GZIP
     @RolesAllowed({"InternalUser", "Administrator", "JBossAdministrator"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
@@ -2114,7 +2114,7 @@ public class CachedResultsBean {
      */
     @DELETE
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
-    @javax.ws.rs.Path("/{queryId}/close")
+    @jakarta.ws.rs.Path("/{queryId}/close")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @ClearQuerySessionId
     @Timed(name = "dw.cachedr.close", absolute = true)
@@ -2228,7 +2228,7 @@ public class CachedResultsBean {
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
-    @javax.ws.rs.Path("/{queryId}/setAlias")
+    @jakarta.ws.rs.Path("/{queryId}/setAlias")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Timed(name = "dw.cachedr.setAlias", absolute = true)
     public CachedResultsResponse setAlias(@PathParam("queryId") @Required("queryId") String queryId, @FormParam("alias") @Required("alias") String alias) {

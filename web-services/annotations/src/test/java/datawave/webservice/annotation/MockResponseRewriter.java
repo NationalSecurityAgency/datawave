@@ -1,6 +1,6 @@
 package datawave.webservice.annotation;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import datawave.webservice.common.rest.ResponseRewriter;
 import datawave.webservice.common.rest.ResponseRewriterContext;

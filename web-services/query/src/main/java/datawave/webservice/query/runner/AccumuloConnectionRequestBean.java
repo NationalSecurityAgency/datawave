@@ -1,8 +1,8 @@
 package datawave.webservice.query.runner;
 
-import javax.annotation.Resource;
-import javax.ejb.EJBContext;
-import javax.inject.Singleton;
+import jakarta.annotation.Resource;
+import jakarta.ejb.EJBContext;
+import jakarta.inject.Singleton;
 
 import org.apache.log4j.Logger;
 

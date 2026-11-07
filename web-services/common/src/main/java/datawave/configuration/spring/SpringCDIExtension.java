@@ -11,22 +11,22 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import javax.enterprise.context.Dependent;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.Any;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.BeforeBeanDiscovery;
-import javax.enterprise.inject.spi.Extension;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.enterprise.inject.spi.InjectionTarget;
-import javax.enterprise.inject.spi.PassivationCapable;
-import javax.enterprise.inject.spi.ProcessInjectionTarget;
-import javax.enterprise.util.AnnotationLiteral;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.InjectionTarget;
+import jakarta.enterprise.inject.spi.PassivationCapable;
+import jakarta.enterprise.inject.spi.ProcessInjectionTarget;
+import jakarta.enterprise.util.AnnotationLiteral;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,7 +103,7 @@ public class SpringCDIExtension implements Extension {
         }
 
         AnnotatedType<ThreadSafeClassPathXmlApplicationContext> at = bm.createAnnotatedType(ThreadSafeClassPathXmlApplicationContext.class);
-        final InjectionTarget<ThreadSafeClassPathXmlApplicationContext> it = bm.createInjectionTarget(at);
+        final InjectionTarget<ThreadSafeClassPathXmlApplicationContext> it = bm.getInjectionTargetFactory(at).createInjectionTarget(null);
         abd.addBean(new Bean<ThreadSafeClassPathXmlApplicationContext>() {
             @Override
             public Class<?> getBeanClass() {
@@ -199,7 +199,7 @@ public class SpringCDIExtension implements Extension {
             }
 
             AnnotatedType<Object> at = beanManager.createAnnotatedType(Object.class);
-            injectionTarget = beanManager.createInjectionTarget(at);
+            injectionTarget = beanManager.getInjectionTargetFactory(at).createInjectionTarget(null);
 
             if (targetType instanceof ParameterizedType) {
                 rawType = (Class<?>) ((ParameterizedType) targetType).getRawType();

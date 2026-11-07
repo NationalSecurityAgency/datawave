@@ -3,9 +3,9 @@ package datawave.webservice.websocket.codec;
 import java.io.IOException;
 import java.io.Writer;
 
-import javax.websocket.EncodeException;
-import javax.websocket.Encoder;
-import javax.websocket.EndpointConfig;
+import jakarta.websocket.EncodeException;
+import jakarta.websocket.Encoder;
+import jakarta.websocket.EndpointConfig;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationIntrospector;
 
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.websocket.messages.QueryResponseMessage;
@@ -37,7 +37,7 @@ public class QueryResponseMessageJsonEncoder implements Encoder.TextStream<Query
         mapper = JsonMapper.builder().enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME).build();
 
         mapper.setAnnotationIntrospector(
-                        AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
+                        AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JakartaXmlBindAnnotationIntrospector(mapper.getTypeFactory())));
         // Don't close the output stream
         mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
         // Don't include NULL properties.

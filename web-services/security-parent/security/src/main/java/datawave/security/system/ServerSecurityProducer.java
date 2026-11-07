@@ -5,10 +5,10 @@ import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUserService;
@@ -33,7 +33,7 @@ public class ServerSecurityProducer {
 
     /**
      * Produces a {@link DatawavePrincipal} that is {@link RequestScoped}. This is the principal of the calling user--that is, the principal that is available
-     * from the {@link javax.ejb.EJBContext} of an EJB.
+     * from the {@link jakarta.ejb.EJBContext} of an EJB.
      *
      * @return the principal of the calling user
      */

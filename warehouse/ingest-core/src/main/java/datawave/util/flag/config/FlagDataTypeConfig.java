@@ -2,8 +2,8 @@ package datawave.util.flag.config;
 
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlType;
 
 import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 

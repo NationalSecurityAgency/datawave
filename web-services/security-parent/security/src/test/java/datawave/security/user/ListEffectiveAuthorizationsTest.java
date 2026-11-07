@@ -10,8 +10,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import javax.ejb.EJBContext;
-import javax.enterprise.inject.Instance;
+import jakarta.ejb.EJBContext;
+import jakarta.enterprise.inject.Instance;
 
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;

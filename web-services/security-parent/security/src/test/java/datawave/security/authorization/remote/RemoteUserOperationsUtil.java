@@ -15,7 +15,7 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.x500.X500Principal;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 
 import org.apache.commons.io.IOUtils;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;

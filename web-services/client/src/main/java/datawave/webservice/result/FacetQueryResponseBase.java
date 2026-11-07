@@ -2,8 +2,8 @@ package datawave.webservice.result;
 
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
 
 import datawave.marking.Markings;
 import datawave.webservice.query.result.event.FacetsBase;

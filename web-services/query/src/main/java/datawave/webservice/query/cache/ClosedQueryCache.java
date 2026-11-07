@@ -2,7 +2,7 @@ package datawave.webservice.query.cache;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import org.apache.log4j.Logger;
 

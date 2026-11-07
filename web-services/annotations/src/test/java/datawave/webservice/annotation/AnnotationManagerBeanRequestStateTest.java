@@ -10,8 +10,8 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.ejb.EJBContext;
-import javax.ws.rs.core.Response;
+import jakarta.ejb.EJBContext;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,6 +1,6 @@
 package datawave.security.servlet;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 import datawave.security.util.SecurityConstants;
 import io.undertow.servlet.ServletExtension;

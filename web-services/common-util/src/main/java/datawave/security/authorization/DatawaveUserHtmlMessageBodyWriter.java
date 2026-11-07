@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 
 import datawave.webservice.util.AbstractHtmlProviderMessageBodyWriter;
 

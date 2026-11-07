@@ -2,8 +2,8 @@ package datawave.webservice.query.cache;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Singleton;
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Singleton;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;

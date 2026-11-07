@@ -2,8 +2,8 @@ package datawave.resteasy.interceptor;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.ws.rs.container.PreMatching;
-import javax.ws.rs.ext.Provider;
+import jakarta.ws.rs.container.PreMatching;
+import jakarta.ws.rs.ext.Provider;
 
 import org.jboss.resteasy.plugins.interceptors.CorsFilter;
 

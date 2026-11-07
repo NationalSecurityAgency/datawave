@@ -5,8 +5,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 
-import javax.ejb.EJBContext;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ejb.EJBContext;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.jupiter.api.Test;

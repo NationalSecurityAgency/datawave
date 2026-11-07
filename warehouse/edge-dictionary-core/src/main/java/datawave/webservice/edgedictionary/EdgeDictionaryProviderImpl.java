@@ -1,6 +1,6 @@
 package datawave.webservice.edgedictionary;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import datawave.core.common.edgedictionary.EdgeDictionaryProvider;
 import datawave.microservice.query.Query;

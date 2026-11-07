@@ -1,6 +1,6 @@
 package datawave.webservice.common.rest;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * A generic interface for transforming JAX-RS {@link Response} objects before they are returned to the client. Implementations can be provided externally to
