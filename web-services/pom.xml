@@ -45,6 +45,7 @@
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.commons-net>3.9.0</version.commons-net>
         <version.dnsjava>3.6.3</version.dnsjava>
+        <version.dropwizard-metrics>4.1.2</version.dropwizard-metrics>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
         <version.jms>3.1.0</version.jms>
@@ -53,6 +54,17 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+                <version>${version.dropwizard-metrics}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>com.clearspring.analytics</groupId>
                 <artifactId>stream</artifactId>
