@@ -149,8 +149,8 @@
         <version.saxon-he>12.4</version.saxon-he>
         <version.slf4j>2.0.17</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
-        <version.spring>5.3.39</version.spring>
-        <version.spring-security>5.8.16</version.spring-security>
+        <version.spring>6.2.19</version.spring>
+        <version.spring-security>6.5.11</version.spring-security>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.thrift>0.17.0</version.thrift>

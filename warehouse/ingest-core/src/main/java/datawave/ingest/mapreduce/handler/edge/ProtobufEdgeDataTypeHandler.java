@@ -251,7 +251,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             throw e;
         }
 
-        Assert.notNull(ctx);
+        Assert.notNull(ctx, "Unable to load the edge spring config " + springConfigFile);
 
         registry.put(EDGE_DEFAULT_DATA_TYPE, null);
 
