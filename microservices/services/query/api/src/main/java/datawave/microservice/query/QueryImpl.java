@@ -30,6 +30,7 @@ import org.springframework.util.MultiValueMap;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
+import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -41,6 +42,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 @XmlRootElement(name = "QueryImpl")
 @XmlAccessorType(XmlAccessType.NONE)
