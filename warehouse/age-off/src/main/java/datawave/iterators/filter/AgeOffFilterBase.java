@@ -1,7 +1,8 @@
 package datawave.iterators.filter;
 
 import java.io.IOException;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Map;
 
@@ -47,15 +48,17 @@ public abstract class AgeOffFilterBase extends Filter {
         cutoffDateLen = cutoffDateText.getLength();
     }
 
+    /**
+     * Return the start of the cutoff day in the default time zone. One extra day is subtracted because entries must be strictly after the cutoff.
+     *
+     * @param thresholdDays
+     *            the number of days to retain
+     * @return the cutoff date
+     */
     protected Date getCutoffDate(int thresholdDays) {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        cal.add(Calendar.DAY_OF_YEAR, -(thresholdDays + 1)); // need to add one for comparison (keep something for one day means the date has to be after two
-                                                             // days ago)
-        return cal.getTime();
+        ZoneId zone = ZoneId.systemDefault();
+        LocalDate cutoffDay = LocalDate.now(zone).minusDays((long) thresholdDays + 1);
+        return Date.from(cutoffDay.atStartOfDay(zone).toInstant());
     }
 
     @Override
