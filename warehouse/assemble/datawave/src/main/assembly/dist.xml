@@ -96,6 +96,7 @@
                 <include>org.apache.commons:commons-jexl3</include>
                 <include>org.apache.curator:curator-client</include>
                 <include>javax.xml.bind:jaxb-api</include>
+                <include>jakarta.xml.bind:jakarta.xml.bind-api</include>
                 <include>org.apache.accumulo:accumulo-access-core</include>
                 <include>${groupId}:datawave-accumulo-extensions</include>
                 <include>${groupId}:datawave-common</include>
