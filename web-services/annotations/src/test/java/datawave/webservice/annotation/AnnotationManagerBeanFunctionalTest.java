@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import jakarta.ejb.EJBContext;
+import jakarta.enterprise.concurrent.ContextService;
 import jakarta.enterprise.concurrent.ManagedExecutorService;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
@@ -883,6 +887,58 @@ public class AnnotationManagerBeanFunctionalTest {
         @Override
         public void execute(Runnable command) {
             delegate.execute(command);
+        }
+
+        // Concurrency Utilities 3.0 (Jakarta EE 10) additions
+
+        @Override
+        public <U> CompletableFuture<U> completedFuture(U value) {
+            return CompletableFuture.completedFuture(value);
+        }
+
+        @Override
+        public <U> CompletionStage<U> completedStage(U value) {
+            return CompletableFuture.completedStage(value);
+        }
+
+        @Override
+        public <T> CompletableFuture<T> copy(CompletableFuture<T> stage) {
+            return stage.copy();
+        }
+
+        @Override
+        public <T> CompletionStage<T> copy(CompletionStage<T> stage) {
+            return stage.toCompletableFuture().copy();
+        }
+
+        @Override
+        public <U> CompletableFuture<U> failedFuture(Throwable ex) {
+            return CompletableFuture.failedFuture(ex);
+        }
+
+        @Override
+        public <U> CompletionStage<U> failedStage(Throwable ex) {
+            return CompletableFuture.failedStage(ex);
+        }
+
+        @Override
+        public ContextService getContextService() {
+            throw new UnsupportedOperationException("No context service in tests");
+        }
+
+        @Override
+        public <U> CompletableFuture<U> newIncompleteFuture() {
+            return new CompletableFuture<>();
+        }
+
+        @Override
+        public CompletableFuture<Void> runAsync(Runnable runnable) {
+            return CompletableFuture.runAsync(runnable, delegate);
+        }
+
+        @Override
+        public <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
+            return CompletableFuture.supplyAsync(supplier, delegate);
         }
     }
 

@@ -236,6 +236,16 @@ public class CredentialsCacheBeanTest {
         }
 
         @Override
+        public Handle<CachedDatawaveUserService> getHandle() {
+            return null;
+        }
+
+        @Override
+        public Iterable<? extends Handle<CachedDatawaveUserService>> handles() {
+            return null;
+        }
+
+        @Override
         public Iterator<CachedDatawaveUserService> iterator() {
             return null;
         }

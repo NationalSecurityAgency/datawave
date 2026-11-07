@@ -115,10 +115,6 @@ public class SpringCDIExtension implements Extension {
                 return it.getInjectionPoints();
             }
 
-            @Override
-            public boolean isNullable() {
-                return false;
-            }
 
             @Override
             public Set<Type> getTypes() {
@@ -223,10 +219,6 @@ public class SpringCDIExtension implements Extension {
             return injectionTarget.getInjectionPoints();
         }
 
-        @Override
-        public boolean isNullable() {
-            return !annotation.required();
-        }
 
         @Override
         public Set<Type> getTypes() {
