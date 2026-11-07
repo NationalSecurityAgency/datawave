@@ -47,7 +47,7 @@
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
-        <version.jms>1.1</version.jms>
+        <version.jms>3.1.0</version.jms>
         <version.mrunit>1.0.0</version.mrunit>
         <version.protobuf>3.16.3</version.protobuf>
     </properties>
@@ -499,7 +499,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${version.jackson}</version>
+                <version>${version.jackson-annotations}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -522,7 +522,7 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
                 <version>${version.jackson}</version>
                 <scope>provided</scope>
             </dependency>
@@ -558,8 +558,8 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>javax.jms</groupId>
-                <artifactId>jms</artifactId>
+                <groupId>jakarta.jms</groupId>
+                <artifactId>jakarta.jms-api</artifactId>
                 <version>${version.jms}</version>
                 <scope>provided</scope>
                 <exclusions>
