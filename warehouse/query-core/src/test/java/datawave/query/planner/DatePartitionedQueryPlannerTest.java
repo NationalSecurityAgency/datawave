@@ -40,6 +40,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.opentest4j.AssertionFailedError;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -133,6 +134,10 @@ public class DatePartitionedQueryPlannerTest {
     @Autowired
     @Qualifier("EventQuery")
     protected ShardQueryLogic logic;
+
+    @Autowired
+    @Qualifier("metadataHelperCacheManager")
+    protected CacheManager metadataHelperCacheManager;
     protected KryoDocumentDeserializer deserializer;
 
     private final DateFormat formatDate = new SimpleDateFormat("yyyyMMdd");
@@ -164,6 +169,9 @@ public class DatePartitionedQueryPlannerTest {
         this.logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         this.logic.setCollapseUids(false);
         this.deserializer = new KryoDocumentDeserializer();
+        // Metadata lookups, getFieldIndexHoles included, are cached by {auths, metadataTableName}, not by Accumulo instance, and each test
+        // ingests different data. Spring 6 intercepts the protected @Cacheable getFieldIndexHoles, so clear the caches between tests.
+        metadataHelperCacheManager.getCacheNames().forEach(name -> metadataHelperCacheManager.getCache(name).clear());
     }
 
     @AfterEach
