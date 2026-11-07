@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.EnumSet;
+import java.util.Map;
 import java.util.Random;
 
 import org.junit.jupiter.api.Test;
@@ -17,11 +19,21 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 class CodecTest {
 
+    // every CodecAlgorithm must have an entry here; expectedCodecsCoverEveryAlgorithm fails otherwise
+    private static final Map<CodecAlgorithm,Codec> EXPECTED_CODECS = Map.of(CodecAlgorithm.GZIP, GZIPCodec.instance(), CodecAlgorithm.BZIP2,
+                    BZIP2Codec.instance(), CodecAlgorithm.SEVEN_ZIP, SevenZIPCodec.instance());
+
     @Test
-    void algorithmsMapToTheirSingletonCodecs() {
-        assertSame(GZIPCodec.instance(), CodecAlgorithm.GZIP.getCodec());
-        assertSame(BZIP2Codec.instance(), CodecAlgorithm.BZIP2.getCodec());
-        assertSame(SevenZIPCodec.instance(), CodecAlgorithm.SEVEN_ZIP.getCodec());
+    void expectedCodecsCoverEveryAlgorithm() {
+        assertEquals(EnumSet.allOf(CodecAlgorithm.class), EnumSet.copyOf(EXPECTED_CODECS.keySet()),
+                        "EXPECTED_CODECS must have an entry for every CodecAlgorithm");
+    }
+
+    @ParameterizedTest
+    @EnumSource(CodecAlgorithm.class)
+    void algorithmsMapToTheirSingletonCodecs(CodecAlgorithm algorithm) {
+        assertTrue(EXPECTED_CODECS.containsKey(algorithm), "no expected codec for " + algorithm + "; add it to EXPECTED_CODECS");
+        assertSame(EXPECTED_CODECS.get(algorithm), algorithm.getCodec());
     }
 
     @ParameterizedTest
