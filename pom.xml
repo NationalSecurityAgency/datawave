@@ -46,6 +46,8 @@
         <failsafe.maxMemory>${surefire.maxMemory}</failsafe.maxMemory>
         <failsafe.reuseForks>${surefire.reuseForks}</failsafe.reuseForks>
         <image.prefix>datawave/</image.prefix>
+        <!-- Spring 6.1+ resolves SpEL #param names (e.g. @Cacheable keys) only from -parameters metadata -->
+        <maven.compiler.parameters>true</maven.compiler.parameters>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
