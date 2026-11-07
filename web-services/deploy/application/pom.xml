@@ -267,11 +267,6 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-expression</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-hdfs</artifactId>
-            <scope>runtime</scope>
-        </dependency>
         <!--
             Not bundled: this only orders the build. The unpack-configuration execution unpacks this module's
             ${build.env} jar, and without a declared dependency a parallel or -pl build resolves that jar from the
@@ -383,6 +378,11 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxb-provider</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-hdfs</artifactId>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
     <build>

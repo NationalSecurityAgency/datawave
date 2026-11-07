@@ -55,17 +55,6 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-core</artifactId>
-                <version>${version.dropwizard-metrics}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>com.clearspring.analytics</groupId>
                 <artifactId>stream</artifactId>
                 <version>${version.stream}</version>
@@ -144,6 +133,17 @@
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>datawave-core-annotation</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+                <version>${version.dropwizard-metrics}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.protostuff</groupId>

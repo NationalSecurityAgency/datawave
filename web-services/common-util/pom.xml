@@ -76,6 +76,14 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-annotation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-core</artifactId>
         </dependency>
@@ -90,14 +98,6 @@
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-yaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-annotation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.annotation</groupId>

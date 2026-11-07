@@ -12,9 +12,9 @@ import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 
 /**
- * Times invocations of methods annotated with {@link Timed} (or of every business method of a class annotated with it) in the
- * {@link DatawaveMetricRegistry}, naming the timer the way metrics-cdi did: the annotation's name when it is absolute, otherwise the name (or the method
- * name) prefixed with the declaring class name.
+ * Times invocations of methods annotated with {@link Timed} (or of every business method of a class annotated with it) in the {@link DatawaveMetricRegistry},
+ * naming the timer the way metrics-cdi did: the annotation's name when it is absolute, otherwise the name (or the method name) prefixed with the declaring
+ * class name.
  */
 @Timed
 @Interceptor

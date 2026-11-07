@@ -5,9 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.InputStream;
 import java.util.Properties;
 
-import jakarta.enterprise.inject.Produces;
-import jakarta.inject.Inject;
-
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -45,6 +42,8 @@ import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.results.cached.CachedResultsConfiguration;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 
 /**
  * this test ensures that our various spring contexts can be deployed successfully to Wildfly
@@ -82,7 +81,9 @@ public class WiredQueryExecutorBeanTest {
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
                                         QueryLogicFactoryImpl.class, CachedResultsConfiguration.class, DateIndexHelperFactory.class,
                                         DefaultMapperDecorator.class)
-                        .addAsManifestResource(new StringAsset("<beans xmlns=\"https://jakarta.ee/xml/ns/jakartaee\" version=\"4.0\" bean-discovery-mode=\"all\"/>"), "beans.xml");
+                        .addAsManifestResource(
+                                        new StringAsset("<beans xmlns=\"https://jakarta.ee/xml/ns/jakartaee\" version=\"4.0\" bean-discovery-mode=\"all\"/>"),
+                                        "beans.xml");
     }
 
     @Test
