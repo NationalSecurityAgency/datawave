@@ -4,7 +4,7 @@
  */
 package datawave.ingest.mapreduce.partition;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -146,7 +146,7 @@ public class MultiTableRRRangePartitionerTest {
             String rowStr = Character.toString((char) ("a".codePointAt(0) + i));
             int resultRow = partitioner.getPartition(getBulkIngestKey(rowStr), new Value(), numPartitions);
 
-            assertTrue(resultRow == resultForPrecedingRow,
+            assertEquals(resultRow, resultForPrecedingRow,
                             "These should have matched: resultRow: " + resultRow + " , resultForPrecedingRow: " + resultForPrecedingRow);
         }
     }
@@ -202,10 +202,10 @@ public class MultiTableRRRangePartitionerTest {
         // first split is a, last is z
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
 
-        assertTrue(27 == numberTimesPartitionSeen.size(),
+        assertEquals(27, numberTimesPartitionSeen.size(),
                         "Should have seen a total of 27 different partitions.  There is a split for each letter of the alphabet and the null split which is not in the file");
         for (Map.Entry<Integer,Integer> partitionAndNumSeen : numberTimesPartitionSeen.entrySet()) {
-            assertTrue(2 == partitionAndNumSeen.getValue().intValue(), "We haven't used the partition space so they should all be even, but partition "
+            assertEquals(2, partitionAndNumSeen.getValue().intValue(), "We haven't used the partition space so they should all be even, but partition "
                             + partitionAndNumSeen.getKey().intValue() + " did not see 2.");
         }
     }
@@ -219,7 +219,7 @@ public class MultiTableRRRangePartitionerTest {
         // first split is a, last is z
         countPartitions(numberTimesPartitionSeen, numPartitions, partitioner);
 
-        assertTrue(numberTimesPartitionSeen.size() == 10, "Should have seen a total of 10 different partitions given the small reducer space");
+        assertEquals(10, numberTimesPartitionSeen.size(), "Should have seen a total of 10 different partitions given the small reducer space");
         System.out.println(numberTimesPartitionSeen);
         // we partitioned 27 splits
         // over a space of 10 partitioners

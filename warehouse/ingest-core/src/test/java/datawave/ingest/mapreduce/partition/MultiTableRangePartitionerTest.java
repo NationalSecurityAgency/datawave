@@ -1,5 +1,8 @@
 package datawave.ingest.mapreduce.partition;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -13,9 +16,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.SplitsCacheFactory;
@@ -29,7 +31,7 @@ public class MultiTableRangePartitionerTest {
     Configuration configuration;
     Job mockJob;
 
-    @Before
+    @BeforeEach
     public void before() throws IOException {
         mockJob = Job.getInstance();
         configuration = mockJob.getConfiguration();
@@ -46,20 +48,20 @@ public class MultiTableRangePartitionerTest {
         mockContextForLocalCacheFile(url);
         configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
         configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
-        Assert.assertEquals(5, getPartition());
+        assertEquals(5, getPartition());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testEmptySplitsThrowsException() throws IOException, URISyntaxException {
         String filename = "trimmed_empty_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
         configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
         configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
-        getPartition();
+        assertThrows(RuntimeException.class, () -> getPartition());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testProblemGettingLocalCacheFiles() throws IOException, URISyntaxException {
         final URL url = createUrl("trimmed_splits.txt");
 
@@ -70,7 +72,7 @@ public class MultiTableRangePartitionerTest {
             }
         });
 
-        getPartition();
+        assertThrows(RuntimeException.class, () -> getPartition());
     }
 
     private URL createUrl(String fileName) {

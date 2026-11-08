@@ -1,11 +1,11 @@
 package datawave.query.util.sortedmap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Comparator;
 import java.util.Iterator;
@@ -14,9 +14,9 @@ import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class FileSortedMapTest {
     SortedMap<Integer,Integer> data = null;
@@ -24,7 +24,7 @@ public class FileSortedMapTest {
     FileSortedMap<Integer,Integer> map = null;
     datawave.query.util.sortedmap.SortedMapTempFileHandler handler = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         Comparator<Integer> c = new Comparator<Integer>() {
             @Override
@@ -53,7 +53,7 @@ public class FileSortedMapTest {
         map.putAll(data);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         handler.getFile().delete();
     }

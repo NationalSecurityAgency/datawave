@@ -9,17 +9,41 @@ else
 fi
 THIS_SCRIPT=$(eval $READLINK_CMD $0)
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR || exit
 
-. ../ingest/ingest-env.sh
-. ../ingest/ingest-libs.sh
-. ../ingest/job-cache-env.sh
+. "$THIS_DIR/ingest-env.sh"
+. "$THIS_DIR/ingest-libs.sh"
+. "$THIS_DIR/job-cache-env.sh"
 
 # Check that there are no other instances of this script running
 acquire_lock_file $(basename "$0") || exit 1
 
-#read from the datawave metadata table to create the edge key version file and save it locally with the rest of the config files
-./create-edgekey-version-cache.sh --update ../../config
+# Read from the DataWave metadata table to create the edge-key version file. Generate it
+# in a temporary directory so a failed or empty update cannot replace the last good copy.
+EDGE_KEY_CACHE_DIR="$THIS_DIR/../../config"
+EDGE_KEY_CACHE_FILE="$EDGE_KEY_CACHE_DIR/edge-key-version.txt"
+EDGE_KEY_CACHE_TMP_DIR=$(mktemp -d "$EDGE_KEY_CACHE_DIR/.edge-key-cache.XXXXXXXX") || {
+    echo "[ERROR] Unable to create a temporary directory for $EDGE_KEY_CACHE_FILE"
+    exit 1
+}
+
+if ! "$THIS_DIR/create-edgekey-version-cache.sh" --update "$EDGE_KEY_CACHE_TMP_DIR"; then
+    echo "[ERROR] create-edgekey-version-cache.sh failed while generating $EDGE_KEY_CACHE_FILE"
+    rm -r -f "$EDGE_KEY_CACHE_TMP_DIR"
+    exit 1
+fi
+
+if [[ ! -s "$EDGE_KEY_CACHE_TMP_DIR/edge-key-version.txt" ]]; then
+    echo "[ERROR] create-edgekey-version-cache.sh did not generate a nonempty $EDGE_KEY_CACHE_FILE"
+    rm -r -f "$EDGE_KEY_CACHE_TMP_DIR"
+    exit 1
+fi
+
+if ! mv "$EDGE_KEY_CACHE_TMP_DIR/edge-key-version.txt" "$EDGE_KEY_CACHE_FILE"; then
+    echo "[ERROR] Unable to install the generated edge-key cache at $EDGE_KEY_CACHE_FILE"
+    rm -r -f "$EDGE_KEY_CACHE_TMP_DIR"
+    exit 1
+fi
+rm -r -f "$EDGE_KEY_CACHE_TMP_DIR"
 
 # Swap the job cache directory
 echo Old job cache dir is $JOB_CACHE_DIR
@@ -40,9 +64,9 @@ echo New job cache dir is $JOB_CACHE_DIR
 BEFORE=$(basename $OLD_JOB_CACHE_DIR)
 AFTER=$(basename $JOB_CACHE_DIR)
 
-sed s%${BEFORE}%${AFTER}% job-cache-env.sh > job-cache-env.tmp
+sed "s%${BEFORE}%${AFTER}%" "$THIS_DIR/job-cache-env.sh" > "$THIS_DIR/job-cache-env.tmp"
 
-. ../ingest/ingest-libs.sh
+. "$THIS_DIR/ingest-libs.sh"
 
 date
 
@@ -130,5 +154,5 @@ date
 # If we made it here, everything is loaded into the new job cache
 # directory.  So, just swap the the environment script with the new
 # one that will tell jobs to run with the new job cache dir.
-cp job-cache-env.sh job-cache-env.bak
-mv job-cache-env.tmp job-cache-env.sh
+cp "$THIS_DIR/job-cache-env.sh" "$THIS_DIR/job-cache-env.bak"
+mv "$THIS_DIR/job-cache-env.tmp" "$THIS_DIR/job-cache-env.sh"

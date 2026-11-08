@@ -1,7 +1,11 @@
 package datawave.ingest.mapreduce.job;
 
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.BULK_IMPORT_MODE_CONFIG;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -36,10 +40,9 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
@@ -124,7 +127,7 @@ public class MultiRFileOutputFormatterTest {
         return mocked;
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
 
         testDriverLevel = MultiRFileOutputFormatterTest.logger.getLevel();
@@ -133,23 +136,21 @@ public class MultiRFileOutputFormatterTest {
         MultiRFileOutputFormatterTest.mockedConfiguration.clear();
     }
 
-    @After
+    @AfterEach
     public void teardown() {
 
         MultiRFileOutputFormatterTest.logger.setLevel(testDriverLevel);
         Logger.getLogger(MultiRFileOutputFormatter.class).setLevel(uutLevel);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetCompressionTypeWithBadType() {
 
         MultiRFileOutputFormatterTest.logger.info("testSetCompressionTypeWithBadType called...");
 
         try {
 
-            MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), "bad-compressor");
-
-            Assert.fail("MultiRFileOutputFormatter#setCompressionType failed to throw expected exception.");
+            assertThrows(IllegalArgumentException.class, () -> MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), "bad-compressor"));
 
         } finally {
 
@@ -249,32 +250,32 @@ public class MultiRFileOutputFormatterTest {
 
             MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), null);
 
-            Assert.assertFalse("MultiRFileOutputFormatter.setCompressionType set compression type when it should not have.",
-                            MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(compressionKey));
+            assertFalse(MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(compressionKey),
+                            "MultiRFileOutputFormatter.setCompressionType set compression type when it should not have.");
 
             String expected = "snappy";
             MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), expected);
 
-            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
-                            MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey));
+            assertEquals(expected, MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey),
+                            "MultiRFileOutputFormatter.setCompressionType failed to set compression type");
 
             expected = "lzo";
             MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), expected);
 
-            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
-                            MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey));
+            assertEquals(expected, MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey),
+                            "MultiRFileOutputFormatter.setCompressionType failed to set compression type");
 
             expected = "gz";
             MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), expected);
 
-            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
-                            MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey));
+            assertEquals(expected, MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey),
+                            "MultiRFileOutputFormatter.setCompressionType failed to set compression type");
 
             expected = "none";
             MultiRFileOutputFormatter.setCompressionType(createMockConfiguration(), expected);
 
-            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
-                            MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey));
+            assertEquals(expected, MultiRFileOutputFormatterTest.mockedConfiguration.get(compressionKey),
+                            "MultiRFileOutputFormatter.setCompressionType failed to set compression type");
 
         } finally {
 
@@ -292,8 +293,8 @@ public class MultiRFileOutputFormatterTest {
 
             String expected = "gz";
 
-            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
-                            MultiRFileOutputFormatter.getCompressionType(createMockConfiguration()));
+            assertEquals(expected, MultiRFileOutputFormatter.getCompressionType(createMockConfiguration()),
+                            "MultiRFileOutputFormatter.setCompressionType failed to set compression type");
 
         } finally {
 
@@ -313,26 +314,26 @@ public class MultiRFileOutputFormatterTest {
             String expected = "snappy";
             MultiRFileOutputFormatter.setCompressionType(conf, expected);
 
-            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
-                            MultiRFileOutputFormatter.getCompressionType(conf));
+            assertEquals(expected, MultiRFileOutputFormatter.getCompressionType(conf),
+                            "MultiRFileOutputFormatter.setCompressionType failed to set compression type");
 
             expected = "lzo";
             MultiRFileOutputFormatter.setCompressionType(conf, expected);
 
-            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
-                            MultiRFileOutputFormatter.getCompressionType(conf));
+            assertEquals(expected, MultiRFileOutputFormatter.getCompressionType(conf),
+                            "MultiRFileOutputFormatter.setCompressionType failed to set compression type");
 
             expected = "gz";
             MultiRFileOutputFormatter.setCompressionType(conf, expected);
 
-            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
-                            MultiRFileOutputFormatter.getCompressionType(conf));
+            assertEquals(expected, MultiRFileOutputFormatter.getCompressionType(conf),
+                            "MultiRFileOutputFormatter.setCompressionType failed to set compression type");
 
             expected = "none";
             MultiRFileOutputFormatter.setCompressionType(conf, expected);
 
-            assertEquals("MultiRFileOutputFormatter.setCompressionType failed to set compression type", expected,
-                            MultiRFileOutputFormatter.getCompressionType(conf));
+            assertEquals(expected, MultiRFileOutputFormatter.getCompressionType(conf),
+                            "MultiRFileOutputFormatter.setCompressionType failed to set compression type");
 
         } finally {
 
@@ -351,20 +352,20 @@ public class MultiRFileOutputFormatterTest {
             String typeKey = String.format("%s.file_type", MultiRFileOutputFormatter.class.getSimpleName());
             Configuration conf = createMockConfiguration();
 
-            Assert.assertFalse("mockedConfiguration incorrectly contained a File Type property",
-                            MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(typeKey));
+            assertFalse(MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(typeKey),
+                            "mockedConfiguration incorrectly contained a File Type property");
 
             MultiRFileOutputFormatter.setFileType(conf, null);
 
-            Assert.assertFalse("MultiRFileOutputFormatter#setFileType incorrectly added a File Type property",
-                            MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(typeKey));
+            assertFalse(MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(typeKey),
+                            "MultiRFileOutputFormatter#setFileType incorrectly added a File Type property");
 
             MultiRFileOutputFormatter.setFileType(conf, "fileType");
 
-            Assert.assertTrue("MultiRFileOutputFormatter#setFileType failed to add a File Type property",
-                            MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(typeKey));
-            assertEquals("MultiRFileOutputFormatter#setFileType failed to retain the expected File Type property value", "fileType",
-                            MultiRFileOutputFormatterTest.mockedConfiguration.get(typeKey));
+            assertTrue(MultiRFileOutputFormatterTest.mockedConfiguration.containsKey(typeKey),
+                            "MultiRFileOutputFormatter#setFileType failed to add a File Type property");
+            assertEquals("fileType", MultiRFileOutputFormatterTest.mockedConfiguration.get(typeKey),
+                            "MultiRFileOutputFormatter#setFileType failed to retain the expected File Type property value");
 
         } finally {
 
@@ -399,12 +400,12 @@ public class MultiRFileOutputFormatterTest {
             String passwordKey = String.format("%s.password", MultiRFileOutputFormatter.class.getName());
             String zooKeeperKey = String.format("%s.zookeepers", MultiRFileOutputFormatter.class.getName());
 
-            assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected instance value.", instance, conf.get(instanceKey));
-            assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected username value.", username, conf.get(usernameKey));
-            assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected password value.",
-                            new String(Base64.encodeBase64(password)), conf.get(passwordKey));
-            assertEquals("MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected zookeepers value.", zookeepers,
-                            conf.get(zooKeeperKey));
+            assertEquals(instance, conf.get(instanceKey), "MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected instance value.");
+            assertEquals(username, conf.get(usernameKey), "MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected username value.");
+            assertEquals(new String(Base64.encodeBase64(password)), conf.get(passwordKey),
+                            "MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected password value.");
+            assertEquals(zookeepers, conf.get(zooKeeperKey),
+                            "MultiRFileOutputFormatter#setAccumuloConfiguration failed to retain the expected zookeepers value.");
 
         } finally {
 
@@ -422,7 +423,7 @@ public class MultiRFileOutputFormatterTest {
 
             MultiRFileOutputFormatter uut = new MultiRFileOutputFormatter();
 
-            Assert.assertNotNull("MultiRFileOutputFormatter constructor failed to create an instance.", uut);
+            assertNotNull(uut, "MultiRFileOutputFormatter constructor failed to create an instance.");
 
         } finally {
 
@@ -484,7 +485,7 @@ public class MultiRFileOutputFormatterTest {
 
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         formatter = createFormatter();
         conf = new Configuration();
@@ -587,7 +588,7 @@ public class MultiRFileOutputFormatterTest {
     }
 
     private void assertFileNameForShardIndex(int index) {
-        Assert.assertTrue(filenames.get(index).endsWith("/shardIndex/shardIndex-m-00001_1.rf"));
+        assertTrue(filenames.get(index).endsWith("/shardIndex/shardIndex-m-00001_1.rf"));
     }
 
     private RecordWriter<BulkIngestKey,Value> createWriter(MultiRFileOutputFormatter formatter, Configuration conf) throws IOException, InterruptedException {
@@ -601,7 +602,7 @@ public class MultiRFileOutputFormatterTest {
     }
 
     private void assertFileNameForShard(int index, String prefix, int shardId) {
-        Assert.assertTrue(filenames.get(index).endsWith("/shard/" + prefix + "-m-00001_" + shardId + ".rf"));
+        assertTrue(filenames.get(index).endsWith("/shard/" + prefix + "-m-00001_" + shardId + ".rf"));
     }
 
     private void writeShardEntry(RecordWriter<BulkIngestKey,Value> writer, int shardId) throws IOException, InterruptedException {
@@ -609,7 +610,7 @@ public class MultiRFileOutputFormatterTest {
     }
 
     private void assertNumFileNames(int expectedNumFiles) {
-        assertEquals(filenames.toString(), expectedNumFiles, filenames.size());
+        assertEquals(expectedNumFiles, filenames.size(), filenames.toString());
     }
 
     private void setConfiguration(Configuration conf, int count) {

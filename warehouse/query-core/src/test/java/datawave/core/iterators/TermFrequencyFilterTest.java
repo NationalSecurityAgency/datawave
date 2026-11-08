@@ -1,9 +1,9 @@
 package datawave.core.iterators;
 
 import static datawave.query.Constants.NULL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -20,7 +20,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
@@ -351,7 +351,7 @@ public class TermFrequencyFilterTest {
                 hits.add(tfIter.getTopKey());
                 tfIter.next();
             }
-            assertEquals("Expected to get 20 hits for field " + field + "but was " + hits.size(), 20, hits.size());
+            assertEquals(20, hits.size(), "Expected to get 20 hits for field " + field + "but was " + hits.size());
         }
     }
 

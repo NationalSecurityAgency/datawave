@@ -1,16 +1,18 @@
 package datawave.ingest.mapreduce.partition;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.job.SplitsCacheFactory;
@@ -19,8 +21,8 @@ import datawave.ingest.mapreduce.job.TableSplitsCache;
 public class TabletLocationHashPartitionerTest {
     public static final int MAX_EXPECTED_COLLISIONS = 70;
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    Path temporaryDirectory;
 
     int TOTAL_TSERVERS = 600;
     int SHARDS_PER_DAY = 170;
@@ -29,7 +31,7 @@ public class TabletLocationHashPartitionerTest {
     Configuration conf = new Configuration();
     TabletLocationHashPartitioner partitioner = null;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         conf = new Configuration();
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
@@ -41,7 +43,7 @@ public class TabletLocationHashPartitionerTest {
         partitioner.setConf(conf);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         conf.clear();
         conf = null;
@@ -51,7 +53,7 @@ public class TabletLocationHashPartitionerTest {
     @Test
     public void testLocationHashPartitioner() throws Exception {
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
-        new TestShardGenerator(conf, temporaryFolder.newFolder(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard");
+        new TestShardGenerator(conf, Files.createTempDirectory(temporaryDirectory, "splits").toFile(), NUM_DAYS, SHARDS_PER_DAY, TOTAL_TSERVERS, "shard");
         TableSplitsCache.clear();
         SplitsCacheFactory.clearInstance();
 
@@ -91,6 +93,6 @@ public class TabletLocationHashPartitionerTest {
             }
             partitionsUsed.add(partition);
         }
-        Assert.assertEquals(42, collisions);
+        assertEquals(42, collisions);
     }
 }

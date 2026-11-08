@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
@@ -10,9 +12,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskInputOutputContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.SplitsCacheFactory;
@@ -24,7 +25,7 @@ public class SplitBasedHashPartitionerTest {
     private static final String TABLE_NAME = "someTableName"; // matches entry in test file: full_splits.txt
     Configuration conf = new Configuration();
 
-    @Before
+    @BeforeEach
     public void before() {
         final String testFilePath = SplitBasedHashPartitionerTest.class.getClassLoader().getResource(TEST_FILE_LOCATION).getPath();
 
@@ -120,8 +121,8 @@ public class SplitBasedHashPartitionerTest {
     }
 
     private void verifyPartitionInRange(int partition, int startRangeInclusive, int endRangeExclusive) {
-        Assert.assertTrue("partition: " + partition, startRangeInclusive <= partition);
-        Assert.assertTrue("partition: " + partition, partition < endRangeExclusive);
+        assertTrue(startRangeInclusive <= partition, "partition: " + partition);
+        assertTrue(partition < endRangeExclusive, "partition: " + partition);
     }
 
     private BulkIngestKey createKeyFor(String row) {

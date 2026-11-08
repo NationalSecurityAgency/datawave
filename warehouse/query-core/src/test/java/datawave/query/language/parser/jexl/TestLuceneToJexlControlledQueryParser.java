@@ -1,5 +1,8 @@
 package datawave.query.language.parser.jexl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,8 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -21,11 +23,12 @@ public class TestLuceneToJexlControlledQueryParser {
 
     private LuceneToJexlControlledQueryParser parser;
 
-    @Test(expected = ParseException.class)
+    @Test
     public void testDisallowedAnyfield() throws ParseException {
         parser = new LuceneToJexlControlledQueryParser();
         parser.setAllowAnyField(false);
-        parseQuery("anyfield should not work");
+        assertThrows(ParseException.class, () -> parseQuery("anyfield should not work"));
+
     }
 
     /**
@@ -43,14 +46,15 @@ public class TestLuceneToJexlControlledQueryParser {
         parseQuery("unfieldedValue");
     }
 
-    @Test(expected = ParseException.class)
+    @Test
     public void testDisallowedFieldsInAnd() throws ParseException {
         parser = new LuceneToJexlControlledQueryParser();
         Set<String> allowedFields = new HashSet<>();
         allowedFields.add("FIELD1");
         allowedFields.add("FIELD2");
         parser.setAllowedFields(allowedFields);
-        parseQuery("FIELD1:value FIELD2:value FIELD3:value");
+        assertThrows(ParseException.class, () -> parseQuery("FIELD1:value FIELD2:value FIELD3:value"));
+
     }
 
     /**
@@ -71,22 +75,24 @@ public class TestLuceneToJexlControlledQueryParser {
         parser.parse("field1:value FIELD2:value field3:value");
     }
 
-    @Test(expected = ParseException.class)
+    @Test
     public void testDisallowedFieldsInFunction1() throws ParseException {
         parser = new LuceneToJexlControlledQueryParser();
         Set<String> allowedFields = new HashSet<>();
         allowedFields.add("FIELD1");
         parser.setAllowedFields(allowedFields);
-        parseQuery("FIELD1:value #INCLUDE(FIELD3, regex3)");
+        assertThrows(ParseException.class, () -> parseQuery("FIELD1:value #INCLUDE(FIELD3, regex3)"));
+
     }
 
-    @Test(expected = ParseException.class)
+    @Test
     public void testDisallowedFieldsInFunction2() throws ParseException {
         parser = new LuceneToJexlControlledQueryParser();
         Set<String> allowedFields = new HashSet<>();
         allowedFields.add("FIELD1");
         parser.setAllowedFields(allowedFields);
-        parseQuery("FIELD1:value #ISNULL(FIELD3)");
+        assertThrows(ParseException.class, () -> parseQuery("FIELD1:value #ISNULL(FIELD3)"));
+
     }
 
     @Test
@@ -96,7 +102,7 @@ public class TestLuceneToJexlControlledQueryParser {
         allowedFields.add("FIELD1");
         allowedFields.add("FIELD2");
         parser.setAllowedFields(allowedFields);
-        Assert.assertEquals("FIELD1 == 'value' && FIELD2 == 'value'", parseQuery("FIELD1:value FIELD2:value"));
+        assertEquals("FIELD1 == 'value' && FIELD2 == 'value'", parseQuery("FIELD1:value FIELD2:value"));
     }
 
     @Test
@@ -113,7 +119,7 @@ public class TestLuceneToJexlControlledQueryParser {
         includedValues.put("FIELD3", Collections.singleton("specialvalue3"));
         parser.setIncludedValues(includedValues);
 
-        Assert.assertEquals("(FIELD1 == 'value') && (filter:includeRegex(FIELD2, 'specialvalue2') || filter:includeRegex(FIELD3, 'specialvalue3'))",
+        assertEquals("(FIELD1 == 'value') && (filter:includeRegex(FIELD2, 'specialvalue2') || filter:includeRegex(FIELD3, 'specialvalue3'))",
                         parseQuery("FIELD1:value"));
     }
 
@@ -131,7 +137,7 @@ public class TestLuceneToJexlControlledQueryParser {
         excludedValues.put("FIELD3", Collections.singleton("specialvalue3"));
         parser.setExcludedValues(excludedValues);
 
-        Assert.assertEquals("(FIELD1 == 'value') && (not(filter:includeRegex(FIELD2, 'specialvalue2')) && not(filter:includeRegex(FIELD3, 'specialvalue3')))",
+        assertEquals("(FIELD1 == 'value') && (not(filter:includeRegex(FIELD2, 'specialvalue2')) && not(filter:includeRegex(FIELD3, 'specialvalue3')))",
                         parseQuery("FIELD1:value"));
     }
 
@@ -157,7 +163,7 @@ public class TestLuceneToJexlControlledQueryParser {
 
         String expandedQuery = parseQuery("$9001_1:dudududuu");
 
-        Assert.assertEquals("($9001_1 == 'dudududuu') && (filter:includeRegex($1337_1, 'John') && not(filter:includeRegex($1337_1, 'Cena')))", expandedQuery);
+        assertEquals("($9001_1 == 'dudududuu') && (filter:includeRegex($1337_1, 'John') && not(filter:includeRegex($1337_1, 'Cena')))", expandedQuery);
     }
 
     private String parseQuery(String query) throws ParseException {
