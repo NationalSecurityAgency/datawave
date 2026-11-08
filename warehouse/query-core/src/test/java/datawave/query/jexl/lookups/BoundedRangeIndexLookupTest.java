@@ -3,10 +3,12 @@ package datawave.query.jexl.lookups;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -32,13 +34,13 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.easymock.EasyMockSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.ShardQueryConfiguration;
@@ -51,8 +53,8 @@ import datawave.util.time.DateHelper;
 
 public class BoundedRangeIndexLookupTest extends EasyMockSupport {
 
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    static File temporaryFolder;
 
     private static final String PASSWORD = "password";
 
@@ -76,9 +78,9 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
 
     private ScanMonitor monitor;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
-        cluster = new MiniAccumuloCluster(temporaryFolder.newFolder(), PASSWORD);
+        cluster = new MiniAccumuloCluster(Files.createTempDirectory(temporaryFolder.toPath(), "accumulo-").toFile(), PASSWORD);
         cluster.start();
 
         client = cluster.createAccumuloClient("root", new PasswordToken(PASSWORD));
@@ -86,7 +88,13 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         writeData();
     }
 
-    @Before
+    @AfterAll
+    public static void tearDownClass() throws Exception {
+        client.close();
+        cluster.stop();
+    }
+
+    @BeforeEach
     public void setup() {
         scannerFactory = new ScannerFactory(client);
 
@@ -104,7 +112,7 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         monitor = ScanMonitor.of(25_000, "test", null);
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         executorService.shutdownNow();
         monitor.close();
@@ -344,7 +352,7 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
     }
 
     private void withExpected(Set<String> expected) {
-        assertTrue("should only set expected values once per test", this.expected.isEmpty());
+        assertTrue(this.expected.isEmpty(), "should only set expected values once per test");
         this.expected.addAll(expected);
     }
 
@@ -356,7 +364,7 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         return values;
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void largeRowInBoundedRangeTest() throws TableNotFoundException {
         ExecutorService s = Executors.newSingleThreadExecutor();

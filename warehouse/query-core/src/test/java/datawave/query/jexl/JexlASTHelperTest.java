@@ -1,11 +1,12 @@
 package datawave.query.jexl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,9 +29,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +57,7 @@ public class JexlASTHelperTest {
 
     private final ASTValidator validator = new ASTValidator();
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         validator.setValidateLineage(true);
         validator.setValidateFlatten(true);
@@ -166,10 +166,10 @@ public class JexlASTHelperTest {
         assertNull(JexlASTHelper.getLiteralValueSafely(query));
     }
 
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void testGetLiteralValueThrowsNSEE() throws Exception {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == FOO2");
-        assertNull(JexlASTHelper.getLiteralValue(query));
+        assertThrows(NoSuchElementException.class, () -> JexlASTHelper.getLiteralValue(query));
     }
 
     @Test
@@ -354,9 +354,9 @@ public class JexlASTHelperTest {
 
         range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
 
-        Assert.assertNotNull(range);
-        Assert.assertNotNull(range.getLowerNode());
-        Assert.assertNotNull(range.getUpperNode());
+        assertNotNull(range);
+        assertNotNull(range.getLowerNode());
+        assertNotNull(range.getUpperNode());
         assertEquals(1, range.getLower());
         assertEquals(5, range.getUpper());
         assertFalse(range.isLowerInclusive());
@@ -366,9 +366,9 @@ public class JexlASTHelperTest {
 
         range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
 
-        Assert.assertNotNull(range);
-        Assert.assertNotNull(range.getLowerNode());
-        Assert.assertNotNull(range.getUpperNode());
+        assertNotNull(range);
+        assertNotNull(range.getLowerNode());
+        assertNotNull(range.getUpperNode());
         assertEquals(1, range.getLower());
         assertEquals(5, range.getUpper());
         assertTrue(range.isLowerInclusive());
@@ -387,9 +387,9 @@ public class JexlASTHelperTest {
 
         range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
 
-        Assert.assertNotNull(range);
-        Assert.assertNotNull(range.getLowerNode());
-        Assert.assertNotNull(range.getUpperNode());
+        assertNotNull(range);
+        assertNotNull(range.getLowerNode());
+        assertNotNull(range.getUpperNode());
         assertEquals("a", range.getLower());
         assertEquals("b", range.getUpper());
         assertFalse(range.isLowerInclusive());
@@ -408,9 +408,9 @@ public class JexlASTHelperTest {
 
         range = JexlASTHelper.findRange().notDelayed().getRange(script.jjtGetChild(0));
 
-        Assert.assertNotNull(range);
-        Assert.assertNotNull(range.getLowerNode());
-        Assert.assertNotNull(range.getUpperNode());
+        assertNotNull(range);
+        assertNotNull(range.getLowerNode());
+        assertNotNull(range.getUpperNode());
         assertEquals(1, range.getLower());
         assertEquals(5, range.getUpper());
         assertFalse(range.isLowerInclusive());
@@ -426,9 +426,9 @@ public class JexlASTHelperTest {
 
         LiteralRange range = JexlASTHelper.findRange().indexedOnly(null, helper).getRange(script.jjtGetChild(0));
 
-        Assert.assertNotNull(range);
-        Assert.assertNotNull(range.getLowerNode());
-        Assert.assertNotNull(range.getUpperNode());
+        assertNotNull(range);
+        assertNotNull(range.getLowerNode());
+        assertNotNull(range.getUpperNode());
         assertEquals("a", range.getLower());
         assertEquals("b", range.getUpper());
         assertFalse(range.isLowerInclusive());
@@ -714,7 +714,7 @@ public class JexlASTHelperTest {
     public void validateJunctionChildrenWithInvalidTreeAndFailHard() {
         ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
         ASTAndNode conjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Collections.singletonList(eqNode));
-        RuntimeException exception = Assert.assertThrows(RuntimeException.class, () -> JexlASTHelper.validateJunctionChildren(conjunction, true));
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> JexlASTHelper.validateJunctionChildren(conjunction, true));
         assertEquals("Could not process node. Instance of AND/OR node found with less than 2 children", exception.getCause().getMessage());
     }
 
@@ -751,7 +751,7 @@ public class JexlASTHelperTest {
         try {
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
             Set<String> fields = JexlASTHelper.getIdentifierNames(script);
-            assertEquals("Expected fields but was", expectedIdentifiers, fields);
+            assertEquals(expectedIdentifiers, fields, "Expected fields but was");
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -808,13 +808,13 @@ public class JexlASTHelperTest {
     private void testDeconstructionGroupingTrue(String expected, String input, boolean expectNewObject) {
         String actual = JexlASTHelper.deconstructIdentifier(input, true);
         assertEquals(expected, actual);
-        assertEquals("Expected new object", expectNewObject, !Objects.equals(input, actual));
+        assertEquals(expectNewObject, !Objects.equals(input, actual), "Expected new object");
     }
 
     private void testDeconstructionGroupingFalse(String expected, String input, boolean expectNewObject) {
         String actual = JexlASTHelper.deconstructIdentifier(input, false);
         assertEquals(expected, actual);
-        assertEquals("Expected a new object", expectNewObject, !Objects.equals(input, actual));
+        assertEquals(expectNewObject, !Objects.equals(input, actual), "Expected a new object");
     }
 
     // Verify the nesting order between 'or' and 'and' in a Jexl query.
