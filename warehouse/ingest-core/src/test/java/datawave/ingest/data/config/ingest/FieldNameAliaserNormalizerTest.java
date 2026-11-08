@@ -1,12 +1,14 @@
 package datawave.ingest.data.config.ingest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.TestBaseIngestHelper;
 import datawave.ingest.data.TypeRegistry;
@@ -16,7 +18,7 @@ public class FieldNameAliaserNormalizerTest {
 
     private Configuration conf;
 
-    @Before
+    @BeforeEach
     public void setup() {
         conf = new Configuration();
         conf.set(Properties.DATA_NAME, "test");
@@ -27,13 +29,13 @@ public class FieldNameAliaserNormalizerTest {
 
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBadAliasConfig() throws Exception {
         conf.set("test.data.category.index.aliases.enabled", "true");
         conf.set("test.data.category.index.aliases", "totalnonsense");
 
         FieldNameAliaserNormalizer fnan = new FieldNameAliaserNormalizer();
-        fnan.setup(TypeRegistry.getType("test"), conf);
+        assertThrows(IllegalArgumentException.class, () -> fnan.setup(TypeRegistry.getType("test"), conf));
     }
 
     @Test
@@ -48,9 +50,9 @@ public class FieldNameAliaserNormalizerTest {
         Map<String,String> expectedFieldAliases = new HashMap<>();
         expectedFieldAliases.put("HELLOWORLD", "HELLO_WORLD");
 
-        Assert.assertEquals(expectedFieldAliases, fnan.getAliases());
-        Assert.assertEquals(2, fnan.getIndexAliases("FOO_1").size());
-        Assert.assertEquals(1, fnan.getIndexAliases("FOO_2").size());
+        assertEquals(expectedFieldAliases, fnan.getAliases());
+        assertEquals(2, fnan.getIndexAliases("FOO_1").size());
+        assertEquals(1, fnan.getIndexAliases("FOO_2").size());
     }
 
     @Test
@@ -62,13 +64,13 @@ public class FieldNameAliaserNormalizerTest {
         String testFieldName = "HeLLo_wOrLd";
         String normalizedFieldName = fnan.normalizeAndAlias(testFieldName);
 
-        Assert.assertEquals("HELLO_WORLD", normalizedFieldName);
+        assertEquals("HELLO_WORLD", normalizedFieldName);
 
         testFieldName = "Bar_3";
 
         normalizedFieldName = fnan.normalizeAndAlias(testFieldName);
 
-        Assert.assertEquals("BAR_3", normalizedFieldName);
+        assertEquals("BAR_3", normalizedFieldName);
     }
 
 }

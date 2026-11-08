@@ -1,5 +1,7 @@
 package datawave.query.lucene.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -8,9 +10,8 @@ import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
 
@@ -22,7 +23,7 @@ public class InvalidSlopProximityVisitorTest {
 
     private final List<InvalidSlopProximityVisitor.InvalidSlop> expected = new ArrayList<>() {};
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         query = null;
         clearExpected();
@@ -204,7 +205,7 @@ public class InvalidSlopProximityVisitorTest {
         List<InvalidSlopProximityVisitor.InvalidSlop> actual = InvalidSlopProximityVisitor.check(query);
         List<String> actualStrings = actual.stream().map(Object::toString).collect(Collectors.toList());
         List<String> expectedStrings = expected.stream().map(Object::toString).collect(Collectors.toList());
-        Assert.assertEquals(expectedStrings, actualStrings);
+        assertEquals(expectedStrings, actualStrings);
         clearExpected();
     }
 }

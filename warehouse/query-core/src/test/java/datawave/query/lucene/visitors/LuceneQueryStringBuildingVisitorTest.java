@@ -1,5 +1,7 @@
 package datawave.query.lucene.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +43,6 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.SynonymQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -770,7 +771,7 @@ public class LuceneQueryStringBuildingVisitorTest {
 
     private void assertResult() throws QueryNodeParseException {
         String actual = LuceneQueryStringBuildingVisitor.build(queryNode);
-        Assert.assertEquals(expectedQuery, actual);
+        assertEquals(expectedQuery, actual);
     }
 
     private QueryNode parse(String query) throws QueryNodeParseException {

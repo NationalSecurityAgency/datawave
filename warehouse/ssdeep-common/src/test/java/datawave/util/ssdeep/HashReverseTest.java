@@ -2,14 +2,14 @@ package datawave.util.ssdeep;
 
 import static datawave.util.ssdeep.HashReverse.getPrefixIndex;
 import static datawave.util.ssdeep.HashReverse.getPrefixMax;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class HashReverseTest {
 
@@ -74,16 +74,16 @@ public class HashReverseTest {
                 missed.add(i);
             }
         }
-        Assert.assertTrue("Missed mapping to partitions: " + missed, missed.isEmpty());
+        assertTrue(missed.isEmpty(), "Missed mapping to partitions: " + missed);
     }
 
-    @Test(expected = SSDeepParseException.class)
+    @Test
     public void testSDeepParseException() {
-        assertEquals(63, getPrefixIndex("*", 1));
+        assertThrows(SSDeepParseException.class, () -> getPrefixIndex("*", 1));
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testOutOfBoundsException() {
-        assertEquals(63, getPrefixIndex("++++++", 6));
+        assertThrows(IndexOutOfBoundsException.class, () -> getPrefixIndex("++++++", 6));
     }
 }

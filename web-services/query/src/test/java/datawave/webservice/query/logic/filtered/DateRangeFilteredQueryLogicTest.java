@@ -5,8 +5,8 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -26,8 +26,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.easymock.Capture;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
@@ -43,7 +43,7 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
     private DateRangeFilteredQueryLogic logic;
     private QueryLogic delegate;
 
-    @Before
+    @BeforeEach
     public void setup() {
         delegate = createMock(QueryLogic.class);
         logic = new DateRangeFilteredQueryLogic();

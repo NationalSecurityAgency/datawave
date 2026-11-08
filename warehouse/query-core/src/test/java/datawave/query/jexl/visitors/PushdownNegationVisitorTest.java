@@ -1,10 +1,11 @@
 package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +15,8 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -25,7 +26,7 @@ import datawave.test.JexlNodeAssert;
 public class PushdownNegationVisitorTest {
     PushdownNegationVisitor visitor;
 
-    @Before
+    @BeforeEach
     public void setup() {
         visitor = new PushdownNegationVisitor();
     }
@@ -255,20 +256,20 @@ public class PushdownNegationVisitorTest {
         test(query, expected);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testApplyDeMorgansNull() {
-        PushdownNegationVisitor.applyDeMorgans(null, false);
+        assertThrows(IllegalArgumentException.class, () -> PushdownNegationVisitor.applyDeMorgans(null, false));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testApplyDeMorgansNoChildren() {
-        PushdownNegationVisitor.applyDeMorgans(new ASTAndNode(1), false);
+        assertThrows(IllegalStateException.class, () -> PushdownNegationVisitor.applyDeMorgans(new ASTAndNode(1), false));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testApplyDeMorgansNotAndOrNode() {
         JexlNode node = JexlNodeFactory.buildEQNode("field", "value");
-        PushdownNegationVisitor.applyDeMorgans(node, false);
+        assertThrows(IllegalArgumentException.class, () -> PushdownNegationVisitor.applyDeMorgans(node, false));
     }
 
     @Test

@@ -1,11 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
@@ -593,8 +593,8 @@ public class IsNotNullPruningVisitorTest {
             ASTJexlScript visited = (ASTJexlScript) IsNotNullPruningVisitor.prune(script);
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
 
-            assertTrue("visit produced an invalid tree", validator.isValid(visited));
-            assertTrue(JexlStringBuildingVisitor.buildQueryWithoutParse(visited), TreeEqualityVisitor.checkEquality(visited, expectedScript).isEqual());
+            assertTrue(validator.isValid(visited), "visit produced an invalid tree");
+            assertTrue(TreeEqualityVisitor.checkEquality(visited, expectedScript).isEqual(), JexlStringBuildingVisitor.buildQueryWithoutParse(visited));
 
         } catch (ParseException | InvalidQueryTreeException e) {
             e.printStackTrace();

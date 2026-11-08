@@ -1,9 +1,9 @@
 package datawave.query.util.sortedmap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,9 +22,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public abstract class BufferedFileBackedSortedMapTest<K,V> {
 
@@ -65,7 +65,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
         }
     }
 
-    @Before
+    @BeforeEach
     public void mapUp() throws Exception {
         for (int i = 0; i < template.length; i++) {
             byte[] buffer = new byte[i + 11];
@@ -138,7 +138,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         // Delete each sorted map file and its checksum.
         for (SortedMapTempFileHandler fileHandler : tempFileHandlers) {
@@ -157,7 +157,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
 
     private void tryDelete(File file) {
         if (file.exists()) {
-            assertTrue("Failed to delete file " + file, file.delete());
+            assertTrue(file.delete(), "Failed to delete file " + file);
         }
     }
 

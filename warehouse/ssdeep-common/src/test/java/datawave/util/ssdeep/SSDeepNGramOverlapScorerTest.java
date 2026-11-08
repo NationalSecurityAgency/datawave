@@ -1,9 +1,10 @@
 package datawave.util.ssdeep;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SSDeepNGramOverlapScorerTest {
     public static final String[][] testData = {
@@ -36,7 +37,7 @@ public class SSDeepNGramOverlapScorerTest {
             SSDeepHash targetHash = SSDeepHash.parse(testData[i][1]);
             Set<NGramTuple> overlappingTuples = scorer.apply(queryHash, targetHash);
             int score = overlappingTuples.size();
-            Assert.assertEquals("Expected score of " + expectedScores[i] + " for query: " + queryHash + ", target: " + targetHash, expectedScores[i], score);
+            assertEquals(expectedScores[i], score, "Expected score of " + expectedScores[i] + " for query: " + queryHash + ", target: " + targetHash);
         }
     }
 }

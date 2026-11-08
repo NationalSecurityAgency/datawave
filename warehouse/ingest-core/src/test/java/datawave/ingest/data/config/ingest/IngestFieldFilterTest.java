@@ -1,11 +1,13 @@
 package datawave.ingest.data.config.ingest;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -21,7 +23,7 @@ public class IngestFieldFilterTest {
     private IngestFieldFilter filter = new IngestFieldFilter(dataType);
     private Multimap<String,Object> fields;
 
-    @Before
+    @BeforeEach
     public void setup() {
         conf = new Configuration();
         // note I added the same filter in the opposite direction. These should be processed in order so the first one wins.
@@ -70,18 +72,18 @@ public class IngestFieldFilterTest {
         assertFieldKept(fields, "LAST_NAME");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldFailOnIncorrectConfig1() {
         conf.set(dataType.typeName() + IngestFieldFilter.FILTER_FIELD_NAME_SUFFIX, "TOO:MANY:TOKENS,NAME:NICKNAME");
 
-        filter.setup(conf);
+        assertThrows(IllegalArgumentException.class, () -> filter.setup(conf));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldFailOnIncorrectConfig2() {
         conf.set(dataType.typeName() + IngestFieldFilter.FILTER_FIELD_VALUE_SUFFIX, "COUNT:DOES&NOT&MATCH");
 
-        filter.setup(conf);
+        assertThrows(IllegalArgumentException.class, () -> filter.setup(conf));
     }
 
     @Test
@@ -180,11 +182,11 @@ public class IngestFieldFilterTest {
     }
 
     private void assertFieldDropped(Multimap<String,Object> fields, String field) {
-        Assert.assertTrue(fields.get(field).isEmpty());
+        assertTrue(fields.get(field).isEmpty());
     }
 
     private void assertFieldKept(Multimap<String,Object> fields, String field) {
-        Assert.assertFalse(fields.get(field).isEmpty());
+        assertFalse(fields.get(field).isEmpty());
     }
 
 }

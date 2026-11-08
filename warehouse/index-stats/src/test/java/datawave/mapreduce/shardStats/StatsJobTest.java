@@ -1,5 +1,10 @@
 package datawave.mapreduce.shardStats;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,10 +14,8 @@ import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.IngestJob;
 
@@ -27,7 +30,7 @@ public class StatsJobTest {
 
     private StatsJobWrapper wrapper;
 
-    @Before
+    @BeforeEach
     public void setup() {
         wrapper = new StatsJobWrapper();
 
@@ -35,7 +38,7 @@ public class StatsJobTest {
 
     @Test
     public void testParseArguments() throws Exception {
-        Assume.assumeTrue(null != System.getenv("DATAWAVE_INGEST_HOME"));
+        assumeTrue(null != System.getenv("DATAWAVE_INGEST_HOME"));
         log.info("======  testParseArguments  =====");
         Map<String,Object> mapArgs = new HashMap<>();
 
@@ -110,11 +113,11 @@ public class StatsJobTest {
                     Boolean bool = (Boolean) entry.getValue();
                     val = conf.getBoolean(entry.getKey(), !bool);
                 } else {
-                    Assert.fail("add instance handler for " + entry.getValue().getClass().getSimpleName());
+                    fail("add instance handler for " + entry.getValue().getClass().getSimpleName());
                 }
 
-                Assert.assertNotNull(val);
-                Assert.assertEquals(entry.getValue(), val);
+                assertNotNull(val);
+                assertEquals(entry.getValue(), val);
             }
         }
     }

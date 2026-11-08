@@ -1,7 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,9 +15,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
@@ -50,7 +50,7 @@ public class ExpandCompositeTermsTest {
 
     private final ASTValidator validator = new ASTValidator();
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         Multimap<String,String> multimap = LinkedListMultimap.create();
         multimap.put("MAKE_COLOR", "MAKE");
@@ -72,7 +72,7 @@ public class ExpandCompositeTermsTest {
         compositeFieldSeparators = Collections.unmodifiableMap(sepMap);
     }
 
-    @Before
+    @BeforeEach
     public void before() {
         conf = new ShardQueryConfiguration();
         conf.setCompositeToFieldMap(compositeToFieldMap);

@@ -32,6 +32,8 @@ import com.google.protobuf.util.JsonFormat;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationList;
 import datawave.annotation.util.v1.AnnotationJsonUtils;
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.util.exceptions.AuthenticationException;
 import datawave.microservice.annotation.util.exceptions.AuthorizationException;
 import datawave.microservice.annotation.util.exceptions.BadRequestException;
@@ -52,6 +54,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
+@ConditionalOnAnnotationRole({AnnotationRole.API, AnnotationRole.COMBINED})
 public class LookupRequest {
     private final CloseableHttpClient httpClient;
     private final LookupProperties lookupProperties;

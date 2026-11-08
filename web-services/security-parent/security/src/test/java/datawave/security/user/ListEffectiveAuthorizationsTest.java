@@ -1,8 +1,8 @@
 package datawave.security.user;
 
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -15,16 +15,16 @@ import javax.enterprise.inject.Instance;
 
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -43,7 +43,7 @@ import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {ListEffectiveAuthorizationsTest.Config.class})
 public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
     private static ResponseObjectFactory mockResponseObjectFactory;
@@ -54,7 +54,7 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
     private static AccumuloConnectionFactory mockAccumuloConnectionFactory;
     private static UserOperations mockRemoteUserOperations1;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupStatic() {
         mockResponseObjectFactory = EasyMock.createMock(ResponseObjectFactory.class);
         mockEJBContext = EasyMock.createMock(EJBContext.class);
@@ -86,7 +86,7 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
                         mockAccumuloConnectionFactory, mockRemoteUserOperations1);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         resetAll();
     }
@@ -138,7 +138,7 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
     @Autowired
     private UserOperationsBean uob;
 
-    @Before
+    @BeforeEach
     public void validateAutowire() {
         assertNotNull(uob);
     }

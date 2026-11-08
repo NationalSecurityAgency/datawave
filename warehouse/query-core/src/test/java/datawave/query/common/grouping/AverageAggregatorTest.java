@@ -1,13 +1,13 @@
 package datawave.query.common.grouping;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -21,7 +21,7 @@ public class AverageAggregatorTest {
 
     private AverageAggregator aggregator;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         aggregator = new AverageAggregator("FIELD");
     }
@@ -41,7 +41,7 @@ public class AverageAggregatorTest {
     public void testNonNumericValue() {
         Content content = new Content("i am content", new Key(), true);
 
-        IllegalArgumentException exception = Assert.assertThrows(IllegalArgumentException.class, () -> aggregator.aggregate(content));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> aggregator.aggregate(content));
         assertEquals("Character i is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.", exception.getMessage());
     }
 

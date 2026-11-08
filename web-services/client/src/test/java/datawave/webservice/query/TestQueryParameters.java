@@ -1,13 +1,13 @@
 package datawave.webservice.query;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.commons.lang.time.DateUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -19,7 +19,7 @@ public class TestQueryParameters {
     private DefaultQueryParameters qp;
     private MultiValueMap<String,String> parameters;
 
-    @Before
+    @BeforeEach
     public void setup() {
         qp = new DefaultQueryParameters();
         parameters = new LinkedMultiValueMap<>();

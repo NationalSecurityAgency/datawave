@@ -11,23 +11,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.integration.IntegrationMessageHeaderAccessor;
-import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.integration.support.MessageBuilder;
-import org.springframework.messaging.Message;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.MultiValueMap;
@@ -62,8 +55,8 @@ import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.annotation.util.v1.AnnotationValidators;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.runner.AccumuloConnectionRequestMap;
-import datawave.microservice.annotation.common.AnnotationSupplier;
-import datawave.microservice.annotation.health.HealthChecker;
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.service.config.AnnotationProperties;
 import datawave.microservice.annotation.util.Metadata;
 import datawave.microservice.annotation.util.lookup.service.LookupService;
@@ -81,12 +74,10 @@ import lombok.extern.slf4j.Slf4j;
 @Tag(name = "Annotation Controller /v1", description = "Operations related to annotations")
 @Slf4j
 @RestController
+@ConditionalOnAnnotationRole({AnnotationRole.API, AnnotationRole.COMBINED})
 @Secured({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
 @RequestMapping(path = "/v1", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class AnnotationControllerV1 {
-    // Note: This must match 'annotationAckChannel' in the service configuration. Default set in bootstrap.yml.
-    public static final String ANNOTATION_ACK_CHANNEL = "annotationAckChannel";
-
     public static final String ANNOTATION_SERVICE_SYSTEM_FROM = "annotation";
 
     /** used to serialize error response bodies (see {@link #jsonError(String)}/{@link #jsonNotFound(String)}) */
@@ -110,32 +101,24 @@ public class AnnotationControllerV1 {
     private final TimestampTransformer timestampTransformer;
     private final VisibilityTransformer visibilityTransformer;
 
-    private final AnnotationAckTracker annotationAckTracker;
-
-    /** used as a 'sink' for annotation writes */
-    private final AnnotationSupplier annotationSource;
+    private final AnnotationPublisher annotationPublisher;
 
     /** used as a backup writer for annotations */
     @Autowired(required = false)
     @Qualifier("fileAnnotationWriter")
     private AnnotationWriter fileAnnotationWriter;
 
-    /** gates message publishing on messaging-infrastructure health, when the rabbit health checker is enabled */
-    @Autowired(required = false)
-    private HealthChecker healthChecker;
-
     @Autowired
     public AnnotationControllerV1(AccumuloConnectionFactory factory, LookupService lookupService, AnnotationProperties annotationProperties,
-                    TimestampTransformer timestampTransformer, VisibilityTransformer visibilityTransformer, AnnotationSupplier annotationSource,
-                    ExecutorService federatedReadExecutorService, AnnotationAckTracker annotationAckTracker) {
+                    TimestampTransformer timestampTransformer, VisibilityTransformer visibilityTransformer, AnnotationPublisher annotationPublisher,
+                    ExecutorService federatedReadExecutorService) {
         this.connectionFactory = factory;
         this.lookupService = lookupService;
         this.annotationProperties = annotationProperties;
         this.timestampTransformer = timestampTransformer;
         this.visibilityTransformer = visibilityTransformer;
-        this.annotationSource = annotationSource;
+        this.annotationPublisher = annotationPublisher;
         this.federatedReadExecutorService = federatedReadExecutorService;
-        this.annotationAckTracker = annotationAckTracker;
     }
 
     @GetMapping("/source/{analyticHash}")
@@ -616,68 +599,7 @@ public class AnnotationControllerV1 {
 
     /* package-private for unit testing */
     Optional<AnnotationMessage> sendAnnotationMessage(AnnotationMessage annotationMessage) {
-        // If a rabbit health checker is configured and reports the messaging infrastructure as unhealthy, skip attempting to send
-        // entirely -- the caller's retry/backoff loop in writeAnnotation will keep re-checking on subsequent attempts, and will
-        // eventually fall back to the file writer once its retry budget is exhausted.
-        if (healthChecker != null && !healthChecker.isHealthy()) {
-            return Optional.empty();
-        }
-
-        AnnotationMessage identifiedMessage = annotationMessage.getAnnotationMessageId().isBlank()
-                        ? AnnotationUtils.injectAnnotationMessageHash(annotationMessage)
-                        : annotationMessage;
-        String annotationMessageId = identifiedMessage.getAnnotationMessageId();
-
-        boolean success;
-        if (annotationProperties.isAnnotationAckEnabled()) {
-            final CountDownLatch newLatch = new CountDownLatch(1);
-            // if a send for this exact annotationMessageId is already in flight, reuse its latch instead of overwriting it -- overwriting
-            // would orphan the earlier caller's latch so that it never gets counted down and always times out.
-            final CountDownLatch existingLatch = annotationAckTracker.putIfAbsent(annotationMessageId, newLatch);
-            final boolean isOriginalSender = existingLatch == null;
-            final CountDownLatch latch = isOriginalSender ? newLatch : existingLatch;
-
-            success = !isOriginalSender || annotationSource.send(MessageBuilder.withPayload(identifiedMessage).setCorrelationId(annotationMessageId).build());
-
-            try {
-                success = success && latch.await(annotationProperties.getAnnotationAckTimeoutMillis(), TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                // Restore the interrupt status so callers/executors can observe that this thread was asked to stop.
-                Thread.currentThread().interrupt();
-                success = false;
-            } finally {
-                // only the original sender owns this latch entry and should remove it; a duplicate caller must leave it alone
-                // so the original sender's await(...) above can still be satisfied by the eventual ack.
-                if (isOriginalSender) {
-                    annotationAckTracker.remove(annotationMessageId, latch);
-                }
-            }
-        } else {
-            success = annotationSource.send(MessageBuilder.withPayload(identifiedMessage).setCorrelationId(annotationMessageId).build());
-        }
-
-        return success ? Optional.of(identifiedMessage) : Optional.empty();
-    }
-
-    /**
-     * Receives producer confirm acknowledgements, and disengages the latch associated with the given correlation ID.
-     *
-     * @param message
-     *            the confirmation acknowledgements message
-     */
-    @ConditionalOnProperty(value = "annotation.annotationAckEnabled", havingValue = "true", matchIfMissing = true)
-    @ServiceActivator(inputChannel = ANNOTATION_ACK_CHANNEL)
-    public void processConfirmAck(Message<?> message) {
-        Object headerObj = message.getHeaders().get(IntegrationMessageHeaderAccessor.CORRELATION_ID);
-
-        if (headerObj != null) {
-            String correlationId = headerObj.toString();
-            if (annotationAckTracker.countdown(correlationId)) {} else {
-                log.warn("Unable to decrement latch for audit ID [{}]", correlationId);
-            }
-        } else {
-            log.warn("No correlation ID found in confirm ack message");
-        }
+        return annotationPublisher.publishAndConfirm(annotationMessage);
     }
 
     /**

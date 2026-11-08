@@ -1,9 +1,11 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Multimap;
 
@@ -17,8 +19,8 @@ public class PatternNodeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);
 
-        Assert.assertEquals(1L, patterns.size());
-        Assert.assertTrue(patterns.containsEntry("FOO", "1234.*\\d"));
+        assertEquals(1L, patterns.size());
+        assertTrue(patterns.containsEntry("FOO", "1234.*\\d"));
     }
 
     @Test
@@ -27,8 +29,8 @@ public class PatternNodeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);
 
-        Assert.assertEquals(1L, patterns.size());
-        Assert.assertTrue(patterns.containsEntry("FOO", "1234.*\\d"));
+        assertEquals(1L, patterns.size());
+        assertTrue(patterns.containsEntry("FOO", "1234.*\\d"));
     }
 
     @Test
@@ -37,8 +39,8 @@ public class PatternNodeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);
 
-        Assert.assertEquals(1L, patterns.size());
-        Assert.assertTrue(patterns.containsEntry("FOO", "1234.*\\d"));
+        assertEquals(1L, patterns.size());
+        assertTrue(patterns.containsEntry("FOO", "1234.*\\d"));
     }
 
     @Test
@@ -47,9 +49,9 @@ public class PatternNodeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);
 
-        Assert.assertEquals(2L, patterns.size());
-        Assert.assertTrue(patterns.containsEntry("FOO", "1234.*\\d"));
-        Assert.assertTrue(patterns.containsEntry("BAR", "*over9000*?"));
+        assertEquals(2L, patterns.size());
+        assertTrue(patterns.containsEntry("FOO", "1234.*\\d"));
+        assertTrue(patterns.containsEntry("BAR", "*over9000*?"));
     }
 
     @Test
@@ -58,9 +60,9 @@ public class PatternNodeVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryString);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);
 
-        Assert.assertEquals(2L, patterns.size());
-        Assert.assertTrue(patterns.containsEntry("FOO", "1234.*\\d"));
-        Assert.assertTrue(patterns.containsEntry("BAR", "*over9000*?"));
+        assertEquals(2L, patterns.size());
+        assertTrue(patterns.containsEntry("FOO", "1234.*\\d"));
+        assertTrue(patterns.containsEntry("BAR", "*over9000*?"));
     }
 
 }

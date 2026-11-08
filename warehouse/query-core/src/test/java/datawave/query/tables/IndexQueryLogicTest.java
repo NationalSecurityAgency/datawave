@@ -13,10 +13,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -27,8 +26,8 @@ import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.planner.DatePartitionedQueryPlanner;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -48,10 +47,10 @@ import datawave.security.authorization.SubjectIssuerDNPair;
  * <p>
  * Also see {@link GenericCarFields#reverse} for reverse indices.
  */
-public class IndexQueryLogicTest extends AbstractFunctionalQuery {
+public class IndexQueryLogicTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(IndexQueryLogicTest.class);
 
@@ -59,7 +58,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         super(CarsDataType.getManager());
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCarFields();
@@ -72,7 +71,6 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         client = accumuloSetup.loadTables(log);
     }
 
-    @Before
     public void querySetUp() throws IOException {
         log.debug("---------  querySetUp  ---------");
 
@@ -97,7 +95,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
         // setup a directory for cache results
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(createTemporaryFolder().toURI().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
         // init must set auths

@@ -19,7 +19,6 @@ else
 fi
 
 THIS_DIR="${THIS_SCRIPT%/*}"
-cd $THIS_DIR || exit
 
 RUN_OPS=""
 
@@ -48,8 +47,8 @@ done
 #
 # Get the ingest envirionment variables
 #
-. ./ingest-env.sh
-. ./ingest-libs.sh
+. "$THIS_DIR/ingest-env.sh"
+. "$THIS_DIR/ingest-libs.sh"
 
 export CLASSPATH
 $WAREHOUSE_ACCUMULO_BIN/accumulo datawave.ingest.util.GenerateEdgeKeyVersionCache -Dfs.default.name=file:/// $RUN_OPS $USERNAME $PASSWORD ${METADATA_TABLE_NAME} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS

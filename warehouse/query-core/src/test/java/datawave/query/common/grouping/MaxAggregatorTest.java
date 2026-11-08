@@ -1,11 +1,11 @@
 package datawave.query.common.grouping;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Content;
@@ -20,7 +20,7 @@ public class MaxAggregatorTest {
 
     private MaxAggregator aggregator;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         aggregator = new MaxAggregator("FIELD");
     }
@@ -43,7 +43,7 @@ public class MaxAggregatorTest {
         assertMax(first);
 
         DiacriticContent diacriticContent = new DiacriticContent("different content type", new Key(), true);
-        IllegalArgumentException exception = Assert.assertThrows(IllegalArgumentException.class, () -> aggregator.aggregate(diacriticContent));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> aggregator.aggregate(diacriticContent));
         assertEquals("Failed to compare current max 'aaa' to new value 'different content type'", exception.getMessage());
     }
 

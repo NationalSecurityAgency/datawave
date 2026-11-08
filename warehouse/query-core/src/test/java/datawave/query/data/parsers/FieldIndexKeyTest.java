@@ -1,12 +1,12 @@
 package datawave.query.data.parsers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class FieldIndexKeyTest {
 
@@ -91,7 +91,7 @@ public class FieldIndexKeyTest {
         assertEquals("d8zay2.-3pnndm.-anolok", parser.getRootUid());
         assertEquals("value", parser.getValue());
         assertEquals(fiKeyNoCf, parser.getKey());
-        assertTrue("made it this far", true);
+        assertTrue(true, "made it this far");
 
         // invalid column family means the parser will throw an exception
         assertThrows(IllegalArgumentException.class, parser::getField);
