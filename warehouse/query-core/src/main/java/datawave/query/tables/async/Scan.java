@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -20,7 +21,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.eventbus.Subscribe;
 
-import datawave.core.common.util.AccumuloExceptionChecker;
+import datawave.core.common.util.ExceptionUtils;
 import datawave.core.query.configuration.Result;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.tables.AccumuloResource;
@@ -291,7 +292,7 @@ public class Scan implements Callable<Scan> {
             } while (!finished());
         } catch (Exception e) {
             // A ScanTimedOutException means the scan is being timesliced
-            if (AccumuloExceptionChecker.isScanTimedOutException(e)) {
+            if (ExceptionUtils.containsCause(e, ScanTimedOutException.class)) {
                 // this is okay. This means that we are being timesliced.
                 myScan.addRange(currentRange);
             } else {
