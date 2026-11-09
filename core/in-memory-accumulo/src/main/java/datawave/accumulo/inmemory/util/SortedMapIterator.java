@@ -26,7 +26,8 @@ public class SortedMapIterator implements SortedKeyValueIterator<Key,Value> {
     private Iterator<Entry<Key,Value>> iter;
     private Entry<Key,Value> entry;
     private Range range;
-    protected AtomicBoolean interruptFlag;
+    private AtomicBoolean interruptFlag;
+    private int interruptCheckCount = 0;
 
     public SortedMapIterator(SortedMap<Key,Value> map) {
         this.map = map;
@@ -76,7 +77,8 @@ public class SortedMapIterator implements SortedKeyValueIterator<Key,Value> {
             throw new IllegalStateException();
         }
 
-        if (interruptFlag != null && interruptFlag.get()) {
+        // checking the interrupt flag on every call to next is costly, so as Accumulo does, check it on every 100th call
+        if (interruptFlag != null && interruptCheckCount++ % 100 == 0 && interruptFlag.get()) {
             throw new IOException("interrupted");
         }
 
@@ -120,7 +122,8 @@ public class SortedMapIterator implements SortedKeyValueIterator<Key,Value> {
     }
 
     /**
-     * Set an interrupt flag that will cause next() and seek() to throw an IOException if set.
+     * Set an interrupt flag that will cause seek() to throw an IOException if set. next() throws one too, but like Accumulo's SortedMapIterator it only checks
+     * the flag on every 100th call, starting with the first.
      *
      * @param flag
      *            the interrupt flag
