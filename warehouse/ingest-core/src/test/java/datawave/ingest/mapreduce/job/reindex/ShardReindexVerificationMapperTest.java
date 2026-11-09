@@ -4,6 +4,8 @@ import static datawave.ingest.mapreduce.job.reindex.ShardedDataGenerator.createI
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,14 +15,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.VersioningIterator;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.Counters;
@@ -393,14 +401,18 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         File shardDir = new File(sourceDir1, "shard");
         FileUtils.copyDirectory(shardDir, sourceDir2);
 
+        // read what the tables should hold before the bulk imports remove the files
+        List<Map.Entry<Key,Value>> expected = readNewestVersions(new File(shardDir, "magic.rf"));
+        assertFalse(expected.isEmpty());
+
         accumuloClient.tableOperations().create("myTable1");
-        File tmp1 = Files.createDirectory(folder.resolve("tmp1")).toFile();
-        // TODO: Fix the bulk import stuff later
-        // accumuloClient.tableOperations().importDirectory("myTable1", sourceDir1.getAbsolutePath() + "/shard", tmp1.getAbsolutePath(), false);
+        accumuloClient.tableOperations().importDirectory(sourceDir1.getAbsolutePath() + "/shard").to("myTable1").load();
         accumuloClient.tableOperations().create("myTable2");
-        File tmp2 = Files.createDirectory(folder.resolve("tmp2")).toFile();
-        // TODO: Fix the bulk import stuff later
-        // accumuloClient.tableOperations().importDirectory("myTable2", sourceDir2.getAbsolutePath(), tmp2.getAbsolutePath(), false);
+        accumuloClient.tableOperations().importDirectory(sourceDir2.getAbsolutePath()).to("myTable2").load();
+
+        // both tables must hold the generated data, otherwise finding no diff below proves nothing
+        assertEquals(expected, scan("myTable1"));
+        assertEquals(expected, scan("myTable2"));
 
         replayAll();
 
@@ -424,5 +436,27 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         // should be no diff as the inputs are identical
 
         verifyAll();
+    }
+
+    // the newest version of each entry in the file, which is what a table with the default versioning iterator returns
+    private static List<Map.Entry<Key,Value>> readNewestVersions(File rfile) {
+        try (Scanner scanner = RFile.newScanner().from(rfile.getAbsolutePath()).build()) {
+            scanner.addScanIterator(new IteratorSetting(20, "vers", VersioningIterator.class));
+            return toList(scanner);
+        }
+    }
+
+    private List<Map.Entry<Key,Value>> scan(String table) throws TableNotFoundException {
+        try (Scanner scanner = accumuloClient.createScanner(table, Authorizations.EMPTY)) {
+            return toList(scanner);
+        }
+    }
+
+    private static List<Map.Entry<Key,Value>> toList(Scanner scanner) {
+        List<Map.Entry<Key,Value>> entries = new ArrayList<>();
+        for (Map.Entry<Key,Value> entry : scanner) {
+            entries.add(entry);
+        }
+        return entries;
     }
 }
