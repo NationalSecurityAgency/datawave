@@ -5,9 +5,9 @@ package datawave.table.constants;
  */
 public final class LocalityGroupConstants {
 
-    public static String FULL_CONTENT_LOCALITY = "fullcontent";
+    public static final String FULL_CONTENT_LOCALITY = "fullcontent";
 
-    public static String TERM_FREQUENCY_LOCALITY = "termfrequency";
+    public static final String TERM_FREQUENCY_LOCALITY = "termfrequency";
 
     private LocalityGroupConstants() {
         throw new UnsupportedOperationException();
