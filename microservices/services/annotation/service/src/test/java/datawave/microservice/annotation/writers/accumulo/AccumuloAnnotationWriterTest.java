@@ -321,8 +321,8 @@ public class AccumuloAnnotationWriterTest {
         private final AccumuloClient accumuloClient;
 
         public MockInMemoryAccumuloConnectionFactory(String username, String instanceName) throws Exception {
-            InMemoryAccumulo inMemoryInstance = new InMemoryAccumulo(instanceName);
-            this.accumuloClient = new InMemoryAccumuloClient(username, inMemoryInstance);
+            InMemoryAccumulo inMemoryAccumulo = new InMemoryAccumulo(instanceName);
+            this.accumuloClient = new InMemoryAccumuloClient(username, inMemoryAccumulo);
             accumuloClient.securityOperations().changeUserAuthorizations(username, new Authorizations("PUBLIC", "PRIVATE"));
         }
 

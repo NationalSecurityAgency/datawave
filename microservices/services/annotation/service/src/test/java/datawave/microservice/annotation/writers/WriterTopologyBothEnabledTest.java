@@ -91,8 +91,8 @@ public class WriterTopologyBothEnabledTest {
         private final org.apache.accumulo.core.client.AccumuloClient accumuloClient;
 
         public MockInMemoryAccumuloConnectionFactory(String username, String instanceName) throws Exception {
-            InMemoryAccumulo inMemoryInstance = new InMemoryAccumulo(instanceName);
-            this.accumuloClient = new InMemoryAccumuloClient(username, inMemoryInstance);
+            InMemoryAccumulo inMemoryAccumulo = new InMemoryAccumulo(instanceName);
+            this.accumuloClient = new InMemoryAccumuloClient(username, inMemoryAccumulo);
             accumuloClient.securityOperations().changeUserAuthorizations(username, new org.apache.accumulo.core.security.Authorizations("PUBLIC", "PRIVATE"));
         }
 

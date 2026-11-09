@@ -138,7 +138,7 @@ public class BulkIngestMapFileLoaderTest {
 
     private List<String> systemProperties;
     private Configuration conf = new Configuration();
-    
+
     private static void deleteRecursively(java.nio.file.Path dir) {
         if (dir == null || !Files.exists(dir))
             return;
@@ -154,7 +154,7 @@ public class BulkIngestMapFileLoaderTest {
             throw new RuntimeException("Failed to walk " + dir, e);
         }
     }
-    
+
     @BeforeAll
     public static void setupClass() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException,
                     InterruptedException, URISyntaxException {

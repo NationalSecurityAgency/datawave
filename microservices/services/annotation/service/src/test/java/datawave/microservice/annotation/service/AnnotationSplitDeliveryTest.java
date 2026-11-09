@@ -20,8 +20,8 @@ import org.mockito.Mockito;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.messaging.Message;
 
+import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.annotation.data.v1.AnnotationDataAccess;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationMessage;
@@ -45,7 +45,7 @@ import reactor.core.Disposable;
 class AnnotationSplitDeliveryTest {
     @Test
     void confirmedApiWriteIsConsumedAndPersistedBySeparateWriterContext() throws Exception {
-        AccumuloClient client = new InMemoryAccumuloClient("writer", new InMemoryInstance("annotation-split-" + UUID.randomUUID()));
+        AccumuloClient client = new InMemoryAccumuloClient("writer", new InMemoryAccumulo("annotation-split-" + UUID.randomUUID()));
         client.securityOperations().changeUserAuthorizations("writer", new Authorizations("PUBLIC", "PRIVATE"));
         AccumuloConnectionFactory writerFactory = Mockito.mock(AccumuloConnectionFactory.class);
         Mockito.when(writerFactory.getClient(anyString(), anyCollection(), anyString(), any(), anyMap())).thenReturn(client);
