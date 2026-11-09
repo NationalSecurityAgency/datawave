@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
-import datawave.query.testframework.AccumuloSetupJUnit5;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -31,7 +31,7 @@ import datawave.query.testframework.GenericCityFields;
 public class MatchRegexTest extends AbstractFunctionalQueryJUnit5 {
 
     @RegisterExtension
-    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
+    public static AccumuloSetupExtension accumuloSetup = AccumuloSetupExtension.create();
 
     private static final Logger log = Logger.getLogger(MatchRegexTest.class);
 
