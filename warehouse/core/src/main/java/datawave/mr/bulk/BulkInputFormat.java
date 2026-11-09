@@ -71,6 +71,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
+import datawave.accumulo.inmemory.InMemoryAccumuloCache;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.common.util.ArgumentChecker;
 import datawave.core.common.connection.AccumuloTableUtils;
@@ -507,7 +508,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static AccumuloClient getClient(Configuration conf) throws AccumuloException, AccumuloSecurityException, IOException {
         log.debug("Creating client with user: {}", getUsername(conf));
         if (conf.getBoolean(MOCK, false)) {
-            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryAccumulo(conf.get(INSTANCE_NAME)));
+            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf),
+                            InMemoryAccumuloCache.getDefault().getOrCreate(conf.get(INSTANCE_NAME)));
             client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
             return client;
         } else {

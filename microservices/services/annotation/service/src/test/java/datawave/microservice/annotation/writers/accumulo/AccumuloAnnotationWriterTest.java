@@ -59,7 +59,7 @@ import lombok.extern.slf4j.Slf4j;
 @ContextConfiguration(classes = {AccumuloAnnotationWriterConfig.class, AccumuloConfiguration.class, AnnotationSerializerConfiguration.class,
         AccumuloAnnotationWriterTest.AccumuloAnnotationWriterTestConfiguration.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = "spring.main.allow-bean-definition-overriding=true")
-@ActiveProfiles({"AccumuloAnnotationWriterTest", "accumulo-enabled"})
+@ActiveProfiles({"combined", "AccumuloAnnotationWriterTest", "accumulo-enabled"})
 public class AccumuloAnnotationWriterTest {
     private static final String annotationTableName = "truthmark";
     private static final String annotationSourceTableName = "truthmarkSource";
@@ -321,8 +321,8 @@ public class AccumuloAnnotationWriterTest {
         private final AccumuloClient accumuloClient;
 
         public MockInMemoryAccumuloConnectionFactory(String username, String instanceName) throws Exception {
-            InMemoryAccumulo inMemoryInstance = new InMemoryAccumulo(instanceName);
-            this.accumuloClient = new InMemoryAccumuloClient(username, inMemoryInstance);
+            InMemoryAccumulo inMemoryAccumulo = new InMemoryAccumulo(instanceName);
+            this.accumuloClient = new InMemoryAccumuloClient(username, inMemoryAccumulo);
             accumuloClient.securityOperations().changeUserAuthorizations(username, new Authorizations("PUBLIC", "PRIVATE"));
         }
 

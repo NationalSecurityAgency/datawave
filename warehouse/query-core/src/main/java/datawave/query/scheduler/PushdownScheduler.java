@@ -25,7 +25,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.core.common.connection.AccumuloTableUtils;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.QueryData;
@@ -175,13 +174,9 @@ public class PushdownScheduler extends Scheduler {
         Set<Authorizations> auths = config.getAuthorizations();
 
         AccumuloClient client = config.getClient();
-        if (client instanceof InMemoryAccumuloClient) {
-            tableId = TableId.of(config.getTableName());
-        } else {
-            tableId = AccumuloTableUtils.getTableId(client, tableName);
-            if (tableId == null) {
-                throw new TableNotFoundException(null, tableName, "Table does not exist");
-            }
+        tableId = AccumuloTableUtils.getTableId(client, tableName);
+        if (tableId == null) {
+            throw new TableNotFoundException(null, tableName, "Table does not exist");
         }
 
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), getPushdownFunction());

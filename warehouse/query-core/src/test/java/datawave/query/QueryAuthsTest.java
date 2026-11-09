@@ -1,8 +1,8 @@
 package datawave.query;
 
 import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,16 +18,16 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.VisibilityEvaluator;
 import org.apache.accumulo.core.security.VisibilityParseException;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.BaseRawData;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
@@ -39,14 +39,14 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 
-public class QueryAuthsTest extends AbstractFunctionalQuery {
+public class QueryAuthsTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(QueryAuthsTest.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
@@ -211,7 +211,7 @@ public class QueryAuthsTest extends AbstractFunctionalQuery {
             }
 
             try {
-                assertTrue("Should not filter visibility: " + cv.toString(), filter.evaluate(cv));
+                assertTrue(filter.evaluate(cv), "Should not filter visibility: " + cv.toString());
             } catch (VisibilityParseException vpe) {
                 fail("Could not parse visibility for field: " + fieldName + " visibility: " + cv.toString() + " exception: " + vpe.getMessage());
             }

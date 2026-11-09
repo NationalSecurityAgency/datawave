@@ -18,7 +18,7 @@
     </bean>
 
     <bean id="dateIndexHelperCacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" >
-        <property name="cacheSpecification" value="maximumSize=1000, expireAfterAccess=24h, expireAfterWrite=24h" />
+        <property name="cacheSpecification" value="maximumSize=1000, expireAfterAccess=15m, expireAfterWrite=15m" />
     </bean>
 
     <bean id="remoteOperationsCacheManager" class="org.springframework.cache.caffeine.CaffeineCacheManager" >

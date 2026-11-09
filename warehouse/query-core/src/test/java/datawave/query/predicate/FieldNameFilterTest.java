@@ -1,8 +1,8 @@
 package datawave.query.predicate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,8 +13,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
@@ -41,7 +41,7 @@ public class FieldNameFilterTest {
     private final List<Entry<Key,Value>> data = new ArrayList<>();
     private final List<Entry<Key,Value>> expected = new ArrayList<>();
 
-    @Before
+    @BeforeEach
     public void before() {
         data.clear();
         expected.clear();

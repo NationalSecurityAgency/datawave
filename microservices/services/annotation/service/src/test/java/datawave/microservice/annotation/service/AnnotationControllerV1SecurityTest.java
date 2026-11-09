@@ -42,8 +42,8 @@ class AnnotationControllerV1SecurityTest {
         @Bean
         AnnotationControllerV1 annotationController() {
             return new AnnotationControllerV1(mock(AccumuloConnectionFactory.class), mock(LookupService.class), new AnnotationProperties(),
-                            new DefaultTimestampTransformer(), new DefaultVisibilityTransformer(), new AnnotationSupplier(), mock(ExecutorService.class),
-                            new AnnotationAckTracker());
+                            new DefaultTimestampTransformer(), new DefaultVisibilityTransformer(),
+                            new AnnotationPublisher(new AnnotationSupplier(), new AnnotationProperties(), null), mock(ExecutorService.class));
         }
 
         @Bean
