@@ -16,6 +16,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
+import org.apache.accumulo.tserver.tablet.TabletClosedException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
@@ -24,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 
-import datawave.core.common.util.AccumuloExceptionChecker;
+import datawave.core.common.util.ExceptionUtils;
 import datawave.next.scanner.CandidateResult;
 import datawave.next.scanner.CandidateResultSerializer;
 import datawave.next.stats.DocIdQueryIterStats;
@@ -291,7 +292,7 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
-        RuntimeException tce = AccumuloExceptionChecker.findTabletClosedException(e);
+        TabletClosedException tce = ExceptionUtils.findCause(e, TabletClosedException.class);
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
