@@ -4,7 +4,11 @@ import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_2_OVER
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_3_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.EXPECTED_2_4_OVERLAPS;
 import static datawave.query.tables.ssdeep.util.SSDeepTestUtil.TEST_SSDEEPS;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,10 +32,9 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -114,7 +117,7 @@ public class SSDeepIndexQueryTest {
         bw.close();
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void loadData() throws Exception {
         final String tableName = SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME;
 
@@ -135,7 +138,7 @@ public class SSDeepIndexQueryTest {
         logSSDeepTestData(tableName);
     }
 
-    @Before
+    @BeforeEach
     public void setUpQuery() {
         logic = new SSDeepSimilarityQueryLogic();
         logic.setTableName(SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME);
@@ -163,15 +166,13 @@ public class SSDeepIndexQueryTest {
         runSingleQuery(true);
     }
 
-    @Test(expected = SSDeepRuntimeQueryException.class)
+    @Test
     public void testSingleQueryWithNoValidNgrams() throws Exception {
         String query = "CHECKSUM_SSDEEP:12288:zzzzzzzzzzzz:zzzzzz";
 
         final int minScoreThreshold = 0;
 
-        EventQueryResponseBase response = runSSDeepQuery(query, minScoreThreshold);
-        List<EventBase> events = response.getEvents();
-        Assert.assertNull(events);
+        assertThrows(SSDeepRuntimeQueryException.class, () -> runSSDeepQuery(query, minScoreThreshold));
     }
 
     @Test
@@ -182,7 +183,7 @@ public class SSDeepIndexQueryTest {
 
         EventQueryResponseBase response = runSSDeepQuery(query, minScoreThreshold);
         List<EventBase> events = response.getEvents();
-        Assert.assertNull(events);
+        assertNull(events);
     }
 
     private static void logSSDeepTestData(String tableName) throws TableNotFoundException {
@@ -207,7 +208,7 @@ public class SSDeepIndexQueryTest {
         int eventCount = events.size();
         Map<String,Map<String,String>> observedEvents = extractObservedEvents(events);
 
-        Assert.assertEquals(expectedEventCount, eventCount);
+        assertEquals(expectedEventCount, eventCount);
 
         // find the fields for the self match example.
         SSDeepTestUtil.assertSSDeepSimilarityMatch(TEST_SSDEEPS[2], TEST_SSDEEPS[2], "67", EXPECTED_2_2_OVERLAPS, "100", observedEvents);
@@ -282,7 +283,7 @@ public class SSDeepIndexQueryTest {
      */
     public static void assertNoMatch(String querySsdeep, String matchingSsdeep, Map<String,Map<String,String>> observedEvents) {
         final Map<String,String> observedFields = observedEvents.get(querySsdeep + "#" + matchingSsdeep);
-        Assert.assertTrue("Observed fields was not empty", observedFields.isEmpty());
+        assertTrue(observedFields.isEmpty(), "Observed fields was not empty");
 
     }
 }

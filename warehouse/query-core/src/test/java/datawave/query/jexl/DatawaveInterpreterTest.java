@@ -1,7 +1,7 @@
 package datawave.query.jexl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,8 +18,8 @@ import org.apache.commons.jexl3.internal.DatawaveJexlScript;
 import org.apache.commons.jexl3.internal.Engine;
 import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import com.google.common.collect.Maps;
@@ -562,7 +562,7 @@ public class DatawaveInterpreterTest {
         testInputs(array);
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testFilterFunctionMultiFieldedIsNull_future() {
         // Once #1604 is complete these tests will evaluate correctly
@@ -622,7 +622,7 @@ public class DatawaveInterpreterTest {
         testInputs(array);
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testFilterFunctionsMultiFieldedIsNotNull() {
         // Once #1604 is complete these tests will evaluate correctly
@@ -734,13 +734,13 @@ public class DatawaveInterpreterTest {
         JexlScript script = getJexlEngine().createScript(query);
         Object executed = script.execute(context);
         boolean isMatched = matchResult(executed);
-        assertEquals("Unexpected result for query (binary tree): " + query, expectedResult, isMatched);
+        assertEquals(expectedResult, isMatched, "Unexpected result for query (binary tree): " + query);
 
         // create flattened tree and execute the query
         DatawaveJexlScript dwScript = DatawaveJexlScript.create((Script) script);
         executed = dwScript.execute(context);
         isMatched = matchResult(executed);
-        assertEquals("Unexpected result for query (flattened tree): " + query, expectedResult, isMatched);
+        assertEquals(expectedResult, isMatched, "Unexpected result for query (flattened tree): " + query);
     }
 
     protected JexlEngine getJexlEngine() {

@@ -7,7 +7,8 @@ import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static datawave.query.testframework.RawDataManager.RN_OP;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,9 +44,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.google.common.collect.Multimap;
 
@@ -56,8 +57,8 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.DatePartitionedQueryPlanner;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.rules.RegexPushdownTransformRule;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupJUnit5;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
@@ -68,14 +69,14 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.table.constants.MetadataColumnFamilyConstants;
 
-public class AnyFieldQueryTest extends AbstractFunctionalQuery {
+public class AnyFieldQueryTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
 
     private static final Logger log = Logger.getLogger(AnyFieldQueryTest.class);
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         FieldConfig generic = new GenericCityFields();
         generic.addReverseIndexField(CityField.STATE.name());
@@ -121,25 +122,27 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         }
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testEqualsTimeout() throws Exception {
         log.info("------  testEqualsTimeout  ------");
 
         // set very fast timeouts
         logic.getConfig().setMaxAnyFieldScanTimeMillis(1);
 
-        for (final TestCities city : TestCities.values()) {
-            String cityPhrase = EQ_OP + "'" + city.name() + "'";
-            String query = Constants.ANY_FIELD + cityPhrase;
+        assertThrows(DatawaveFatalQueryException.class, () -> {
+            for (final TestCities city : TestCities.values()) {
+                String cityPhrase = EQ_OP + "'" + city.name() + "'";
+                String query = Constants.ANY_FIELD + cityPhrase;
 
-            // Test the plan with all expansions
-            String anyCity = CityField.CITY.name() + cityPhrase;
-            if (city.name().equals("london")) {
-                anyCity = "(" + anyCity + JEXL_OR_OP + CityField.STATE.name() + cityPhrase + ")";
+                // Test the plan with all expansions
+                String anyCity = CityField.CITY.name() + cityPhrase;
+                if (city.name().equals("london")) {
+                    anyCity = "(" + anyCity + JEXL_OR_OP + CityField.STATE.name() + cityPhrase + ")";
+                }
+                String plan = getPlan(new DelayedClient(client, 6000), query, true, true);
+                assertPlanEquals(anyCity, plan);
             }
-            String plan = getPlan(new DelayedClient(client, 6000), query, true, true);
-            assertPlanEquals(anyCity, plan);
-        }
+        });
     }
 
     @Test
@@ -720,7 +723,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         }
     }
 
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testRegexWithFIAndRI() throws Exception {
         String phrase = RE_OP + "'.*iss.*'";
         String query = Constants.ANY_FIELD + phrase;
@@ -757,7 +760,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         // test running the query
         String expect = this.dataManager.convertAnyField(EQ_OP + "'nothing'");
-        runTest(query, expect);
+        assertThrows(DatawaveFatalQueryException.class, () -> runTest(query, expect));
     }
 
     @Test
