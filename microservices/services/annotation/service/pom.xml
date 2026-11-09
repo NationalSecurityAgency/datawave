@@ -28,7 +28,6 @@
         <version.curator>5.9.0</version.curator>
         <version.datawave>9.0.0-SNAPSHOT</version.datawave>
         <version.datawave-commons-security>${version.datawave}</version.datawave-commons-security>
-        <version.datawave.annotation-core>9.0.0-SNAPSHOT</version.datawave.annotation-core>
         <version.datawave.hazelcast-client>9.0.0-SNAPSHOT</version.datawave.hazelcast-client>
         <version.datawave.hazelcast-common>9.0.0-SNAPSHOT</version.datawave.hazelcast-common>
         <version.datawave.starter>9.0.0-SNAPSHOT</version.datawave.starter>
