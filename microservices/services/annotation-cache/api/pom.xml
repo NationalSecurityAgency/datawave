@@ -9,12 +9,12 @@
     </parent>
 
     <artifactId>annotation-cache-api</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.1.0</version>
     <url>https://github.com/NationalSecurityAgency/datawave</url>
     <scm>
         <connection>scm:git:${project.scm.url}</connection>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>microservices/services/annotation-cache/api-1.1.0</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
 
