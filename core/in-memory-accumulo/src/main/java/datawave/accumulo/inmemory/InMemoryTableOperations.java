@@ -18,6 +18,9 @@ package datawave.accumulo.inmemory;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,16 +29,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.NamespaceNotFoundException;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.CloneConfiguration;
@@ -45,22 +51,32 @@ import org.apache.accumulo.core.client.admin.FindMax;
 import org.apache.accumulo.core.client.admin.ImportConfiguration;
 import org.apache.accumulo.core.client.admin.Locations;
 import org.apache.accumulo.core.client.admin.NewTableConfiguration;
+import org.apache.accumulo.core.client.admin.TableOperations.ImportDestinationArguments;
+import org.apache.accumulo.core.client.admin.TableOperations.ImportMappingOptions;
 import org.apache.accumulo.core.client.admin.TabletMergeability;
 import org.apache.accumulo.core.client.admin.TimeType;
+import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.clientImpl.TableOperationsHelper;
 import org.apache.accumulo.core.clientImpl.TabletMergeabilityUtil;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.LoadPlan;
+import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.RowRange;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.TabletId;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.dataImpl.TabletIdImpl;
 import org.apache.accumulo.core.metadata.SystemTables;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.util.Validators;
 import org.apache.accumulo.core.util.tables.TableNameUtil;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -255,6 +271,11 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         if (!exists(tableName))
             throw new TableNotFoundException(tableName, tableName, "");
         return Collections.singleton(range);
+    }
+
+    @Override
+    public ImportDestinationArguments importDirectory(String directory) {
+        return new BulkImportImpl(acu, directory);
     }
 
     @Override
@@ -533,6 +554,143 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         @Override
         public Map<TabletId,List<Range>> groupByTablet() {
             return groupedByTablets;
+        }
+    }
+
+    /**
+     * Bulk import into an in-memory table. As in Accumulo, only the RFiles directly in the directory are loaded, and they are removed from the directory once
+     * loaded. Their entries are replayed into the table as mutations.
+     */
+    private static class BulkImportImpl implements ImportDestinationArguments, ImportMappingOptions {
+        private static final String RFILE_EXTENSION = ".rf";
+        private static final String BULK_WORKING_PREFIX = "accumulo-bulk-";
+
+        private final InMemoryAccumulo acu;
+        private final String directory;
+        private String tableName;
+        private boolean setTime = false;
+        private boolean ignoreEmptyDir = false;
+
+        BulkImportImpl(InMemoryAccumulo acu, String directory) {
+            this.acu = acu;
+            this.directory = Objects.requireNonNull(directory);
+        }
+
+        @Override
+        public ImportMappingOptions to(String tableName) {
+            this.tableName = Objects.requireNonNull(tableName);
+            return this;
+        }
+
+        @Override
+        public ImportMappingOptions tableTime(boolean value) {
+            this.setTime = value;
+            return this;
+        }
+
+        @Override
+        public ImportMappingOptions ignoreEmptyDir(boolean ignore) {
+            this.ignoreEmptyDir = ignore;
+            return this;
+        }
+
+        @Override
+        public ImportMappingOptions plan(LoadPlan plan) {
+            // ignored: an in-memory table has no tablets to map the files to
+            return this;
+        }
+
+        @Override
+        public ImportMappingOptions executor(Executor service) {
+            // ignored: the files are read on the calling thread
+            return this;
+        }
+
+        @Override
+        public ImportMappingOptions threads(int numThreads) {
+            // ignored: the files are read on the calling thread
+            return this;
+        }
+
+        @Override
+        public void load() throws TableNotFoundException, IOException, AccumuloException, AccumuloSecurityException {
+            InMemoryTable table = acu.tables.get(tableName);
+            if (table == null) {
+                throw new TableNotFoundException(null, tableName, "The table was not found");
+            }
+            FileSystem fs = acu.getFileSystem();
+            Path dir = checkPath(fs);
+
+            // the files Accumulo loads: RFiles directly in the directory, other than its own working files
+            List<Path> files = new ArrayList<>();
+            for (FileStatus status : fs.listStatus(dir)) {
+                String name = status.getPath().getName();
+                if (!status.isDirectory() && name.endsWith(RFILE_EXTENSION) && !name.startsWith(BULK_WORKING_PREFIX)) {
+                    files.add(status.getPath());
+                }
+            }
+
+            // read every file before changing the table, so a file that cannot be read fails the whole import
+            List<Entry<Key,Value>> entries = new ArrayList<>();
+            for (Path file : files) {
+                read(fs, file, entries);
+            }
+
+            // as in Accumulo, files without any entries leave nothing to import
+            if (entries.isEmpty()) {
+                if (ignoreEmptyDir) {
+                    log.info("Attempted to import files from empty directory - {}. Zero files imported", dir);
+                    return;
+                }
+                throw new IllegalArgumentException("Attempted to import zero files from " + dir);
+            }
+
+            long time = System.currentTimeMillis();
+            for (Entry<Key,Value> entry : entries) {
+                table.addMutation(toMutation(entry, time));
+            }
+            // Accumulo moves the loaded files out of the directory and into the table
+            for (Path file : files) {
+                if (!fs.delete(file, false)) {
+                    throw new IOException("Unable to remove imported file " + file);
+                }
+            }
+        }
+
+        private Path checkPath(FileSystem fs) throws IOException, AccumuloException {
+            Path dir = fs.makeQualified(new Path(directory));
+            try {
+                if (!fs.getFileStatus(dir).isDirectory()) {
+                    throw new AccumuloException("Bulk import directory " + directory + " is not a directory!");
+                }
+            } catch (FileNotFoundException e) {
+                throw new AccumuloException("Bulk import directory " + directory + " does not exist or has bad permissions", e);
+            }
+            return dir;
+        }
+
+        private static void read(FileSystem fs, Path file, List<Entry<Key,Value>> entries) throws IOException {
+            // without the system iterators the scanner returns delete markers and does not filter on visibility
+            try (Scanner scanner = RFile.newScanner().from(file.toString()).withFileSystem(fs).withoutSystemIterators().build()) {
+                for (Entry<Key,Value> entry : scanner) {
+                    entries.add(entry);
+                }
+            } catch (UncheckedIOException e) {
+                throw new IOException("Unable to read " + file, e.getCause());
+            }
+        }
+
+        private Mutation toMutation(Entry<Key,Value> entry, long time) {
+            Key key = entry.getKey();
+            long timestamp = setTime ? time : key.getTimestamp();
+            ColumnVisibility visibility = new ColumnVisibility(key.getColumnVisibilityData().toArray());
+            Mutation mutation = new Mutation(key.getRow());
+            if (key.isDeleted()) {
+                mutation.putDelete(key.getColumnFamily(), key.getColumnQualifier(), visibility, timestamp);
+            } else {
+                mutation.put(key.getColumnFamily(), key.getColumnQualifier(), visibility, timestamp, entry.getValue());
+            }
+            return mutation;
         }
     }
 }
