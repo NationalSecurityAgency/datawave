@@ -79,7 +79,7 @@ public class SortedMapIterator implements SortedKeyValueIterator<Key,Value> {
 
         // checking the interrupt flag on every call to next is costly, so as Accumulo does, check it on every 100th call
         if (interruptFlag != null && interruptCheckCount++ % 100 == 0 && interruptFlag.get()) {
-            throw new IOException("interrupted");
+            throw new IterationInterruptedException();
         }
 
         if (iter.hasNext()) {
@@ -95,7 +95,7 @@ public class SortedMapIterator implements SortedKeyValueIterator<Key,Value> {
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         if (interruptFlag != null && interruptFlag.get()) {
-            throw new IOException("interrupted");
+            throw new IterationInterruptedException();
         }
 
         this.range = range;
@@ -122,8 +122,9 @@ public class SortedMapIterator implements SortedKeyValueIterator<Key,Value> {
     }
 
     /**
-     * Set an interrupt flag that will cause seek() to throw an IOException if set. next() throws one too, but like Accumulo's SortedMapIterator it only checks
-     * the flag on every 100th call, starting with the first.
+     * Set a flag that interrupts this iterator. While the flag is set, seek() throws an {@link IterationInterruptedException}. next() throws one too, but like
+     * Accumulo's SortedMapIterator it only checks the flag on every 100th call, starting with the first. Copies made by deepCopy() after this call share the
+     * flag.
      *
      * @param flag
      *            the interrupt flag
