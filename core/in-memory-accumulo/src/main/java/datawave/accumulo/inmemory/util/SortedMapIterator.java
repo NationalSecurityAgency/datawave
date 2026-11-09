@@ -98,30 +98,24 @@ public class SortedMapIterator implements SortedKeyValueIterator<Key,Value> {
 
         this.range = range;
 
-        Key startKey = range.getStartKey();
-        if (startKey == null) {
-            startKey = new Key();
+        Key key = range.getStartKey();
+        if (key == null) {
+            key = new Key();
         }
 
-        // Get the tailMap starting from the start key
-        SortedMap<Key,Value> tailMap = map.tailMap(startKey);
-        iter = tailMap.entrySet().iterator();
-
-        // If the range is not start key inclusive, skip the first entry if it equals the start key
+        iter = map.tailMap(key).entrySet().iterator();
         if (iter.hasNext()) {
             entry = iter.next();
-            if (!range.isStartKeyInclusive() && entry.getKey().equals(startKey)) {
-                if (iter.hasNext()) {
-                    entry = iter.next();
-                } else {
-                    entry = null;
-                }
-            }
-            if (entry != null && range.afterEndKey(entry.getKey())) {
+            if (range.afterEndKey(entry.getKey())) {
                 entry = null;
             }
         } else {
             entry = null;
+        }
+
+        // the tail map includes the start key, so move past any entries the range excludes, such as an exclusive start key
+        while (hasTop() && range.beforeStartKey(getTopKey())) {
+            next();
         }
     }
 
