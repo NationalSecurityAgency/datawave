@@ -10,11 +10,11 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -32,13 +32,13 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.easymock.Capture;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.ingest.protobuf.TermWeight;
@@ -52,7 +52,7 @@ import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class ExcerptTransformTest extends EasyMockSupport {
 
     @Mock
@@ -72,13 +72,13 @@ public class ExcerptTransformTest extends EasyMockSupport {
 
     private static final String EVENT_ID = "shard\u0000dt\u0000uid";
 
-    @Before
+    @BeforeEach
     public void setUp() {
         phraseIndexes = new PhraseIndexes();
         excerptFields = new ExcerptFields();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         document = null;
         excerptTransform = null;

@@ -1,11 +1,15 @@
 package datawave.microservice.annotation.writers.log.config;
 
+import static datawave.microservice.annotation.config.AnnotationRoleConstants.LOG_WRITER_ENABLED;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import datawave.microservice.annotation.common.AnnotationConsumer;
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.writers.AnnotationWriter;
 import datawave.microservice.annotation.writers.log.LogAnnotationWriter;
 
@@ -15,7 +19,8 @@ import datawave.microservice.annotation.writers.log.LogAnnotationWriter;
  * annotation binding, as specified in the annotation config.
  */
 @Configuration
-@ConditionalOnProperty(name = "annotation.writers.log.enabled", havingValue = "true")
+@ConditionalOnProperty(name = LOG_WRITER_ENABLED, havingValue = "true")
+@ConditionalOnAnnotationRole({AnnotationRole.WRITER, AnnotationRole.COMBINED})
 public class LogAnnotationWriterProperties {
     @Bean
     public AnnotationConsumer logAnnotationSink(@Qualifier("logAnnotationWriter") AnnotationWriter annotationWriter) {

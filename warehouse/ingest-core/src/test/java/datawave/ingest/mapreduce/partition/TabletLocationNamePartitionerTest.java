@@ -1,5 +1,8 @@
 package datawave.ingest.mapreduce.partition;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -11,10 +14,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
@@ -23,7 +25,7 @@ public class TabletLocationNamePartitionerTest {
     Configuration conf = new Configuration();
     TabletLocationNamePartitioner partitioner = null;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         conf = new Configuration();
         conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
@@ -31,7 +33,7 @@ public class TabletLocationNamePartitionerTest {
         partitioner.setConf(conf);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         conf.clear();
         conf = null;
@@ -68,14 +70,14 @@ public class TabletLocationNamePartitionerTest {
         }
         for (int i = 0; i < 8; i++) {
             try {
-                Assert.assertEquals("Unexpected distribution: ", expected[i], distribution[i]);
+                assertEquals(expected[i], distribution[i], "Unexpected distribution: ");
             } catch (Throwable e) {
                 System.err.println(e.getMessage());
                 errored = true;
             }
         }
         if (errored) {
-            Assert.fail("Failed to get expected distribution.  See console for unexpected entries");
+            fail("Failed to get expected distribution.  See console for unexpected entries");
         }
 
     }

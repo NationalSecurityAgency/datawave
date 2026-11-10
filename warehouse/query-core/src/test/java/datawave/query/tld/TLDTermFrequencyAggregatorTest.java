@@ -1,10 +1,10 @@
 package datawave.query.tld;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -21,8 +21,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Maps;
 
@@ -39,7 +39,7 @@ import datawave.query.util.TypeMetadata;
 public class TLDTermFrequencyAggregatorTest {
     private TLDTermFrequencyAggregator aggregator;
 
-    @Before
+    @BeforeEach
     public void setup() {
         aggregator = new TLDTermFrequencyAggregator(null, null, -1);
     }
@@ -121,7 +121,7 @@ public class TLDTermFrequencyAggregatorTest {
         DatawaveKey parsedResult = new DatawaveKey(result);
         assertEquals("dataType1", parsedResult.getDataType());
         assertEquals("123.345.456", parsedResult.getUid());
-        assertEquals(parsedResult.getFieldName(), "FIELD1", parsedResult.getFieldName());
+        assertEquals("FIELD1", parsedResult.getFieldName(), parsedResult.getFieldName());
         assertEquals("VALUE1", parsedResult.getFieldValue());
 
         // test that the doc is empty

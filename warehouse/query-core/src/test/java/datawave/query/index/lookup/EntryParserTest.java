@@ -1,8 +1,8 @@
 package datawave.query.index.lookup;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -16,7 +16,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.core.query.configuration.Result;
