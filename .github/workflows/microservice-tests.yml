@@ -98,7 +98,7 @@ jobs:
     # 9.0.0-SNAPSHOT version, which is not published, and core in turn depends on the
     # microservice APIs. Install the core modules (and, through -am, the APIs they need)
     # from the root reactor so the microservice build below can resolve them.
-    # TODO: This should be reverted before merging into integration.
+    # SPRINGBOOT_3 TODO: This should be reverted before merging into integration.
     - name: Install Core Modules
       if: github.base_ref == 'springboot-3.x' || github.event.merge_group.base_ref == 'refs/heads/springboot-3.x'
       run: |
