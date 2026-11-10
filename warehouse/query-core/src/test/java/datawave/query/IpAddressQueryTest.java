@@ -36,8 +36,7 @@ public class IpAddressQueryTest extends AbstractFunctionalQueryJUnit5 {
         FieldConfig fieldInfo = new IpAddrFields();
         IpAddressDataManager.newInstance();
         DataTypeHadoopConfig dataType = new IpAddressDataType(IpAddrEntry.ipbase, fieldInfo);
-        accumuloSetup.setData(FileType.CSV, dataType);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataType).ingest(log);
     }
 
     public IpAddressQueryTest() {

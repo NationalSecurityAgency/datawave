@@ -64,8 +64,7 @@ public class GroupedNormalFlattenQueryTest extends AbstractFunctionalQueryJUnit5
 
     @BeforeAll
     public static void filterSetup() throws Exception {
-        accumuloSetup.setData(FileType.JSON, flatten);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.JSON, flatten).ingest(log);
     }
 
     public GroupedNormalFlattenQueryTest() {

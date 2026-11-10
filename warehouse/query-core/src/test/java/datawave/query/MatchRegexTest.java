@@ -46,8 +46,7 @@ public class MatchRegexTest extends AbstractFunctionalQueryJUnit5 {
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         dataTypes.add(new CitiesDataType(nullState, generic));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public MatchRegexTest() {

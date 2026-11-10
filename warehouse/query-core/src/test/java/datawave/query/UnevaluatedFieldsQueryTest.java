@@ -49,8 +49,7 @@ public class UnevaluatedFieldsQueryTest extends AbstractFunctionalQueryJUnit5 {
         CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.generic, fldConfig));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public UnevaluatedFieldsQueryTest() {

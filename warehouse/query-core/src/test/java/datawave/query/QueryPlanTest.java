@@ -62,9 +62,7 @@ public class QueryPlanTest extends AbstractFunctionalQueryJUnit5 {
         generic.addReverseIndexField(CitiesDataType.CityField.CONTINENT.name());
         CityDataManager.newInstance();
         DataTypeHadoopConfig dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
-        accumuloSetup.setData(FileType.CSV, dataType);
-
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataType).ingest(log);
     }
 
     @BeforeEach

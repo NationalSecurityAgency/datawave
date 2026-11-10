@@ -84,8 +84,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQueryJUnit5 {
         CityDataManager.newInstance();
         DataTypeHadoopConfig dataType = new CitiesDataType(CityEntry.generic, generic);
 
-        accumuloSetup.setData(FileType.CSV, dataType);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataType).ingest(log);
     }
 
     public AnyFieldQueryTest() {

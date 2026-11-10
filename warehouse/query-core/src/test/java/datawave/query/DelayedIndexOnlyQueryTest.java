@@ -52,8 +52,7 @@ public class DelayedIndexOnlyQueryTest extends AbstractFunctionalQueryJUnit5 {
         CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public DelayedIndexOnlyQueryTest() {

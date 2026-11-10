@@ -54,9 +54,8 @@ public class RangeQueryTest extends AbstractFunctionalQueryJUnit5 {
         CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
         Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public RangeQueryTest() {

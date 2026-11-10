@@ -37,8 +37,7 @@ public class LuceneQueryTest extends AbstractFunctionalQueryJUnit5 {
     public static void filterSetup() throws Exception {
         FieldConfig generic = new GenericCityFields();
         CityDataManager.newInstance();
-        accumuloSetup.setData(FileType.CSV, new CitiesDataType(CityEntry.generic, generic));
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, new CitiesDataType(CityEntry.generic, generic)).ingest(log);
     }
 
     public LuceneQueryTest() {

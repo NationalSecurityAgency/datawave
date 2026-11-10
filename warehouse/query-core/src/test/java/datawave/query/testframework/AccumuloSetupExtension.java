@@ -4,20 +4,18 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
-import org.apache.accumulo.core.client.TableExistsException;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -44,6 +42,9 @@ import org.apache.log4j.Logger;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ParameterResolver;
 
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -55,24 +56,64 @@ import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 
 /**
- * Jupiter class-level extension for loading Accumulo test data. An instance of this extension can be created with {@code @RegisterExtension}:
+ * Jupiter class-level extension for creating {@link AccumuloClient} instances with configured test data. An instance of this extension can be created with
+ * {@code @RegisterExtension}:
  *
  * <pre>
  * &#64;RegisterExtension
  * public static AccumuloSetupExtension accumuloSetup = AccumuloSetupExtension.create();
  * </pre>
  *
- * The use of {@code @ExtendWith} is not supported for this extension due to the need to store and access stateful information.
+ * Configuring the test data can be done in a fluent-style manner. At a minimum, the test data must be set via {@code withData(...)}, and the last call must be
+ * to {@code @ingest(...)}. For example:
+ *
+ * <pre>
+ * &#64;BeforeAll
+ * public static void beforeAll() {
+ *     // @formatter:off
+ *     accumuloSetup.withData(FileType.CSV, new CitiesDataType(CityEntry.generic, generic))
+ *          .withAuthorizations(getAuths())
+ *          .withTeardown(RebuildingScannerTestHelper.TEARDOWN.NEVER)
+ *          .withInterrupt(RebuildingScannerTestHelper.INTERRUPT.NEVER)
+ *          .ingest(log);
+ *     // @formatter:on
+ * }
+ * </pre>
+ *
+ * The created {@link AccumuloClient} can be fetched via {@link #getClient()} if need be. It will also automatically be injected into any annotated test context
+ * methods that accept an {@link AccumuloClient} parameter, e.g.:
+ *
+ * <pre>
+ * &#64;BeforeEach
+ * public static void beforeEach(AccumuloClient client) {
+ *     ...
+ * }
+ * </pre>
+ *
+ * The use of {@code @ExtendWith} is not supported for this extension due to the need to store and access stateful information. The only state kept in an
+ * {@link ExtensionContext.Store} is the {@link AccumuloClient}, so it is closed with the test class and can be injected as a parameter.
  */
-public class AccumuloSetupExtension implements BeforeAllCallback, AfterAllCallback {
+public class AccumuloSetupExtension implements BeforeAllCallback, AfterAllCallback, ParameterResolver {
 
     private static final Logger log = Logger.getLogger(AccumuloSetupExtension.class);
+    private static final String REGISTRY_KEY = "accumuloClientRegistry";
+
+    /**
+     * Instance-scoped namespace. Even if multiple extension instances are created in the same context, their stores will not collide.
+     */
+    private final ExtensionContext.Namespace namespace = ExtensionContext.Namespace.create(AccumuloSetupExtension.class);
 
     /**
      * Whether to cause tests to fail with an {@link org.opentest4j.AssertionFailedError} if resources are left undeleted after the {@code @AfterAll} lifecycle
      * step.
      */
     private final boolean enforceCleanup;
+
+    /**
+     * Context of the test class this (static, per-class) extension instance is registered on. Set in {@link #beforeAll(ExtensionContext)}, cleared in
+     * {@link #afterAll(ExtensionContext)}.
+     */
+    private ExtensionContext classContext;
 
     /**
      * The folder where any generated sequence files will be stored. This folder will be deleted at the end of tests.
@@ -83,6 +124,8 @@ public class AccumuloSetupExtension implements BeforeAllCallback, AfterAllCallba
     private Collection<DataTypeHadoopConfig> dataTypes;
     private Set<String> shardIds;
     private FileType fileFormat;
+    private RebuildingScannerTestHelper.TEARDOWN teardown = RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER;
+    private RebuildingScannerTestHelper.INTERRUPT interrupt = RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER;
     private Authorizations auths = AbstractDataTypeConfig.getTestAuths();
 
     /**
@@ -109,8 +152,8 @@ public class AccumuloSetupExtension implements BeforeAllCallback, AfterAllCallba
 
     /**
      * The private constructor here is deliberate to prevent JUnit from instantiating via {@code @ExtendWith}. This is necessary to safeguard against
-     * potentially leaking data between tests since we do not use an {@link ExtensionContext.Store} in this class. Instead, we want to force the use of
-     * {@code @RegisterExtension}, where an instance of this extension of is always created as an instance or field of the test.
+     * potentially leaking data between tests since most state is held on the instance rather than an {@link ExtensionContext.Store} in this class. Instead, we
+     * want to force the use of {@code @RegisterExtension}, where an instance of this extension of is always created as an instance or field of the test.
      */
     @SuppressWarnings("unused")
     private AccumuloSetupExtension() {
@@ -128,8 +171,19 @@ public class AccumuloSetupExtension implements BeforeAllCallback, AfterAllCallba
         this.enforceCleanup = enforceCleanup;
     }
 
+    /**
+     * Set up the extension.
+     *
+     * @param context
+     *            the current extension context; never {@code null}
+     * @throws Exception
+     *             if an error occurs
+     */
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
+        // Set the context.
+        this.classContext = context;
+
         // Create a temporary root folder.
         try {
             tempFolder = Files.createTempDirectory(UUID.randomUUID().toString());
@@ -138,8 +192,19 @@ public class AccumuloSetupExtension implements BeforeAllCallback, AfterAllCallba
         }
     }
 
+    /**
+     * Clean up the extension.
+     *
+     * @param context
+     *            the current extension context; never {@code null}
+     * @throws Exception
+     *             if an error occurs
+     */
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
+        // Clear the context.
+        this.classContext = null;
+
         // If the temporary root folder exists, delete it.
         if (tempFolder != null && Files.exists(tempFolder)) {
             try {
@@ -154,95 +219,151 @@ public class AccumuloSetupExtension implements BeforeAllCallback, AfterAllCallba
         }
     }
 
-    public void setData(FileType fileFormat, DataTypeHadoopConfig config) {
-        setData(fileFormat, Collections.singletonList(config));
+    /**
+     * This extension supports resolving parameters that are {@link AccumuloClient} types.
+     */
+    @Override
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        return parameterContext.getParameter().getType() == AccumuloClient.class;
     }
 
-    public void setData(FileType format, Collection<DataTypeHadoopConfig> types) {
+    /**
+     * This extension will return the current registered {@link AccumuloClient}, if any, for parameters accepting an {@link AccumuloClient} type.
+     *
+     * @return the client
+     * @throws ParameterResolutionException
+     *             if no {@link AccumuloClient} was registered.
+     */
+    @Override
+    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        return getClient();
+    }
+
+    /**
+     * Returns the {@link AccumuloClient}. For any {@code @BeforeAll} code that needs the client after calling {@code ingest(...)}.
+     *
+     * @return the client
+     */
+    public AccumuloClient getClient() {
+        ClientRegistry registry = classContext.getStore(namespace).get(REGISTRY_KEY, ClientRegistry.class);
+        if (registry != null) {
+            AccumuloClient client = registry.current().orElse(null);
+            if (client != null) {
+                return client;
+            }
+        }
+        throw new ParameterResolutionException("No AccumuloClient is available. Call ingest(...) in @BeforeAll first.");
+    }
+
+    /**
+     * Set the data to ingest.
+     *
+     * @param fileFormat
+     *            the file format
+     * @param configs
+     *            the datatype configurations
+     * @return this {@link AccumuloSetupExtension}
+     */
+    public AccumuloSetupExtension withData(FileType fileFormat, DataTypeHadoopConfig... configs) {
+        return withData(fileFormat, Arrays.asList(configs));
+    }
+
+    /**
+     * Set the data to ingest.
+     *
+     * @param fileFormat
+     *            the file format
+     * @param configs
+     *            the datatype configurations
+     * @return this {@link AccumuloSetupExtension}
+     */
+    public AccumuloSetupExtension withData(FileType fileFormat, Collection<DataTypeHadoopConfig> configs) {
         this.recordWriter = new MockAccumuloRecordWriter();
-        this.dataTypes = types;
+        this.dataTypes = configs;
         this.shardIds = new HashSet<>();
-        this.fileFormat = format;
+        this.fileFormat = fileFormat;
         for (DataTypeHadoopConfig config : this.dataTypes) {
             this.shardIds.addAll(config.getShardIds());
         }
+        return this;
     }
 
-    /** Override the default authorizations used for printing the contents of tables */
-    public void setAuthorizations(Authorizations auths) {
+    /**
+     * Override the default authorizations.
+     *
+     * @param auths
+     *            the auths
+     * @return this {@link AccumuloSetupExtension}
+     */
+    public AccumuloSetupExtension withAuthorizations(Authorizations auths) {
         this.auths = auths;
+        return this;
     }
 
     /**
-     * Creates the Accumulo shard ids and ingests the data into the tables. Uses a CSV file for loading test data.
+     * Set the teardown setting. Defaults to {@link datawave.query.RebuildingScannerTestHelper.TEARDOWN#EVERY_OTHER}.
+     *
+     * @param teardown
+     *            the teardown
+     * @return this {@link AccumuloSetupExtension}
+     */
+    public AccumuloSetupExtension withTeardown(RebuildingScannerTestHelper.TEARDOWN teardown) {
+        this.teardown = teardown;
+        return this;
+    }
+
+    /**
+     * Set the interrupt setting. Defaults to {@link datawave.query.RebuildingScannerTestHelper.INTERRUPT#EVERY_OTHER}.
+     *
+     * @param interrupt
+     *            the interrupt
+     * @return this {@link AccumuloSetupExtension}
+     */
+    public AccumuloSetupExtension withInterrupt(RebuildingScannerTestHelper.INTERRUPT interrupt) {
+        this.interrupt = interrupt;
+        return this;
+    }
+
+    /**
+     * Create and register an {@link AccumuloClient}, creating the shard IDs and ingesting the test data into the tables.
      *
      * @param parentLog
-     *            log of parent
-     * @return connector to Accumulo
-     * @throws AccumuloException
-     *             , AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException Accumulo error conditions
+     *            the parent class logger
+     * @return this {@link AccumuloSetupExtension}
+     * @throws Exception
+     *             if an error occurs.
+     * @see #ingest(QueryTestTableHelper)
      */
-    public AccumuloClient loadTables(final Logger parentLog) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
-                    TableExistsException, TableNotFoundException, URISyntaxException {
-        return loadTables(parentLog, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
+    public AccumuloSetupExtension ingest(Logger parentLog) throws Exception {
+        log.debug("------------- ingest -------------");
+        requireConfigured();
+        return ingest(new QueryTestTableHelper(getClass().getName(), parentLog, teardown, interrupt));
     }
 
     /**
-     * Creates the Accumulo shard ids and ingests the data into the tables. Uses a CSV file for loading test data.
+     * Create and register an {@link AccumuloClient}, creating the shard IDs and ingesting the test data into the tables.
      *
-     * @param parentLog
-     *            log of parent
-     * @return connector to Accumulo
-     * @throws AccumuloException
-     *             Accumulo error conditions
-     * @throws AccumuloSecurityException
-     *             Accumulo error conditions
-     * @throws IOException
-     *             Accumulo error conditions
-     * @throws InterruptedException
-     *             Accumulo error conditions
-     * @throws TableExistsException
-     *             Accumulo error conditions
-     * @throws TableNotFoundException
-     *             Accumulo error conditions
+     * @param helper
+     *            the query helper
+     * @return this {@link AccumuloSetupExtension}
+     * @throws Exception
+     *             if an error occurs
      */
-    public AccumuloClient loadTables(final Logger parentLog, final RebuildingScannerTestHelper.TEARDOWN teardown,
-                    RebuildingScannerTestHelper.INTERRUPT interrupt) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
-                    TableExistsException, TableNotFoundException, URISyntaxException {
-        final QueryTestTableHelper tableHelper = new QueryTestTableHelper(this.getClass().getName(), parentLog, teardown, interrupt);
-        return this.loadTables(tableHelper);
-    }
+    public AccumuloSetupExtension ingest(QueryTestTableHelper helper) throws Exception {
+        log.debug("------------- ingest -------------");
 
-    /**
-     * Creates the Accumulo shard ids and ingests the data into the tables. Uses a CSV file for loading test data.
-     *
-     * @param tableHelper
-     *            the table helper to use
-     * @return connector to Accumulo
-     * @throws AccumuloException
-     *             Accumulo error conditions
-     * @throws AccumuloSecurityException
-     *             Accumulo error conditions
-     * @throws IOException
-     *             Accumulo error conditions
-     * @throws InterruptedException
-     *             Accumulo error conditions
-     * @throws TableExistsException
-     *             Accumulo error conditions
-     * @throws TableNotFoundException
-     *             Accumulo error conditions
-     */
-    public AccumuloClient loadTables(final QueryTestTableHelper tableHelper) throws AccumuloException, AccumuloSecurityException, IOException,
-                    InterruptedException, TableExistsException, TableNotFoundException, URISyntaxException {
-        log.debug("------------- loadTables -------------");
+        requireConfigured();
 
         if (this.fileFormat != FileType.GROUPING) {
             assertFalse(this.shardIds.isEmpty(), "shard ids have not been specified");
             assertFalse(this.dataTypes.isEmpty(), "data types have not been specified");
         }
 
-        final AccumuloClient client = tableHelper.client;
-        tableHelper.configureTables(this.recordWriter);
+        final AccumuloClient client = helper.client;
+        // Immediately register the client before any other steps. This way if a failure occurs, we still close the client.
+        registry().register(client);
+
+        helper.configureTables(this.recordWriter);
 
         for (DataTypeHadoopConfig dataType : this.dataTypes) {
             HadoopTestConfiguration hadoopConfig = new HadoopTestConfiguration(dataType);
@@ -261,9 +382,18 @@ public class AccumuloSetupExtension implements BeforeAllCallback, AfterAllCallba
             bw.addMutation(mutation);
         }
 
-        tableHelper.printTables(auths);
+        helper.printTables(auths);
 
-        return client;
+        return this;
+    }
+
+    private void requireConfigured() {
+        if (classContext == null) {
+            throw new IllegalStateException("Extension not initialized: register it with @RegisterExtension on a static field");
+        }
+        if (fileFormat == null || dataTypes == null || dataTypes.isEmpty()) {
+            throw new IllegalStateException("No data configured: call withData(...) before ingest(...)");
+        }
     }
 
     private void ingestTestData(Configuration conf, TestFileLoader loader) throws IOException, InterruptedException {
@@ -306,6 +436,48 @@ public class AccumuloSetupExtension implements BeforeAllCallback, AfterAllCallba
                         SequenceFile.Writer.valueClass(RawRecordContainerImpl.class))) {
             loader.loadTestData(seqWriter);
             return fileSystem;
+        }
+    }
+
+    /**
+     * Return the {@link ClientRegistry} from the context store, creating one if needed.
+     *
+     * @return the registry
+     */
+    private ClientRegistry registry() {
+        if (classContext == null) {
+            throw new IllegalStateException(AccumuloSetupExtension.class.getSimpleName() + " has not been initialized. Register it with @RegisterExtension on"
+                            + " a static field.");
+        }
+        return classContext.getStore(namespace).getOrComputeIfAbsent(REGISTRY_KEY, k -> new ClientRegistry(), ClientRegistry.class);
+    }
+
+    /**
+     * A registry that tracks every client created for a test class and closes them all when the class' context is closed.
+     */
+    private static final class ClientRegistry implements ExtensionContext.Store.CloseableResource {
+
+        private final Deque<AccumuloClient> clients = new ArrayDeque<>();
+
+        synchronized void register(AccumuloClient client) {
+            if (!clients.contains(client)) {
+                clients.push(client);
+            }
+        }
+
+        synchronized Optional<AccumuloClient> current() {
+            return Optional.ofNullable(clients.peek());
+        }
+
+        @Override
+        public synchronized void close() {
+            while (!clients.isEmpty()) {
+                try {
+                    clients.pop().close();
+                } catch (Exception e) {
+                    log.warn("Failed to close AccumuloClient", e);
+                }
+            }
         }
     }
 }
