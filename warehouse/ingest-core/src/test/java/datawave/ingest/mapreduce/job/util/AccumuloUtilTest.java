@@ -1,8 +1,13 @@
 package datawave.ingest.mapreduce.job.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +19,8 @@ import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.Text;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -92,6 +99,26 @@ public class AccumuloUtilTest {
     }
 
     @Test
+    public void getFilesFromMetadataBySplitTest_accumulo4Entry() throws Exception {
+        String path = "hdfs://localhost:8020/accumulo/tables/1/t-0000001/A0000001.rf";
+        writeFileEntry("d", fileEntry(path, null, null));
+
+        List<Map.Entry<String,List<String>>> splits = AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test1", "test1", "d", "d");
+        assertEquals(List.of(new AbstractMap.SimpleEntry<>("d", List.of(path))), splits);
+    }
+
+    @Test
+    public void getFilesFromMetadataBySplitTest_fencedAccumulo4Entry() throws Exception {
+        // after a merge or deleteRows the tablet only reads the rows of the file inside its fence
+        String path = "hdfs://localhost:8020/accumulo/tables/1/t-0000001/A0000002.rf";
+        writeFileEntry("d", fileEntry(path, "c", "d"));
+
+        assertThrows(IllegalStateException.class, () -> AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test1", "test1", "d", "d"));
+        List<Map.Entry<String,List<String>>> splits = AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test1", "test1", "d", "d", true);
+        assertEquals(List.of(new AbstractMap.SimpleEntry<>("d", List.of(path))), splits);
+    }
+
+    @Test
     public void getFilesFromMetadataBySplitTest_nonExistentMetadata() throws AccumuloException {
         assertThrows(AccumuloException.class, () -> AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test3", "test2", null, null));
     }
@@ -99,5 +126,31 @@ public class AccumuloUtilTest {
     @Test
     public void getFilesFromMetadataBySplitTest_nonExistentTable() throws AccumuloException {
         assertThrows(AccumuloException.class, () -> AccumuloUtil.getFilesFromMetadataBySplit(accumuloClient, "test3", null, null));
+    }
+
+    private void writeFileEntry(String endRow, String fileEntry) throws Exception {
+        String tableId = accumuloClient.tableOperations().tableIdMap().get("test1");
+        try (BatchWriter writer = accumuloClient.createBatchWriter("test1")) {
+            Mutation m = new Mutation(tableId + ";" + endRow);
+            m.put("file", fileEntry, new Value());
+            writer.addMutation(m);
+        }
+    }
+
+    /**
+     * A file column entry as Accumulo 4 writes it (see its StoredTabletFile): JSON with the file's path and the tablet's fence on the file, whose rows are
+     * written as Hadoop Text and Base64 encoded, and empty when there is no fence.
+     */
+    private static String fileEntry(String path, String fenceStartRow, String fenceEndRow) throws IOException {
+        return "{\"path\":\"" + path + "\",\"startRow\":\"" + encodeRow(fenceStartRow) + "\",\"endRow\":\"" + encodeRow(fenceEndRow) + "\"}";
+    }
+
+    private static String encodeRow(String row) throws IOException {
+        if (row == null) {
+            return "";
+        }
+        DataOutputBuffer out = new DataOutputBuffer();
+        new Text(row).write(out);
+        return Base64.getUrlEncoder().encodeToString(Arrays.copyOf(out.getData(), out.getLength()));
     }
 }
