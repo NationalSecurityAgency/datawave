@@ -330,8 +330,8 @@ public class RFileUtilTest {
         File tmpFile = File.createTempFile("testSimpleSplits", ".rf");
         assertTrue(tmpFile.delete());
 
-        try (RFileWriter writer = RFile.newWriter().to(tmpFile.getPath()).withFileSystem(FileSystem.getLocal(new Configuration())).withTableProperties(tableProperties)
-                        .build()) {
+        try (RFileWriter writer = RFile.newWriter().to(tmpFile.getPath()).withFileSystem(FileSystem.getLocal(new Configuration()))
+                        .withTableProperties(tableProperties).build()) {
             for (Map.Entry<Key,Value> toWrite : data) {
                 writer.append(toWrite.getKey(), toWrite.getValue());
             }
