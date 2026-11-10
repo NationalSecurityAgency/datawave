@@ -8,8 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,13 +25,19 @@ import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.rfile.RFile;
+import org.apache.accumulo.core.client.rfile.RFileWriter;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.spi.crypto.AESCryptoService;
+import org.apache.accumulo.core.spi.crypto.GenericCryptoServiceFactory;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.RecordWriter;
@@ -44,6 +52,7 @@ import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mockito;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
@@ -613,5 +622,55 @@ public class MultiRFileOutputFormatterTest {
 
     private void assertNumFileNames(int expectedNumFiles) {
         assertEquals(expectedNumFiles, filenames.size(), filenames.toString());
+    }
+
+    @TempDir
+    File tempDir;
+
+    @Test
+    public void testVerifyFile() throws IOException {
+        FileSystem fs = FileSystem.getLocal(new Configuration()).getRaw();
+        Path file = writeRFile(fs, "plain.rf", Map.of());
+        MultiRFileOutputFormatter.verifyFile(fs, file, Map.<String,String> of().entrySet());
+    }
+
+    @Test
+    public void testVerifyFileFailsOnTruncatedFile() throws IOException {
+        FileSystem fs = FileSystem.getLocal(new Configuration()).getRaw();
+        Path file = writeRFile(fs, "truncated.rf", Map.of());
+        // drop the end of the file, where the index is
+        File local = new File(file.toUri());
+        byte[] bytes = Files.readAllBytes(local.toPath());
+        Files.write(local.toPath(), Arrays.copyOf(bytes, bytes.length / 2));
+        assertThrows(IOException.class, () -> MultiRFileOutputFormatter.verifyFile(fs, file, Map.<String,String> of().entrySet()));
+    }
+
+    @Test
+    public void testVerifyFileUsesTableCrypto() throws IOException {
+        FileSystem fs = FileSystem.getLocal(new Configuration()).getRaw();
+        File kek = new File(tempDir, "kek");
+        Files.write(kek.toPath(), new byte[32]);
+        Map<String,String> crypto = Map.of(GenericCryptoServiceFactory.TABLE_SERVICE_NAME_PROP, AESCryptoService.class.getName(),
+                        AESCryptoService.KEY_URI_PROPERTY, kek.toURI().toString());
+        Path file = writeRFile(fs, "encrypted.rf", crypto);
+        // the file is encrypted, so it cannot be read without the table's crypto properties
+        assertThrows(IOException.class, () -> MultiRFileOutputFormatter.verifyFile(fs, file, Map.<String,String> of().entrySet()));
+        MultiRFileOutputFormatter.verifyFile(fs, file, crypto.entrySet());
+    }
+
+    @Test
+    public void testVerifyFileDoesNotLoadTableIterators() throws IOException {
+        FileSystem fs = FileSystem.getLocal(new Configuration()).getRaw();
+        Path file = writeRFile(fs, "iterators.rf", Map.of());
+        Map<String,String> table = Map.of("table.iterator.scan.missing", "10,datawave.does.not.Exist");
+        MultiRFileOutputFormatter.verifyFile(fs, file, table.entrySet());
+    }
+
+    private Path writeRFile(FileSystem fs, String name, Map<String,String> tableProperties) throws IOException {
+        Path file = new Path(new File(tempDir, name).toURI());
+        try (RFileWriter writer = RFile.newWriter().to(file.toString()).withFileSystem(fs).withTableProperties(tableProperties).build()) {
+            writer.append(new Key("row", "cf", "cq"), new Value("value"));
+        }
+        return file;
     }
 }

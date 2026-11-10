@@ -1,9 +1,9 @@
 package datawave.ingest.mapreduce.job;
 
 import static datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.BULK_IMPORT_MODE_CONFIG;
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,22 +20,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.rfile.RFileWriter;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.LoadPlan;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.file.FileOperations;
-import org.apache.accumulo.core.file.FileSKVIterator;
-import org.apache.accumulo.core.file.rfile.RFile;
-import org.apache.accumulo.core.metadata.UnreferencedTabletFile;
-import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
-import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.accumulo.core.spi.file.rfile.compression.NoCompression;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
@@ -69,6 +64,8 @@ import datawave.util.StringUtils;
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
 
     private static final Logger log = Logger.getLogger(MultiRFileOutputFormatter.class);
+
+    private static final String RFILE_EXTENSION = "rf";
 
     protected Map<String,SizeTrackingWriter> writers = null;
     protected boolean loadPlanningEnabled = false;
@@ -269,13 +266,40 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         }
     }
 
+    /**
+     * Reopen a written file, which rereads the index at its end and verifies its integrity. It is read with the table properties it was written with, so a file
+     * the table encrypts can be read, but without the table's iterators, which reading the file does not need.
+     *
+     * @param fs
+     *            the file system holding the file
+     * @param path
+     *            the file
+     * @param tableProperties
+     *            the properties of the table the file was written for
+     * @throws IOException
+     *             if the file cannot be read
+     */
+    static void verifyFile(FileSystem fs, Path path, Iterable<Entry<String,String>> tableProperties) throws IOException {
+        Map<String,String> properties = new HashMap<>();
+        for (Entry<String,String> property : tableProperties) {
+            if (!property.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
+                properties.put(property.getKey(), property.getValue());
+            }
+        }
+        try (Scanner scanner = RFile.newScanner().from(path.toString()).withFileSystem(fs).withTableProperties(properties).withoutSystemIterators().build()) {
+            // the file is only opened when the scanner is iterated
+            scanner.iterator();
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
+    }
+
     protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf, String table) throws IOException {
         startWriteTime = System.currentTimeMillis();
         // @formatter:off
 
 
-        // ACCUMULO4_TODO this could be converted to use accumulo's public API for writing rfiles, this was done in PR 2582
-        var builder = org.apache.accumulo.core.client.rfile.RFile.newWriter().to(filename).withFileSystem(fs).withTableProperties(tableConf);
+        var builder = RFile.newWriter().to(filename).withFileSystem(fs).withTableProperties(tableConf);
         if(this.loadPlanningEnabled) {
             var splits = SplitsFile.getSplits(conf, table);
             if(splits != null && !splits.isEmpty()) {
@@ -569,7 +593,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
         extension = conf.get(FILE_TYPE);
         if (extension == null || extension.isEmpty())
-            extension = RFile.EXTENSION;
+            extension = RFILE_EXTENSION;
         extension = "." + extension;
 
         conf.setInt("io.seqfile.compress.blocksize", getSeqFileBlockSize());
@@ -692,19 +716,13 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
 
                 // To verify the file was actually written successfully, we need to reopen it which will reread
                 // the index at the end and verify its integrity.
-                FileOperations fops = FileOperations.getInstance();
                 for (Map.Entry<String,Path> entry : usedWriterPaths.entrySet()) {
                     Path path = entry.getValue();
                     String table = writerTableNames.get(entry.getKey());
                     try {
-                        // ACCUMULO4_TODO this could be converted to use accumulo's public API for reading rfiles
-                        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
-                                        context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-                        FileSKVIterator openReader = fops.newReaderBuilder().forFile(UnreferencedTabletFile.of(fs, path), fs, conf, cs)
-                                        .withTableConfiguration(tableConfigs.get(table)).build();
+                        verifyFile(fs, path, tableConfigs.get(table));
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
-                        openReader.close();
                         log.info("Successfully wrote " + path + ". Total size: " + fileSize + " B. Total time: " + (System.currentTimeMillis() - startWriteTime)
                                         + " ms.");
                     } catch (Exception ex) {
