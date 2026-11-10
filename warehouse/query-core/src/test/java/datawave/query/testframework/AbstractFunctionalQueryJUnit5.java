@@ -44,13 +44,14 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.io.TempDir;
 import org.opentest4j.AssertionFailedError;
 
 import com.google.common.collect.HashMultimap;
@@ -98,8 +99,14 @@ import datawave.webservice.result.EventQueryResponseBase;
  */
 public abstract class AbstractFunctionalQueryJUnit5 implements QueryLogicTestHarness.TestResultParser {
 
-    @TempDir
-    Path temporaryDirectory;
+    public static final int MAX_TEMP_DIR_CLEANUP_RETRIES = 10;
+    public static final int TEMP_DIR_CLEANUP_RETRIES_INTERVAL_MS = 250;
+
+    /**
+     * The root temporary directory.
+     */
+    protected Path temporaryDirectory;
+    protected boolean enforceTempDirCleanup = false;
 
     protected static final String VALUE_THRESHOLD_JEXL_NODE = EXCEEDED_VALUE.getLabel();
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
@@ -254,7 +261,69 @@ public abstract class AbstractFunctionalQueryJUnit5 implements QueryLogicTestHar
 
     @BeforeEach
     public void setUpFunctionalQuery() throws IOException {
+        log.debug("---------  setUpFunctionalQuery  ---------");
+        this.temporaryDirectory = Files.createTempDirectory("query-root");
         querySetUp();
+    }
+
+    /**
+     * Set whether to enforce cleanup of the temporary directory after tests complete. If {@code true}, an exception will be thrown if the temporary directory
+     * is not successfully cleaned up. Otherwise, a warning will be logged.
+     *
+     * @param enforceTempDirCleanup
+     *            whether to enforce clean up of the temporary directory
+     */
+    protected void enforceTempDirCleanup(boolean enforceTempDirCleanup) {
+        this.enforceTempDirCleanup = enforceTempDirCleanup;
+    }
+
+    @AfterEach
+    public void cleanupFunctionalQuery() throws Exception {
+        log.debug("---------  cleanupFunctionalQuery  ---------");
+        // Close the logic.
+        if (this.logic != null) {
+            try {
+                this.logic.close();
+            } catch (Exception e) {
+                log.error("Failed to close query logic", e);
+            }
+        }
+        // Clean up the temporary directory.
+        if (temporaryDirectory != null) {
+            deleteTemporaryDirectory();
+        } else {
+            log.warn("temporaryDirectory is null, skipping delete");
+        }
+    }
+
+    /**
+     * Attempt to clean up all files in the temporary directory {@link #temporaryDirectory}, retrying up to {@value #MAX_TEMP_DIR_CLEANUP_RETRIES} times, and
+     * waiting {@value TEMP_DIR_CLEANUP_RETRIES_INTERVAL_MS}ms between retries. It is necessary to allow for retries in case ivarator threads are still
+     * executing and creating files in the temporary directory. A temporary directory managed by {@link org.junit.jupiter.api.io.TempDir} will fail to clean up
+     * files in such a scenario, resulting in flaky tests. By default, if files fail to be cleaned up, a warning will be simply be logged, unless
+     * {@link #enforceTempDirCleanup} is cleaned up, in which case an exception will be thrown.
+     *
+     * @throws Exception
+     *             if the thread was interrupted, or the temporary directory could not be cleaned up and {@link #enforceTempDirCleanup} is true
+     */
+    private void deleteTemporaryDirectory() throws Exception {
+        File dir = temporaryDirectory.toFile();
+        for (int i = 0; i < MAX_TEMP_DIR_CLEANUP_RETRIES; i++) {
+            try {
+                FileUtils.deleteDirectory(dir);
+                return;
+            } catch (IOException e) {
+                if (i == (MAX_TEMP_DIR_CLEANUP_RETRIES - 1)) {
+                    if (enforceTempDirCleanup) {
+                        throw new IOException("Could not delete " + temporaryDirectory + " after " + MAX_TEMP_DIR_CLEANUP_RETRIES + " attempts", e);
+                    } else {
+                        log.warn("Could not delete " + temporaryDirectory + " after " + MAX_TEMP_DIR_CLEANUP_RETRIES + " attempts", e);
+                    }
+                    return;
+                }
+                Thread.sleep(TEMP_DIR_CLEANUP_RETRIES_INTERVAL_MS);
+            }
+        }
     }
 
     public void querySetUp() throws IOException {
