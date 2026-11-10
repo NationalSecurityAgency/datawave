@@ -2,10 +2,12 @@ package datawave.util.accumulo;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +20,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.spi.crypto.AESCryptoService;
+import org.apache.accumulo.core.spi.crypto.GenericCryptoServiceFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Level;
@@ -265,6 +269,27 @@ public class RFileUtilTest {
         List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), null, null, 1);
         assertEquals(List.of(new Range(createKey(1), true, createKey(9).followingKey(PartialKey.ROW), false)), Range.mergeOverlapping(splits));
         assertEachKeyInOneRange(data, splits, "locality groups");
+    }
+
+    @Test
+    public void getRangeSplitsTest_encryptedFile() throws IOException {
+        File kek = File.createTempFile("testSimpleSplits", ".kek");
+        try {
+            Files.write(kek.toPath(), new byte[32]);
+            Map<String,String> crypto = Map.of(GenericCryptoServiceFactory.TABLE_SERVICE_NAME_PROP, AESCryptoService.class.getName(),
+                            AESCryptoService.KEY_URI_PROPERTY, kek.toURI().toString());
+            List<Map.Entry<Key,Value>> data = new ArrayList<>();
+            addRow(data, 1, 5);
+            tmpFile = createRFile(data, crypto);
+
+            // the encrypted file can only be read with the crypto properties
+            assertThrows(IOException.class, () -> RFileUtil.getRangeSplits(config, tmpFile.getPath(), null, null, 1));
+            crypto.forEach(config::set);
+            List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), null, null, 1);
+            assertEquals(List.of(new Range(createKey(1), true, createKey(1).followingKey(PartialKey.ROW), false)), splits);
+        } finally {
+            assertTrue(kek.delete());
+        }
     }
 
     private static void assertEachKeyInOneRange(List<Map.Entry<Key,Value>> data, List<Range> ranges, String message) {

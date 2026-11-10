@@ -1,18 +1,19 @@
 package datawave.util.accumulo;
 
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.rfile.RFileSource;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -86,10 +87,22 @@ public class RFileUtil {
             throw new FileNotFoundException(rfile + " does not exist");
         }
 
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, getCryptoProperties(config));
         CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
 
         return new RFile.Reader(cb);
+    }
+
+    /**
+     * The crypto properties in a configuration, under their full keys, which is how the crypto service reads them. These are the properties
+     * AccumuloConfiguration.getAllCryptoProperties() collects.
+     */
+    private static Map<String,String> getCryptoProperties(Configuration config) {
+        Map<String,String> properties = new HashMap<>();
+        for (Property prefix : List.of(Property.INSTANCE_CRYPTO_PREFIX, Property.GENERAL_ARBITRARY_PROP_PREFIX, Property.TABLE_CRYPTO_PREFIX)) {
+            config.getPropsWithPrefix(prefix.getKey()).forEach((key, value) -> properties.put(prefix.getKey() + key, value));
+        }
+        return properties;
     }
 
     public static List<Range> getRangeSplits(Configuration config, String paths, Key start, Key end, int indexBlocksPerSplit) throws IOException {
