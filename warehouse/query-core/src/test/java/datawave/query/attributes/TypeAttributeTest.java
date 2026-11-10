@@ -9,7 +9,7 @@ import java.io.ByteArrayOutputStream;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;

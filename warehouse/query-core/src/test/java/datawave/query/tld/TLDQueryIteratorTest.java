@@ -1,11 +1,11 @@
 package datawave.query.tld;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.function.Equality;
 import datawave.query.function.RangeProvider;
@@ -22,11 +22,11 @@ public class TLDQueryIteratorTest {
         TermFrequencyConfig config = new TermFrequencyConfig();
         config.setTypeMetadata(new TypeMetadata());
         config.setScript(JexlASTHelper.parseAndFlattenJexlQuery("FOO == 'bar'"));
-        assertFalse("tld flag should be false by default", config.isTld());
+        assertFalse(config.isTld(), "tld flag should be false by default");
 
         TLDQueryIterator tldIter = new TLDQueryIterator();
         tldIter.buildTfFunction(config);
-        assertTrue("TLDQueryIterator sets the isTld flag during build", config.isTld());
+        assertTrue(config.isTld(), "TLDQueryIterator sets the isTld flag during build");
     }
 
     @Test

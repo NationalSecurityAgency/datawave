@@ -5,18 +5,19 @@
 
 package datawave.query.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.file.Files;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -26,8 +27,8 @@ import com.google.common.collect.Sets;
   */
 public class TypeMetadataTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     private static final Logger log = Logger.getLogger(TypeMetadataTest.class);
 
@@ -51,11 +52,11 @@ public class TypeMetadataTest {
 
         TypeMetadata fromString = new TypeMetadata(asString);
 
-        Assert.assertEquals(fromString, typeMetadata);
-        Assert.assertEquals(fromString.getTypeMetadata("field1", "ingest1"), typeMetadata.getTypeMetadata("field1", "ingest1"));
-        Assert.assertEquals(fromString.getTypeMetadata("field1", "ingest2"), typeMetadata.getTypeMetadata("field1", "ingest2"));
-        Assert.assertEquals(fromString.getTypeMetadata("field2", "ingest1"), typeMetadata.getTypeMetadata("field2", "ingest1"));
-        Assert.assertEquals(fromString.getTypeMetadata("field2", "ingest2"), typeMetadata.getTypeMetadata("field2", "ingest2"));
+        assertEquals(fromString, typeMetadata);
+        assertEquals(fromString.getTypeMetadata("field1", "ingest1"), typeMetadata.getTypeMetadata("field1", "ingest1"));
+        assertEquals(fromString.getTypeMetadata("field1", "ingest2"), typeMetadata.getTypeMetadata("field1", "ingest2"));
+        assertEquals(fromString.getTypeMetadata("field2", "ingest1"), typeMetadata.getTypeMetadata("field2", "ingest1"));
+        assertEquals(fromString.getTypeMetadata("field2", "ingest2"), typeMetadata.getTypeMetadata("field2", "ingest2"));
     }
 
     @Test
@@ -74,15 +75,15 @@ public class TypeMetadataTest {
         typeMetadata2.put("field1", "ingest2", "DateType");
         typeMetadata2.put("field2", "ingest2", "LcType");
 
-        Assert.assertEquals(typeMetadata, typeMetadata.filter(Sets.newHashSet("ingest1", "ingest2")));
-        Assert.assertEquals(typeMetadata1, typeMetadata.filter(Sets.newHashSet("ingest1")));
-        Assert.assertEquals(typeMetadata2, typeMetadata.filter(Sets.newHashSet("ingest2")));
+        assertEquals(typeMetadata, typeMetadata.filter(Sets.newHashSet("ingest1", "ingest2")));
+        assertEquals(typeMetadata1, typeMetadata.filter(Sets.newHashSet("ingest1")));
+        assertEquals(typeMetadata2, typeMetadata.filter(Sets.newHashSet("ingest2")));
     }
 
     @Test
     public void testFileRoundTrip() throws Exception {
         Map<String,TypeMetadata> map = prepareTypeMetadataMap();
-        final File tempDir = temporaryFolder.newFolder();
+        final File tempDir = Files.createTempDirectory(temporaryFolder.toPath(), "util-").toFile();
         final File tempFile = new File(tempDir, "type_metadata_roundtrip_test");
         FileOutputStream fos = new FileOutputStream(tempFile);
         ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -92,7 +93,7 @@ public class TypeMetadataTest {
         FileInputStream fis = new FileInputStream(tempFile);
         ObjectInputStream ois = new ObjectInputStream(fis);
         Object got = ois.readObject();
-        Assert.assertEquals(got, map);
+        assertEquals(got, map);
     }
 
     public Map<String,TypeMetadata> prepareTypeMetadataMap() {

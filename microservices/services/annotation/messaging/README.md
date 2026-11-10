@@ -9,6 +9,19 @@ This module provides shared Spring messaging support for services that exchange
 
 `AnnotationProtobufMessageConverter` extends Spring's standard `ProtobufMessageConverter`. The DATAWAVE-packaged subclass is intentional: Spring Cloud Stream 3.2 filters most `org.springframework.*` converter beans from its custom converter collection, while accepting application-provided converter classes.
 
+## Module dependencies
+
+`annotation-messaging` depends on `annotation-api`, which exposes the annotation
+model from `datawave-core-annotation`. Both `annotation-service` and
+`annotation-cache-service` depend on `annotation-messaging`, so the cache service
+receives `annotation-api` transitively. `annotation-service` also declares
+`annotation-api` directly.
+
+Both services retain direct `datawave-core-annotation` dependencies because their
+source code uses its classes. Keep those versions aligned with the core version
+declared by `annotation-api`. `annotation-cache-api` contains cache-specific types
+and does not depend on the annotation model or messaging.
+
 ## Using the module
 
 Add the dependency to each annotation message producer or consumer:
