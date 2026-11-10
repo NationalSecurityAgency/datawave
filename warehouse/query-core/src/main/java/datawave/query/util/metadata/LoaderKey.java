@@ -21,9 +21,7 @@ public class LoaderKey {
     }
 
     public boolean equals(Object other) {
-        // TODO: Switch to alias pattern with java 17
-        if (other instanceof LoaderKey) {
-            LoaderKey otherLoader = (LoaderKey) other;
+        if (other instanceof LoaderKey otherLoader) {
             return otherLoader.client.instanceOperations().getInstanceId().equals(client.instanceOperations().getInstanceId())
                             && otherLoader.table.equals(table) && otherLoader.user.equals(user);
         }

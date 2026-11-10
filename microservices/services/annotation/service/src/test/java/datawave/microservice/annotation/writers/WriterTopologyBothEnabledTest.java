@@ -41,7 +41,7 @@ import datawave.microservice.annotation.writers.log.config.LogAnnotationWriterPr
 @ContextConfiguration(classes = {LogAnnotationWriterProperties.class, AccumuloAnnotationWriterConfig.class, AccumuloConfiguration.class,
         AnnotationSerializerConfiguration.class, WriterTopologyBothEnabledTest.WriterTopologyTestConfiguration.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE, properties = "spring.main.allow-bean-definition-overriding=true")
-@ActiveProfiles({"WriterTopologyBothEnabledTest", "log-enabled", "accumulo-enabled"})
+@ActiveProfiles({"combined", "WriterTopologyBothEnabledTest", "log-enabled", "accumulo-enabled"})
 public class WriterTopologyBothEnabledTest {
 
     @Autowired
@@ -91,8 +91,8 @@ public class WriterTopologyBothEnabledTest {
         private final org.apache.accumulo.core.client.AccumuloClient accumuloClient;
 
         public MockInMemoryAccumuloConnectionFactory(String username, String instanceName) throws Exception {
-            InMemoryAccumulo inMemoryInstance = new InMemoryAccumulo(instanceName);
-            this.accumuloClient = new InMemoryAccumuloClient(username, inMemoryInstance);
+            InMemoryAccumulo inMemoryAccumulo = new InMemoryAccumulo(instanceName);
+            this.accumuloClient = new InMemoryAccumuloClient(username, inMemoryAccumulo);
             accumuloClient.securityOperations().changeUserAuthorizations(username, new org.apache.accumulo.core.security.Authorizations("PUBLIC", "PRIVATE"));
         }
 

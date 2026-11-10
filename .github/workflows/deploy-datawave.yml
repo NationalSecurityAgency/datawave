@@ -134,6 +134,9 @@ jobs:
         - image: datawave/annotation-service
           category: trivy-annotation-service
           pom: microservices/services/annotation/service/pom.xml
+        - image: datawave/annotation-cache-service
+          category: trivy-annotation-cache-service
+          pom: microservices/services/annotation-cache/service/pom.xml
         - image: datawave/audit-service
           category: trivy-audit-service
           pom: microservices/services/audit/service/pom.xml

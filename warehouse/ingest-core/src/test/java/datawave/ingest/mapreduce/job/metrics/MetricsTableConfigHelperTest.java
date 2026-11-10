@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -14,8 +14,8 @@ import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
@@ -29,7 +29,7 @@ public class MetricsTableConfigHelperTest {
     private MetricsTableConfigHelper configHelper;
     private TableOperations tops;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         tops = new InMemoryAccumuloClient("root", new InMemoryAccumulo()).tableOperations();
 

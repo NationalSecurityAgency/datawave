@@ -2,7 +2,7 @@ package datawave.ingest.mapreduce.job.reindex;
 
 import static datawave.ingest.mapreduce.job.reindex.ReindexedShardPartitioner.MAX_PARTITIONS;
 import static datawave.ingest.mapreduce.job.reindex.ReindexedShardPartitioner.MIN_KEYS;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 
@@ -11,7 +11,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.DelegatingPartitioner;

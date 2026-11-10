@@ -1,10 +1,11 @@
 package datawave.query.transformer;
 
 import static datawave.query.transformer.TagCloudTransformer.DEFAULT_VERSION;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.List;
@@ -14,8 +15,8 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
@@ -38,7 +39,7 @@ public class TagCloudTransformerTest {
 
     private static final Map<String,Double> ENTITY_MAP = Map.of("x", .8, "y", .3, "z", .1);
 
-    @Before
+    @BeforeEach
     public void setup() {
         query = new QueryImpl();
         query.setQueryAuthorizations("A,B,C");
@@ -98,19 +99,19 @@ public class TagCloudTransformerTest {
         assertEquals(DEFAULT_VERSION, TagCloudTransformer.ResponseVersion.V1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void transformNoTransformerTest() {
         TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new MarkingFunctions.Default(),
                         new DefaultResponseObjectFactory(), Set.of());
-        transformer.transform(Map.entry(new Key(), new Value()));
+        assertThrows(IllegalArgumentException.class, () -> transformer.transform(Map.entry(new Key(), new Value())));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void transformCantDecodeTest() {
         NeverDecodingTagCloudInputTransformer neverDecodingTagCloudInputTransformer = new NeverDecodingTagCloudInputTransformer();
         TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new MarkingFunctions.Default(),
                         new DefaultResponseObjectFactory(), Set.of(neverDecodingTagCloudInputTransformer));
-        transformer.transform(Map.entry(new Key(), new Value()));
+        assertThrows(IllegalArgumentException.class, () -> transformer.transform(Map.entry(new Key(), new Value())));
     }
 
     @Test
