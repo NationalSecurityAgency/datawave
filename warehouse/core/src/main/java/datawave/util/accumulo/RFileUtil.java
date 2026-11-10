@@ -117,14 +117,14 @@ public class RFileUtil {
             Key startKey = null;
             for (String rfile : paths) {
                 RFile.Reader reader = getRFileReader(config, new Path(rfile));
-                // TODO ACCUMULO4: Verify that this implementation is correct.
-                // Cannot determine splits if range is undefined
-                if (!reader.getFileRange().empty) {
-                    if (lastKey == null || reader.getFileRange().rowRange.getEndKey().compareTo(lastKey) > 0) {
-                        lastKey = reader.getFileRange().rowRange.getEndKey();
+                // a file's range covers whole rows: it starts at its first row and its exclusive end follows its last row. An empty file has no range.
+                var fileRange = reader.getFileRange();
+                if (!fileRange.empty) {
+                    if (lastKey == null || fileRange.rowRange.getEndKey().compareTo(lastKey) > 0) {
+                        lastKey = fileRange.rowRange.getEndKey();
                     }
-                    if (startKey == null || reader.getFileRange().rowRange.getStartKey().compareTo(startKey) < 0) {
-                        startKey = reader.getFileRange().rowRange.getStartKey();
+                    if (startKey == null || fileRange.rowRange.getStartKey().compareTo(startKey) < 0) {
+                        startKey = fileRange.rowRange.getStartKey();
                     }
                 }
                 readers.add(reader);
@@ -140,6 +140,7 @@ public class RFileUtil {
 
             Key fenceStart = start;
             Key fenceEnd = end;
+            boolean fenceEndInclusive = true;
 
             Range fence = new Range(fenceStart, true, fenceEnd, true);
 
@@ -149,11 +150,13 @@ public class RFileUtil {
                 fence = new Range(fenceStart, true, fenceEnd, true);
             }
 
-            if (fence.contains(lastKey)) {
+            // the end of the files' range is exclusive
+            if (fence.contains(lastKey) && fenceStart.compareTo(lastKey) < 0) {
                 fenceEnd = lastKey;
+                fenceEndInclusive = false;
             }
 
-            fence = new Range(fenceStart, true, fenceEnd, true);
+            fence = new Range(fenceStart, true, fenceEnd, fenceEndInclusive);
 
             MultiIterator wrappedIterator = new MultiIterator(indexIterators, true);
 

@@ -1,6 +1,5 @@
 package datawave.util.accumulo;
 
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,17 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.accumulo.core.conf.DefaultConfiguration;
-import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
+import org.apache.accumulo.core.client.rfile.RFile;
+import org.apache.accumulo.core.client.rfile.RFileWriter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.file.FileSKVWriter;
-import org.apache.accumulo.core.file.rfile.RFileOperations;
-import org.apache.accumulo.core.metadata.UnreferencedTabletFile;
-import org.apache.accumulo.core.spi.crypto.CryptoEnvironment;
-import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.log4j.Level;
@@ -79,7 +73,7 @@ public class RFileUtilTest {
     public void getRangeSplitsTest_singleRow_outsideFence() throws IOException {
         List<Map.Entry<Key,Value>> data = new ArrayList<>();
         addData(data, 1, 1);
-        tmpFile = createRFile(data, new Range(String.format("%06x", 1), false, String.format("%06x", 1), true));
+        tmpFile = createRFile(data);
         List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), new Key("a"), new Key("z"), 1);
         assertEquals(0, splits.size());
     }
@@ -91,7 +85,7 @@ public class RFileUtilTest {
         tmpFile = createRFile(data);
         List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), createKey(1), createKey(9), 1);
         assertEquals(1, splits.size());
-        Range r = new Range(createKey(1), true, createKey(1).followingKey(PartialKey.ROW), true);
+        Range r = new Range(createKey(1), true, createKey(1).followingKey(PartialKey.ROW), false);
         assertEquals(r, splits.get(0));
     }
 
@@ -108,7 +102,7 @@ public class RFileUtilTest {
     public void getRangeSplitsTest_singleRow_insideFenceEdge2() throws IOException {
         List<Map.Entry<Key,Value>> data = new ArrayList<>();
         addData(data, 9, 1);
-        tmpFile = createRFile(data, new Range(String.format("%06x", 9), false, String.format("%06x", 9), true));
+        tmpFile = createRFile(data);
         List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), createKey(1), createKey(9), 1);
         assertEquals(1, splits.size());
         Range r = new Range(createKey(9), true, createKey(9), true);
@@ -138,7 +132,7 @@ public class RFileUtilTest {
         }
         tmpFile = createRFile(data);
         List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), null, null, 1);
-        Range r = new Range(first, true, last.followingKey(PartialKey.ROW), true);
+        Range r = new Range(first, true, last.followingKey(PartialKey.ROW), false);
 
         // ensure no overlapping
         for (int i = 1; i < splits.size(); i++) {
@@ -166,7 +160,7 @@ public class RFileUtilTest {
         }
         tmpFile = createRFile(data);
         List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), null, null, 999999999);
-        Range r = new Range(first, true, last.followingKey(PartialKey.ROW), true);
+        Range r = new Range(first, true, last.followingKey(PartialKey.ROW), false);
         assertEquals(1, splits.size());
         assertEquals(r, splits.get(0));
     }
@@ -186,44 +180,14 @@ public class RFileUtilTest {
     }
 
     public static File createRFile(List<Map.Entry<Key,Value>> data) throws IOException {
-        FileSystem fs = FileSystem.getLocal(new Configuration());
         File tmpFile = File.createTempFile("testSimpleSplits", ".rf");
         assertTrue(tmpFile.delete());
 
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
-                        new Configuration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-
-        FileSKVWriter writer = RFileOperations.getInstance().newWriterBuilder().forFile(UnreferencedTabletFile.of(fs, tmpFile), fs, new Configuration(), cs)
-                        .withTableConfiguration(DefaultConfiguration.getInstance()).build();
-        writer.startDefaultLocalityGroup();
-
-        // write data
-        for (Map.Entry<Key,Value> toWrite : data) {
-            writer.append(toWrite.getKey(), toWrite.getValue());
+        try (RFileWriter writer = RFile.newWriter().to(tmpFile.getPath()).withFileSystem(FileSystem.getLocal(new Configuration())).build()) {
+            for (Map.Entry<Key,Value> toWrite : data) {
+                writer.append(toWrite.getKey(), toWrite.getValue());
+            }
         }
-        writer.close();
-
-        return tmpFile;
-    }
-
-    public static File createRFile(List<Map.Entry<Key,Value>> data, Range range) throws IOException {
-        FileSystem fs = FileSystem.getLocal(new Configuration());
-        File tmpFile = File.createTempFile("testSimpleSplits", ".rf");
-        assertTrue(tmpFile.delete());
-
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
-                        new Configuration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-
-        FileSKVWriter writer = RFileOperations.getInstance().newWriterBuilder()
-                        .forFile(UnreferencedTabletFile.ofRanged(fs, tmpFile, range), fs, new Configuration(), cs)
-                        .withTableConfiguration(DefaultConfiguration.getInstance()).build();
-        writer.startDefaultLocalityGroup();
-
-        // write data
-        for (Map.Entry<Key,Value> toWrite : data) {
-            writer.append(toWrite.getKey(), toWrite.getValue());
-        }
-        writer.close();
 
         return tmpFile;
     }
