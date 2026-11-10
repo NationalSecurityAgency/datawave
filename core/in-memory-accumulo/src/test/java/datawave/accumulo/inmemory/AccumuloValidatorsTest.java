@@ -1,8 +1,12 @@
 package datawave.accumulo.inmemory;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 import org.junit.jupiter.api.Test;
 
@@ -197,11 +201,11 @@ public class AccumuloValidatorsTest {
 
     @Test
     public void testConstructorThrowsUnsupportedOperationException() {
-        java.lang.reflect.InvocationTargetException ex = assertThrows(java.lang.reflect.InvocationTargetException.class, () -> {
-            java.lang.reflect.Constructor<AccumuloValidators> constructor = AccumuloValidators.class.getDeclaredConstructor();
+        InvocationTargetException ex = assertThrows(InvocationTargetException.class, () -> {
+            Constructor<AccumuloValidators> constructor = AccumuloValidators.class.getDeclaredConstructor();
             constructor.setAccessible(true);
             constructor.newInstance();
         });
-        assert ex.getCause() instanceof UnsupportedOperationException;
+        assertInstanceOf(UnsupportedOperationException.class, ex.getCause());
     }
 }
