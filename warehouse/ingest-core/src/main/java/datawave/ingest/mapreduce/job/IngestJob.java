@@ -1163,8 +1163,7 @@ public class IngestJob implements Tool {
         for (String inputPath : paths) {
             // if we are to treat the input paths as file lists, then expand here
             if (inputFileLists) {
-                FileInputStream in = new FileInputStream(inputPath);
-                try (BufferedReader r = new BufferedReader(new InputStreamReader(in))) {
+                try (BufferedReader r = new BufferedReader(new InputStreamReader(fs.open(new Path(inputPath))))) {
                     String line = r.readLine();
                     boolean useit = (inputFileListMarker == null);
                     while (line != null) {
