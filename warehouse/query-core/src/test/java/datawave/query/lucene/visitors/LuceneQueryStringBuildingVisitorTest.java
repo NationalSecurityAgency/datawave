@@ -67,7 +67,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link FieldQueryNode} with a non-empty field.
      */
     @Test
-    void testFieldQueryNodeWithField() throws QueryNodeParseException {
+    void testFieldQueryNodeWithField() {
         FieldQueryNode node = new FieldQueryNode("FIELD", "abc", 0, 3);
         givenQueryNode(node);
 
@@ -80,7 +80,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link FieldQueryNode} with an empty field.
      */
     @Test
-    void testFieldQueryNodeWithoutField() throws QueryNodeParseException {
+    void testFieldQueryNodeWithoutField() {
         FieldQueryNode node = new FieldQueryNode("", "abc", 0, 3);
         givenQueryNode(node);
 
@@ -93,7 +93,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link FieldQueryNode} with a non-empty field.
      */
     @Test
-    void testQuotedFieldQueryNodeWithField() throws QueryNodeParseException {
+    void testQuotedFieldQueryNodeWithField() {
         FieldQueryNode node = new QuotedFieldQueryNode("FIELD", "abc", 0, 3);
         givenQueryNode(node);
 
@@ -106,7 +106,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link FieldQueryNode} with an empty field.
      */
     @Test
-    void testQuotedFieldQueryNodeWithoutField() throws QueryNodeParseException {
+    void testQuotedFieldQueryNodeWithoutField() {
         FieldQueryNode node = new QuotedFieldQueryNode("", "abc", 0, 3);
         givenQueryNode(node);
 
@@ -119,7 +119,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link AndQueryNode} with no parent.
      */
     @Test
-    void testAndQueryNodeWithoutParent() throws QueryNodeParseException {
+    void testAndQueryNodeWithoutParent() {
         ArrayList<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("BAR", "def", 4, 7));
@@ -135,7 +135,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link AndQueryNode} with a group parent.
      */
     @Test
-    void testAndQueryNodeWithGroupParent() throws QueryNodeParseException {
+    void testAndQueryNodeWithGroupParent() {
         ArrayList<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("BAR", "def", 4, 7));
@@ -154,7 +154,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link AndQueryNode} with a parent that is not a {@link GroupQueryNode}.
      */
     @Test
-    void testAndQueryNodeWithNonGroupParent() throws QueryNodeParseException {
+    void testAndQueryNodeWithNonGroupParent() {
         ArrayList<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("BAR", "def", 4, 7));
@@ -173,7 +173,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link OrQueryNode} with no parent.
      */
     @Test
-    void testOrQueryNodeWithoutParent() throws QueryNodeParseException {
+    void testOrQueryNodeWithoutParent() {
         ArrayList<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("BAR", "def", 4, 7));
@@ -189,7 +189,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link OrQueryNode} with a group parent.
      */
     @Test
-    void testOrQueryNodeWithGroupParent() throws QueryNodeParseException {
+    void testOrQueryNodeWithGroupParent() {
         ArrayList<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("BAR", "def", 4, 7));
@@ -208,7 +208,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link OrQueryNode} with a parent that is not a {@link GroupQueryNode}.
      */
     @Test
-    void testOrQueryNodeWithNonGroupParent() throws QueryNodeParseException {
+    void testOrQueryNodeWithNonGroupParent() {
         ArrayList<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("BAR", "def", 4, 7));
@@ -240,7 +240,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link BoostQueryNode}.
      */
     @Test
-    void testBoostQueryNode() throws QueryNodeParseException {
+    void testBoostQueryNode() {
         BoostQueryNode node = new BoostQueryNode(new FieldQueryNode("FOO", "abc", 0, 3), 2F);
         givenQueryNode(node);
 
@@ -253,7 +253,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link DeletedQueryNode}.
      */
     @Test
-    void testDeletedQueryNode() throws QueryNodeParseException {
+    void testDeletedQueryNode() {
         DeletedQueryNode node = new DeletedQueryNode();
         givenQueryNode(node);
 
@@ -266,7 +266,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link DeletedQueryNode}.
      */
     @Test
-    void testFuzzyQueryNodeWithField() throws QueryNodeParseException {
+    void testFuzzyQueryNodeWithField() {
         FuzzyQueryNode node = new FuzzyQueryNode("FOO", "abc", 2, 0, 3);
         givenQueryNode(node);
 
@@ -279,7 +279,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link DeletedQueryNode}.
      */
     @Test
-    void testFuzzyQueryNodeWithoutField() throws QueryNodeParseException {
+    void testFuzzyQueryNodeWithoutField() {
         FuzzyQueryNode node = new FuzzyQueryNode("", "abc", 2, 0, 3);
         givenQueryNode(node);
 
@@ -292,7 +292,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link MatchAllDocsQueryNode}.
      */
     @Test
-    void testMatchAllDocsQueryNode() throws QueryNodeParseException {
+    void testMatchAllDocsQueryNode() {
         MatchAllDocsQueryNode node = new MatchAllDocsQueryNode();
         givenQueryNode(node);
 
@@ -305,7 +305,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link MatchNoDocsQueryNode}.
      */
     @Test
-    void testMatchNoDocsQueryNode() throws QueryNodeParseException {
+    void testMatchNoDocsQueryNode() {
         MatchNoDocsQueryNode node = new MatchNoDocsQueryNode();
         givenQueryNode(node);
 
@@ -318,7 +318,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link NoTokenFoundQueryNode}.
      */
     @Test
-    void testNoTokenFoundQueryNode() throws QueryNodeParseException {
+    void testNoTokenFoundQueryNode() {
         NoTokenFoundQueryNode node = new NoTokenFoundQueryNode();
         givenQueryNode(node);
 
@@ -331,7 +331,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test an {@link OpaqueQueryNode}.
      */
     @Test
-    void testOpaqueQueryNode() throws QueryNodeParseException {
+    void testOpaqueQueryNode() {
         OpaqueQueryNode node = new OpaqueQueryNode("wiki", "abc");
         givenQueryNode(node);
 
@@ -344,7 +344,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test an {@link PathQueryNode}.
      */
     @Test
-    void testPathQueryNode() throws QueryNodeParseException {
+    void testPathQueryNode() {
         List<PathQueryNode.QueryText> elements = new ArrayList<>();
         elements.add(new PathQueryNode.QueryText("etc", 0, 3));
         elements.add(new PathQueryNode.QueryText("udev", 0, 3));
@@ -361,7 +361,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test an {@link PhraseSlopQueryNode}.
      */
     @Test
-    void testPhraseSlopQueryNode() throws QueryNodeParseException {
+    void testPhraseSlopQueryNode() {
         PhraseSlopQueryNode node = new PhraseSlopQueryNode(new FieldQueryNode("FOO", "abc", 0, 3), 2);
         givenQueryNode(node);
 
@@ -374,7 +374,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test an {@link SlopQueryNode}.
      */
     @Test
-    void testSlopQueryNode() throws QueryNodeParseException {
+    void testSlopQueryNode() {
         SlopQueryNode node = new SlopQueryNode(new FieldQueryNode("FOO", "abc", 0, 3), 2);
         givenQueryNode(node);
 
@@ -387,7 +387,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test an {@link TokenizedPhraseQueryNode}.
      */
     @Test
-    void testTokenizedPhraseQueryNode() throws QueryNodeParseException {
+    void testTokenizedPhraseQueryNode() {
         TokenizedPhraseQueryNode node = new TokenizedPhraseQueryNode();
         node.add(new FieldQueryNode("FOO", "abc", 0, 3));
         node.add(new FieldQueryNode("BAR", "def", 0, 3));
@@ -402,7 +402,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test an {@link MultiPhraseQueryNode}.
      */
     @Test
-    void testMultiPhraseQueryNode() throws QueryNodeParseException {
+    void testMultiPhraseQueryNode() {
         MultiPhraseQueryNode node = new MultiPhraseQueryNode();
         node.add(new FieldQueryNode("FOO", "abc", 0, 3));
         node.add(new FieldQueryNode("BAR", "def", 0, 3));
@@ -417,7 +417,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test an {@link PointQueryNode} with a field.
      */
     @Test
-    void testPointQueryNodeWithField() throws QueryNodeParseException {
+    void testPointQueryNodeWithField() {
         PointQueryNode node = new PointQueryNode("FOO", 23, NumberFormat.getIntegerInstance());
         givenQueryNode(node);
 
@@ -430,7 +430,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test an {@link PointQueryNode} with a blank field.
      */
     @Test
-    void testPointQueryNodeWithoutField() throws QueryNodeParseException {
+    void testPointQueryNodeWithoutField() {
         String value = NumberFormat.getCurrencyInstance(Locale.US).format(23);
         PointQueryNode node = new PointQueryNode("", 23, NumberFormat.getCurrencyInstance(Locale.US));
         givenQueryNode(node);
@@ -498,7 +498,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link PrefixWildcardQueryNode} with a non-blank field.
      */
     @Test
-    void testPrefixWildcardNodeWithField() throws QueryNodeParseException {
+    void testPrefixWildcardNodeWithField() {
         PrefixWildcardQueryNode node = new PrefixWildcardQueryNode("FOO", "ab*", 0, 3);
         givenQueryNode(node);
 
@@ -511,7 +511,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link PrefixWildcardQueryNode} with a blank field.
      */
     @Test
-    void testPrefixWildcardNodeWithoutField() throws QueryNodeParseException {
+    void testPrefixWildcardNodeWithoutField() {
         PrefixWildcardQueryNode node = new PrefixWildcardQueryNode("", "ab*", 0, 3);
         givenQueryNode(node);
 
@@ -524,7 +524,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link WildcardQueryNode} with a non-blank field.
      */
     @Test
-    void testWildcardQueryNodeWithField() throws QueryNodeParseException {
+    void testWildcardQueryNodeWithField() {
         WildcardQueryNode node = new WildcardQueryNode("FOO", "ab*", 0, 3);
         givenQueryNode(node);
 
@@ -537,7 +537,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link WildcardQueryNode} with a blank field.
      */
     @Test
-    void testWildcardQueryNodeWithoutField() throws QueryNodeParseException {
+    void testWildcardQueryNodeWithoutField() {
         WildcardQueryNode node = new WildcardQueryNode("", "ab*", 0, 3);
         givenQueryNode(node);
 
@@ -550,7 +550,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link RegexpQueryNode} with a non-blank field.
      */
     @Test
-    void testRegexpQueryNodeWithField() throws QueryNodeParseException {
+    void testRegexpQueryNodeWithField() {
         RegexpQueryNode node = new RegexpQueryNode("FOO", "ab*", 0, 3);
         givenQueryNode(node);
 
@@ -563,7 +563,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link RegexpQueryNode} with a blank field.
      */
     @Test
-    void testRegexpQueryNodeWithoutField() throws QueryNodeParseException {
+    void testRegexpQueryNodeWithoutField() {
         RegexpQueryNode node = new RegexpQueryNode("", "ab*", 0, 3);
         givenQueryNode(node);
 
@@ -615,7 +615,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test an {@link AnyQueryNode} with a field.
      */
     @Test
-    void testAnyQueryNodeWithField() throws QueryNodeParseException {
+    void testAnyQueryNodeWithField() {
         List<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("FOO", "def", 0, 3));
@@ -632,7 +632,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test an {@link AnyQueryNode} without a field.
      */
     @Test
-    void testAnyQueryNodeWithoutField() throws QueryNodeParseException {
+    void testAnyQueryNodeWithoutField() {
         List<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "abc", 0, 3));
         clauses.add(new FieldQueryNode("FOO", "def", 0, 3));
@@ -649,7 +649,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link ProximityQueryNode} with a field.
      */
     @Test
-    void testProximityQueryNodeWithField() throws QueryNodeParseException {
+    void testProximityQueryNodeWithField() {
         List<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "1", 0, 3));
         clauses.add(new FieldQueryNode("FOO", "2", 0, 3));
@@ -666,7 +666,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link ProximityQueryNode} without a field.
      */
     @Test
-    void testProximityQueryNodeWithoutField() throws QueryNodeParseException {
+    void testProximityQueryNodeWithoutField() {
         List<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "1", 0, 3));
         clauses.add(new FieldQueryNode("FOO", "2", 0, 3));
@@ -683,7 +683,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link TermRangeQueryNode} where both bounds are inclusive.
      */
     @Test
-    void testTermRangeQueryNodeBothBoundsInclusive() throws QueryNodeException {
+    void testTermRangeQueryNodeBothBoundsInclusive() {
         FieldQueryNode lowerBound = new FieldQueryNode("FOO", "aaa", 0, 3);
         FieldQueryNode upperBound = new FieldQueryNode("FOO", "zzz", 0, 3);
 
@@ -699,7 +699,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link TermRangeQueryNode} where both bounds are exclusive.
      */
     @Test
-    void testTermRangeQueryNodeBothBoundExclusive() throws QueryNodeException {
+    void testTermRangeQueryNodeBothBoundExclusive() {
         FieldQueryNode lowerBound = new FieldQueryNode("FOO", "aaa", 0, 3);
         FieldQueryNode upperBound = new FieldQueryNode("FOO", "zzz", 0, 3);
 
@@ -715,7 +715,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link TermRangeQueryNode} where one bound is exclusive.
      */
     @Test
-    void testTermRangeQueryNodeOneBoundExclusive() throws QueryNodeException {
+    void testTermRangeQueryNodeOneBoundExclusive() {
         FieldQueryNode lowerBound = new FieldQueryNode("FOO", "aaa", 0, 3);
         FieldQueryNode upperBound = new FieldQueryNode("FOO", "zzz", 0, 3);
 
@@ -731,7 +731,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link SynonymQueryNode}.
      */
     @Test
-    void testSynonymQueryNode() throws QueryNodeParseException {
+    void testSynonymQueryNode() {
         List<QueryNode> clauses = new ArrayList<>();
         clauses.add(new FieldQueryNode("FOO", "1", 0, 3));
         clauses.add(new FieldQueryNode("FOO", "2", 0, 3));
@@ -748,7 +748,7 @@ public class LuceneQueryStringBuildingVisitorTest {
      * Test a {@link BooleanModifierNode}.
      */
     @Test
-    void testBooleanModifierNode() throws QueryNodeParseException {
+    void testBooleanModifierNode() {
         BooleanModifierNode node = new BooleanModifierNode(new FieldQueryNode("FOO", "abc", 0, 3), ModifierQueryNode.Modifier.MOD_REQ);
         givenQueryNode(node);
 
@@ -765,11 +765,11 @@ public class LuceneQueryStringBuildingVisitorTest {
         this.expectedQuery = query;
     }
 
-    private void expectExactMatchToQueryString(QueryNode queryNode) throws QueryNodeParseException {
+    private void expectExactMatchToQueryString(QueryNode queryNode) {
         expect(queryNode.toQueryString(escapeQuerySyntax).toString());
     }
 
-    private void assertResult() throws QueryNodeParseException {
+    private void assertResult() {
         String actual = LuceneQueryStringBuildingVisitor.build(queryNode);
         assertEquals(expectedQuery, actual);
     }

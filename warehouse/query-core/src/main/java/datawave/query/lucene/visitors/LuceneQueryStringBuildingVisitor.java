@@ -40,8 +40,6 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.SynonymQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
 
-import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
-
 /**
  * A visitor implementation that returns a formatted LUCENE query string from a given QueryNode. This visitor acts as an equivalent to
  * {@link QueryNode#toQueryString(EscapeQuerySyntax)} with some differences:
@@ -51,8 +49,6 @@ import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
  * </ul>
  */
 public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
-
-    private static final EscapeQuerySyntax escapedSyntax = new EscapeQuerySyntaxImpl();
 
     public static String build(QueryNode node) {
         LuceneQueryStringBuildingVisitor visitor = new LuceneQueryStringBuildingVisitor();
@@ -97,7 +93,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         if (!isDefaultField) {
             sb.append(field).append(":");
         }
-        sb.append(escape(node.getText(), Locale.getDefault(), EscapeQuerySyntax.Type.NORMAL));
+        sb.append(LuceneUtils.escape(node.getText()));
         return sb;
     }
 
@@ -132,7 +128,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         if (!isDefaultField) {
             sb.append(field).append(":");
         }
-        sb.append(escape(node.getText(), Locale.getDefault(), EscapeQuerySyntax.Type.NORMAL));
+        sb.append(LuceneUtils.escape(node.getText()));
         sb.append("~").append(node.getSimilarity());
         return sb;
     }
@@ -207,7 +203,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         StringBuilder sb = (StringBuilder) data;
         sb.append("/").append(node.getFirstPathElement());
         for (PathQueryNode.QueryText element : node.getPathElements(1)) {
-            sb.append("/\"").append(escape(element.getValue(), Locale.getDefault(), EscapeQuerySyntax.Type.STRING)).append("\"");
+            sb.append("/\"").append(LuceneUtils.escapeQuoted(element.getValue())).append("\"");
         }
         return sb;
     }
@@ -268,7 +264,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         if (!isDefaultField) {
             sb.append(field).append(":");
         }
-        sb.append("\"").append(escape(node.getText(), Locale.getDefault(), EscapeQuerySyntax.Type.STRING)).append("\"");
+        sb.append("\"").append(LuceneUtils.escapeQuoted(node.getText())).append("\"");
         return sb;
     }
 
@@ -352,14 +348,14 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         if (!isDefaultField) {
             sb.append(field).append(":");
         }
-        sb.append(escape(node.getNumberFormat().format(node.getValue()), Locale.ROOT, EscapeQuerySyntax.Type.NORMAL));
+        sb.append(LuceneUtils.escape(node.getNumberFormat().format(node.getValue()), Locale.ROOT));
         return sb;
     }
 
     @Override
     public Object visit(PointRangeQueryNode node, Object data) {
         // PointRangeQueryNode does not override toQueryString(). Default to behavior of parent class AbstractRangeQueryNode.
-        return visit((AbstractRangeQueryNode) node, data);
+        return visit((AbstractRangeQueryNode<?>) node, data);
     }
 
     @Override
@@ -389,7 +385,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
     @Override
     public Object visit(TermRangeQueryNode node, Object data) {
         // TermRangeQueryNode does not override toQueryString(). Default to behavior of parent class AbstractRangeQueryNode.
-        return visit((AbstractRangeQueryNode) node, data);
+        return visit((AbstractRangeQueryNode<?>) node, data);
     }
 
     @Override
@@ -412,7 +408,7 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
         sb.append("(");
         String filler = "";
         for (String parameter : node.getParameterList()) {
-            sb.append(filler).append(escape(parameter, Locale.getDefault(), EscapeQuerySyntax.Type.NORMAL));
+            sb.append(filler).append(LuceneUtils.escape(parameter));
             filler = ", ";
         }
         sb.append(")");
@@ -460,10 +456,6 @@ public class LuceneQueryStringBuildingVisitor extends BaseVisitor {
     private boolean isRootOrHasParentGroup(QueryNode node) {
         QueryNode parent = node.getParent();
         return parent == null || parent instanceof GroupQueryNode;
-    }
-
-    private CharSequence escape(CharSequence text, Locale locale, EscapeQuerySyntax.Type type) {
-        return escapedSyntax.escape(text, locale, type);
     }
 
     private String getFloatStr(Float floatValue) {
