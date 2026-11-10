@@ -100,6 +100,7 @@ jobs:
     # from the root reactor so the microservice build below can resolve them.
     # TODO: This should be reverted before merging into integration.
     - name: Install Core Modules
+      if: github.base_ref == 'springboot-3.x' || github.event.merge_group.base_ref == 'refs/heads/springboot-3.x'
       run: |
         mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" ${{ needs.configure-runner.outputs.cache_settings }} -T1.0C install -DskipTests -DskipFormat -Dspotbugs.skip -Dcheckstyle.skip -Dstarters -Dservices -Dutils -am -pl :datawave-core-annotation,:base-rest-responses,:datawave-core-cached-results,:datawave-core-common,:datawave-core-common-util,:datawave-core-connection-pool,:datawave-in-memory-accumulo,:datawave-core-map-reduce,:datawave-core-modification,:datawave-core-query,:datawave-core-tables,:accumulo-utils,:common-utils,:metadata-utils,:type-utils,:datawave-core,:datawave-ingest-configuration,:datawave-ingest-core,:datawave-ingest-csv,:datawave-ingest-json,:datawave-query-core
     - name: Build and Run Unit Tests
