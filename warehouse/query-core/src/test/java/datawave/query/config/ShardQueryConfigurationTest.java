@@ -1,5 +1,9 @@
 package datawave.query.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -15,9 +19,8 @@ import java.util.function.Predicate;
 
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
@@ -93,7 +96,7 @@ public class ShardQueryConfigurationTest {
     // The set of fields that are already set via one of the other fields.
     private final Set<String> alreadySet = new HashSet<>();
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // The set of default values (optionally as predicates,
         // alternate values (to test the setters/getters),
@@ -694,33 +697,32 @@ public class ShardQueryConfigurationTest {
         Set<String> fieldsFound = new HashSet<>();
         for (Iterator<String> it = root.fieldNames(); it.hasNext();) {
             String fieldName = it.next();
-            Assert.assertTrue("Missing values for " + fieldName + ".  Please add default and updated values at the top of " + this.getClass().getSimpleName(),
-                            values.containsKey(fieldName));
+            assertTrue(values.containsKey(fieldName),
+                            "Missing values for " + fieldName + ".  Please add default and updated values at the top of " + this.getClass().getSimpleName());
             fieldsFound.add(fieldName);
             Object value = getValue(config, fieldName);
             if (predicates.containsKey(fieldName)) {
-                Assert.assertTrue("Unexpected value for " + fieldName, predicates.get(fieldName).test(value));
+                assertTrue(predicates.get(fieldName).test(value), "Unexpected value for " + fieldName);
             } else if (fieldName.endsWith("AsString")) {
-                Assert.assertTrue("Unexpected value for " + fieldName, isUnorderedListEqual(String.valueOf(values.get(fieldName)), String.valueOf(value)));
+                assertTrue(isUnorderedListEqual(String.valueOf(values.get(fieldName)), String.valueOf(value)), "Unexpected value for " + fieldName);
             } else {
-                Assert.assertEquals("Unexpected value for " + fieldName, values.get(fieldName), value);
+                assertEquals(values.get(fieldName), value, "Unexpected value for " + fieldName);
             }
         }
         for (String fieldName : alreadySet) {
-            Assert.assertTrue("Missing values for " + fieldName + ".  Please add default and updated values at the top of " + this.getClass().getSimpleName(),
-                            values.containsKey(fieldName));
+            assertTrue(values.containsKey(fieldName),
+                            "Missing values for " + fieldName + ".  Please add default and updated values at the top of " + this.getClass().getSimpleName());
             fieldsFound.add(fieldName);
             Object value = getValue(config, fieldName);
             if (predicates.containsKey(fieldName)) {
-                Assert.assertTrue("Unexpected value for " + fieldName, predicates.get(fieldName).test(value));
+                assertTrue(predicates.get(fieldName).test(value), "Unexpected value for " + fieldName);
             } else if (fieldName.endsWith("AsString")) {
-                Assert.assertTrue("Unexpected value for " + fieldName, isUnorderedListEqual(String.valueOf(values.get(fieldName)), String.valueOf(value)));
+                assertTrue(isUnorderedListEqual(String.valueOf(values.get(fieldName)), String.valueOf(value)), "Unexpected value for " + fieldName);
             } else {
-                Assert.assertEquals("Unexpected value for " + fieldName, values.get(fieldName), value);
+                assertEquals(values.get(fieldName), value, "Unexpected value for " + fieldName);
             }
         }
-        Assert.assertEquals("Unexpected additional entries in defaultValues: " + Sets.difference(values.keySet(), fieldsFound), values.size(),
-                        fieldsFound.size());
+        assertEquals(values.size(), fieldsFound.size(), "Unexpected additional entries in defaultValues: " + Sets.difference(values.keySet(), fieldsFound));
     }
 
     public boolean isUnorderedListEqual(String expected, String actual) {
@@ -807,30 +809,28 @@ public class ShardQueryConfigurationTest {
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ShardQueryConfiguration other = ShardQueryConfiguration.create();
 
-        Assert.assertEquals("Default shard configurations to not equal", config, other);
+        assertEquals(config, other, "Default shard configurations to not equal");
 
         for (Map.Entry<String,Object> entry : updatedValues.entrySet()) {
             if (!alreadySet.contains(entry.getKey())) {
                 other = ShardQueryConfiguration.create();
-                Assert.assertNotEquals("Updated value for " + entry.getKey() + " should be different than default", getValue(other, entry.getKey()),
-                                entry.getValue());
-                Assert.assertNotEquals("Updated hashvalue value for " + entry.getKey() + " should be different than default",
-                                hashCodeOf(getValue(other, entry.getKey())), hashCodeOf(entry.getValue().hashCode()));
+                assertNotEquals(getValue(other, entry.getKey()), entry.getValue(), "Updated value for " + entry.getKey() + " should be different than default");
+                assertNotEquals(hashCodeOf(getValue(other, entry.getKey())), hashCodeOf(entry.getValue().hashCode()),
+                                "Updated hashvalue value for " + entry.getKey() + " should be different than default");
                 setValue(other, entry.getKey(), entry.getValue());
-                Assert.assertNotEquals("Missing " + entry.getKey() + " in ShardQueryConfiguration.equals()", config, other);
-                Assert.assertNotEquals("Missing " + entry.getKey() + " in ShardQueryConfiguration.hashCode()", config.hashCode(), other.hashCode());
+                assertNotEquals(config, other, "Missing " + entry.getKey() + " in ShardQueryConfiguration.equals()");
+                assertNotEquals(config.hashCode(), other.hashCode(), "Missing " + entry.getKey() + " in ShardQueryConfiguration.hashCode()");
             }
         }
 
         for (Map.Entry<String,Object> entry : extraValuesToSet.entrySet()) {
             other = ShardQueryConfiguration.create();
-            Assert.assertNotEquals("Updated value for " + entry.getKey() + " should be different than default", getValue(other, entry.getKey()),
-                            entry.getValue());
-            Assert.assertNotEquals("Updated hashvalue value for " + entry.getKey() + " should be different than default",
-                            hashCodeOf(getValue(other, entry.getKey())), hashCodeOf(entry.getValue().hashCode()));
+            assertNotEquals(getValue(other, entry.getKey()), entry.getValue(), "Updated value for " + entry.getKey() + " should be different than default");
+            assertNotEquals(hashCodeOf(getValue(other, entry.getKey())), hashCodeOf(entry.getValue().hashCode()),
+                            "Updated hashvalue value for " + entry.getKey() + " should be different than default");
             setValue(other, entry.getKey(), entry.getValue());
-            Assert.assertNotEquals("Missing " + entry.getKey() + " in ShardQueryConfiguration.equals()", config, other);
-            Assert.assertNotEquals("Missing " + entry.getKey() + " in ShardQueryConfiguration.hashCode()", config.hashCode(), other.hashCode());
+            assertNotEquals(config, other, "Missing " + entry.getKey() + " in ShardQueryConfiguration.equals()");
+            assertNotEquals(config.hashCode(), other.hashCode(), "Missing " + entry.getKey() + " in ShardQueryConfiguration.hashCode()");
         }
     }
 
@@ -843,26 +843,26 @@ public class ShardQueryConfigurationTest {
         ShardQueryConfiguration configuration = new ShardQueryConfiguration();
         configuration.setTableName("shardTable");
         configuration.setActiveQueryLogNameSource(ShardQueryConfiguration.TABLE_NAME_SOURCE);
-        Assert.assertEquals("shardTable", configuration.getActiveQueryLogName());
+        assertEquals("shardTable", configuration.getActiveQueryLogName());
     }
 
     @Test
     public void whenRetrievingActiveQueryLogName_givenQueryLogicNameSource_thenReturnsQueryLogicName() {
         ShardQueryConfiguration configuration = new ShardQueryConfiguration();
         configuration.setActiveQueryLogNameSource(ShardQueryConfiguration.QUERY_LOGIC_NAME_SOURCE);
-        Assert.assertEquals(ShardQueryConfiguration.class.getSimpleName(), configuration.getActiveQueryLogName());
+        assertEquals(ShardQueryConfiguration.class.getSimpleName(), configuration.getActiveQueryLogName());
     }
 
     @Test
     public void whenRetrievingActiveQueryLogName_givenNoActiveQueryLogNameValue_thenReturnsBlankString() {
         ShardQueryConfiguration configuration = new ShardQueryConfiguration();
-        Assert.assertEquals("", configuration.getActiveQueryLogName());
+        assertEquals("", configuration.getActiveQueryLogName());
     }
 
     @Test
     public void whenRetrievingActiveQueryLogName_givenOtherValue_thenReturnsBlankString() {
         ShardQueryConfiguration configuration = new ShardQueryConfiguration();
         configuration.setActiveQueryLogNameSource("nonMatchingValue");
-        Assert.assertEquals("", configuration.getActiveQueryLogName());
+        assertEquals("", configuration.getActiveQueryLogName());
     }
 }

@@ -12,7 +12,7 @@ import java.util.Map;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
