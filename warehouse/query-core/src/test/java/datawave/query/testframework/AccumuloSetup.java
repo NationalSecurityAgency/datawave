@@ -55,7 +55,7 @@ import datawave.query.RebuildingScannerTestHelper;
 /**
  * JUnit 4 rule for loading Accumulo test data.
  *
- * @deprecated Use {@link AccumuloSetupJUnit5} for Jupiter tests.
+ * @deprecated Use {@link AccumuloSetupExtension} for Jupiter tests.
  */
 @Deprecated
 public class AccumuloSetup extends ExternalResource {

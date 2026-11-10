@@ -22,7 +22,7 @@ import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
-import datawave.query.testframework.AccumuloSetupJUnit5;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
@@ -38,7 +38,7 @@ import datawave.query.testframework.FileType;
 public class UnevaluatedFieldsQueryTest extends AbstractFunctionalQueryJUnit5 {
 
     @RegisterExtension
-    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
+    public static AccumuloSetupExtension accumuloSetup = AccumuloSetupExtension.create();
 
     private static final Logger log = Logger.getLogger(UnevaluatedFieldsQueryTest.class);
 
