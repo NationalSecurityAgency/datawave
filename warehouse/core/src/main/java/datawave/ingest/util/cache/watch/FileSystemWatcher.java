@@ -2,6 +2,7 @@ package datawave.ingest.util.cache.watch;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -47,7 +48,7 @@ public abstract class FileSystemWatcher<V> extends Reloadable<V> {
         FileChecksum checksum = fs.getFileChecksum(filePath);
 
         if (null == checksum) {
-            return "".getBytes();
+            return "".getBytes(StandardCharsets.UTF_8);
         } else
             return checksum.getBytes();
     }

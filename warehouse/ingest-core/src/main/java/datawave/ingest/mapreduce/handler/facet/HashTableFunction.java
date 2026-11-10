@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.handler.facet;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
 import javax.annotation.Nullable;
@@ -32,7 +33,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collection<NormalizedContentInterface>,Collection<NormalizedContentInterface>> {
 
     public static final String FIELD_APPEND = ".hash";
-    public static final byte[] FIELD_APPEND_BYTES = FIELD_APPEND.getBytes();
+    public static final byte[] FIELD_APPEND_BYTES = FIELD_APPEND.getBytes(StandardCharsets.UTF_8);
     private static final byte[] EMPTY_BYTES = new byte[] {};
     private static final Value EMPTY_VALUE = new Value(EMPTY_BYTES);
 
@@ -96,13 +97,13 @@ public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collec
 
             for (NormalizedContentInterface nci : input) {
                 hasher.putUnencodedChars(nci.getIndexedFieldValue());
-                byte[] indexedValue = nci.getIndexedFieldValue().getBytes();
+                byte[] indexedValue = nci.getIndexedFieldValue().getBytes(StandardCharsets.UTF_8);
                 // key maintains a reference to hashBytes, so it is properly updated by the time it is written
                 map.put(new BulkIngestKey(outputTable, new Key(hashBytes, indexedValue, EMPTY_BYTES, EMPTY_BYTES, timestamp, false, false)), EMPTY_VALUE);
             }
 
             final String hash = hasher.hash().toString();
-            final byte[] hashStringBytes = hash.getBytes();
+            final byte[] hashStringBytes = hash.getBytes(StandardCharsets.UTF_8);
             System.arraycopy(hashStringBytes, 0, hashBytes, 0, hashBytes.length);
 
             try {
@@ -135,7 +136,7 @@ public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collec
      * @return true if the field name ends with the FIELD_APPEND_BYTES suffix.
      */
     public static boolean isReduced(NormalizedContentInterface pivotTypes) {
-        final byte[] fieldNameBytes = pivotTypes.getIndexedFieldName().getBytes();
+        final byte[] fieldNameBytes = pivotTypes.getIndexedFieldName().getBytes(StandardCharsets.UTF_8);
         if (fieldNameBytes.length > FIELD_APPEND_BYTES.length) {
             // @formatter:off
             final int cmp = WritableComparator.compareBytes(

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -92,7 +93,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
     @Override
     public BytesWritable getCurrentValue() {
         if (currentJsonObj != null) {
-            return new BytesWritable(currentJsonObj.toString().getBytes());
+            return new BytesWritable(currentJsonObj.toString().getBytes(StandardCharsets.UTF_8));
         } else {
             return null;
         }
@@ -226,7 +227,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
 
         decorateEvent();
 
-        event.setRawData(currentJsonObj.toString().getBytes());
+        event.setRawData(currentJsonObj.toString().getBytes(StandardCharsets.UTF_8));
 
         if (!event.isTimestampSet()) {
             event.setTimestamp(System.currentTimeMillis());

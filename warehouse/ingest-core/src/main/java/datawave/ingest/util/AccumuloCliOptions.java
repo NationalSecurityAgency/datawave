@@ -1,5 +1,7 @@
 package datawave.ingest.util;
 
+import java.nio.charset.StandardCharsets;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
@@ -78,7 +80,7 @@ public class AccumuloCliOptions {
 
     public void setAccumuloConfiguration(Configuration conf) {
         AccumuloHelper.setUsername(conf, cl.getOptionValue("u"));
-        AccumuloHelper.setPassword(conf, PasswordConverter.parseArg(cl.getOptionValue("p")).getBytes());
+        AccumuloHelper.setPassword(conf, PasswordConverter.parseArg(cl.getOptionValue("p")).getBytes(StandardCharsets.UTF_8));
         AccumuloHelper.setInstanceName(conf, cl.getOptionValue("i"));
         AccumuloHelper.setZooKeepers(conf, cl.getOptionValue("zk"));
 

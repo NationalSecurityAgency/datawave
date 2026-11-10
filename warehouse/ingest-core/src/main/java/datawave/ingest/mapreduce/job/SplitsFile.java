@@ -3,6 +3,7 @@ package datawave.ingest.mapreduce.job;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -134,7 +135,7 @@ public class SplitsFile {
      */
     private static boolean shardsExistForDate(Map<Text,String> locations, String datePrefix, int expectedNumberOfShards) {
         int count = 0;
-        byte[] prefixBytes = datePrefix.getBytes();
+        byte[] prefixBytes = datePrefix.getBytes(StandardCharsets.UTF_8);
         for (Text key : locations.keySet()) {
             if (prefixMatches(prefixBytes, key.getBytes(), key.getLength())) {
                 count++;
@@ -157,7 +158,7 @@ public class SplitsFile {
         boolean dateIsBalanced = true;
 
         Map<String,MutableInt> tabletsSeenForDate = new HashMap<>();
-        byte[] prefixBytes = datePrefix.getBytes();
+        byte[] prefixBytes = datePrefix.getBytes(StandardCharsets.UTF_8);
 
         for (Map.Entry<Text,String> entry : locations.entrySet()) {
             Text key = entry.getKey();

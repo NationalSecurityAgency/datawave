@@ -1,5 +1,6 @@
 package datawave.ingest.data.config;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -166,9 +167,9 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
             for (int i = 2; i < uidParts.length; i++) {
                 extra.append(UIDConstants.DEFAULT_SEPARATOR).append(uidParts[i]);
             }
-            return builder.newId(uidParts[0].getBytes(), time, extra.toString());
+            return builder.newId(uidParts[0].getBytes(StandardCharsets.UTF_8), time, extra.toString());
         } else {
-            return builder.newId(id.getBytes(), time);
+            return builder.newId(id.getBytes(StandardCharsets.UTF_8), time);
         }
     }
 

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -562,7 +563,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 }
             }
 
-            flagOS.write(sb.toString().getBytes());
+            flagOS.write(sb.toString().getBytes(StandardCharsets.UTF_8));
         }
 
         return f;
