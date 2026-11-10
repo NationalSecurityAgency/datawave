@@ -1,25 +1,23 @@
 package datawave.test.iter;
 
+import java.util.Map;
+
 import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.TableId;
-
-import datawave.accumulo.core.util.AccumuloConfigurationWrapper;
 
 public class TestPluginEnv implements PluginEnvironment {
 
-    private final AccumuloConfiguration conf = DefaultConfiguration.getInstance();
+    private final Configuration conf = Configuration.from(Map.of(), true);
 
     @Override
     public Configuration getConfiguration() {
-        return new AccumuloConfigurationWrapper(conf);
+        return conf;
     }
 
     @Override
     public Configuration getConfiguration(TableId tableId) {
-        return new AccumuloConfigurationWrapper(conf);
+        return conf;
     }
 
     @Override

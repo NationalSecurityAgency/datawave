@@ -20,8 +20,6 @@ import org.apache.accumulo.core.client.PluginEnvironment;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
@@ -36,8 +34,6 @@ import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
-import datawave.accumulo.core.util.AccumuloConfigurationWrapper;
 
 public class SourceManagerTest {
     private static final SimpleDateFormat shardFormatter = new SimpleDateFormat("yyyyMMdd HHmmss");
@@ -346,10 +342,10 @@ public class SourceManagerTest {
 
     public static class MockIteratorEnvironment implements IteratorEnvironment {
 
-        AccumuloConfiguration conf;
+        PluginEnvironment.Configuration conf;
 
         public MockIteratorEnvironment() {
-            this.conf = DefaultConfiguration.getInstance();
+            this.conf = PluginEnvironment.Configuration.from(Map.of(), true);
         }
 
         @Override
@@ -405,12 +401,12 @@ public class SourceManagerTest {
         public class MockPluginEnvironment implements PluginEnvironment {
             @Override
             public Configuration getConfiguration() {
-                return new AccumuloConfigurationWrapper(conf);
+                return conf;
             }
 
             @Override
             public Configuration getConfiguration(TableId tableId) {
-                return new AccumuloConfigurationWrapper(conf);
+                return conf;
             }
 
             @Override
