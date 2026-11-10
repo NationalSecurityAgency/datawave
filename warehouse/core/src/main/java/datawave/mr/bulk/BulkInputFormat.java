@@ -31,7 +31,6 @@ import org.apache.accumulo.core.client.IsolatedScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.RowIterator;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -48,7 +47,6 @@ import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
-import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
@@ -1096,7 +1094,6 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 }
             } else {
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
-                    TableId tableId = null;
                     tl = getTabletLocator(job.getConfiguration());
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                     tl.invalidateCache();
@@ -1105,12 +1102,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                                     ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
                     while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
-                            if (tableId == null)
-                                tableId = context.getTableId(tableName);
-                            if (!context.tableNodeExists(tableId))
-                                throw new TableDeletedException(tableId.canonical());
-                            if (context.getTableState(tableId) == TableState.OFFLINE)
-                                throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
+                            if (!client.tableOperations().isOnline(tableName)) {
+                                throw new TableOfflineException((TableId) null, tableName);
+                            }
                         }
                         binnedRanges.clear();
                         log.warn("Unable to locate bins for specified ranges. Retrying.");
