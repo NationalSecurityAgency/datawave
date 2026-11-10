@@ -3,8 +3,9 @@ package datawave.ingest.mapreduce.job.writer;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,9 +21,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.easymock.EasyMockSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -36,7 +37,7 @@ public class SpillingSortedContextWriterTest extends EasyMockSupport {
     private TaskInputOutputContext context;
     private TaskInputOutputContext outputContext;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         writer = new SpillingSortedContextWriter();
         config = new Configuration();
@@ -47,7 +48,7 @@ public class SpillingSortedContextWriterTest extends EasyMockSupport {
         expect(outputContext.getConfiguration()).andReturn(config).anyTimes();
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         if (tmpDir != null) {
             cleanup(tmpDir);
@@ -64,17 +65,17 @@ public class SpillingSortedContextWriterTest extends EasyMockSupport {
         dir.delete();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setup_noWorkDirTest() throws IOException, InterruptedException {
-        writer.setup(config, true);
+        assertThrows(IllegalStateException.class, () -> writer.setup(config, true));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setup_workDirNotDirTest() throws IOException, InterruptedException {
         File tmpFile = File.createTempFile("prefix", "suffix");
         try {
             config.set(SpillingSortedContextWriter.WORK_DIR, tmpFile.toString());
-            writer.setup(config, true);
+            assertThrows(IllegalStateException.class, () -> writer.setup(config, true));
         } finally {
             tmpFile.delete();
         }

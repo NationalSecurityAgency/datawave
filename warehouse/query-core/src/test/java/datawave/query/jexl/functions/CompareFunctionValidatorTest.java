@@ -1,10 +1,10 @@
 package datawave.query.jexl.functions;
 
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlNodeFactory;
 

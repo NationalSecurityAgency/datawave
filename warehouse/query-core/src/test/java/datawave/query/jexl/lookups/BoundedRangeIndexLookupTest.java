@@ -3,10 +3,10 @@ package datawave.query.jexl.lookups;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -36,11 +36,13 @@ import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.io.FileUtils;
 import org.easymock.EasyMockSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.ShardQueryConfiguration;
@@ -53,8 +55,10 @@ import datawave.util.time.DateHelper;
 
 public class BoundedRangeIndexLookupTest extends EasyMockSupport {
 
+    @TempDir
+    static File temporaryFolder;
+
     private static final String PASSWORD = "password";
-    private static File testDir;
 
     private static final String shard = "2024070";
     private static final Set<String> fields = Set.of("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D", "FIELD_E");
@@ -76,13 +80,12 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
 
     private ScanMonitor monitor;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupClass() throws Exception {
-
         // Setup Mini Accumulo Logging
         File baseDir = new File(System.getProperty("user.dir") + "/target/mini-tests");
         assertTrue(baseDir.mkdirs() || baseDir.isDirectory());
-        testDir = new File(baseDir, BoundedRangeIndexLookupTest.class.getName());
+        File testDir = new File(baseDir, BoundedRangeIndexLookupTest.class.getName());
         FileUtils.deleteQuietly(testDir);
         assertTrue(testDir.mkdir());
 
@@ -96,7 +99,13 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         writeData();
     }
 
-    @Before
+    @AfterAll
+    public static void tearDownClass() throws Exception {
+        client.close();
+        cluster.stop();
+    }
+
+    @BeforeEach
     public void setup() {
         scannerFactory = new ScannerFactory(client);
 
@@ -114,7 +123,7 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         monitor = ScanMonitor.of(25_000, "test", null);
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         executorService.shutdownNow();
         monitor.close();
@@ -327,7 +336,7 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         if (expected.isEmpty()) {
             assertTrue(lookupMap.isEmpty());
         } else {
-            assertFalse("Lookup Map is empty", lookupMap.isEmpty());
+            assertFalse(lookupMap.isEmpty());
             Set<String> values = new HashSet<>(lookupMap.get(field));
             assertEquals(expected, values);
         }
@@ -356,7 +365,7 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
     }
 
     private void withExpected(Set<String> expected) {
-        assertTrue("should only set expected values once per test", this.expected.isEmpty());
+        assertTrue(this.expected.isEmpty(), "should only set expected values once per test");
         this.expected.addAll(expected);
     }
 
@@ -368,7 +377,7 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         return values;
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void largeRowInBoundedRangeTest() throws TableNotFoundException {
         ExecutorService s = Executors.newSingleThreadExecutor();

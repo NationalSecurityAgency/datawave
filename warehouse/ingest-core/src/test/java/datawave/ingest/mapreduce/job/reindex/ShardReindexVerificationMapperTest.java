@@ -4,10 +4,13 @@ import static datawave.ingest.mapreduce.job.reindex.ShardedDataGenerator.createI
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,11 +27,10 @@ import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.easymock.EasyMockSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.accumulo.inmemory.InMemoryAccumulo;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
@@ -36,8 +38,8 @@ import datawave.ingest.data.config.ingest.AccumuloHelper;
 
 public class ShardReindexVerificationMapperTest extends EasyMockSupport {
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    Path folder;
 
     private ShardReindexVerificationMapper mapper;
     private Mapper.Context context;
@@ -50,7 +52,7 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
     private File sourceDir1 = null;
     private File sourceDir2 = null;
 
-    @Before
+    @BeforeEach
     public void setup() throws AccumuloSecurityException {
         mapper = new ShardReindexVerificationMapper();
         config = new Configuration();
@@ -71,7 +73,7 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         dataOptions.add("walking");
     }
 
-    @After
+    @AfterEach
     public void cleanup() throws IOException {
         if (sourceDir1 != null) {
             FileUtils.deleteDirectory(sourceDir1);
@@ -81,67 +83,67 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setupTest_noSources() {
         replayAll();
 
-        mapper.setup(context);
+        assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
         verifyAll();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setupTest_oneSource1Accumulo() {
         replayAll();
 
         config.set("source1", "ACCUMULO");
-        mapper.setup(context);
+        assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
         verifyAll();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setupTest_oneSource1File() {
         replayAll();
 
         config.set("source1", "FILE");
-        mapper.setup(context);
+        assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
         verifyAll();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setupTest_oneSource2Accumulo() {
         replayAll();
 
         config.set("source2", "ACCUMULO");
-        mapper.setup(context);
+        assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
         verifyAll();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setupTest_oneSource2File() {
         replayAll();
 
         config.set("source2", "FILE");
-        mapper.setup(context);
+        assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
         verifyAll();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setupTest_twoSources() {
         replayAll();
 
         config.set("source1", "ACCUMULO");
         config.set("source2", "FILE");
-        mapper.setup(context);
+        assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
         verifyAll();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setupTest_accumuloSourceNeedsAccumuloHelperConfig() {
         replayAll();
 
@@ -149,23 +151,23 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         config.set("source1.table", "myTable");
         config.set("source2", "ACCUMULO");
         config.set("source2.table", "myOtherTable");
-        mapper.setup(context);
+        assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
         verifyAll();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setupTest_accumuloSourceNeedsTable() {
         replayAll();
 
         config.set("source1", "ACCUMULO");
         config.set("source2", "ACCUMULO");
-        mapper.setup(context);
+        assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
         verifyAll();
     }
 
-    @Test(expected = AccumuloSecurityException.class)
+    @Test
     public void setupTest_accumuloSourceUserMustExist() throws Throwable {
         replayAll();
 
@@ -182,16 +184,18 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         mapper.setAccumuloClient(accumuloClient);
 
         // since this is thrown as a runtime exception caused by an AccumuloSecurityException unwrap this to verify
-        try {
-            mapper.setup(context);
-        } catch (RuntimeException e) {
-            throw e.getCause();
-        }
+        assertThrows(AccumuloSecurityException.class, () -> {
+            try {
+                mapper.setup(context);
+            } catch (RuntimeException e) {
+                throw e.getCause();
+            }
+        });
 
         verifyAll();
     }
 
-    @Test(expected = TableNotFoundException.class)
+    @Test
     public void setupTest_accumuloSourceTableMustExist() throws Throwable {
         replayAll();
 
@@ -211,16 +215,18 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         mapper.setAccumuloClient(accumuloClient);
 
         // accumulo exception is wrapped up in a runtime exception, unwrap and verify
-        try {
-            mapper.setup(context);
-        } catch (RuntimeException e) {
-            throw e.getCause();
-        }
+        assertThrows(TableNotFoundException.class, () -> {
+            try {
+                mapper.setup(context);
+            } catch (RuntimeException e) {
+                throw e.getCause();
+            }
+        });
 
         verifyAll();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setupTest_fileSourceMustHavePaths() {
         replayAll();
 
@@ -228,12 +234,12 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
 
         config.set("source2", "FILE");
         config.set("source2.files", "/some/path");
-        mapper.setup(context);
+        assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
         verifyAll();
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void setupTest_fileSourceNoPaths() throws Throwable {
         replayAll();
 
@@ -242,11 +248,13 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         config.set("source2", "FILE");
         config.set("source2.files", "/some/other/path/no-rfiles");
 
-        try {
-            mapper.setup(context);
-        } catch (RuntimeException e) {
-            throw e.getCause();
-        }
+        assertThrows(IOException.class, () -> {
+            try {
+                mapper.setup(context);
+            } catch (RuntimeException e) {
+                throw e.getCause();
+            }
+        });
 
         verifyAll();
     }
@@ -379,20 +387,20 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
 
         sourceDir1 = createIngestFiles(dataOptions, 10000);
         // create a copy of this data for the other table
-        sourceDir2 = folder.newFolder("source2");
+        sourceDir2 = Files.createDirectory(folder.resolve("source2")).toFile();
 
         // copy the rfile generated to the second directory for bulk importing
         File shardDir = new File(sourceDir1, "shard");
         FileUtils.copyDirectory(shardDir, sourceDir2);
 
         accumuloClient.tableOperations().create("myTable1");
-        File tmp1 = folder.newFolder("tmp1");
+        File tmp1 = Files.createDirectory(folder.resolve("tmp1")).toFile();
         // TODO: Fix the bulk import stuff later
-        // accumuloClient.tableOperations().importDirectory(sourceDir1.getAbsolutePath() + "/shard").to("myTable1").tableTime(false).load();
+        // accumuloClient.tableOperations().importDirectory("myTable1", sourceDir1.getAbsolutePath() + "/shard", tmp1.getAbsolutePath(), false);
         accumuloClient.tableOperations().create("myTable2");
-        File tmp2 = folder.newFolder("tmp2");
+        File tmp2 = Files.createDirectory(folder.resolve("tmp2")).toFile();
         // TODO: Fix the bulk import stuff later
-        // accumuloClient.tableOperations().importDirectory(sourceDir2.getAbsolutePath()).to("myTable2").tableTime(false).load();
+        // accumuloClient.tableOperations().importDirectory("myTable2", sourceDir2.getAbsolutePath(), tmp2.getAbsolutePath(), false);
 
         replayAll();
 
