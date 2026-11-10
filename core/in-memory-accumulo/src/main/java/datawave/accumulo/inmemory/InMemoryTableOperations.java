@@ -565,14 +565,14 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         private static final String RFILE_EXTENSION = ".rf";
         private static final String BULK_WORKING_PREFIX = "accumulo-bulk-";
 
-        private final InMemoryAccumulo acu;
+        private final InMemoryAccumulo instance;
         private final String directory;
         private String tableName;
         private boolean setTime = false;
         private boolean ignoreEmptyDir = false;
 
-        BulkImportImpl(InMemoryAccumulo acu, String directory) {
-            this.acu = acu;
+        BulkImportImpl(InMemoryAccumulo instance, String directory) {
+            this.instance = instance;
             this.directory = Objects.requireNonNull(directory);
         }
 
@@ -613,12 +613,12 @@ public class InMemoryTableOperations extends TableOperationsHelper {
         }
 
         @Override
-        public void load() throws TableNotFoundException, IOException, AccumuloException, AccumuloSecurityException {
-            InMemoryTable table = acu.tables.get(tableName);
+        public void load() throws TableNotFoundException, IOException, AccumuloException {
+            InMemoryTable table = instance.tables.get(tableName);
             if (table == null) {
                 throw new TableNotFoundException(null, tableName, "The table was not found");
             }
-            FileSystem fs = acu.getFileSystem();
+            FileSystem fs = instance.getFileSystem();
             Path dir = checkPath(fs);
 
             // the files Accumulo loads: RFiles directly in the directory, other than its own working files
@@ -631,10 +631,7 @@ public class InMemoryTableOperations extends TableOperationsHelper {
             }
 
             // read every file before changing the table, so a file that cannot be read fails the whole import
-            List<Entry<Key,Value>> entries = new ArrayList<>();
-            for (Path file : files) {
-                read(fs, file, entries);
-            }
+            List<Entry<Key,Value>> entries = read(fs, files);
 
             // as in Accumulo, files without any entries leave nothing to import
             if (entries.isEmpty()) {
@@ -669,15 +666,19 @@ public class InMemoryTableOperations extends TableOperationsHelper {
             return dir;
         }
 
-        private static void read(FileSystem fs, Path file, List<Entry<Key,Value>> entries) throws IOException {
-            // without the system iterators the scanner returns delete markers and does not filter on visibility
-            try (Scanner scanner = RFile.newScanner().from(file.toString()).withFileSystem(fs).withoutSystemIterators().build()) {
-                for (Entry<Key,Value> entry : scanner) {
-                    entries.add(entry);
+        private static List<Entry<Key,Value>> read(FileSystem fs, List<Path> files) throws IOException {
+            List<Entry<Key,Value>> entries = new ArrayList<>();
+            for (Path file : files) {
+                // without the system iterators the scanner returns delete markers and does not filter on visibility
+                try (Scanner scanner = RFile.newScanner().from(file.toString()).withFileSystem(fs).withoutSystemIterators().build()) {
+                    for (Entry<Key,Value> entry : scanner) {
+                        entries.add(entry);
+                    }
+                } catch (UncheckedIOException e) {
+                    throw new IOException("Unable to read " + file, e.getCause());
                 }
-            } catch (UncheckedIOException e) {
-                throw new IOException("Unable to read " + file, e.getCause());
             }
+            return entries;
         }
 
         private Mutation toMutation(Entry<Key,Value> entry, long time) {

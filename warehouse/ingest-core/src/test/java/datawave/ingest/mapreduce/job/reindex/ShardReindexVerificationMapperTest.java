@@ -23,6 +23,7 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -405,10 +406,11 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         List<Map.Entry<Key,Value>> expected = readNewestVersions(new File(shardDir, "magic.rf"));
         assertFalse(expected.isEmpty());
 
-        accumuloClient.tableOperations().create("myTable1");
-        accumuloClient.tableOperations().importDirectory(sourceDir1.getAbsolutePath() + "/shard").to("myTable1").load();
-        accumuloClient.tableOperations().create("myTable2");
-        accumuloClient.tableOperations().importDirectory(sourceDir2.getAbsolutePath()).to("myTable2").load();
+        TableOperations tops = accumuloClient.tableOperations();
+        tops.create("myTable1");
+        tops.importDirectory(sourceDir1.getAbsolutePath() + "/shard").to("myTable1").load();
+        tops.create("myTable2");
+        tops.importDirectory(sourceDir2.getAbsolutePath()).to("myTable2").load();
 
         // both tables must hold the generated data, otherwise finding no diff below proves nothing
         assertEquals(expected, scan("myTable1"));
