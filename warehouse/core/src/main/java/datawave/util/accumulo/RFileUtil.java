@@ -186,8 +186,12 @@ public class RFileUtil {
                 wrappedIterator.next();
             }
 
-            if (blockCount > 0) {
-                splits.add(new Range(splitStart, true, fence.getEndKey(), fence.isEndKeyInclusive()));
+            // the last range runs to the end of the fence. blockCount only counts index keys, which are the last key of each block, so keys in the fence
+            // that share a block with keys past it are not counted: a fence inside a single block, or the keys after the last split. Look for those in the
+            // files.
+            Range last = fence.clip(new Range(splitStart, true, null, true), true);
+            if (last != null && (blockCount > 0 || hasKeys(readers, last))) {
+                splits.add(last);
             }
         } finally {
             // close all readers
@@ -197,5 +201,15 @@ public class RFileUtil {
         }
 
         return splits;
+    }
+
+    private static boolean hasKeys(List<RFile.Reader> readers, Range range) throws IOException {
+        for (RFile.Reader reader : readers) {
+            reader.seek(range, Collections.emptySet(), false);
+            if (reader.hasTop()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

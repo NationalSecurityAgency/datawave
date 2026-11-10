@@ -10,6 +10,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.rfile.RFileWriter;
@@ -26,6 +27,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class RFileUtilTest {
+    // 1K data blocks, so a few hundred keys span many blocks
+    private static final Map<String,String> SMALL_BLOCKS = Map.of("table.file.compress.blocksize", "1K");
+
     private Configuration config;
     private File tmpFile;
 
@@ -165,6 +169,120 @@ public class RFileUtilTest {
         assertEquals(r, splits.get(0));
     }
 
+    @Test
+    public void getRangeSplitsTest_fenceInsideOneBlock() throws IOException {
+        // rows 1 to 3 fit in one block, so the block's index key, the last key of row 3, is past a fence on row 2
+        List<Map.Entry<Key,Value>> data = new ArrayList<>();
+        for (int i = 1; i <= 3; i++) {
+            addRow(data, i, 5);
+        }
+        tmpFile = createRFile(data);
+        // the fence ShardReindexJob uses for a row
+        Range fence = new Range(new Key(row(2)), true, new Key(row(2), "\uFFFF", "\uFFFF"), true);
+        List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), fence.getStartKey(), fence.getEndKey(), 1);
+        assertEquals(List.of(fence), splits);
+    }
+
+    @Test
+    public void getRangeSplitsTest_fenceBetweenRows() throws IOException {
+        List<Map.Entry<Key,Value>> data = new ArrayList<>();
+        addRow(data, 1, 5);
+        addRow(data, 3, 5);
+        tmpFile = createRFile(data);
+        // the files have no keys in row 2, so there is no range for it
+        List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), new Key(row(2)), new Key(row(2), "\uFFFF", "\uFFFF"), 1);
+        assertEquals(0, splits.size());
+    }
+
+    @Test
+    public void getRangeSplitsTest_everyKeyInOneRange() throws IOException {
+        // with small blocks a few hundred keys make many blocks. When the last block in the fence completes a split, the keys after that split, starting
+        // with the split key itself, still need a range.
+        int splitRuns = 0;
+        for (int keys = 50; keys <= 500; keys += 50) {
+            List<Map.Entry<Key,Value>> data = new ArrayList<>();
+            for (int i = 0; i < keys; i++) {
+                addData(data, i, i);
+            }
+            tmpFile = createRFile(data, SMALL_BLOCKS);
+            for (int blocksPerSplit = 1; blocksPerSplit <= 3; blocksPerSplit++) {
+                List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), null, null, blocksPerSplit);
+                assertEachKeyInOneRange(data, splits, keys + " keys, " + blocksPerSplit + " blocks per split");
+                if (splits.size() > 1) {
+                    splitRuns++;
+                }
+            }
+            assertTrue(tmpFile.delete());
+        }
+        // the files were split
+        assertTrue(splitRuns > 0);
+    }
+
+    @Test
+    public void getRangeSplitsTest_multipleFiles() throws IOException {
+        // two files with alternating rows, and an empty file
+        List<Map.Entry<Key,Value>> even = new ArrayList<>();
+        List<Map.Entry<Key,Value>> odd = new ArrayList<>();
+        for (int i = 0; i < 400; i++) {
+            addData(i % 2 == 0 ? even : odd, i, i);
+        }
+        List<File> files = List.of(createRFile(even, SMALL_BLOCKS), createRFile(odd, SMALL_BLOCKS), createRFile(new ArrayList<>()));
+        try {
+            List<String> paths = files.stream().map(File::getPath).toList();
+            List<Range> splits = RFileUtil.getRangeSplits(config, paths, null, null, 1, Function.identity());
+            assertTrue(splits.size() > 1);
+            assertEachKeyInOneRange(even, splits, "even rows");
+            assertEachKeyInOneRange(odd, splits, "odd rows");
+            Range all = new Range(createKey(0), true, createKey(399).followingKey(PartialKey.ROW), false);
+            assertEquals(List.of(all), Range.mergeOverlapping(splits));
+        } finally {
+            for (File file : files) {
+                assertTrue(file.delete());
+            }
+        }
+    }
+
+    @Test
+    public void getRangeSplitsTest_localityGroups() throws IOException {
+        // the file's first row is in its second locality group
+        tmpFile = File.createTempFile("testSimpleSplits", ".rf");
+        assertTrue(tmpFile.delete());
+        List<Map.Entry<Key,Value>> data = new ArrayList<>();
+        try (RFileWriter writer = RFile.newWriter().to(tmpFile.getPath()).withFileSystem(FileSystem.getLocal(new Configuration())).build()) {
+            writer.startNewLocalityGroup("lg", "a");
+            for (int i = 5; i <= 9; i++) {
+                Key key = new Key(row(i), "a", "cq");
+                writer.append(key, createValue(i));
+                data.add(new AbstractMap.SimpleEntry<>(key, createValue(i)));
+            }
+            writer.startDefaultLocalityGroup();
+            for (int i = 1; i <= 3; i++) {
+                Key key = new Key(row(i), "z", "cq");
+                writer.append(key, createValue(i));
+                data.add(new AbstractMap.SimpleEntry<>(key, createValue(i)));
+            }
+        }
+        List<Range> splits = RFileUtil.getRangeSplits(config, tmpFile.getPath(), null, null, 1);
+        assertEquals(List.of(new Range(createKey(1), true, createKey(9).followingKey(PartialKey.ROW), false)), Range.mergeOverlapping(splits));
+        assertEachKeyInOneRange(data, splits, "locality groups");
+    }
+
+    private static void assertEachKeyInOneRange(List<Map.Entry<Key,Value>> data, List<Range> ranges, String message) {
+        for (Map.Entry<Key,Value> entry : data) {
+            assertEquals(1, ranges.stream().filter(range -> range.contains(entry.getKey())).count(), message + ": " + entry.getKey());
+        }
+    }
+
+    private static String row(int row) {
+        return String.format("%08x", row);
+    }
+
+    private static void addRow(List<Map.Entry<Key,Value>> data, int row, int columns) {
+        for (int i = 0; i < columns; i++) {
+            data.add(new AbstractMap.SimpleEntry<>(new Key(row(row), "cf" + i, "cq"), createValue(i)));
+        }
+    }
+
     public static Key createKey(int key) {
         return new Key(String.format("%08x", key));
     }
@@ -180,10 +298,15 @@ public class RFileUtilTest {
     }
 
     public static File createRFile(List<Map.Entry<Key,Value>> data) throws IOException {
+        return createRFile(data, Map.of());
+    }
+
+    public static File createRFile(List<Map.Entry<Key,Value>> data, Map<String,String> tableProperties) throws IOException {
         File tmpFile = File.createTempFile("testSimpleSplits", ".rf");
         assertTrue(tmpFile.delete());
 
-        try (RFileWriter writer = RFile.newWriter().to(tmpFile.getPath()).withFileSystem(FileSystem.getLocal(new Configuration())).build()) {
+        try (RFileWriter writer = RFile.newWriter().to(tmpFile.getPath()).withFileSystem(FileSystem.getLocal(new Configuration())).withTableProperties(tableProperties)
+                        .build()) {
             for (Map.Entry<Key,Value> toWrite : data) {
                 writer.append(toWrite.getKey(), toWrite.getValue());
             }
