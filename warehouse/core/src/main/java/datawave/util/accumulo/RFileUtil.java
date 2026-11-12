@@ -1,18 +1,19 @@
 package datawave.util.accumulo;
 
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.rfile.RFileSource;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -86,10 +87,22 @@ public class RFileUtil {
             throw new FileNotFoundException(rfile + " does not exist");
         }
 
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, config.getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, getCryptoProperties(config));
         CachableBlockFile.CachableBuilder cb = new CachableBlockFile.CachableBuilder().fsPath(fs, rfile).conf(config).cryptoService(cs);
 
         return new RFile.Reader(cb);
+    }
+
+    /**
+     * The crypto properties in a configuration, under their full keys, which is how the crypto service reads them. These are the properties
+     * AccumuloConfiguration.getAllCryptoProperties() collects.
+     */
+    private static Map<String,String> getCryptoProperties(Configuration config) {
+        Map<String,String> properties = new HashMap<>();
+        for (Property prefix : List.of(Property.INSTANCE_CRYPTO_PREFIX, Property.GENERAL_ARBITRARY_PROP_PREFIX, Property.TABLE_CRYPTO_PREFIX)) {
+            config.getPropsWithPrefix(prefix.getKey()).forEach((key, value) -> properties.put(prefix.getKey() + key, value));
+        }
+        return properties;
     }
 
     public static List<Range> getRangeSplits(Configuration config, String paths, Key start, Key end, int indexBlocksPerSplit) throws IOException {
@@ -117,14 +130,14 @@ public class RFileUtil {
             Key startKey = null;
             for (String rfile : paths) {
                 RFile.Reader reader = getRFileReader(config, new Path(rfile));
-                // TODO ACCUMULO4: Verify that this implementation is correct.
-                // Cannot determine splits if range is undefined
-                if (!reader.getFileRange().empty) {
-                    if (lastKey == null || reader.getFileRange().rowRange.getEndKey().compareTo(lastKey) > 0) {
-                        lastKey = reader.getFileRange().rowRange.getEndKey();
+                // a file's range covers whole rows: it starts at its first row and its exclusive end follows its last row. An empty file has no range.
+                var fileRange = reader.getFileRange();
+                if (!fileRange.empty) {
+                    if (lastKey == null || fileRange.rowRange.getEndKey().compareTo(lastKey) > 0) {
+                        lastKey = fileRange.rowRange.getEndKey();
                     }
-                    if (startKey == null || reader.getFileRange().rowRange.getStartKey().compareTo(startKey) < 0) {
-                        startKey = reader.getFileRange().rowRange.getStartKey();
+                    if (startKey == null || fileRange.rowRange.getStartKey().compareTo(startKey) < 0) {
+                        startKey = fileRange.rowRange.getStartKey();
                     }
                 }
                 readers.add(reader);
@@ -140,6 +153,7 @@ public class RFileUtil {
 
             Key fenceStart = start;
             Key fenceEnd = end;
+            boolean fenceEndInclusive = true;
 
             Range fence = new Range(fenceStart, true, fenceEnd, true);
 
@@ -149,11 +163,13 @@ public class RFileUtil {
                 fence = new Range(fenceStart, true, fenceEnd, true);
             }
 
-            if (fence.contains(lastKey)) {
+            // the end of the files' range is exclusive
+            if (fence.contains(lastKey) && fenceStart.compareTo(lastKey) < 0) {
                 fenceEnd = lastKey;
+                fenceEndInclusive = false;
             }
 
-            fence = new Range(fenceStart, true, fenceEnd, true);
+            fence = new Range(fenceStart, true, fenceEnd, fenceEndInclusive);
 
             MultiIterator wrappedIterator = new MultiIterator(indexIterators, true);
 
@@ -183,8 +199,12 @@ public class RFileUtil {
                 wrappedIterator.next();
             }
 
-            if (blockCount > 0) {
-                splits.add(new Range(splitStart, true, fence.getEndKey(), fence.isEndKeyInclusive()));
+            // the last range runs to the end of the fence. blockCount only counts index keys, which are the last key of each block, so keys in the fence
+            // that share a block with keys past it are not counted: a fence inside a single block, or the keys after the last split. Look for those in the
+            // files.
+            Range last = fence.clip(new Range(splitStart, true, null, true), true);
+            if (last != null && (blockCount > 0 || hasKeys(readers, last))) {
+                splits.add(last);
             }
         } finally {
             // close all readers
@@ -194,5 +214,15 @@ public class RFileUtil {
         }
 
         return splits;
+    }
+
+    private static boolean hasKeys(List<RFile.Reader> readers, Range range) throws IOException {
+        for (RFile.Reader reader : readers) {
+            reader.seek(range, Collections.emptySet(), false);
+            if (reader.hasTop()) {
+                return true;
+            }
+        }
+        return false;
     }
 }
