@@ -9,7 +9,8 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 
 import datawave.query.model.FieldMapping;
@@ -21,7 +22,7 @@ import datawave.webservice.model.Model;
  */
 public class LoadModel {
 
-    private static final Logger log = Logger.getLogger(LoadModel.class);
+    private static final Logger log = LoggerFactory.getLogger(LoadModel.class);
 
     public static QueryModel loadModelFromXml(InputStream stream) throws Exception {
 
@@ -38,7 +39,7 @@ public class LoadModel {
         Model xmlModel = (Model) um.unmarshal(xmlSource);
 
         if (log.isDebugEnabled()) {
-            log.debug(xmlModel.getName());
+            log.debug(String.valueOf(xmlModel.getName()));
             for (FieldMapping fieldMapping : xmlModel.getFields()) {
                 log.debug(fieldMapping.toString());
             }

@@ -23,7 +23,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -56,7 +57,7 @@ import datawave.query.util.sortedset.FileSortedSet;
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
 
-    private static final Logger log = Logger.getLogger(UniqueTransform.class);
+    private static final Logger log = LoggerFactory.getLogger(UniqueTransform.class);
 
     private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields = new UniqueFields();

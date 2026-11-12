@@ -20,7 +20,8 @@ import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
@@ -37,7 +38,7 @@ import datawave.query.util.MetadataHelper;
  */
 public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
 
-    private static final Logger log = Logger.getLogger(FieldMissingFromSchemaVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(FieldMissingFromSchemaVisitor.class);
 
     private final MetadataHelper helper;
     private final Set<String> allFieldsForDatatypes; // All fields for the specified datatypes pulled from MetadataHelper
@@ -56,7 +57,9 @@ public class FieldMissingFromSchemaVisitor extends ShortCircuitBaseVisitor {
             this.allFieldsForDatatypes = this.helper.getAllFields(datatypeFilter);
             this.allHiddenFields = this.helper.getHiddenFields(datatypeFilter);
         } catch (TableNotFoundException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             throw new RuntimeException("Unable to get metadata", e);
         }
         this.datatypeFilter = datatypeFilter;

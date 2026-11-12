@@ -33,7 +33,8 @@ import javax.inject.Inject;
 
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.configuration.RefreshEvent;
 import datawave.configuration.spring.SpringBean;
@@ -60,7 +61,7 @@ import datawave.webservice.result.VoidResponse;
 @Lock(LockType.READ)
 public class QueryMetricsWriter {
 
-    private Logger log = Logger.getLogger(QueryMetricsWriter.class);
+    private Logger log = LoggerFactory.getLogger(QueryMetricsWriter.class);
 
     @Resource(mappedName = "java:jboss/ee/concurrency/factory/default")
     private ManagedThreadFactory managedThreadFactory;

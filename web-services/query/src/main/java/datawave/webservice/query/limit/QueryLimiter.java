@@ -6,8 +6,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is responsible for determining if any concurrent query limits are going to be exceeded for a user, system, or query logic when a new query is
@@ -15,7 +16,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
  */
 public class QueryLimiter {
 
-    private static final Logger log = Logger.getLogger(QueryLimiter.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryLimiter.class);
 
     // The string to use to connect to zookeeper.
     private String zookeeperConfig;

@@ -2,9 +2,10 @@ package datawave.query.rules;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.NotBooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.lucene.visitors.AmbiguousNotVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
@@ -15,7 +16,7 @@ import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
  */
 public class AmbiguousNotRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(AmbiguousNotRule.class);
+    private static final Logger log = LoggerFactory.getLogger(AmbiguousNotRule.class);
 
     public AmbiguousNotRule() {}
 

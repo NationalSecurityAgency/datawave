@@ -22,7 +22,6 @@ import javax.inject.Inject;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit5.ArquillianExtension;
@@ -34,6 +33,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -66,7 +67,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 @ExtendWith(ArquillianExtension.class)
 @RunAsClient
 public class AnnotationLookupUUIDTest {
-    private static final Logger log = Logger.getLogger(AnnotationLookupUUIDTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AnnotationLookupUUIDTest.class);
 
     private static final Authorizations auths = new Authorizations("ALL");
     private static final Set<Authorizations> authSet = Collections.singleton(auths);

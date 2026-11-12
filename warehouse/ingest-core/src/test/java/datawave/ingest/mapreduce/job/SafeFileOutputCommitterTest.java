@@ -17,8 +17,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileExistsException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -46,6 +44,8 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is the FileOutputCommitterTest from after YARN-3027 and YARN-3079 was applied, with some added tests for the SafeFileOutputCommitterTest. Note that this
@@ -60,7 +60,7 @@ public class SafeFileOutputCommitterTest {
     private static final String SUB_DIR = "SUB_DIR";
     private static final Path OUT_SUB_DIR = new Path(outDir, SUB_DIR);
 
-    private static final Log LOG = LogFactory.getLog(SafeFileOutputCommitterTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SafeFileOutputCommitterTest.class);
 
     private static final String ATTEMPT_0_ID = "attempt_200707121733_0001_m_000000_0";
     private static final String ATTEMPT_1_ID = "attempt_200707121733_0001_m_000001_0";

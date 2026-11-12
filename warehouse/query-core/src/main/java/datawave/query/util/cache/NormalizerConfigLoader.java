@@ -16,7 +16,8 @@ import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -31,7 +32,7 @@ public class NormalizerConfigLoader extends Loader<String,Multimap<String,Type<?
 
     protected Collection<String> dataTypeFilters;
 
-    private static final Logger log = Logger.getLogger(NormalizerConfigLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(NormalizerConfigLoader.class);
 
     public NormalizerConfigLoader(final Configuration conf, String configItem) throws IOException {
         String configValue = conf.get(configItem);
@@ -92,7 +93,9 @@ public class NormalizerConfigLoader extends Loader<String,Multimap<String,Type<?
 
             return new String(Base64.encodeBase64(byteStream.toByteArray()));
         } catch (IOException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
         }
 
         return "";
@@ -141,7 +144,9 @@ public class NormalizerConfigLoader extends Loader<String,Multimap<String,Type<?
 
                 normalizerMap.put(dataType, clazz.getDeclaredConstructor().newInstance());
             } catch (InstantiationException | ClassNotFoundException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
-                log.error(e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(e));
+                }
             }
         }
 

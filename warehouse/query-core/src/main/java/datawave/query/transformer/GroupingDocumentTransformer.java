@@ -11,7 +11,8 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Lists;
@@ -36,7 +37,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 
 public class GroupingDocumentTransformer extends DocumentTransformer {
 
-    private static final Logger log = Logger.getLogger(GroupingDocumentTransformer.class);
+    private static final Logger log = LoggerFactory.getLogger(GroupingDocumentTransformer.class);
 
     private List<String> groupFieldsList;
     private Map<String,FieldBase<?>> fieldMap = Maps.newHashMap();
@@ -133,7 +134,9 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
                     created = this.makeField(shortName, markingFunctions.translateFromColumnVisibility(new ColumnVisibility(field.getColumnVisibility())),
                                     field.getColumnVisibility(), 0L, field.getValueOfTypedValue());
                 } catch (Exception ex) {
-                    log.error(ex);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(ex));
+                    }
                 }
                 if (created != null) {
                     if (fieldMap.containsKey(fieldName)) {

@@ -12,7 +12,8 @@ import java.util.UUID;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -34,7 +35,7 @@ import datawave.util.keyword.TagCloudPartition;
  * terms that are fed into a keyword extraction query.
  */
 public class StatefulKeywordUUIDChainStrategy extends FullChainStrategy<Entry<Key,Value>,Entry<Key,Value>> {
-    private static final Logger log = Logger.getLogger(StatefulKeywordUUIDChainStrategy.class);
+    private static final Logger log = LoggerFactory.getLogger(StatefulKeywordUUIDChainStrategy.class);
 
     private int batchSize = -1;
     protected DocumentDeserializer deserializer;

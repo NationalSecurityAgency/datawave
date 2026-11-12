@@ -13,7 +13,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -22,7 +23,7 @@ public class ActiveQueryLog {
 
     public static final String DEFAULT_NAME = "default_log";
     private static final String DEFAULT_EMPTY_QUERY_ID = new UUID(0, 0).toString();
-    private static final Logger log = Logger.getLogger(ActiveQueryLog.class);
+    private static final Logger log = LoggerFactory.getLogger(ActiveQueryLog.class);
     private static Cache<String,ActiveQueryLog> logCache = null;
     private static final Object logCacheLock = new Object();
     private static AccumuloConfiguration conf = null;

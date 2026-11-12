@@ -12,7 +12,8 @@ import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
@@ -37,7 +38,7 @@ public class Union extends BaseIndexStream {
     protected JexlNodeSet delayedNodes;
     protected Tuple2<String,IndexInfo> next;
 
-    private static final Logger log = Logger.getLogger(Union.class);
+    private static final Logger log = LoggerFactory.getLogger(Union.class);
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public Union(Iterable<? extends IndexStream> streams) {

@@ -1,10 +1,11 @@
 package datawave.query.language.tree;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SoftAndNode extends HardAndNode {
 
-    private static final Logger log = Logger.getLogger(SoftAndNode.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(SoftAndNode.class.getName());
 
     public SoftAndNode(QueryNode... children) {
         super(children);

@@ -21,7 +21,8 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -58,7 +59,7 @@ public class MockMetadataHelper extends MetadataHelper {
     protected Map<String,QueryModel> models = new HashMap<>();
     protected Map<Map.Entry<String,String>,Map<String,Long>> cardinalityByDataTypeForFieldAndDate = Maps.newHashMap();
 
-    private static final Logger log = Logger.getLogger(MockMetadataHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(MockMetadataHelper.class);
     protected Map<String,Map<String,IndexFieldHole>> fieldIndexHoles = Collections.emptyMap();
 
     Function<Type<?>,String> function = new Function<Type<?>,String>() {
@@ -108,7 +109,9 @@ public class MockMetadataHelper extends MetadataHelper {
         try {
             this.dataTypes.put(field, Class.forName(dt).asSubclass(Type.class).getDeclaredConstructor().newInstance());
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
         }
     }
 
@@ -254,7 +257,9 @@ public class MockMetadataHelper extends MetadataHelper {
             try {
                 typeMetadata.put(fieldName, "test", Iterables.transform(getDatatypesForField(fieldName), function).iterator().next());
             } catch (InstantiationException | IllegalAccessException e) {
-                log.error(e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(e));
+                }
             }
         }
         return typeMetadata;

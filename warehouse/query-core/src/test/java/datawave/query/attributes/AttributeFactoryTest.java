@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Collection;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -20,7 +21,7 @@ import datawave.query.util.TypeMetadata;
  */
 public class AttributeFactoryTest {
 
-    private static final Logger log = Logger.getLogger(AttributeFactoryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(AttributeFactoryTest.class);
 
     Collection<Class<?>> one = Sets.<Class<?>> newHashSet(LcNoDiacriticsType.class);
     Collection<Class<?>> two = Sets.<Class<?>> newHashSet(NoOpType.class, LcNoDiacriticsType.class);
@@ -36,11 +37,21 @@ public class AttributeFactoryTest {
 
     @Test
     public void testFindersKeepers() {
-        log.debug(AttributeFactory.getKeepers(one));
-        log.debug(AttributeFactory.getKeepers(two));
-        log.debug(AttributeFactory.getKeepers(three));
-        log.debug(AttributeFactory.getKeepers(four));
-        log.debug(AttributeFactory.getKeepers(five));
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(AttributeFactory.getKeepers(one)));
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(AttributeFactory.getKeepers(two)));
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(AttributeFactory.getKeepers(three)));
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(AttributeFactory.getKeepers(four)));
+        }
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(AttributeFactory.getKeepers(five)));
+        }
 
         assertEquals(AttributeFactory.getKeepers(one), expectedOne);
         assertEquals(AttributeFactory.getKeepers(two), expectedTwo);

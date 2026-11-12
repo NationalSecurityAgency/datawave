@@ -89,7 +89,6 @@ import datawave.webservice.result.EventQueryResponseBase;
 
 public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> extends BaseQueryMetricHandler<T> {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final org.apache.log4j.Logger setupLogger = org.apache.log4j.Logger.getLogger(getClass());
 
     protected String clientAuthorizations;
 
@@ -840,7 +839,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
                 tableHelper = tableHelperClass.getDeclaredConstructor().newInstance();
 
                 if (tableHelper != null) {
-                    tableHelper.setup(tableName, conf, setupLogger);
+                    tableHelper.setup(tableName, conf, log);
                 }
             } catch (Exception e) {
                 throw new IllegalArgumentException(e);

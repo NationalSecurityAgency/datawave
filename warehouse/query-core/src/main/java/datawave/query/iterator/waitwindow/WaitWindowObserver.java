@@ -20,7 +20,8 @@ import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
@@ -36,7 +37,7 @@ import datawave.query.iterator.profile.QuerySpan;
  */
 public class WaitWindowObserver {
 
-    private static final Logger log = Logger.getLogger(WaitWindowObserver.class);
+    private static final Logger log = LoggerFactory.getLogger(WaitWindowObserver.class);
     private static Timer timer = null;
     public static final String WAIT_WINDOW_OVERRUN = "WAIT_WINDOW_OVERRUN";
     public static final String YIELD_AT_BEGIN_STR = "!YIELD_AT_BEGIN";

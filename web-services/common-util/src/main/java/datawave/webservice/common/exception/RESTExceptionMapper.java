@@ -12,10 +12,11 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.spi.CorsHeaders;
 import org.jboss.resteasy.spi.LoggableFailure;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 import datawave.Constants;
 import datawave.resteasy.interceptor.DatawaveCorsFilter;
@@ -26,7 +27,7 @@ import datawave.webservice.result.VoidResponse;
 @Provider
 public class RESTExceptionMapper implements ExceptionMapper<Exception> {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     private static String RESPONSE_ORIGIN = null;
     private static final Object lock = new Object();
@@ -59,7 +60,7 @@ public class RESTExceptionMapper implements ExceptionMapper<Exception> {
         if (!(e instanceof WebApplicationException) || ((WebApplicationException) e).getResponse().getStatus() >= 500) {
             level = Level.WARN;
         }
-        log.log(level, "Turning this exception into a response", e);
+        log.atLevel(level).setCause(e).log("Turning this exception into a response");
 
         if (e instanceof WebApplicationException) {
             WebApplicationException web = (WebApplicationException) e;

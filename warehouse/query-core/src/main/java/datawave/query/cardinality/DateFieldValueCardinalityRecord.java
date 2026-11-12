@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
@@ -15,7 +16,7 @@ public class DateFieldValueCardinalityRecord implements Comparable, Serializable
     private String fieldValue = null;
     private String dataType = null;
     private HyperLogLogPlus hll = new HyperLogLogPlus(12, 20);
-    private static Logger log = Logger.getLogger(DateFieldValueCardinalityRecord.class);
+    private static Logger log = LoggerFactory.getLogger(DateFieldValueCardinalityRecord.class);
 
     public DateFieldValueCardinalityRecord(String eventDate, String fieldName, String fieldValue, String dataType) {
         this.eventDate = eventDate;

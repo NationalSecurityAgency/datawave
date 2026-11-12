@@ -7,7 +7,8 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.microservice.query.Query;
 import datawave.query.jexl.visitors.FieldMissingFromDateRangeVisitor;
@@ -19,7 +20,7 @@ import datawave.util.time.DateHelper;
  */
 public class FieldExistenceRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(FieldExistenceRule.class);
+    private static final Logger log = LoggerFactory.getLogger(FieldExistenceRule.class);
 
     private Set<String> specialFields = Collections.emptySet();
 

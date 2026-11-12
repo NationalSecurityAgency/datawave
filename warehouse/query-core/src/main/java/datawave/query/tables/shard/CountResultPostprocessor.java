@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -17,7 +18,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 
 public class CountResultPostprocessor implements ResultPostprocessor {
-    private static final Logger log = Logger.getLogger(CountResultPostprocessor.class);
+    private static final Logger log = LoggerFactory.getLogger(CountResultPostprocessor.class);
 
     private MarkingFunctions<?> markingFunctions;
 

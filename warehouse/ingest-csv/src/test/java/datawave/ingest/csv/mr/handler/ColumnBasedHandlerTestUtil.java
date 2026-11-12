@@ -21,7 +21,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -57,7 +58,7 @@ public class ColumnBasedHandlerTestUtil {
     public static final Text edgeTableName = new Text(TableName.EDGE);
     public static final String NB = "\u0000";
 
-    private static final Logger log = Logger.getLogger(ColumnBasedHandlerTestUtil.class);
+    private static final Logger log = LoggerFactory.getLogger(ColumnBasedHandlerTestUtil.class);
 
     public static boolean isDocumentKey(Key k) {
         return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT);
@@ -185,7 +186,9 @@ public class ColumnBasedHandlerTestUtil {
         }
 
         for (String error : errors) {
-            log.error(error.trim());
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(error.trim()));
+            }
         }
         assertTrue("Observed errors:\n" + errors, errors.isEmpty());
     }
@@ -306,7 +309,9 @@ public class ColumnBasedHandlerTestUtil {
         try {
             if (!printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
-                    log.info(keyString.trim());
+                    if (log.isInfoEnabled()) {
+                        log.info(String.valueOf(keyString.trim()));
+                    }
                 }
             }
             if (expectedShardKeys > 0)
@@ -320,7 +325,9 @@ public class ColumnBasedHandlerTestUtil {
         } catch (AssertionError ae) {
             if (printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
-                    log.info(keyString.trim());
+                    if (log.isInfoEnabled()) {
+                        log.info(String.valueOf(keyString.trim()));
+                    }
                 }
             }
             fail(String.format("Expected: %s shard, %s index, %s reverse index, and %s edge keys.\nFound: %s, %s, %s, and %s respectively", expectedShardKeys,

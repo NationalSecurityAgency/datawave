@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import au.com.bytecode.opencsv.CSVReader;
 import datawave.data.normalizer.Normalizer;
@@ -21,7 +22,7 @@ import datawave.query.testframework.GroupsDataType.GroupField;
 
 public class GroupsDataManager extends AbstractDataManager {
 
-    private static final Logger log = Logger.getLogger(GroupsDataManager.class);
+    private static final Logger log = LoggerFactory.getLogger(GroupsDataManager.class);
     private static GroupsDataManager INSTANCE = new GroupsDataManager();
 
     private GroupsDataManager() {

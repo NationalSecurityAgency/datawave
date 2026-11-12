@@ -13,7 +13,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.google.common.collect.Lists;
 
@@ -294,7 +294,9 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             try {
                 this.rangeConsumerThread.join(500);
             } catch (InterruptedException e) {
-                log.warn(e);
+                if (log.isWarnEnabled()) {
+                    log.warn(String.valueOf(e));
+                }
                 this.rangeConsumerThread.interrupt();
             }
         }
@@ -331,7 +333,9 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             try {
                 rangeIterable.close();
             } catch (IOException e) {
-                log.error(e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(e));
+                }
             }
         }
 

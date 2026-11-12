@@ -26,7 +26,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -48,7 +49,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<DocumentData,Document>> {
 
-    private static final Logger log = Logger.getLogger(KeyToDocumentData.class);
+    private static final Logger log = LoggerFactory.getLogger(KeyToDocumentData.class);
 
     protected SortedKeyValueIterator<Key,Value> source;
 
@@ -100,7 +101,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                 this.countFunction.init(source, options, env);
             } catch (IOException e) {
                 final String message = "Unable to initialize child count function for " + this.getClass().getSimpleName();
-                log.trace(message, e);
+                if (log.isTraceEnabled()) {
+                    log.trace(String.valueOf(message), e);
+                }
             }
         }
         // Child counting is desired, so a function is not needed

@@ -6,7 +6,8 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -23,7 +24,7 @@ import datawave.query.util.TypeMetadata;
  */
 public class TimeFunctionRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(TimeFunctionRule.class);
+    private static final Logger log = LoggerFactory.getLogger(TimeFunctionRule.class);
 
     private static final Set<Pair<String,String>> functions = Collections.unmodifiableSet(Sets
                     .newHashSet(Pair.of(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE, EvaluationPhaseFilterFunctionsDescriptor.TIME_FUNCTION)));

@@ -16,7 +16,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -30,7 +31,7 @@ import datawave.util.CompositeTimestamp;
  */
 public class PrintUtility {
 
-    private static final Logger logger = Logger.getLogger(PrintUtility.class);
+    private static final Logger logger = LoggerFactory.getLogger(PrintUtility.class);
 
     /**
      * Hide default constructor

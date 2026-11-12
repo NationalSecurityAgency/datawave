@@ -28,9 +28,10 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.RootLogger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -52,7 +53,7 @@ import datawave.util.StringUtils;
  * Can be run against rfiles for a table that need to be repartitioned. Will optionally apply the configured combiners to map and reduce tasks
  */
 public class RepartitionerJob implements Tool {
-    private static final Logger log = Logger.getLogger(RepartitionerJob.class);
+    private static final Logger log = LoggerFactory.getLogger(RepartitionerJob.class);
 
     private Configuration configuration;
     private final JobConfig jobConfig = new JobConfig();
@@ -188,7 +189,7 @@ public class RepartitionerJob implements Tool {
             MultiTableRangePartitioner.setContext(context);
 
             // move logging to the warn level, too much noise created for these tasks
-            RootLogger.getRootLogger().setLevel(Level.WARN);
+            Configurator.setRootLevel(Level.WARN);
         }
 
         @Override

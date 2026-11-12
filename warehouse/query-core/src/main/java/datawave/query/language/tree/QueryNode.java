@@ -6,7 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.search.FieldedTerm;
 
@@ -21,7 +22,7 @@ public abstract class QueryNode implements Cloneable {
     protected List<QueryNode> children;
     protected int numSelectors = 1;
 
-    private static final Logger log = Logger.getLogger(QueryNode.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(QueryNode.class.getName());
     protected String originalQuery = null;
     protected Set<FieldedTerm> positiveFilters = new HashSet<>();
     protected Set<FieldedTerm> negativeFilters = new HashSet<>();

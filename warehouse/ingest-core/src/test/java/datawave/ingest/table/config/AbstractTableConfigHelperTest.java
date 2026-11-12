@@ -22,12 +22,15 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.clientImpl.thrift.SecurityErrorCode;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.table.aggregator.CombinerConfiguration;
 
@@ -35,7 +38,7 @@ import datawave.ingest.table.aggregator.CombinerConfiguration;
 public class AbstractTableConfigHelperTest {
 
     private static final String BAD_TABLE_NAME = "VERY_BAD_TABLE_NAME";
-    private static final Logger logger = Logger.getLogger(AbstractTableConfigHelperTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractTableConfigHelperTest.class);
     private static Level testDriverLevel;
     private Configuration config;
 
@@ -44,16 +47,16 @@ public class AbstractTableConfigHelperTest {
 
         Level desiredLevel = Level.ALL;
 
-        Logger log = Logger.getLogger(AbstractTableConfigHelperTest.class);
-        AbstractTableConfigHelperTest.testDriverLevel = log.getLevel();
-        log.setLevel(desiredLevel);
+        Logger log = LoggerFactory.getLogger(AbstractTableConfigHelperTest.class);
+        AbstractTableConfigHelperTest.testDriverLevel = LogManager.getLogger(log.getName()).getLevel();
+        Configurator.setLevel(log.getName(), desiredLevel);
     }
 
     @AfterAll
     public static void resetLogLevels() {
 
-        Logger log = Logger.getLogger(AbstractTableConfigHelperTest.class);
-        log.setLevel(AbstractTableConfigHelperTest.testDriverLevel);
+        Logger log = LoggerFactory.getLogger(AbstractTableConfigHelperTest.class);
+        Configurator.setLevel(log.getName(), AbstractTableConfigHelperTest.testDriverLevel);
     }
 
     public static class TestAbstractTableConfigHelperImpl extends AbstractTableConfigHelper {

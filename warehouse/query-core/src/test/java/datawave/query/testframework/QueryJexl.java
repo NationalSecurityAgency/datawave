@@ -36,8 +36,9 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.SimpleNode;
 import org.apache.commons.jexl3.parser.TokenMgrException;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.NumberNormalizer;
@@ -69,7 +70,7 @@ import datawave.query.jexl.JexlASTHelper;
  */
 public class QueryJexl {
 
-    private static final Logger log = Logger.getLogger(QueryJexl.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryJexl.class);
 
     private static final Engine jEngine = new Engine(new JexlBuilder().strict(false));
     private final RawDataManager manager;

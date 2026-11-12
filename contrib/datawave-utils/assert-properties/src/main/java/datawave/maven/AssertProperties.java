@@ -1,5 +1,8 @@
 package datawave.maven;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -23,6 +26,7 @@ import java.util.Set;
 @Mojo(name = "assert-properties", defaultPhase = LifecyclePhase.VALIDATE, threadSafe=true)
 @SuppressWarnings("unused")
 public class AssertProperties extends AbstractMojo {
+    private static final Logger log = LoggerFactory.getLogger(AssertProperties.class);
     private static final Character COMMENT = '#', COMMA = ',';
 
     @Parameter(defaultValue = "{project}", required = true, readonly = true)
@@ -135,14 +139,14 @@ public class AssertProperties extends AbstractMojo {
                 }
             }
         } catch (FileNotFoundException e) {
-            getLog().warn("Could not read expected properties files");
+            log.warn("Could not read expected properties files");
             throw new MojoExecutionException("Could not read expected properties file", e);
         } catch (IOException e) {
             throw new MojoExecutionException("Could not read expected properties file", e);
         }
 
         if (expectedProperties.isEmpty()) {
-            getLog().warn("No expected properties were loaded from " + this.expectedPropertyNames);
+            log.warn("No expected properties were loaded from " + this.expectedPropertyNames);
         }
 
         return expectedProperties;

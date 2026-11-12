@@ -17,7 +17,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -25,7 +26,7 @@ import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue.Metadata;
 
 public class EdgeMetadataCQStripperCombiner extends WrappingIterator {
-    private static final Logger log = Logger.getLogger(EdgeMetadataCQStripperCombiner.class);
+    private static final Logger log = LoggerFactory.getLogger(EdgeMetadataCQStripperCombiner.class);
 
     Key topKey;
     Value topValue;

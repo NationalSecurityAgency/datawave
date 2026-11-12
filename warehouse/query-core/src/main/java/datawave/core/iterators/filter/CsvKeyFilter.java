@@ -11,10 +11,11 @@ import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CsvKeyFilter extends Filter {
-    private static Logger log = Logger.getLogger(CsvKeyFilter.class);
+    private static Logger log = LoggerFactory.getLogger(CsvKeyFilter.class);
 
     public static final String ALLOWED_OPT = "kf.allowed";
     public static final String KEY_PART_OPT = "kf.part";

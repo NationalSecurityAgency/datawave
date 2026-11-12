@@ -19,7 +19,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -51,7 +52,7 @@ import datawave.webservice.query.exception.QueryException;
  */
 public class ShardIndexQueryTableStaticMethods {
 
-    private static final Logger log = Logger.getLogger(ShardIndexQueryTableStaticMethods.class);
+    private static final Logger log = LoggerFactory.getLogger(ShardIndexQueryTableStaticMethods.class);
 
     private static final FastDateFormat formatter = FastDateFormat.getInstance("yyyyMMdd");
 
@@ -386,7 +387,9 @@ public class ShardIndexQueryTableStaticMethods {
                 if (!fullTableScanEnabled) {
                     PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES,
                                     MessageFormat.format("Term: {0}", normalizedQueryTerm));
-                    log.error(qe);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(qe));
+                    }
                     throw new DoNotPerformOptimizedQueryException(qe);
                 }
                 rangeDesc.range = new Range();
@@ -423,7 +426,9 @@ public class ShardIndexQueryTableStaticMethods {
                 if (!fullTableScanEnabled) {
                     PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.WILDCARDS_BOTH_SIDES,
                                     MessageFormat.format("Term: {0}", normalizedQueryTerm));
-                    log.error(qe);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(qe));
+                    }
                     throw new DoNotPerformOptimizedQueryException(qe);
                 }
                 rangeDesc.range = new Range();
@@ -560,7 +565,9 @@ public class ShardIndexQueryTableStaticMethods {
             range = new Range(startKey, literalRange.isLowerInclusive(), endKey, literalRange.isUpperInclusive());
         } catch (IllegalArgumentException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", literalRange));
-            log.debug(qe);
+            if (log.isDebugEnabled()) {
+                log.debug(String.valueOf(qe));
+            }
             throw new IllegalRangeArgumentException(qe);
         }
         return range;

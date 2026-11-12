@@ -50,8 +50,9 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.net.util.Base64;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.annotation.Required;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -78,7 +79,7 @@ public class AtomServiceBean {
     private static final String COLLECTION_LINK_FORMAT = "https://{0}:{1}/DataWave/Atom/{2}";
     // see configuration file for reference: datawave/atom/AtomConfiguration.xml
 
-    private final Logger log = Logger.getLogger(this.getClass());
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @EJB
     private AccumuloConnectionFactory connectionFactory;
@@ -158,7 +159,9 @@ public class AtomServiceBean {
         } catch (Exception e) {
             VoidResponse response = new VoidResponse();
             QueryException qe = new QueryException(DatawaveErrorCode.COLLECTION_ERROR, e);
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
@@ -264,7 +267,9 @@ public class AtomServiceBean {
         } catch (Exception e) {
             VoidResponse response = new VoidResponse();
             QueryException qe = new QueryException(DatawaveErrorCode.FEED_GET_ERROR, e, MessageFormat.format("collection: {0}", category));
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
@@ -330,7 +335,9 @@ public class AtomServiceBean {
             VoidResponse response = new VoidResponse();
             QueryException qe = new QueryException(DatawaveErrorCode.ENTRY_RETRIEVAL_ERROR, e,
                             MessageFormat.format("entry: {0} from collection: {1}", id, category));
-            log.error(qe);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(qe));
+            }
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {

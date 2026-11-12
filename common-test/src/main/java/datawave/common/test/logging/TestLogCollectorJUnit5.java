@@ -1,23 +1,19 @@
 package datawave.common.test.logging;
 
-import java.io.CharArrayWriter;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.log4j.bridge.FilterAdapter;
-import org.apache.log4j.spi.Filter;
-import org.apache.log4j.spi.LoggingEvent;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.Logger;
-import org.apache.logging.log4j.core.StringLayout;
-import org.apache.logging.log4j.core.appender.WriterAppender;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -26,7 +22,7 @@ public class TestLogCollectorJUnit5 implements BeforeEachCallback, AfterEachCall
 
     private final List<String> messages = Collections.synchronizedList(new ArrayList<>());
     private final List<LogAppender> loggers;
-    private final Writer writer = new CharArrayWriter();
+    private Appender appender;
 
     private TestLogCollectorJUnit5(Builder builder) {
         this.loggers = builder.classLoggers;
@@ -34,14 +30,12 @@ public class TestLogCollectorJUnit5 implements BeforeEachCallback, AfterEachCall
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        StringLayout layout = PatternLayout.newBuilder().setPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
-        Appender appender = WriterAppender.newBuilder().setName(TestLogCollectorJUnit5.class.getSimpleName()).setFilter(FilterAdapter.adapt(new Filter() {
+        appender = new AbstractAppender(TestLogCollectorJUnit5.class.getSimpleName(), null, null, true, Property.EMPTY_ARRAY) {
             @Override
-            public int decide(LoggingEvent event) {
-                messages.add(event.getMessage().toString());
-                return Filter.ACCEPT;
+            public void append(LogEvent event) {
+                messages.add(event.getMessage().getFormattedMessage());
             }
-        })).setLayout(layout).setTarget(writer).build();
+        };
         appender.start();
         this.loggers.forEach(logger -> logger.setAppender(appender));
     }
@@ -50,10 +44,9 @@ public class TestLogCollectorJUnit5 implements BeforeEachCallback, AfterEachCall
     public void afterEach(ExtensionContext context) {
         this.loggers.forEach(LogAppender::reset);
         clearMessages();
-        try {
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (appender != null) {
+            appender.stop();
+            appender = null;
         }
     }
 
@@ -67,11 +60,6 @@ public class TestLogCollectorJUnit5 implements BeforeEachCallback, AfterEachCall
 
     public static class Builder {
         private final ArrayList<LogAppender> classLoggers = new ArrayList<>();
-
-        public Builder with(Class<?> clazz, org.apache.log4j.Level level) {
-            classLoggers.add(new LogAppender(clazz, Level.valueOf(level.toString())));
-            return this;
-        }
 
         public Builder with(Class<?> clazz, Level level) {
             classLoggers.add(new LogAppender(clazz, level));
@@ -89,26 +77,41 @@ public class TestLogCollectorJUnit5 implements BeforeEachCallback, AfterEachCall
     }
 
     private static class LogAppender {
-        final Class<?> clazz;
         final Logger logger;
         Appender appender;
-        final Level oldLevel;
+        final Level level;
+        Level oldLevel;
+        LoggerConfig oldConfig;
+        Configuration configuration;
 
         LogAppender(Class<?> clazz, Level level) {
-            this.logger = (Logger) LogManager.getLogger(clazz);
-            this.oldLevel = logger.getLevel();
-            this.clazz = clazz;
-            Configurator.setLevel(clazz.getCanonicalName(), level);
+            LoggerContext context = (LoggerContext) LogManager.getContext(clazz.getClassLoader(), false);
+            this.logger = context.getLogger(clazz.getName());
+            this.level = level;
         }
 
         void setAppender(Appender appender) {
+            this.configuration = logger.getContext().getConfiguration();
+            this.oldConfig = configuration.getLoggers().get(logger.getName());
+            if (oldConfig == null) {
+                configuration.addLogger(logger.getName(), new LoggerConfig(logger.getName(), level, true));
+            } else {
+                this.oldLevel = oldConfig.getLevel();
+                oldConfig.setLevel(level);
+            }
+            logger.getContext().updateLoggers();
             this.appender = appender;
             this.logger.addAppender(this.appender);
         }
 
         void reset() {
             this.logger.removeAppender(this.appender);
-            Configurator.setLevel(clazz.getCanonicalName(), oldLevel);
+            if (oldConfig == null) {
+                configuration.removeLogger(logger.getName());
+            } else {
+                oldConfig.setLevel(oldLevel);
+            }
+            logger.getContext().updateLoggers();
         }
     }
 }

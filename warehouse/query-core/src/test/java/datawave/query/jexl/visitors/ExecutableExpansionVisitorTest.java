@@ -29,7 +29,6 @@ import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +37,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -76,7 +77,7 @@ import datawave.table.constants.TableName;
 // @formatter:on
 public class ExecutableExpansionVisitorTest extends AbstractQueryTest {
 
-    private static final Logger log = Logger.getLogger(ExecutableExpansionVisitorTest.class);
+    private static final Logger log = LoggerFactory.getLogger(ExecutableExpansionVisitorTest.class);
     private static final Authorizations auths = new Authorizations("ALL");
 
     private static AccumuloClient sharedClient;

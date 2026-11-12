@@ -19,8 +19,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
 import org.javatuples.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -47,7 +48,7 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
 
     private static final Pair<Boolean,Optional<ImmutableSortedSet<String>>> ALL_FIELDS = Pair.with(Boolean.TRUE,
                     Optional.<ImmutableSortedSet<String>> absent());
-    private static final Logger log = Logger.getLogger(IndexMatchingIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(IndexMatchingIterator.class);
 
     // configured options
     private Set<String> unfieldedLiterals;

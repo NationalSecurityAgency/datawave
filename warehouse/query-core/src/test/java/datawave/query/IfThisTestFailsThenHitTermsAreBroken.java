@@ -13,13 +13,14 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
@@ -46,7 +47,7 @@ import datawave.table.constants.TableName;
  */
 public class IfThisTestFailsThenHitTermsAreBroken extends AbstractQueryTest {
 
-    private static final Logger log = Logger.getLogger(IfThisTestFailsThenHitTermsAreBroken.class);
+    private static final Logger log = LoggerFactory.getLogger(IfThisTestFailsThenHitTermsAreBroken.class);
     private static final Authorizations auths = new Authorizations("A");
 
     private static AccumuloClient clientForTest;

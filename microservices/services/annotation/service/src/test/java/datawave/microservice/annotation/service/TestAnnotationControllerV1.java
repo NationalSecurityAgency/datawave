@@ -42,6 +42,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
@@ -100,7 +102,7 @@ public class TestAnnotationControllerV1 {
 
     @BeforeAll
     public static void setupAccumulo() throws Exception {
-        org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(TestAnnotationControllerV1.class);
+        Logger log = LoggerFactory.getLogger(TestAnnotationControllerV1.class);
         QueryTestTableHelper queryTestTableHelper = new QueryTestTableHelper(TestAnnotationControllerV1.class.toString(), log);
         client = queryTestTableHelper.client;
 

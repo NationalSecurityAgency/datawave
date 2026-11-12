@@ -13,11 +13,12 @@ import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.mapreduce.job.TableConfigHelperFactory;
 import datawave.ingest.table.config.ShardTableConfigHelper;
@@ -28,7 +29,7 @@ import datawave.table.constants.TableName;
  * Test uses mini accumulo cluster. Files are stored in warehouse/ingest-core/target/mac/datawave.ingest.mapreduce.TableConfigHelperFactoryTest
  */
 public class TableConfigHelperFactoryTest {
-    private static final Logger logger = Logger.getLogger(TableConfigHelperFactoryTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(TableConfigHelperFactoryTest.class);
     private static MiniAccumuloCluster mac;
 
     private Configuration conf;

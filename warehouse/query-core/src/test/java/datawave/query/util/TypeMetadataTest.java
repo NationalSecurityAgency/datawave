@@ -15,9 +15,10 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -30,7 +31,7 @@ public class TypeMetadataTest {
     @TempDir
     public File temporaryFolder;
 
-    private static final Logger log = Logger.getLogger(TypeMetadataTest.class);
+    private static final Logger log = LoggerFactory.getLogger(TypeMetadataTest.class);
 
     /**
      * Test of getDataType method, of class DatawaveShardedTableFieldIndexKeyParser.

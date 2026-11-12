@@ -7,7 +7,8 @@ import java.util.stream.Collectors;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.mutable.MutableLong;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
@@ -15,7 +16,7 @@ import datawave.marking.MarkingFunctions.Exception;
 public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T> implements Serializable {
 
     private static final long serialVersionUID = -5961455715747661898L;
-    private static final Logger log = Logger.getLogger(AttributeBag.class);
+    private static final Logger log = LoggerFactory.getLogger(AttributeBag.class);
     protected long shardTimestamp = Long.MAX_VALUE;
     protected boolean validMetadata = false;
     protected MarkingFunctions<?> markingFunctions;

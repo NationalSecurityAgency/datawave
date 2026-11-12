@@ -2,9 +2,10 @@ package datawave.query.rules;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.lucene.visitors.AmbiguousUnfieldedTermsVisitor;
 import datawave.query.lucene.visitors.BaseVisitor;
@@ -16,7 +17,7 @@ import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
  */
 public class AmbiguousUnquotedPhrasesRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(AmbiguousUnquotedPhrasesRule.class);
+    private static final Logger log = LoggerFactory.getLogger(AmbiguousUnquotedPhrasesRule.class);
 
     public AmbiguousUnquotedPhrasesRule() {}
 

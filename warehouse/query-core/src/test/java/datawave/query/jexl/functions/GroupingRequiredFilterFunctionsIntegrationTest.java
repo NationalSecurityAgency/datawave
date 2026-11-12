@@ -7,12 +7,13 @@ import java.util.TimeZone;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -48,7 +49,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 // @formatter:on
 public class GroupingRequiredFilterFunctionsIntegrationTest extends AbstractQueryTest {
 
-    private static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctionsIntegrationTest.class);
+    private static final Logger log = LoggerFactory.getLogger(GroupingRequiredFilterFunctionsIntegrationTest.class);
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");
 
     private static AccumuloClient clientForTest;

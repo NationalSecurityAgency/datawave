@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -48,6 +47,8 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.PrefixWildcardQuery
 import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 
@@ -86,7 +87,7 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
  */
 public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
 
-    private static final Logger logger = Logger.getLogger(CustomAnalyzerQueryNodeProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(CustomAnalyzerQueryNodeProcessor.class);
 
     /**
      * A tag added to query nodes that indicates that they have been processed by the {@link CustomAnalyzerQueryNodeProcessor} and should not be processed if

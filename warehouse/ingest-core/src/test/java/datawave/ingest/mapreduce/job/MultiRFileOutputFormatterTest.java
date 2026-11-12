@@ -39,12 +39,15 @@ import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.ImportMode;
@@ -54,7 +57,7 @@ public class MultiRFileOutputFormatterTest {
 
     private static final String JOB_ID = "job_201109071404_1";
     private List<String> filenames = new ArrayList<>();
-    protected static final Logger logger = Logger.getLogger(MultiRFileOutputFormatterTest.class);
+    protected static final Logger logger = LoggerFactory.getLogger(MultiRFileOutputFormatterTest.class);
     protected static Map<String,String> mockedConfiguration = new HashMap<>();
 
     protected Level testDriverLevel;
@@ -131,8 +134,8 @@ public class MultiRFileOutputFormatterTest {
     @BeforeEach
     public void setup() throws Exception {
 
-        testDriverLevel = MultiRFileOutputFormatterTest.logger.getLevel();
-        MultiRFileOutputFormatterTest.logger.setLevel(Level.ALL);
+        testDriverLevel = LogManager.getLogger(MultiRFileOutputFormatterTest.logger.getName()).getLevel();
+        Configurator.setLevel(MultiRFileOutputFormatterTest.logger.getName(), Level.ALL);
 
         MultiRFileOutputFormatterTest.mockedConfiguration.clear();
     }
@@ -140,8 +143,8 @@ public class MultiRFileOutputFormatterTest {
     @AfterEach
     public void teardown() {
 
-        MultiRFileOutputFormatterTest.logger.setLevel(testDriverLevel);
-        Logger.getLogger(MultiRFileOutputFormatter.class).setLevel(uutLevel);
+        Configurator.setLevel(MultiRFileOutputFormatterTest.logger.getName(), testDriverLevel);
+        Configurator.setLevel(MultiRFileOutputFormatter.class.getName(), uutLevel);
     }
 
     @Test

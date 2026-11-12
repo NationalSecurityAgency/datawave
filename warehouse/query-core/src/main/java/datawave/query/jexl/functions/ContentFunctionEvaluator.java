@@ -7,7 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -21,7 +22,7 @@ import datawave.query.postprocessing.tf.TermOffsetMap;
  * An abstract class to for the ordered and unordered content evaluators.
  */
 public abstract class ContentFunctionEvaluator {
-    private static final Logger log = Logger.getLogger(ContentFunctionEvaluator.class);
+    private static final Logger log = LoggerFactory.getLogger(ContentFunctionEvaluator.class);
     protected static final int DEFAULT_MAX_SCORE = TermWeightPosition.positionScoreToTermWeightScore(Float.NEGATIVE_INFINITY);
 
     protected final Set<String> fields;

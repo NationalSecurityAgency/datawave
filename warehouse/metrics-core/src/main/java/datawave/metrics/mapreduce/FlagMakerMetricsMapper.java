@@ -12,7 +12,8 @@ import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.metrics.util.WritableUtil;
 import datawave.metrics.util.flag.FlagFile;
@@ -29,7 +30,7 @@ import datawave.metrics.util.flag.InputFile;
  */
 public class FlagMakerMetricsMapper extends Mapper<Text,Counters,Text,Mutation> {
 
-    private static final Logger log = Logger.getLogger(FlagMakerMetricsMapper.class);
+    private static final Logger log = LoggerFactory.getLogger(FlagMakerMetricsMapper.class);
 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
@@ -46,7 +47,9 @@ public class FlagMakerMetricsMapper extends Mapper<Text,Counters,Text,Mutation> 
     public void map(Text flagFile, Counters counters, Context context) throws IOException, InterruptedException {
         System.out.println("Received counters for job " + flagFile);
 
-        log.info(counters);
+        if (log.isInfoEnabled()) {
+            log.info(String.valueOf(counters));
+        }
 
         long endTime = counters.findCounter(InputFile.FLAGMAKER_END_TIME).getValue();
         long startTime = counters.findCounter(InputFile.FLAGMAKER_START_TIME).getValue();
