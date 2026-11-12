@@ -19,7 +19,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -32,6 +31,7 @@ import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
 import datawave.query.Constants;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.util.IterationInterruptedCheck;
 import datawave.query.util.Tuple3;
 
 /**
@@ -327,8 +327,11 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
 
             // and return the count
             return uids.size();
-        } catch (IterationInterruptedException e) {
-            // Re-throw iteration interrupted as-is since this is an expected event from
+        } catch (RuntimeException e) {
+            if (!IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                throw e;
+            }
+            // Re-throw IterationInterruptedException as-is since this is an expected event from
             // a client going away. Re-throwing as an IOException will cause the tserver
             // to catch the exception and log a warning. Re-throwing as-is will let the
             // tserver catch and ignore it as intended.
@@ -425,8 +428,11 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             final CountResult result = new CountResult(numberOfImmediateChildren, numberOfDescendants);
             result.setSkippedDescendants(skippedSomeDescendants);
             return result;
-        } catch (IterationInterruptedException e) {
-            // Re-throw iteration interrupted as-is since this is an expected event from
+        } catch (RuntimeException e) {
+            if (!IterationInterruptedCheck.isIterationInterruptedException(e)) {
+                throw e;
+            }
+            // Re-throw IterationInterruptedException as-is since this is an expected event from
             // a client going away. Re-throwing as an IOException will cause the tserver
             // to catch the exception and log a warning. Re-throwing as-is will let the
             // tserver catch and ignore it as intended.
