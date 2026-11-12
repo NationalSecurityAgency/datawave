@@ -4,7 +4,6 @@ import static datawave.util.keyword.KeywordExtractor.EMPTY_RESULTS;
 
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -282,9 +281,7 @@ public class KeywordExtractingIterator implements SortedKeyValueIterator<Key,Val
     }
 
     private void addFoundContent(Map<String,VisibleContent> foundContent, String currentViewName, byte[] encodedContent, String visibility) {
-        final byte[] decodedContent = ContentKeyValueFactory.decodeAndDecompressContent(encodedContent);
-        final String decodedString = new String(decodedContent, StandardCharsets.UTF_8);
-        final String input = decodedString.substring(0, Math.min(decodedString.length(), maxContentLength));
+        final String input = ContentKeyValueFactory.decodeAndDecompressContent(encodedContent, maxContentLength);
         foundContent.put(currentViewName, new VisibleContent(visibility, input));
     }
 
