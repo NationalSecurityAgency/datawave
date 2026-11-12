@@ -104,6 +104,44 @@ public class TestLookupTask<T extends QueryIterator> {
         return results;
     }
 
+    /**
+     * Run the lookup the way a tablet server does after a teardown: rebuild the iterator from scratch after every result and seek it again starting just after
+     * the last key it returned. Yields are followed the same way {@link #lookup} follows them.
+     *
+     * @return the results, in the order the rebuilt iterators returned them
+     * @throws IllegalStateException
+     *             if a rebuilt iterator returns a key that does not follow the key it was rebuilt after
+     */
+    public List<Map.Entry<Key,Document>> lookupWithTeardown(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env,
+                    Range range) throws IOException {
+        includeGroupingContext = Boolean.parseBoolean(options.getOrDefault(QueryOptions.INCLUDE_GROUPING_CONTEXT, "false"));
+
+        List<Map.Entry<Key,Document>> results = new ArrayList<>();
+        Range r = range;
+        Key lastResultKey = null;
+        while (true) {
+            YieldCallback<Key> yield = new YieldCallback<>();
+            QueryIterator iterator = init(source, options, env, yield);
+            iterator.seek(r, Collections.emptyList(), false);
+            if (iterator.hasTop()) {
+                Key topKey = iterator.getTopKey();
+                if (lastResultKey != null && topKey.compareTo(lastResultKey) <= 0) {
+                    throw new IllegalStateException("Iterator rebuilt after " + lastResultKey + " returned " + topKey + ", which does not follow it");
+                }
+                Document document = deserializeAndFilterDocument(iterator.getTopValue());
+                if (!document.getDictionary().isEmpty()) {
+                    results.add(new AbstractMap.SimpleEntry<>(topKey, document));
+                }
+                lastResultKey = topKey;
+                r = new Range(topKey, false, range.getEndKey(), range.isEndKeyInclusive());
+            } else if (yield.hasYielded()) {
+                r = new Range(yield.getPositionAndReset(), false, range.getEndKey(), range.isEndKeyInclusive());
+            } else {
+                return results;
+            }
+        }
+    }
+
     private Document deserializeAndFilterDocument(Value value) {
         Map.Entry<Key,Document> deserializedValue = deserialize(value);
         Document d = deserializedValue.getValue();
