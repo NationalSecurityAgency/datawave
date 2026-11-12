@@ -28,6 +28,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
+import datawave.ingest.mapreduce.job.SplitsConstants;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.table.constants.TableName;
 
@@ -52,8 +54,8 @@ public class MultiTableRRRangePartitionerTest {
         configuration.set("job.output.table.names", TableName.SHARD);
         configuration.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
 
-        TableSplitsCache.getCurrentCache(configuration).clear();
-
+        TableSplitsCache.clear();
+        SplitsCacheFactory.clearInstance();
     }
 
     @Test
@@ -82,8 +84,8 @@ public class MultiTableRRRangePartitionerTest {
         String filename = "full_empty_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         assertThrows(RuntimeException.class, () -> getPartition("23432"));
     }
 
@@ -92,8 +94,8 @@ public class MultiTableRRRangePartitionerTest {
         String filename = "full_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
 
         MultiTableRangePartitioner.setContext(new MapContextImpl<Key,Value,Text,Mutation>(configuration, new TaskAttemptID(), null, null, null, null, null) {
             @Override
@@ -129,8 +131,8 @@ public class MultiTableRRRangePartitionerTest {
         String filename = "full_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         int numPartitions = 581;
 
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
@@ -167,8 +169,8 @@ public class MultiTableRRRangePartitionerTest {
         String filename = "full_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         int numPartitions = 581;
 
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
@@ -272,8 +274,8 @@ public class MultiTableRRRangePartitionerTest {
         String filename = "full_splits.txt";
         URL url = createUrl(filename);
         mockContextForLocalCacheFile(url);
-        configuration.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
-        configuration.set(TableSplitsCache.SPLITS_CACHE_FILE, filename);
+        configuration.set(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf('/')));
+        configuration.set(SplitsConstants.SPLITS_CACHE_FILE, filename);
         MultiTableRRRangePartitioner partitioner = new MultiTableRRRangePartitioner();
         partitioner.setConf(configuration);
         return partitioner;
