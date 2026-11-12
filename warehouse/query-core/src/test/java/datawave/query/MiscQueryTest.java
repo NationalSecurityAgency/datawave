@@ -67,8 +67,7 @@ public class MiscQueryTest extends AbstractFunctionalQueryJUnit5 {
         CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public MiscQueryTest() {

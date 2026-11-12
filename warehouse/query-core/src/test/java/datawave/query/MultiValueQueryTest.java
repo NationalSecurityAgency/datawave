@@ -42,8 +42,7 @@ public class MultiValueQueryTest extends AbstractFunctionalQueryJUnit5 {
         CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.multivalue, multi));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public MultiValueQueryTest() {

@@ -44,8 +44,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQueryJUnit
         CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public MaxExpansionIndexOnlyQueryTest() {

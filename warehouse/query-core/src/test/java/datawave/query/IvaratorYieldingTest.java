@@ -72,10 +72,14 @@ public class IvaratorYieldingTest extends AbstractFunctionalQueryJUnit5 {
         CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
         // The YieldingQueryIterator is simulating the Accumulo framework that handles yields and
-        // re-seeks the iterator. Set RebuildingScannerTestHelper to NEVER/NEVER to avoid interference
-        client = accumuloSetup.loadTables(log, RebuildingScannerTestHelper.TEARDOWN.NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
+        // re-seeks the iterator. Set RebuildingScannerTestHelper to NEVER/NEVER to avoid interference.
+        // @formatter:off
+        accumuloSetup.withData(FileType.CSV, dataTypes)
+                        .withTeardown(RebuildingScannerTestHelper.TEARDOWN.NEVER)
+                        .withInterrupt(RebuildingScannerTestHelper.INTERRUPT.NEVER)
+                        .ingest(log);
+        // @formatter:on
     }
 
     @BeforeEach

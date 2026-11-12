@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -37,7 +38,6 @@ import datawave.query.testframework.ConfigData;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
-import datawave.query.testframework.RawDataManager;
 
 /**
  * Tests for grouping data. The {@link BooksDataManager} will create the valid grouping entries.
@@ -50,9 +50,10 @@ public class BooksQueryTest extends AbstractFunctionalQueryJUnit5 {
     private static final Logger log = Logger.getLogger(BooksQueryTest.class);
 
     private static final Map<String,String> QUERY_OPTIONS = ImmutableMap.of(QueryParameters.INCLUDE_GROUPING_CONTEXT, Boolean.TRUE.toString());
-    private static final RawDataManager BOOKS_MANAGER = createManager();
+    private static BooksDataManager booksManager;
 
-    private static RawDataManager createManager() {
+    @BeforeAll
+    public static void setup() {
         try {
             Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
             FieldConfig indexes = new BooksFieldIndex();
@@ -62,18 +63,16 @@ public class BooksQueryTest extends AbstractFunctionalQueryJUnit5 {
             DataTypeHadoopConfig books = new BooksDataType(BooksEntry.tech.getDataType(), BooksEntry.tech.getIngestFile(), indexes, cfgData);
             dataTypes.add(books);
 
-            accumuloSetup.setData(FileType.GROUPING, dataTypes);
-            client = accumuloSetup.loadTables(log);
-            BooksDataManager mgr = new BooksDataManager(BooksEntry.tech.getDataType(), client, indexes, cfgData);
-            mgr.loadGroupingData(books.getIngestFile());
-            return mgr;
+            accumuloSetup.withData(FileType.GROUPING, dataTypes).ingest(log);
+            booksManager = new BooksDataManager(BooksEntry.tech.getDataType(), accumuloSetup.getClient(), indexes, cfgData);
+            booksManager.loadGroupingData(books.getIngestFile());
         } catch (Exception e) {
             throw new AssertionError(e);
         }
     }
 
     public BooksQueryTest() {
-        super(BOOKS_MANAGER);
+        super(booksManager);
     }
 
     @Test

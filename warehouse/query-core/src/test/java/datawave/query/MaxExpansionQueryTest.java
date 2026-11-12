@@ -76,8 +76,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQueryJUnit5 {
         italy.addIndexOnlyField(CityField.CODE.name());
         dataTypes.add(new CitiesDataType(CityEntry.italy, italy));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public MaxExpansionQueryTest() {

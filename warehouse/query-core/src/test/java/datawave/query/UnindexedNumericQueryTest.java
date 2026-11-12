@@ -57,8 +57,7 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQueryJUnit5 {
         CityDataManager.newInstance();
         dataTypes.add(new CitiesDataType(CityEntry.usa, generic));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public UnindexedNumericQueryTest() {

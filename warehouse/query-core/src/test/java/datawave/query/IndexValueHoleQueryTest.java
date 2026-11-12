@@ -61,8 +61,7 @@ public class IndexValueHoleQueryTest extends AbstractFunctionalQueryJUnit5 {
         FieldConfig holes = new HoleFields();
         dataTypes.add(new CitiesDataType(CityEntry.hole, holes));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public IndexValueHoleQueryTest() {

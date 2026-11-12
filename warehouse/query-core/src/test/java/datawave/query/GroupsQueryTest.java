@@ -39,8 +39,7 @@ public class GroupsQueryTest extends AbstractFunctionalQueryJUnit5 {
         GroupsDataManager.newInstance();
         dataTypes.add(new GroupsDataType(GroupsEntry.cities, fields));
 
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(log);
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(log);
     }
 
     public GroupsQueryTest() {

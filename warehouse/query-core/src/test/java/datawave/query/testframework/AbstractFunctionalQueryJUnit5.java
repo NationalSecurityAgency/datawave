@@ -144,7 +144,7 @@ public abstract class AbstractFunctionalQueryJUnit5 implements QueryLogicTestHar
 
     // ============================================
     // static members
-    protected static AccumuloClient client;
+    protected AccumuloClient client;
 
     // ============================================
     // instance members
@@ -260,8 +260,9 @@ public abstract class AbstractFunctionalQueryJUnit5 implements QueryLogicTestHar
     }
 
     @BeforeEach
-    public void setUpFunctionalQuery() throws IOException {
+    public void setUpFunctionalQuery(AccumuloClient client) throws IOException {
         log.debug("---------  setUpFunctionalQuery  ---------");
+        this.client = client;
         this.temporaryDirectory = Files.createTempDirectory("query-root");
         querySetUp();
     }
@@ -288,6 +289,10 @@ public abstract class AbstractFunctionalQueryJUnit5 implements QueryLogicTestHar
                 log.error("Failed to close query logic", e);
             }
         }
+
+        // The client will be cleaned up externally.
+        this.client = null;
+
         // Clean up the temporary directory.
         if (temporaryDirectory != null) {
             deleteTemporaryDirectory();

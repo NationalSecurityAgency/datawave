@@ -83,10 +83,10 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQueryJUnit5 {
         FieldConfig generic = new SSDeepFields();
         dataTypes.add(new SSDeepDataType(SSDeepDataType.SSDeepEntry.ssdeep, generic));
 
-        SSDeepQueryTestTableHelper ssDeepQueryTestTableHelper = new SSDeepQueryTestTableHelper(SSDeepIngestQueryTest.class.getName(), log,
+        SSDeepQueryTestTableHelper tableHelper = new SSDeepQueryTestTableHelper(SSDeepIngestQueryTest.class.getName(), log,
                         RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
-        accumuloSetup.setData(FileType.CSV, dataTypes);
-        client = accumuloSetup.loadTables(ssDeepQueryTestTableHelper);
+
+        accumuloSetup.withData(FileType.CSV, dataTypes).ingest(tableHelper);
     }
 
     @BeforeEach
