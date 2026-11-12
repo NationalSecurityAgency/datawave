@@ -133,7 +133,7 @@ import datawave.webservice.query.exception.QueryException;
 public class IteratorBuildingVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(IteratorBuildingVisitor.class);
 
-    public static final String NULL_DELIMETER = "\u0000";
+    public static final String NULL_DELIMITER = "\u0000";
 
     @SuppressWarnings("rawtypes")
     protected NestedIterator root;
@@ -513,19 +513,19 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         Key startKey = rangeLimiter.getStartKey();
 
         StringBuilder strBuilder = new StringBuilder("fi");
-        strBuilder.append(NULL_DELIMETER).append(range.getFieldName());
+        strBuilder.append(NULL_DELIMITER).append(range.getFieldName());
         Text cf = new Text(strBuilder.toString());
 
         strBuilder = new StringBuilder(range.getLower().toString());
 
-        strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        strBuilder.append(NULL_DELIMITER).append(startKey.getColumnFamily());
         Text cq = new Text(strBuilder.toString());
 
         Key seekBeginKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
 
         strBuilder = new StringBuilder(range.getUpper().toString());
 
-        strBuilder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        strBuilder.append(NULL_DELIMITER).append(startKey.getColumnFamily());
         cq = new Text(strBuilder.toString());
 
         Key seekEndKey = new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
@@ -875,12 +875,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         String value = null == objValue ? "null" : objValue.toString();
 
         StringBuilder builder = new StringBuilder("fi");
-        builder.append(NULL_DELIMETER).append(identifier);
+        builder.append(NULL_DELIMITER).append(identifier);
         Text cf = new Text(builder.toString());
 
         builder = new StringBuilder(value);
 
-        builder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        builder.append(NULL_DELIMITER).append(startKey.getColumnFamily());
         Text cq = new Text(builder.toString());
 
         return new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
@@ -893,12 +893,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         String value = null == objValue ? "null" : objValue.toString();
 
         StringBuilder builder = new StringBuilder("fi");
-        builder.append(NULL_DELIMETER).append(identifier);
+        builder.append(NULL_DELIMITER).append(identifier);
         Text cf = new Text(builder.toString());
 
         builder = new StringBuilder(value);
 
-        builder.append(NULL_DELIMETER).append(startKey.getColumnFamily());
+        builder.append(NULL_DELIMITER).append(startKey.getColumnFamily());
         Text cq = new Text(builder.toString());
 
         return new Key(startKey.getRow(), cf, cq, startKey.getTimestamp());
@@ -1051,7 +1051,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 char c1 = cf1.charAt(i);
                 char c2 = cf2.charAt(i);
                 if (c1 == c2) {
-                    if (c1 == NULL_DELIMETER.charAt(0)) {
+                    if (c1 == NULL_DELIMITER.charAt(0)) {
                         c1 = '_';
                     }
                     builder.append(c1);
