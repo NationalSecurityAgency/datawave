@@ -32,8 +32,6 @@ We create several JBOSS modules that will be part of Wildfly upon startup. These
 * [org.apache.commons.commons-text](src/main/wildfly/overlay/modules/org/apache/commons/commons-text)
 * [org.apache.hadoop.common](src/main/wildfly/overlay/modules/org/apache/hadoop/common)
 
-The Jakarta XML Binding annotation support for Jackson (`jackson-module-jakarta-xmlbind-annotations`) is not a custom module: Wildfly ships it inside its `com.fasterxml.jackson.jakarta.jackson-jakarta-json-provider` module, which the deployment and the security modules depend on directly.
-
 ### Overridden Modules
 
 We also override the library versions of several modules that are part of the core Wildfly application modules in order to synchronize the versions used by Datawave and Wildfly. These modules may get automatically added to deployments by Wildfly and may be dependencies of other core modules. The versions are overridden by copying updated versions of the libraries and `module.xml` files to the [modules/system/layers/base](src/main/wildfly/overlay/modules/system/layers/base) directory.
