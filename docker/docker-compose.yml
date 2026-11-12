@@ -62,11 +62,12 @@ services:
     networks: [demo]
     depends_on:
       hdfs-nn:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
-      test: ["CMD-SHELL", "hdfs dfsadmin -report | grep -q 'Live datanodes (1)' "]
+      test: ["CMD-SHELL", "hdfs dfsadmin -report | grep -q 'Live datanodes (1)' && hdfs dfsadmin -safemode get | grep -q OFF"]
       interval: 2s
       timeout: 5s
+      start_period: 15s
       retries: 30
 
   yarn-rm:
