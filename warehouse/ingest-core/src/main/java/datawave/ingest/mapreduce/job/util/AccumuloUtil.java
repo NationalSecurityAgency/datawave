@@ -93,6 +93,30 @@ public class AccumuloUtil {
         return getFilesFromMetadataBySplit(accumuloClient, DEFAULT_METADATA_TABLE, tableName, startRow, endRow);
     }
 
+    /**
+     * Gets the paths of the files of each tablet of a table between two rows, from the metadata table, without allowing fenced files.
+     * <p>
+     * Fenced files are not allowed by default because the files are usually read directly, as ShardReindexJob does with --accumuloMetadata. A fenced file, left
+     * by a merge or deleteRows, has rows the tablet doesn't use, such as the rows deleteRows deleted, and reading it directly would read them as the tablet's
+     * data. The lookup fails instead, and compacting the tablet rewrites the file without the fence. A caller that reads the data through Accumulo, which
+     * applies the fence, can allow fenced files with {@link #getFilesFromMetadataBySplit(AccumuloClient, String, String, String, String, boolean)}.
+     *
+     * @param accumuloClient
+     *            the client
+     * @param accumuloMetadataTable
+     *            the metadata table
+     * @param tableName
+     *            the table whose files to get
+     * @param startRow
+     *            the first row, or null for the start of the table
+     * @param endRow
+     *            the last row, or null for the end of the table
+     * @return each tablet's end row and the paths of its files
+     * @throws AccumuloException
+     *             if either table does not exist
+     * @throws IllegalStateException
+     *             if a file is fenced
+     */
     public static List<Map.Entry<String,List<String>>> getFilesFromMetadataBySplit(AccumuloClient accumuloClient, String accumuloMetadataTable,
                     String tableName, String startRow, String endRow) throws AccumuloException {
         return getFilesFromMetadataBySplit(accumuloClient, accumuloMetadataTable, tableName, startRow, endRow, false);
