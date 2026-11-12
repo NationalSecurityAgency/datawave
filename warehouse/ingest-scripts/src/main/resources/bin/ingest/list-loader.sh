@@ -15,7 +15,7 @@ FORCE=true
 
 params="-destHdfs -majcThreshold"
 host=$(hostname -s)
-for pid in $($MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader"); do
+for pid in $($MAP_FILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader"); do
    process=`ps -ef | grep $pid | grep -v grep`
    detail=""
    for param in $params; do
