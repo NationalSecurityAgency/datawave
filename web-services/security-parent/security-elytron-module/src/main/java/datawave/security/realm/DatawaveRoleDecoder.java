@@ -55,6 +55,8 @@ public class DatawaveRoleDecoder implements RoleDecoder {
                     ROLE_AUTHORIZED_QUERY_SERVER);
     // @formatter:on
 
+    public static final String defaultAccessDeniedRole = "AccessDenied";
+
     /**
      * The configuration for this {@link RoleDecoder}. This will be overridden if configuration properties are passed in from Wildfly via
      * {@link #initialize(Map)}.
@@ -195,8 +197,10 @@ public class DatawaveRoleDecoder implements RoleDecoder {
 
             // Parse the access denied role.
             String accessDeniedRoleOption = map.get(OPTION_ACCESS_DENIED_ROLE);
-            String accessDeniedRole = null;
-            if (accessDeniedRoleOption != null && !accessDeniedRoleOption.isBlank()) {
+            String accessDeniedRole;
+            if (StringUtils.isBlank(accessDeniedRoleOption)) {
+                accessDeniedRole = defaultAccessDeniedRole;
+            } else {
                 accessDeniedRole = accessDeniedRoleOption.trim();
             }
 
