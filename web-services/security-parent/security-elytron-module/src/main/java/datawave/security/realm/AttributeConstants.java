@@ -29,7 +29,7 @@ public final class AttributeConstants {
     public static final String ROLE_AUTHORIZED_SERVER = "AuthorizedServer";
     public static final String ROLE_AUTHORIZED_QUERY_SERVER = "AuthorizedQueryServer";
     public static final String ROLE_AUTHORIZED_PROXIED_SERVER = "AuthorizedProxiedServer";
-
+    public static final String ROLE_ACCESS_DENIED = "AccessDenied";
     private AttributeConstants() {
         throw new UnsupportedOperationException();
     }
