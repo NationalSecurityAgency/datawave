@@ -458,6 +458,18 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-common-test</artifactId>
+                <version>${version.datawave}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-ingest-core</artifactId>
                 <version>${version.datawave}</version>
                 <scope>test</scope>
@@ -566,6 +578,11 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-common-test</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>

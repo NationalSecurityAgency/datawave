@@ -28,6 +28,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import datawave.common.test.utils.rabbit.RestTemplateHttpLayer;
 import datawave.microservice.annotation.health.rabbit.config.RabbitHealthProperties;
 
 class AnnotationRabbitTopologyTest {

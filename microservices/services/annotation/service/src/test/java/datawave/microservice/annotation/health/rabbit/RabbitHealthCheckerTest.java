@@ -38,6 +38,7 @@ import com.rabbitmq.http.client.domain.ExchangeInfo;
 import com.rabbitmq.http.client.domain.NodeInfo;
 import com.rabbitmq.http.client.domain.QueueInfo;
 
+import datawave.common.test.utils.rabbit.RestTemplateHttpLayer;
 import datawave.microservice.annotation.health.rabbit.config.RabbitHealthProperties;
 
 @ExtendWith(SpringExtension.class)

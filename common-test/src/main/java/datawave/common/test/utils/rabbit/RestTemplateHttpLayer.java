@@ -1,4 +1,4 @@
-package datawave.microservice.audit.health.rabbit;
+package datawave.common.test.utils.rabbit;
 
 import java.net.URI;
 import java.util.Map;
@@ -14,8 +14,8 @@ import com.rabbitmq.http.client.ParameterizedTypeReference;
 
 /**
  * An {@link HttpLayer} backed by a Spring {@link RestTemplate}, so tests can drive the RabbitMQ management {@link com.rabbitmq.http.client.Client} with a
- * {@link org.springframework.test.web.client.MockRestServiceServer}. The 5.x client uses the JDK HttpClient by default, which a mock server can't intercept.
- * Like the default layer, a 404 on GET returns null.
+ * {@code MockRestServiceServer}. The 5.x client uses the JDK HttpClient by default, which a mock server can't intercept. Like the default layer, a 404 on GET
+ * returns null.
  */
 public class RestTemplateHttpLayer implements HttpLayer {
     private final RestTemplate restTemplate;
