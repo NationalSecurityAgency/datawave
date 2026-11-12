@@ -1,6 +1,8 @@
 package datawave.microservice.audit.health.rabbit.config;
 
-import java.time.Instant;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -54,8 +56,11 @@ public class RabbitHealthConfig implements SchedulingConfigurer {
     @Bean
     public Trigger trigger() {
         return triggerContext -> {
-            Instant lastActualExecution = triggerContext.lastActualExecution();
-            return (lastActualExecution != null ? lastActualExecution : Instant.now()).plusMillis(healthChecker().pollIntervalMillis());
+            Calendar nextExecutionTime = new GregorianCalendar();
+            Date lastActualExecutionTime = triggerContext.lastActualExecutionTime();
+            nextExecutionTime.setTime(lastActualExecutionTime != null ? lastActualExecutionTime : new Date());
+            nextExecutionTime.add(Calendar.MILLISECOND, Math.toIntExact(healthChecker().pollIntervalMillis()));
+            return nextExecutionTime.toInstant();
         };
     }
 
