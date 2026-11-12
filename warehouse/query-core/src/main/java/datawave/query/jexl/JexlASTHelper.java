@@ -48,11 +48,11 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.DatawaveJexlParser;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.Parser;
-import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
@@ -215,7 +215,7 @@ public class JexlASTHelper {
      */
     public static ASTJexlScript parseJexlQuery(String query) throws ParseException {
         // Instantiate a parser and visitor
-        Parser parser = new Parser(new StringProvider(";"));
+        Parser parser = DatawaveJexlParser.create();
 
         // lowercase all 'and', 'or', and 'not' portions of the query.
         String caseFixQuery = AND_PATTERN.matcher(query).replaceAll(" and ");
