@@ -125,8 +125,8 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
              * since we already validated a given row+colfam, if the last top has the same row+colfam, then this key is automagically valid.
              */
             if (lastTop != null && lastTop.equals(key, PartialKey.ROW_COLFAM)) {
-                if (log.isDebugEnabled())
-                    log.debug("Automatic match because of lastKey[" + lastTop + "]" + ", key[" + key + "]");
+                if (log.isTraceEnabled())
+                    log.trace("Automatic match because of lastKey[" + lastTop + "]" + ", key[" + key + "]");
                 propagateTop();
                 return;
             }
@@ -142,12 +142,12 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
                     ImmutableSortedSet<String> fields = maybeFields.get();
                     String field = stringify(key.getColumnFamilyData());
                     String possibleMatch = fields.ceiling(field);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Field is " + field + " possible match is " + possibleMatch);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Field is " + field + " possible match is " + possibleMatch);
                     }
                     if (field.equals(possibleMatch)) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Returning");
+                        if (log.isTraceEnabled()) {
+                            log.trace("Returning");
                         }
                         propagateTop();
                         return;
@@ -188,8 +188,8 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
                 log.debug("Need to calculate fields for term[" + term + "]");
             fieldsForLastTerm = Pair.with(term, computeFieldsFor(term));
         }
-        if (log.isDebugEnabled())
-            log.debug("Returning " + fieldsForLastTerm.getValue1());
+        if (log.isTraceEnabled())
+            log.trace("Returning " + fieldsForLastTerm.getValue1());
         return fieldsForLastTerm.getValue1();
     }
 

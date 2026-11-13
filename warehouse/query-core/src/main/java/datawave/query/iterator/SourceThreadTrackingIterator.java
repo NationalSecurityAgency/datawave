@@ -70,8 +70,8 @@ public class SourceThreadTrackingIterator<K extends WritableComparable<?>,V exte
             log.error("Concurrently using " + source + " on thread " + Thread.currentThread().getId(), new RuntimeException());
         }
         try {
-            if (log.isDebugEnabled())
-                log.debug("Using " + source + " on thread " + Thread.currentThread().getId());
+            if (log.isTraceEnabled())
+                log.trace("Using " + source + " on thread " + Thread.currentThread().getId());
 
             if (threadId != Thread.currentThread().getId()) {
                 log.error("Using " + source + " on wrong thread: " + threadId + " vs " + Thread.currentThread().getId(), new RuntimeException());
@@ -91,8 +91,8 @@ public class SourceThreadTrackingIterator<K extends WritableComparable<?>,V exte
             log.error("Concurrently seeking " + source + " on thread " + Thread.currentThread().getId(), new RuntimeException());
         }
         try {
-            if (log.isDebugEnabled())
-                log.debug("Seeking " + source + " on thread " + Thread.currentThread().getId());
+            if (log.isTraceEnabled())
+                log.trace("Seeking " + source + " on thread " + Thread.currentThread().getId());
             source.seek(range, columnFamilies, inclusive);
             threadId = Thread.currentThread().getId();
         } finally {

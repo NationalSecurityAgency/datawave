@@ -123,32 +123,32 @@ public class DocumentDataIterator implements Iterator<DocumentData> {
 
                 if (!isEventKey(k)) {
                     if (cf.find("fi\0") == 0) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Seeking over 'fi')");
+                        if (log.isTraceEnabled()) {
+                            log.trace("Seeking over 'fi')");
                         }
                         // Try to do an optimized jump over the field index
                         cf.set("fi\1");
                         source.seek(new Range(new Key(source.getTopKey().getRow(), cf), false, totalRange.getEndKey(), totalRange.isEndKeyInclusive()),
                                         columnFamilies, inclusive);
                     } else if (cf.getLength() == 1 && cf.charAt(0) == 'd') {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Seeking over 'd'");
+                        if (log.isTraceEnabled()) {
+                            log.trace("Seeking over 'd'");
                         }
                         // Try to do an optimized jump over the raw documents
                         cf.set("d\0");
                         source.seek(new Range(new Key(source.getTopKey().getRow(), cf), false, totalRange.getEndKey(), totalRange.isEndKeyInclusive()),
                                         columnFamilies, inclusive);
                     } else if (cf.getLength() == 2 && cf.charAt(0) == 't' && cf.charAt(1) == 'f') {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Seeking over 'tf'");
+                        if (log.isTraceEnabled()) {
+                            log.trace("Seeking over 'tf'");
                         }
                         // Try to do an optimized jump over the term frequencies
                         cf.set("tf\0");
                         source.seek(new Range(new Key(source.getTopKey().getRow(), cf), false, totalRange.getEndKey(), totalRange.isEndKeyInclusive()),
                                         columnFamilies, inclusive);
                     } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Next()'ing over the current key");
+                        if (log.isTraceEnabled()) {
+                            log.trace("Next()'ing over the current key");
                         }
                         source.next();
                     }
