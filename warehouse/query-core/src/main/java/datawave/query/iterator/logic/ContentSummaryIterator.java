@@ -30,6 +30,9 @@ import datawave.query.table.parser.ContentKeyValueFactory;
 
 /**
  * This iterator is intended to scan the d column for a specified document. The result will be a summary for each document scanned.
+ * <p>
+ * Each document is scanned once, retaining bounded prefixes for the highest-priority view or wildcard group seen so far. A better match replaces earlier
+ * prefixes; lower-priority matches are skipped. An early fallback may be decoded before a better match appears, avoiding another traversal of source Values.
  */
 public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value> {
     private static final Logger log = LoggerFactory.getLogger(ContentSummaryIterator.class);
@@ -235,7 +238,8 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
 
         Key top = source.getTopKey();
 
-        // save only bounded, decoded prefixes for this document's matching views
+        // save only bounded, decoded prefixes for the best view or wildcard group seen so far
+        int selectedPriority = viewSummaryOrder.size();
         final Map<String,String> foundContent = new HashMap<>();
 
         // while we have d keys for the same document
@@ -245,18 +249,15 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
             // get the view name
             String currentViewName = getViewName(top);
 
-            for (String name : viewSummaryOrder) {
-                if (name.endsWith("*")) {
-                    name = name.substring(0, name.length() - 1);
-                    if (currentViewName.startsWith(name)) {
-                        addContentToFound(foundContent, currentViewName);
-                        break;
+            // only consider priorities that can improve or extend the current selection
+            for (int priority = 0; priority < viewSummaryOrder.size() && priority <= selectedPriority; priority++) {
+                if (matchesView(viewSummaryOrder.get(priority), currentViewName)) {
+                    if (priority < selectedPriority) {
+                        foundContent.clear();
+                        selectedPriority = priority;
                     }
-                } else {
-                    if (currentViewName.equalsIgnoreCase(name)) {
-                        addContentToFound(foundContent, currentViewName);
-                        break;
-                    }
+                    addContentToFound(foundContent, currentViewName);
+                    break;
                 }
             }
 
@@ -264,8 +265,13 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
             source.next();
         }
 
-        // create the summary
-        String summary = new SummaryCreator(viewSummaryOrder, foundContent).createSummary();
+        if (selectedPriority == viewSummaryOrder.size()) {
+            return;
+        }
+
+        // create the summary from the winning pattern's bounded prefixes
+        String selectedView = viewSummaryOrder.get(selectedPriority);
+        String summary = new SummaryCreator(Collections.singletonList(selectedView), foundContent).createSummary();
         if (summary != null) {
             tk = new Key(top.getRow(), new Text(dtUid), new Text(summary), top.getColumnVisibility());
             tv = new Value();
@@ -275,6 +281,10 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
         // If we get here, we have not found content to summarize, so return null
         tk = null;
         tv = null;
+    }
+
+    private static boolean matchesView(String requestedView, String actualView) {
+        return requestedView.endsWith("*") ? actualView.startsWith(requestedView.substring(0, requestedView.length() - 1)) : actualView.equals(requestedView);
     }
 
     private void addContentToFound(Map<String,String> foundContent, String currentViewName) {
