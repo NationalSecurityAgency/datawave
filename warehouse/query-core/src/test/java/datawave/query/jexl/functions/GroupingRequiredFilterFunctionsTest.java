@@ -1,5 +1,7 @@
 package datawave.query.jexl.functions;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -7,11 +9,9 @@ import java.util.List;
 import java.util.function.Function;
 
 import org.apache.accumulo.core.data.Key;
-import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -21,7 +21,6 @@ import datawave.data.type.Type;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 
-@RunWith(Enclosed.class)
 public class GroupingRequiredFilterFunctionsTest {
 
     private abstract static class BaseTest {
@@ -31,7 +30,7 @@ public class GroupingRequiredFilterFunctionsTest {
         protected final List<Object> args = new ArrayList<>();
         protected boolean normalizeFilterToRegex = true;
 
-        @After
+        @AfterEach
         public void tearDown() throws Exception {
             this.args.clear();
             this.normalizeFilterToRegex = true;
@@ -78,12 +77,13 @@ public class GroupingRequiredFilterFunctionsTest {
      * Contains tests for {@link GroupingRequiredFilterFunctions#atomValuesMatch(Object...)} and
      * {@link GroupingRequiredFilterFunctions#atomValuesMatch(Iterable[])}.
      */
-    public static class AtomValuesMatchTest extends BaseTest {
+    @Nested
+    public class AtomValuesMatchTest extends BaseTest {
 
         private final List<ValueTuple> expected = new ArrayList<>();
         private boolean iterableArgs = false;
 
-        @After
+        @AfterEach
         public void tearDown() throws Exception {
             super.tearDown();
             iterableArgs = false;
@@ -250,18 +250,19 @@ public class GroupingRequiredFilterFunctionsTest {
             } else {
                 valueTuples = GroupingRequiredFilterFunctions.atomValuesMatch(args.toArray(new Object[0]));
             }
-            Assertions.assertThat(valueTuples).containsExactlyInAnyOrderElementsOf(expected);
+            assertThat(valueTuples).containsExactlyInAnyOrderElementsOf(expected);
         }
     }
 
     /**
      * Contains tests for {@link GroupingRequiredFilterFunctions#matchesInGroup(Object...)}.
      */
-    public static class MatchesInGroupTests extends BaseTest {
+    @Nested
+    public class MatchesInGroupTests extends BaseTest {
 
         private final List<ValueTuple> expected = new ArrayList<>();
 
-        @After
+        @AfterEach
         public void tearDown() throws Exception {
             super.tearDown();
             expected.clear();
@@ -328,18 +329,19 @@ public class GroupingRequiredFilterFunctionsTest {
         protected void assertResult() {
             @SuppressWarnings("unchecked")
             Collection<ValueTuple> valueTuples = (Collection<ValueTuple>) GroupingRequiredFilterFunctions.matchesInGroup(args.toArray(new Object[0]));
-            Assertions.assertThat(valueTuples).containsExactlyInAnyOrderElementsOf(expected);
+            assertThat(valueTuples).containsExactlyInAnyOrderElementsOf(expected);
         }
     }
 
     /**
      * Contains tests for {@link GroupingRequiredFilterFunctions#getGroupsForMatchesInGroup(Object...)}.
      */
-    public static class GetGroupsForMatchesInGroupsTest extends BaseTest {
+    @Nested
+    public class GetGroupsForMatchesInGroupsTest extends BaseTest {
 
         private final List<String> expected = new ArrayList<>();
 
-        @After
+        @AfterEach
         public void tearDown() throws Exception {
             super.tearDown();
             expected.clear();
@@ -390,15 +392,16 @@ public class GroupingRequiredFilterFunctionsTest {
         protected void assertResult() {
             @SuppressWarnings("unchecked")
             Collection<String> groups = (Collection<String>) GroupingRequiredFilterFunctions.getGroupsForMatchesInGroup(args.toArray(new Object[0]));
-            Assertions.assertThat(groups).containsExactlyInAnyOrderElementsOf(expected);
+            assertThat(groups).containsExactlyInAnyOrderElementsOf(expected);
         }
 
     }
 
-    public static class MatchesInGroupLeftTests extends BaseTest {
+    @Nested
+    public class MatchesInGroupLeftTests extends BaseTest {
         private final List<ValueTuple> expected = new ArrayList<>();
 
-        @After
+        @AfterEach
         public void tearDown() throws Exception {
             super.tearDown();
             expected.clear();
@@ -479,7 +482,7 @@ public class GroupingRequiredFilterFunctionsTest {
         protected void assertResult() {
             @SuppressWarnings("unchecked")
             Collection<ValueTuple> valueTuples = (Collection<ValueTuple>) GroupingRequiredFilterFunctions.matchesInGroupLeft(args.toArray(new Object[0]));
-            Assertions.assertThat(valueTuples).containsExactlyInAnyOrderElementsOf(expected);
+            assertThat(valueTuples).containsExactlyInAnyOrderElementsOf(expected);
         }
     }
 }

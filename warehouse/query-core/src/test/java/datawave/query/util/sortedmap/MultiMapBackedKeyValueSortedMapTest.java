@@ -1,6 +1,6 @@
 package datawave.query.util.sortedmap;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Comparator;
 import java.util.Map;

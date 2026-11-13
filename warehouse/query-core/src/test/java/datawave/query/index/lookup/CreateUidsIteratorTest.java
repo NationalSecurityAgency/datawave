@@ -1,8 +1,8 @@
 package datawave.query.index.lookup;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,8 +22,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.protobuf.Uid;
 import datawave.query.util.ValueSerializer;
@@ -31,7 +31,7 @@ import datawave.query.util.ValueSerializer;
 public class CreateUidsIteratorTest {
     private ValueSerializer<IndexInfo> valueSerializer;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         valueSerializer = ValueSerializer.newSerializer(IndexInfo.class, CreateUidsIterator.DEFAULT_VALUE_ENCODING_TYPE);
     }
@@ -110,7 +110,7 @@ public class CreateUidsIteratorTest {
                 expectedDocs.remove(id);
             }
         }
-        assertEquals("Items remaining " + expectedDocs, 0, expectedDocs.size());
+        assertEquals(0, expectedDocs.size(), "Items remaining " + expectedDocs);
     }
 
     /**

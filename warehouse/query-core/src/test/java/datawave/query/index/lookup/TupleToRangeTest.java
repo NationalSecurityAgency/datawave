@@ -4,9 +4,9 @@ import static datawave.common.test.utils.query.RangeFactoryForTests.makeDayRange
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTldTestRange;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -16,8 +16,8 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -32,7 +32,7 @@ public class TupleToRangeTest {
     private JexlNode queryNode = null;
     private ShardQueryConfiguration config;
 
-    @Before
+    @BeforeEach
     public void setup() throws ParseException {
         queryNode = JexlASTHelper.parseJexlQuery("true==true");
         config = new ShardQueryConfiguration();
@@ -225,7 +225,7 @@ public class TupleToRangeTest {
             Range generatedRange = generatedIter.next();
             assertEquals(expectedRange, generatedRange);
 
-            assertFalse("Query plan generated unexpected ranges", generatedIter.hasNext());
+            assertFalse(generatedIter.hasNext(), "Query plan generated unexpected ranges");
         }
 
         assertFalse(expectedIter.hasNext());
