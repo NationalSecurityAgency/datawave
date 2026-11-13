@@ -4,24 +4,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import datawave.query.Constants;
-import datawave.query.table.parser.ContentKeyValueFactory;
-
 /**
- * This class contains the functionality to generate summaries.
- * <p>
- * </p>
- * Just need to call "createSummary()" after creation.
+ * Formats summaries from decoded, bounded content prefixes. Callers apply their content-length limit before constructing this class.
  */
 public class SummaryCreator {
     private final List<String> viewSummaryOrder;
-    Map<String,byte[]> foundContent;
-    int summarySize;
+    private final Map<String,String> foundContent;
 
-    public SummaryCreator(List<String> viewSummaryOrder, Map<String,byte[]> foundContent, int summarySize) {
+    public SummaryCreator(List<String> viewSummaryOrder, Map<String,String> foundContent) {
         this.viewSummaryOrder = viewSummaryOrder;
         this.foundContent = foundContent;
-        this.summarySize = summarySize;
     }
 
     /**
@@ -36,12 +28,12 @@ public class SummaryCreator {
                 // strip wildcard from view name
                 name = name.substring(0, name.length() - 1);
 
-                String endingWildcardSummary = getEndingWildcardSummary(name, foundContent, summarySize);
+                String endingWildcardSummary = getEndingWildcardSummary(name, foundContent);
                 if (endingWildcardSummary != null) {
                     return endingWildcardSummary;
                 }
             } else {
-                String simpleSummary = getSimpleSummary(name, foundContent, summarySize);
+                String simpleSummary = getSimpleSummary(name, foundContent);
                 if (simpleSummary != null) {
                     return simpleSummary;
                 }
@@ -51,14 +43,12 @@ public class SummaryCreator {
     }
 
     /** for matching and creating summaries when view names have trailing wildcards */
-    private static String getEndingWildcardSummary(String currentViewName, Map<String,byte[]> foundContent, int summarySize) {
+    private static String getEndingWildcardSummary(String currentViewName, Map<String,String> foundContent) {
         // if we have a view name that matches the list...
         Map<String,String> summaries = new HashMap<>();
-        for (Map.Entry<String,byte[]> entry : foundContent.entrySet()) {
-            // first part is view, second part is if compressed still
-            String[] temp = entry.getKey().split(Constants.COLON);
-            if (temp[0].startsWith(currentViewName)) {
-                summaries.put(temp[0], getSummaryForView(entry.getValue(), summarySize, Boolean.parseBoolean(temp[1])));
+        for (Map.Entry<String,String> entry : foundContent.entrySet()) {
+            if (entry.getKey().startsWith(currentViewName)) {
+                summaries.put(entry.getKey(), entry.getValue());
             }
         }
         if (!summaries.isEmpty()) {
@@ -73,29 +63,13 @@ public class SummaryCreator {
     }
 
     /** a straight-up match between view names */
-    private static String getSimpleSummary(String currentViewName, Map<String,byte[]> foundContent, int summarySize) {
-        for (Map.Entry<String,byte[]> entry : foundContent.entrySet()) {
-            // first part is view, second part is if compressed still
-            String[] temp = entry.getKey().split(Constants.COLON);
-            if (temp[0].equals(currentViewName)) {
-                return currentViewName + ": " + getSummaryForView(entry.getValue(), summarySize, Boolean.parseBoolean(temp[1]));
+    private static String getSimpleSummary(String currentViewName, Map<String,String> foundContent) {
+        for (Map.Entry<String,String> entry : foundContent.entrySet()) {
+            if (entry.getKey().equals(currentViewName)) {
+                return currentViewName + ": " + entry.getValue();
             }
         }
         return null;
     }
 
-    private static String getSummaryForView(byte[] content, int summarySize, boolean needsDecompressing) {
-        String summary;
-        if (needsDecompressing) {
-            // decode and decompress the content
-            summary = new String(ContentKeyValueFactory.decodeAndDecompressContent(content));
-        } else {
-            summary = new String(content);
-        }
-        // if the content is longer than the specified length, truncate it
-        if (summary.length() > summarySize) {
-            summary = summary.substring(0, summarySize);
-        }
-        return summary;
-    }
 }
