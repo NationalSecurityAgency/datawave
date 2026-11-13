@@ -3,9 +3,6 @@ package datawave.webservice.edgedictionary;
 import java.net.URI;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.client.utils.URIBuilder;
 import org.xbill.DNS.TextParseException;
@@ -22,6 +19,8 @@ import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
 import datawave.webservice.dictionary.edge.MetadataBase;
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
 
 /**
  * Retrieves an {@link EdgeDictionaryBase} from the remote edge dictionary service.

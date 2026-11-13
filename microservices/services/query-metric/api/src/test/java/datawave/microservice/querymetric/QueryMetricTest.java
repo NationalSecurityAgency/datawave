@@ -16,15 +16,11 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
 
 import datawave.marking.AccessExpressionMarkings;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
@@ -37,6 +33,9 @@ import io.protostuff.LinkedBuffer;
 import io.protostuff.Message;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 
 public class QueryMetricTest {
 
@@ -147,7 +146,7 @@ public class QueryMetricTest {
     @Test
     public void testJsonSerialization() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JaxbAnnotationModule());
+        objectMapper.registerModule(new JakartaXmlBindAnnotationModule());
         String metricAsBytes = objectMapper.writeValueAsString(queryMetric);
         QueryMetric deserializedMetric = objectMapper.readValue(metricAsBytes, QueryMetric.class);
         assertEquals(queryMetric, deserializedMetric);

@@ -28,6 +28,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import datawave.common.test.utils.rabbit.RestTemplateHttpLayer;
 import datawave.microservice.annotation.health.rabbit.config.RabbitHealthProperties;
 
 class AnnotationRabbitTopologyTest {
@@ -144,15 +145,17 @@ class AnnotationRabbitTopologyTest {
     private void initialize(StandardEnvironment environment) {
         RabbitHealthProperties properties = Binder.get(environment).bind("annotation.health.rabbit", Bindable.of(RabbitHealthProperties.class)).get();
         checker = new RabbitHealthChecker(properties, "localhost", "guest", "guest");
-        RestTemplate restTemplate = (RestTemplate) new DirectFieldAccessor(new DirectFieldAccessor(checker).getPropertyValue("rabbitClient"))
-                        .getPropertyValue("rt");
+        // the 5.x management client uses the JDK HttpClient; route it through a RestTemplate so MockRestServiceServer can intercept
+        RestTemplate restTemplate = new RestTemplate();
+        new DirectFieldAccessor(new DirectFieldAccessor(checker).getPropertyValue("rabbitClient")).setPropertyValue("httpLayer",
+                        new RestTemplateHttpLayer(restTemplate));
         server = MockRestServiceServer.createServer(restTemplate);
     }
 
     private void expectTopology(String group, boolean bindingsPresent) throws IOException {
         expect("nodes/", List.of(Map.of("name", "rabbit@localhost", "running", true, "type", "disc")));
         expect("exchanges/", List.of(exchange("annotation", "topic"), exchange("DLX", "direct")));
-        expect("queues/", group == null ? List.of() : List.of(queue("annotation." + group, true), queue("annotation." + group + ".dlq", false)));
+        expect("queues", group == null ? List.of() : List.of(queue("annotation." + group, true), queue("annotation." + group + ".dlq", false)));
         expect("bindings/", !bindingsPresent ? List.of()
                         : List.of(binding("annotation", "annotation." + group, "#"), binding("DLX", "annotation." + group + ".dlq", "annotation." + group)));
     }

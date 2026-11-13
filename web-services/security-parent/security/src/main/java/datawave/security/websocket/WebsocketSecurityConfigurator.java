@@ -5,15 +5,15 @@ import static datawave.security.util.SecurityConstants.REQUEST_LOGIN_TIME_HEADER
 import java.util.List;
 import java.util.Map;
 
-import javax.websocket.HandshakeResponse;
-import javax.websocket.server.HandshakeRequest;
-import javax.websocket.server.ServerEndpointConfig;
-import javax.websocket.server.ServerEndpointConfig.Configurator;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
+
+import jakarta.websocket.HandshakeResponse;
+import jakarta.websocket.server.HandshakeRequest;
+import jakarta.websocket.server.ServerEndpointConfig;
+import jakarta.websocket.server.ServerEndpointConfig.Configurator;
 
 /**
  * A JBOSS AS/Wildfly-specific {@link Configurator} that stores the invoking user's security identity and the request login time into the user session so that

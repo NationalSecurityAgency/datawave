@@ -2,14 +2,16 @@ package datawave.microservice.querymetric.config;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.constraints.PositiveOrZero;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @ConfigurationProperties(prefix = "datawave.query.metric.client")
 public class QueryMetricClientProperties {
     private boolean enabled;
+    @Valid
     private QueryMetricTransportType transport = QueryMetricTransportType.MESSAGE;
     private String scheme = "https";
     private String host = "localhost";
@@ -19,6 +21,7 @@ public class QueryMetricClientProperties {
     private boolean confirmAckEnabled = true;
     private long confirmAckTimeoutMillis = 500L;
 
+    @Valid
     Retry retry = new Retry();
 
     public void setEnabled(boolean enabled) {
@@ -29,7 +32,7 @@ public class QueryMetricClientProperties {
         return enabled;
     }
 
-    public void setTransport(QueryMetricTransportType transport) {
+    public void setTransport(@Valid QueryMetricTransportType transport) {
         this.transport = transport;
     }
 
@@ -97,7 +100,7 @@ public class QueryMetricClientProperties {
         return retry;
     }
 
-    public void setRetry(Retry retry) {
+    public void setRetry(@Valid Retry retry) {
         this.retry = retry;
     }
 

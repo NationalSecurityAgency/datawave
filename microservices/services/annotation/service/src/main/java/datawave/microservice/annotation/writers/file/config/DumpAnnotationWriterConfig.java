@@ -4,8 +4,6 @@ import static datawave.microservice.annotation.config.AnnotationRoleConstants.DU
 
 import java.util.List;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,6 +15,7 @@ import datawave.microservice.annotation.config.AnnotationRole;
 import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.writers.AnnotationWriter;
 import datawave.microservice.annotation.writers.file.FileAnnotationWriter;
+import jakarta.validation.Valid;
 
 /**
  * Configures a {@link FileAnnotationWriter} to dump messages to the filesystem on demand. This configuration is activated via the

@@ -1,11 +1,10 @@
 package datawave.webservice.edgedictionary;
 
-import javax.inject.Inject;
-
 import datawave.core.common.edgedictionary.EdgeDictionaryProvider;
 import datawave.microservice.query.Query;
 import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
 import datawave.webservice.dictionary.edge.MetadataBase;
+import jakarta.inject.Inject;
 
 public class EdgeDictionaryProviderImpl implements EdgeDictionaryProvider {
     @Inject

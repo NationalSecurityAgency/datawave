@@ -10,8 +10,6 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 
-import javax.xml.bind.JAXB;
-
 import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +41,7 @@ import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.webservice.response.LookupResponse;
 import datawave.webservice.response.objects.DefaultKey;
+import jakarta.xml.bind.JAXB;
 
 /**
  * Tests LookupController and LookupService functionality ({@code accumulo.lookup.enabled=true}) with auditing disabled ({@code audit-client.enabled=false}).

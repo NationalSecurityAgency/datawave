@@ -66,8 +66,14 @@ public class RabbitMQMessagingConfiguration {
                 finalConnectionFactory.setPublisherConfirmType(rabbitMqProperties.getPublisherConfirmType());
             }
 
-            finalConnectionFactory.setPublisherConfirms(CachingConnectionFactory.ConfirmType.SIMPLE != rabbitMqProperties.getPublisherConfirmType()
-                            && rabbitMqProperties.isPublisherConfirms());
+            // setPublisherConfirms(boolean) was removed in Spring AMQP 3; this mirrors what it did: true -> CORRELATED, false -> CORRELATED becomes NONE
+            if (CachingConnectionFactory.ConfirmType.SIMPLE != rabbitMqProperties.getPublisherConfirmType()) {
+                if (rabbitMqProperties.isPublisherConfirms()) {
+                    finalConnectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
+                } else if (finalConnectionFactory.isPublisherConfirms()) {
+                    finalConnectionFactory.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.NONE);
+                }
+            }
             finalConnectionFactory.setPublisherReturns(rabbitMqProperties.isPublisherReturns());
         }
         return finalConnectionFactory;

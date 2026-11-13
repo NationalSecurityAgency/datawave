@@ -26,8 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-import javax.ws.rs.core.MediaType;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -62,6 +60,7 @@ import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.DefaultEdgeQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
+import jakarta.ws.rs.core.MediaType;
 
 public class RemoteEdgeQueryLogicHttpTest {
 

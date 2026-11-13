@@ -22,18 +22,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import javax.ejb.EJBContext;
-import javax.enterprise.concurrent.ManagedExecutorService;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import javax.ws.rs.core.Response;
+import java.util.function.Supplier;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -86,6 +83,12 @@ import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 import datawave.webservice.query.runner.QueryExecutorBean;
+import jakarta.ejb.EJBContext;
+import jakarta.enterprise.concurrent.ContextService;
+import jakarta.enterprise.concurrent.ManagedExecutorService;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.core.Response;
 
 @SuppressWarnings({"unused", "unchecked", "SpellCheckingInspection"})
 @ExtendWith(ArquillianExtension.class)
@@ -143,7 +146,6 @@ public class AnnotationManagerBeanFunctionalTest {
                 .addPackages(
                         true,
                         "org.apache.deltaspike",
-                        "io.astefanutti.metrics.cdi",
                         "datawave.query",
                         "org.jboss.logging",
                         "datawave.webservice.query.result.event"
@@ -154,9 +156,11 @@ public class AnnotationManagerBeanFunctionalTest {
                 .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
                 .addAsManifestResource(
                         new StringAsset(
-                                "<alternatives>" +
+                                "<beans xmlns=\"https://jakarta.ee/xml/ns/jakartaee\" version=\"4.0\" bean-discovery-mode=\"all\">" +
+                        "<alternatives>" +
                                         "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" +
-                                        "</alternatives>"),
+                                        "</alternatives>" +
+                        "</beans>"),
                         "beans.xml"
                 );
         //@formatter:on
@@ -883,6 +887,58 @@ public class AnnotationManagerBeanFunctionalTest {
         @Override
         public void execute(Runnable command) {
             delegate.execute(command);
+        }
+
+        // Concurrency Utilities 3.0 (Jakarta EE 10) additions
+
+        @Override
+        public <U> CompletableFuture<U> completedFuture(U value) {
+            return CompletableFuture.completedFuture(value);
+        }
+
+        @Override
+        public <U> CompletionStage<U> completedStage(U value) {
+            return CompletableFuture.completedStage(value);
+        }
+
+        @Override
+        public <T> CompletableFuture<T> copy(CompletableFuture<T> stage) {
+            return stage.copy();
+        }
+
+        @Override
+        public <T> CompletionStage<T> copy(CompletionStage<T> stage) {
+            return stage.toCompletableFuture().copy();
+        }
+
+        @Override
+        public <U> CompletableFuture<U> failedFuture(Throwable ex) {
+            return CompletableFuture.failedFuture(ex);
+        }
+
+        @Override
+        public <U> CompletionStage<U> failedStage(Throwable ex) {
+            return CompletableFuture.failedStage(ex);
+        }
+
+        @Override
+        public ContextService getContextService() {
+            throw new UnsupportedOperationException("No context service in tests");
+        }
+
+        @Override
+        public <U> CompletableFuture<U> newIncompleteFuture() {
+            return new CompletableFuture<>();
+        }
+
+        @Override
+        public CompletableFuture<Void> runAsync(Runnable runnable) {
+            return CompletableFuture.runAsync(runnable, delegate);
+        }
+
+        @Override
+        public <U> CompletableFuture<U> supplyAsync(Supplier<U> supplier) {
+            return CompletableFuture.supplyAsync(supplier, delegate);
         }
     }
 

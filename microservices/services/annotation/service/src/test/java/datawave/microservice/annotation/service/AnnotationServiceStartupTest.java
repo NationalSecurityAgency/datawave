@@ -68,7 +68,7 @@ public class AnnotationServiceStartupTest {
     @BeforeEach
     void simulateHealthyBrokerProducerConfirms() {
         brokerSubscription = annotationSource.get().subscribe(sent -> sent.getHeaders().get(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, CorrelationData.class)
-                        .getFuture().set(new CorrelationData.Confirm(true, null)));
+                        .getFuture().complete(new CorrelationData.Confirm(true, null)));
     }
 
     @AfterEach

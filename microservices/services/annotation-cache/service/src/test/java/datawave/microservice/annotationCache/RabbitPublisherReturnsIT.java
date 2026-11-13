@@ -22,8 +22,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.config.BindingServiceProperties;
 import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.cloud.stream.test.binder.MessageCollectorAutoConfiguration;
-import org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
@@ -171,7 +169,7 @@ class RabbitPublisherReturnsIT {
     }
 
     @SpringBootConfiguration
-    @EnableAutoConfiguration(exclude = {TestSupportBinderAutoConfiguration.class, MessageCollectorAutoConfiguration.class})
+    @EnableAutoConfiguration
     static class TestApplication {
         @Bean
         BlockingQueue<Message<?>> returnedMessages() {

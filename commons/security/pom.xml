@@ -42,7 +42,6 @@
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>${version.jakarta}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

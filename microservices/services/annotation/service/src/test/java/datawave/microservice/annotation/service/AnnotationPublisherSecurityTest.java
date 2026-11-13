@@ -13,7 +13,7 @@ import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import datawave.annotation.protobuf.v1.AnnotationMessage;
@@ -41,7 +41,7 @@ class AnnotationPublisherSecurityTest {
                                     SecurityContextHolder.clearContext();
                                     assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
                                     sent.getHeaders().get(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, CorrelationData.class).getFuture()
-                                                    .set(new CorrelationData.Confirm(true, null));
+                                                    .complete(new CorrelationData.Confirm(true, null));
                                 });
                             });
                             try {
@@ -60,6 +60,6 @@ class AnnotationPublisherSecurityTest {
     }
 
     @Configuration
-    @EnableGlobalMethodSecurity(securedEnabled = true)
+    @EnableMethodSecurity(securedEnabled = true, prePostEnabled = false)
     static class MethodSecurity {}
 }

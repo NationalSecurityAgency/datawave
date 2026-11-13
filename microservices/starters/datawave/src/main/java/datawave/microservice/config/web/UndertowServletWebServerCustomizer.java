@@ -2,8 +2,6 @@ package datawave.microservice.config.web;
 
 import static datawave.microservice.config.web.Constants.REQUEST_START_TIME_NS_ATTRIBUTE;
 
-import javax.servlet.ServletRequest;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -14,6 +12,7 @@ import org.springframework.stereotype.Component;
 import io.undertow.Undertow;
 import io.undertow.server.Connectors;
 import io.undertow.servlet.handlers.ServletRequestContext;
+import jakarta.servlet.ServletRequest;
 
 /**
  * Customizes Undertow Servlet-based server (vs the Reactive one) for DATAWAVE use. This handles setting up recording the request start time as early as

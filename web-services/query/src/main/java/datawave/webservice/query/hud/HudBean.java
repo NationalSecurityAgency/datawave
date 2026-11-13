@@ -6,19 +6,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJBContext;
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
 import org.jboss.resteasy.annotations.GZIP;
 
 import com.google.gson.Gson;
@@ -34,6 +21,18 @@ import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.result.QueryImplListResponse;
+import jakarta.annotation.Resource;
+import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.ejb.EJBContext;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 @Path("/Query/queryhud")
 @GZIP

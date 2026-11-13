@@ -16,8 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -42,6 +40,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.oauth.OAuthTokenResponse;
 import datawave.security.authorization.oauth.OAuthUserInfo;
 import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Presents the REST operations for the authorization service to implement the OAuth2 code flow.

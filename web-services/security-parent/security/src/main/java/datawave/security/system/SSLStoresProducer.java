@@ -1,11 +1,10 @@
 package datawave.security.system;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Default;
-import javax.enterprise.inject.Produces;
-
 import datawave.security.cert.SSLStores;
 import datawave.security.cert.SSLStoresImpl;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.Produces;
 
 /**
  * A producer class for producing server-security related artifacts.

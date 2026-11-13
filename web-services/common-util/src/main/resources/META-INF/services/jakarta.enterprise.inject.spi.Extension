@@ -1,0 +1,2 @@
+datawave.configuration.ConfigExtension
+datawave.metrics.cdi.MetricsAnnotationExtension

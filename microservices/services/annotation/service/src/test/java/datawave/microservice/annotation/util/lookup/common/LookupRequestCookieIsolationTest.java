@@ -18,10 +18,12 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.client5.http.ssl.HostnameVerificationPolicy;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,7 +102,12 @@ class LookupRequestCookieIsolationTest {
         // Mirror HttpClientConfig's production wiring (NoopHostnameVerifier is the intentional, discovery-compatible TLS policy - see
         // HttpClientConfigTlsPolicyTest for a dedicated assertion of that behavior). Only the trust material differs here (test CA vs. production truststore).
         CloseableHttpClient httpClient = HttpClientBuilder.create()
-                        .setSSLSocketFactory(new SSLConnectionSocketFactory(clientSslContext, NoopHostnameVerifier.INSTANCE)).build();
+                        .setConnectionManager(PoolingHttpClientConnectionManagerBuilder.create()
+                                        .setTlsSocketStrategy(ClientTlsStrategyBuilder.create().setSslContext(clientSslContext)
+                                                        .setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                                                        .setHostVerificationPolicy(HostnameVerificationPolicy.CLIENT).buildClassic())
+                                        .build())
+                        .build();
 
         LookupProperties lookupProperties = new LookupProperties();
         lookupProperties.setDatawaveQueryHost("localhost:" + server.getAddress().getPort());

@@ -9,7 +9,7 @@ batch
 embed-server --server-config=standalone-full.xml
 
 # Add the MySQL Connector as a module
-module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.api,com.fasterxml.jackson.core.jackson-core --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
+module add --name=com.mysql.driver --dependencies=javax.api,jakarta.transaction.api,com.fasterxml.jackson.core.jackson-core --resources=mysql/mysql-connector-j-${version.mysql-connector}.jar
 
 # Change default ports to listen on all interfaces (can still override on command line)
 /interface=public/:write-attribute(name=inet-address,value="${jboss.bind.address:0.0.0.0}")
@@ -309,6 +309,9 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=ejb3/strict-max-bean-instance-pool=slsb-strict-max-pool/:write-attribute(name=timeout-unit,value=MILLISECONDS)
 /subsystem=ejb3:write-attribute(name=default-slsb-instance-pool,value=slsb-strict-max-pool)
 /subsystem=transactions/:write-attribute(name=default-timeout,value=${jboss.transaction.time.out})
+# WildFly rejects max-threads below core-threads (WFLYEE0113), and core-threads defaults to twice the processor count,
+# so pin core-threads to the same value to keep the pool size independent of the host's core count.
+/subsystem=ee/managed-executor-service=default:write-attribute(name=core-threads,value=${jboss.managed.executor.service.default.max.threads})
 /subsystem=ee/managed-executor-service=default:write-attribute(name=max-threads,value=${jboss.managed.executor.service.default.max.threads})
 
 # Configure the JDBC DataSource used by MySQL
@@ -373,8 +376,6 @@ jms-queue add --queue-address=AccumuloTableCacheDLQ --entries=queue/AccumuloTabl
 /subsystem=logging/logger=datawave.webservice.results.cached:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.webservice.query.cachedresults:add(use-parent-handlers=false,handlers=["CACHED_LOG"],level=INFO)
 /subsystem=logging/logger=datawave.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
-/subsystem=logging/logger=org.jboss.security.auth:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
-/subsystem=logging/logger=org.jboss.security.authorization.modules.ejb.EJBPolicyModuleDelegate:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 # Uncomment the following three lines to also capture logging from the Wildfly Elytron framework if desired.
 #/subsystem=logging/logger=org.wildfly.security:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])
 #/subsystem=logging/logger=org.wildfly.security.tls:add(use-parent-handlers=false,handlers=["SECURITY_LOG"])

@@ -15,9 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.stream.binder.BinderFactory;
-import org.springframework.cloud.stream.test.binder.MessageCollector;
-import org.springframework.cloud.stream.test.binder.TestSupportBinder;
+import org.springframework.cloud.stream.binder.test.OutputDestination;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -39,7 +38,7 @@ import datawave.microservice.annotation.messaging.AnnotationMessagingConfigurati
  * separate tests.
  */
 @SpringBootTest(classes = AnnotationMessagingBindingTest.StreamTestApplication.class,
-                properties = {"spring.cloud.config.enabled=false", "spring.cloud.function.definition=receive", "spring.cloud.stream.defaultBinder=test",
+                properties = {"spring.cloud.config.enabled=false", "spring.cloud.function.definition=receive", "spring.cloud.stream.defaultBinder=integration",
                         "spring.cloud.stream.bindings.receive-in-0.destination=annotation-cache-in",
                         "spring.cloud.stream.bindings.receive-in-0.contentType=application/x-protobuf",
                         "spring.cloud.stream.bindings.persisted-out-0.destination=annotation-cache-out",
@@ -54,28 +53,22 @@ class AnnotationMessagingBindingTest {
     private ApplicationContext applicationContext;
 
     @Autowired
-    private BinderFactory binderFactory;
-
-    @Autowired
-    private MessageCollector messageCollector;
+    private OutputDestination outputDestination;
 
     @Autowired
     private BlockingQueue<AnnotationMessage> receivedMessages;
 
     @Test
-    void streamBridgePublishesProtobufPayloadOnConfiguredBinding() throws InterruptedException {
+    void streamBridgePublishesProtobufPayloadOnConfiguredBinding() {
         AnnotationMessage original = message();
         Message<AnnotationMessage> message = MessageBuilder.withPayload(original)
                         .setHeader(MessageHeaders.CONTENT_TYPE, MimeTypeUtils.parseMimeType(PROTOBUF_CONTENT_TYPE)).build();
 
         assertTrue(publisher.send(message));
 
-        TestSupportBinder binder = (TestSupportBinder) binderFactory.getBinder("test", MessageChannel.class);
-        MessageChannel producerChannel = binder.getChannelForName("annotation-cache-out");
-        assertNotNull(producerChannel);
-        Message<?> published = messageCollector.forChannel(producerChannel).poll(5, TimeUnit.SECONDS);
+        Message<byte[]> published = outputDestination.receive(TimeUnit.SECONDS.toMillis(5), "annotation-cache-out");
         assertNotNull(published);
-        assertArrayEquals(original.toByteArray(), (byte[]) published.getPayload());
+        assertArrayEquals(original.toByteArray(), published.getPayload());
         assertEquals(PROTOBUF_CONTENT_TYPE, published.getHeaders().get(MessageHeaders.CONTENT_TYPE).toString());
     }
 
@@ -98,7 +91,7 @@ class AnnotationMessagingBindingTest {
 
     @SpringBootConfiguration
     @EnableAutoConfiguration
-    @Import({AnnotationMessagingConfiguration.class, AnnotationMessagePublisher.class})
+    @Import({TestChannelBinderConfiguration.class, AnnotationMessagingConfiguration.class, AnnotationMessagePublisher.class})
     static class StreamTestApplication {
         @Bean
         BlockingQueue<AnnotationMessage> receivedMessages() {

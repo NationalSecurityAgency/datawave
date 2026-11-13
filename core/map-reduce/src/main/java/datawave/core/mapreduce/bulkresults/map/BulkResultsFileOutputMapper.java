@@ -10,12 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.ws.rs.core.MediaType;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.codec.binary.Base64;
@@ -33,6 +27,11 @@ import datawave.microservice.mapreduce.bulkresults.map.SerializationFormat;
 import datawave.microservice.query.Query;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.util.ProtostuffMessageBodyWriter;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 
 public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<Key,Value,Key,Value> {
 
@@ -84,8 +83,8 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(logicName);
         t = logic.getEnrichedTransformer(query);
 
-        Assert.notNull(logic.getMarkingFunctions());
-        Assert.notNull(logic.getResponseObjectFactory());
+        Assert.notNull(logic.getMarkingFunctions(), "Query logic has no marking functions");
+        Assert.notNull(logic.getResponseObjectFactory(), "Query logic has no response object factory");
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(RESULT_SERIALIZATION_FORMAT));
     }
 

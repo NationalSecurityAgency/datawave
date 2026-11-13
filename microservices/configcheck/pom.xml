@@ -25,20 +25,20 @@
         <surefire.maxMemory>2048m</surefire.maxMemory>
         <surefire.minMemory>128m</surefire.minMemory>
         <surefire.reuseForks>false</surefire.reuseForks>
-        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
-        <version.jackson>2.14.3</version.jackson>
+        <!-- keep jackson and snakeyaml in step with spring-boot-dependencies -->
+        <version.jackson>2.21.4</version.jackson>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>
         <version.log4j>2.26.1</version.log4j>
         <version.slf4j>2.0.17</version.slf4j>
-        <version.snakeyaml>1.33</version.snakeyaml>
-        <version.spring.boot>2.7.1</version.spring.boot>
+        <version.snakeyaml>2.4</version.snakeyaml>
+        <version.spring.boot>3.5.16</version.spring.boot>
     </properties>
     <dependencyManagement>
         <dependencies>
             <!-- Don't sort the import scope dependencies. The first declared version of a dependency in dependencyManagement will prevail. -->
             <?SORTPOM IGNORE?>
-            <!-- snakeyaml >= 1.33 needed for jackson-dataformat-yaml 2.14.X -->
+            <!-- snakeyaml 2.x is required by spring-boot 3 (YamlPropertySourceLoader) -->
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>

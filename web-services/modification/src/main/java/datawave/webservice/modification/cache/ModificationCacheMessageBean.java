@@ -1,28 +1,27 @@
 package datawave.webservice.modification.cache;
 
-import javax.annotation.security.RunAs;
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.ejb.TransactionManagement;
-import javax.ejb.TransactionManagementType;
-import javax.inject.Inject;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.TextMessage;
-
 import org.apache.log4j.Logger;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.modification.MutableMetadataHandler;
 import datawave.modification.configuration.ModificationConfiguration;
 import datawave.modification.configuration.ModificationServiceConfiguration;
+import jakarta.annotation.security.RunAs;
+import jakarta.ejb.ActivationConfigProperty;
+import jakarta.ejb.MessageDriven;
+import jakarta.ejb.TransactionAttribute;
+import jakarta.ejb.TransactionAttributeType;
+import jakarta.ejb.TransactionManagement;
+import jakarta.ejb.TransactionManagementType;
+import jakarta.inject.Inject;
+import jakarta.jms.JMSException;
+import jakarta.jms.Message;
+import jakarta.jms.MessageListener;
+import jakarta.jms.TextMessage;
 
 @RunAs("InternalUser")
 @MessageDriven(name = "ModificationCacheMessageBean",
-                activationConfig = {@ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
+                activationConfig = {@ActivationConfigProperty(propertyName = "destinationType", propertyValue = "jakarta.jms.Topic"),
                         @ActivationConfigProperty(propertyName = "destination", propertyValue = "topic/AccumuloTableCache"),
                         @ActivationConfigProperty(propertyName = "useLocalTx", propertyValue = "true"),
                         @ActivationConfigProperty(propertyName = "subscriptionDurability", propertyValue = "Durable"),

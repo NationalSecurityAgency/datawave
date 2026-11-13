@@ -99,7 +99,7 @@ public class TestHelper {
 
     public static <T extends HttpStatusCodeException> void assertHttpException(Class<T> exceptionClass, int statusCode, Executable executable) {
         HttpStatusCodeException thrown = assertThrows(exceptionClass, executable);
-        assertThat("Unexpected HTTP status code", thrown.getRawStatusCode(), equalTo(statusCode));
+        assertThat("Unexpected HTTP status code", thrown.getStatusCode().value(), equalTo(statusCode));
     }
 
     public static <T extends Throwable> void assertExceptionMessage(Class<T> exceptionClass, String message, Executable executable) {

@@ -38,6 +38,7 @@ import com.rabbitmq.http.client.domain.ExchangeInfo;
 import com.rabbitmq.http.client.domain.NodeInfo;
 import com.rabbitmq.http.client.domain.QueueInfo;
 
+import datawave.common.test.utils.rabbit.RestTemplateHttpLayer;
 import datawave.microservice.audit.health.rabbit.config.RabbitHealthProperties;
 
 @ExtendWith(SpringExtension.class)
@@ -48,7 +49,7 @@ public class RabbitHealthCheckerTest {
 
     private static final String NODES_URL = "http://localhost:15672/api/nodes/";
     private static final String EXCHANGES_URL = "http://localhost:15672/api/exchanges/";
-    private static final String QUEUES_URL = "http://localhost:15672/api/queues/";
+    private static final String QUEUES_URL = "http://localhost:15672/api/queues";
     private static final String BINDINGS_URL = "http://localhost:15672/api/bindings/";
 
     private static final String QUEUE_URL = "http://localhost:15672/api/queues/%2F/";
@@ -66,8 +67,10 @@ public class RabbitHealthCheckerTest {
     @BeforeEach
     public void beforeTest() {
         healthChecker = new RabbitHealthChecker(rabbitHealthProperties, "localhost", "guest", "guest");
-        RestTemplate restTemplate = (RestTemplate) new DirectFieldAccessor(new DirectFieldAccessor(healthChecker).getPropertyValue("rabbitClient"))
-                        .getPropertyValue("rt");
+        // the 5.x management client uses the JDK HttpClient; route it through a RestTemplate so MockRestServiceServer can intercept
+        RestTemplate restTemplate = new RestTemplate();
+        new DirectFieldAccessor(new DirectFieldAccessor(healthChecker).getPropertyValue("rabbitClient")).setPropertyValue("httpLayer",
+                        new RestTemplateHttpLayer(restTemplate));
         assertNotNull(restTemplate);
         mockServer = MockRestServiceServer.createServer(restTemplate);
     }

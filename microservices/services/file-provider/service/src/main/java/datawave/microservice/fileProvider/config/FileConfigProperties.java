@@ -2,12 +2,12 @@ package datawave.microservice.fileProvider.config;
 
 import java.util.List;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 
 @Validated
 @Configuration
@@ -54,7 +54,7 @@ public class FileConfigProperties {
             return download;
         }
 
-        public void setDownload(DownloadConfig download) {
+        public void setDownload(@Valid DownloadConfig download) {
             this.download = download;
         }
     }

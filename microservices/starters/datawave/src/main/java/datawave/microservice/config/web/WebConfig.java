@@ -2,8 +2,6 @@ package datawave.microservice.config.web;
 
 import java.util.List;
 
-import javax.servlet.DispatcherType;
-
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -23,7 +21,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
 
 import datawave.microservice.config.web.DatawaveServerProperties.Cors;
 import datawave.microservice.config.web.filter.ResponseHeaderServletFilter;
@@ -34,6 +32,7 @@ import datawave.microservice.http.converter.html.VoidResponseHttpMessageConverte
 import datawave.microservice.http.converter.protostuff.ProtostuffHttpMessageConverter;
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.result.VoidResponse;
+import jakarta.servlet.DispatcherType;
 
 /**
  * Web configuration for Datawave microservices. TODO: We have only setup configuration here for a servlet-based web application. Additional work needs to be
@@ -43,22 +42,22 @@ import datawave.webservice.result.VoidResponse;
 @EnableConfigurationProperties(DatawaveServerProperties.class)
 public class WebConfig {
     /**
-     * Creates a {@link JaxbAnnotationModule} bean, which will be added automatically to any {@link ObjectMapper} created by Spring. The
-     * {@link JaxbAnnotationModule} causes Jackson to honor JAX-B annotations on object when producing JSON. This default behavior can be disabled by setting
-     * the property {@code spring.jackson.module.jaxb-annotation-module} to {@code false}.
+     * Creates a {@link JakartaXmlBindAnnotationModule} bean, which will be added automatically to any {@link ObjectMapper} created by Spring. The
+     * {@link JakartaXmlBindAnnotationModule} causes Jackson to honor JAX-B annotations on object when producing JSON. This default behavior can be disabled by
+     * setting the property {@code spring.jackson.module.jaxb-annotation-module} to {@code false}.
      *
-     * @return a new {@link JaxbAnnotationModule}
+     * @return a new {@link JakartaXmlBindAnnotationModule}
      */
     @Bean
     @ConditionalOnProperty(name = "spring.jackson.module.jaxb-annotation-module", havingValue = "true", matchIfMissing = true)
-    public JaxbAnnotationModule jaxbAnnotationModule() {
-        return new JaxbAnnotationModule();
+    public JakartaXmlBindAnnotationModule jaxbAnnotationModule() {
+        return new JakartaXmlBindAnnotationModule();
     }
 
     /**
      * Enables by default the Jackson object mapper feature {@link MapperFeature#USE_WRAPPER_NAME_AS_PROPERTY_NAME}. For annotated objects that use
-     * {@link javax.xml.bind.annotation.XmlElementWrapper}, this will use the specified name as the JSON property name rather than the value of
-     * {@link javax.xml.bind.annotation.XmlElement}. Disable by setting the property {@code spring.jackson.mapper.use-wrapper-name-as-property-name} to
+     * {@link jakarta.xml.bind.annotation.XmlElementWrapper}, this will use the specified name as the JSON property name rather than the value of
+     * {@link jakarta.xml.bind.annotation.XmlElement}. Disable by setting the property {@code spring.jackson.mapper.use-wrapper-name-as-property-name} to
      * {@code false}.
      *
      * @return a {@link Jackson2ObjectMapperBuilderCustomizer} that enables the {@link MapperFeature#USE_WRAPPER_NAME_AS_PROPERTY_NAME} Jackson object mapper

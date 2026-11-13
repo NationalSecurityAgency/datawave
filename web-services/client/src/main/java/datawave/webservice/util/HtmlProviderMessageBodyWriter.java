@@ -3,17 +3,16 @@ package datawave.webservice.util;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
-import javax.ws.rs.core.MediaType;
-
 import datawave.webservice.HtmlProvider;
+import jakarta.ws.rs.core.MediaType;
 
 public class HtmlProviderMessageBodyWriter extends AbstractHtmlProviderMessageBodyWriter<HtmlProvider> {
 
     /*
      * (non-Javadoc)
      *
-     * @see javax.ws.rs.ext.MessageBodyWriter#isWriteable(java.lang.Class, java.lang.reflect.Type, java.lang.annotation.Annotation[],
-     * javax.ws.rs.core.MediaType)
+     * @see jakarta.ws.rs.ext.MessageBodyWriter#isWriteable(java.lang.Class, java.lang.reflect.Type, java.lang.annotation.Annotation[],
+     * jakarta.ws.rs.core.MediaType)
      */
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {

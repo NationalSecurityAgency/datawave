@@ -3,10 +3,10 @@ package datawave.microservice.validator;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-
 import org.apache.commons.beanutils.BeanUtils;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 
 /**
  * Implementation of {@link NotBlankIfFieldEquals} validator.

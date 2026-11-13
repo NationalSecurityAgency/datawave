@@ -267,6 +267,118 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-expression</artifactId>
         </dependency>
+        <!--
+            Not bundled: this only orders the build. The unpack-configuration execution unpacks this module's
+            ${build.env} jar, and without a declared dependency a parallel or -pl build resolves that jar from the
+            local repository instead of the reactor, so the server can end up with a stale configuration.
+        -->
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-deploy-configuration</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+            <scope>provided</scope>
+        </dependency>
+        <!--
+            WildFly provides the Jakarta EE APIs, RESTEasy, the JAXB runtime and jboss-logging as modules. Declaring them
+            provided here keeps them, and what they drag in (e.g. jaxb-xjc, xsom and codemodel from resteasy-jaxb-provider),
+            out of the EAR's lib directory, where they would only shadow or duplicate the server's copies.
+        -->
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ejb</groupId>
+            <artifactId>jakarta.ejb-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.lang-model</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.interceptor</groupId>
+            <artifactId>jakarta.interceptor-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.mail</groupId>
+            <artifactId>jakarta.mail-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-activation</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-core-spi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxb-provider</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
@@ -279,6 +391,7 @@
             <plugin>
                 <artifactId>maven-ear-plugin</artifactId>
                 <configuration>
+                    <version>10</version>
                     <defaultLibBundleDir>lib/</defaultLibBundleDir>
                     <skinnyWars>true</skinnyWars>
                     <classifier>${build.env}</classifier>
@@ -671,25 +784,6 @@
                                 </configuration>
                             </execution>
 
-                            <!-- Copy resources for JBOSS module com.fasterxml.jackson.module.jackson-module-jaxb-annotations -->
-                            <execution>
-                                <id>copy-com-fasterxml-jackson-module-jackson-module-jaxb-annotations</id>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <phase>process-resources</phase>
-                                <configuration>
-                                    <outputDirectory>${base.wildfly.modules.dir}/com/fasterxml/jackson/module/jackson-module-jaxb-annotations/main</outputDirectory>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>com.fasterxml.jackson.module</groupId>
-                                            <artifactId>jackson-module-jaxb-annotations</artifactId>
-                                            <version>${version.jackson}</version>
-                                        </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-
                             <!-- Copy resources for JBOSS module datawave.commons.datawave-commons-security. -->
                             <execution>
                                 <id>copy-datawave-commons-security</id>
@@ -850,9 +944,8 @@
                                     <outputDirectory>${project.build.directory}/wildfly/overlay/tools/mapreduce/lib</outputDirectory>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>javax.inject</groupId>
-                                            <artifactId>javax.inject</artifactId>
-                                            <version>1</version>
+                                            <groupId>jakarta.inject</groupId>
+                                            <artifactId>jakarta.inject-api</artifactId>
                                         </artifactItem>
                                         <dependency>
                                             <groupId>jakarta.enterprise</groupId>
@@ -867,36 +960,36 @@
                                             <artifactId>resteasy-core-spi</artifactId>
                                         </dependency>
                                         <artifactItem>
-                                            <groupId>org.jboss.spec.javax.annotation</groupId>
-                                            <artifactId>jboss-annotations-api_1.3_spec</artifactId>
+                                            <groupId>jakarta.annotation</groupId>
+                                            <artifactId>jakarta.annotation-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.jboss.spec.javax.ejb</groupId>
-                                            <artifactId>jboss-ejb-api_3.2_spec</artifactId>
+                                            <groupId>jakarta.ejb</groupId>
+                                            <artifactId>jakarta.ejb-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.jboss.spec.javax.enterprise.concurrent</groupId>
-                                            <artifactId>jboss-concurrency-api_1.0_spec</artifactId>
+                                            <groupId>jakarta.enterprise.concurrent</groupId>
+                                            <artifactId>jakarta.enterprise.concurrent-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.jboss.spec.javax.interceptor</groupId>
-                                            <artifactId>jboss-interceptors-api_1.2_spec</artifactId>
+                                            <groupId>jakarta.interceptor</groupId>
+                                            <artifactId>jakarta.interceptor-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.jboss.spec.javax.jms</groupId>
-                                            <artifactId>jboss-jms-api_2.0_spec</artifactId>
+                                            <groupId>jakarta.jms</groupId>
+                                            <artifactId>jakarta.jms-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.jboss.spec.javax.security.jacc</groupId>
-                                            <artifactId>jboss-jacc-api_1.5_spec</artifactId>
+                                            <groupId>jakarta.authorization</groupId>
+                                            <artifactId>jakarta.authorization-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.jboss.spec.javax.servlet</groupId>
-                                            <artifactId>jboss-servlet-api_4.0_spec</artifactId>
+                                            <groupId>jakarta.servlet</groupId>
+                                            <artifactId>jakarta.servlet-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.jboss.spec.javax.transaction</groupId>
-                                            <artifactId>jboss-transaction-api_1.3_spec</artifactId>
+                                            <groupId>jakarta.transaction</groupId>
+                                            <artifactId>jakarta.transaction-api</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>xerces</groupId>

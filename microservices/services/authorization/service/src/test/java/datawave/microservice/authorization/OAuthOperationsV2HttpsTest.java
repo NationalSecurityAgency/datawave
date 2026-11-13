@@ -2,10 +2,14 @@ package datawave.microservice.authorization;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.client5.http.ssl.HostnameVerificationPolicy;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -102,15 +106,20 @@ public class OAuthOperationsV2HttpsTest extends OAuthOperationsV2TestCommon {
         }
 
         protected HttpClientBuilder customizeHttpClient(HttpClientBuilder httpClientBuilder, SSLContext sslContext) {
+            ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create();
             if (sslContext != null) {
-                httpClientBuilder.setSSLContext(sslContext);
+                tlsStrategyBuilder.setSslContext(sslContext);
             }
-            httpClientBuilder.setMaxConnTotal(maxConnectionsTotal);
-            httpClientBuilder.setMaxConnPerRoute(maxConnectionsPerRoute);
-            httpClientBuilder.disableRedirectHandling();
             // TODO: We're allowing all hosts, since the cert presented by the service we're calling likely won't match its hostname (e.g., a docker host name)
             // Instead, we could list the expected cert as a property (or use our server cert), and verify that the presented name matches.
-            return httpClientBuilder.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+            // CLIENT: use only our verifier; httpclient 5.4+ otherwise also runs the JDK's built-in hostname check
+            tlsStrategyBuilder.setHostnameVerifier(NoopHostnameVerifier.INSTANCE).setHostVerificationPolicy(HostnameVerificationPolicy.CLIENT);
+            // httpclient5 configures TLS and connection limits on the connection manager rather than the client builder
+            PoolingHttpClientConnectionManager connectionManager = PoolingHttpClientConnectionManagerBuilder.create()
+                            .setTlsSocketStrategy(tlsStrategyBuilder.buildClassic()).setMaxConnTotal(maxConnectionsTotal)
+                            .setMaxConnPerRoute(maxConnectionsPerRoute).build();
+            httpClientBuilder.disableRedirectHandling();
+            return httpClientBuilder.setConnectionManager(connectionManager);
         }
     }
 }

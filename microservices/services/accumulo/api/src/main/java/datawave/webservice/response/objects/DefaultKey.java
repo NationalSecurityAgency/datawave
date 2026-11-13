@@ -2,16 +2,15 @@ package datawave.webservice.response.objects;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-
 import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.codec.binary.Base64;
 
 import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.Markings;
 import datawave.webservice.query.util.TypedValue;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultKey extends KeyBase {

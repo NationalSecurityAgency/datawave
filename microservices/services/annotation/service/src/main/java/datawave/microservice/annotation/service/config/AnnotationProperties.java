@@ -3,14 +3,13 @@ package datawave.microservice.annotation.service.config;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.Valid;
-import javax.validation.constraints.PositiveOrZero;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -44,6 +43,7 @@ public class AnnotationProperties {
      */
     private String shardTableName = "shard";
 
+    @Valid
     private AccumuloConnectionFactory.Priority priority;
 
     private boolean annotationAckEnabled = true;

@@ -12,7 +12,6 @@ import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.springframework.beans.factory.annotation.Required;
 
 import datawave.audit.SelectorExtractor;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -301,8 +300,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
 
     @Override
-    @Required
-    // enforces that the unit tests will fail and the application will not deploy unless this property is set
     public void setAuditType(AuditType auditType) {
         this.auditType = auditType;
     }

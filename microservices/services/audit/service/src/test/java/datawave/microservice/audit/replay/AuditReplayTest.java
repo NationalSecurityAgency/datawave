@@ -151,7 +151,7 @@ public class AuditReplayTest {
 
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         HttpClientErrorException thrown = assertThrows(HttpClientErrorException.class, () -> jwtRestTemplate.exchange(requestEntity, String.class));
-        assertEquals(403, thrown.getRawStatusCode());
+        assertEquals(403, thrown.getStatusCode().value());
     }
 
     // Test create (0 msgs/sec), status, stop, status, update, status, resume, verify status, delete, verify file names, verify messageCollector

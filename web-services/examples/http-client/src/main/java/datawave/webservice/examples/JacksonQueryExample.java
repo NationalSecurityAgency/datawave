@@ -30,7 +30,7 @@ import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationIntrospector;
 
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.result.BaseQueryResponse;
@@ -83,7 +83,7 @@ public class JacksonQueryExample {
 
         // Tell Jackson that it should honor JAX-B annotations when de-serializing the JSON response.
         ObjectMapper mapper = new ObjectMapper();
-        AnnotationIntrospector introspector = new JaxbAnnotationIntrospector(mapper.getTypeFactory());
+        AnnotationIntrospector introspector = new JakartaXmlBindAnnotationIntrospector(mapper.getTypeFactory());
         mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
         mapper.setAnnotationIntrospector(introspector);
 

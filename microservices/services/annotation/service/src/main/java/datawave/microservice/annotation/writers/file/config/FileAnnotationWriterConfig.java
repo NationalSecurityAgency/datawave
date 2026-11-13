@@ -2,8 +2,6 @@ package datawave.microservice.annotation.writers.file.config;
 
 import java.util.List;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -14,6 +12,7 @@ import datawave.microservice.annotation.config.AnnotationRole;
 import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.writers.AnnotationWriter;
 import datawave.microservice.annotation.writers.file.FileAnnotationWriter;
+import jakarta.validation.Valid;
 
 /**
  * Configures an FileAnnotationWriter to process messages received by the annotation service in the case that our messaging infrastructure has failed. This

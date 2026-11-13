@@ -1,9 +1,8 @@
 package datawave.webservice.common.exception;
 
-import javax.ejb.ApplicationException;
-import javax.ws.rs.core.Response;
-
 import datawave.webservice.result.BaseResponse;
+import jakarta.ejb.ApplicationException;
+import jakarta.ws.rs.core.Response;
 
 @ApplicationException(rollback = true)
 public class QueryCanceledException extends DatawaveWebApplicationException {

@@ -45,9 +45,10 @@
         <version.commons-lang3>3.20.0</version.commons-lang3>
         <version.commons-net>3.9.0</version.commons-net>
         <version.dnsjava>3.6.3</version.dnsjava>
+        <version.dropwizard-metrics>4.1.2</version.dropwizard-metrics>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
-        <version.jms>1.1</version.jms>
+        <version.jms>3.1.0</version.jms>
         <version.mrunit>1.0.0</version.mrunit>
         <version.protobuf>3.16.3</version.protobuf>
     </properties>
@@ -132,6 +133,17 @@
                 <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>datawave-core-annotation</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-core</artifactId>
+                <version>${version.dropwizard-metrics}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.protostuff</groupId>
@@ -499,7 +511,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${version.jackson}</version>
+                <version>${version.jackson-annotations}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -522,7 +534,7 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
                 <version>${version.jackson}</version>
                 <scope>provided</scope>
             </dependency>
@@ -558,8 +570,8 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>javax.jms</groupId>
-                <artifactId>jms</artifactId>
+                <groupId>jakarta.jms</groupId>
+                <artifactId>jakarta.jms-api</artifactId>
                 <version>${version.jms}</version>
                 <scope>provided</scope>
                 <exclusions>
@@ -612,7 +624,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-ejb-plugin</artifactId>
-                    <version>2.5.1</version>
+                    <version>3.2.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

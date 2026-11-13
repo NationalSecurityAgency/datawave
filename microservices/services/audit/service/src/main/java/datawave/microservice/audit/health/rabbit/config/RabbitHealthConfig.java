@@ -6,8 +6,6 @@ import java.util.GregorianCalendar;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import javax.annotation.Resource;
-
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,6 +19,7 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
 import datawave.microservice.audit.health.HealthChecker;
 import datawave.microservice.audit.health.rabbit.RabbitHealthChecker;
+import jakarta.annotation.Resource;
 
 /**
  * Configuration for the RabbitMQ Health Checker. This configuration is activated via the 'audit.health.rabbit.enabled' property.
@@ -61,7 +60,7 @@ public class RabbitHealthConfig implements SchedulingConfigurer {
             Date lastActualExecutionTime = triggerContext.lastActualExecutionTime();
             nextExecutionTime.setTime(lastActualExecutionTime != null ? lastActualExecutionTime : new Date());
             nextExecutionTime.add(Calendar.MILLISECOND, Math.toIntExact(healthChecker().pollIntervalMillis()));
-            return nextExecutionTime.getTime();
+            return nextExecutionTime.toInstant();
         };
     }
 

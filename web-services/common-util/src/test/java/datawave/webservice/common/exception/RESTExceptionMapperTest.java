@@ -4,12 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.UndeclaredThrowableException;
 
-import javax.ejb.EJBAccessException;
-import javax.ejb.EJBException;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +12,11 @@ import com.google.common.net.HttpHeaders;
 
 import datawave.Constants;
 import datawave.webservice.query.exception.QueryException;
+import jakarta.ejb.EJBAccessException;
+import jakarta.ejb.EJBException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 public class RESTExceptionMapperTest {
 

@@ -4,10 +4,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.List;
 
-import javax.ws.rs.core.MediaType;
-
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.util.AbstractHtmlProviderMessageBodyWriter;
+import jakarta.ws.rs.core.MediaType;
 
 public class VoidResponseHtmlMessageBodyWriter extends AbstractHtmlProviderMessageBodyWriter<VoidResponse> {
     @Override

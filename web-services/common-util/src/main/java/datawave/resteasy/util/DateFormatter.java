@@ -5,8 +5,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import javax.ws.rs.ext.ParamConverter;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
@@ -14,6 +12,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Preconditions;
 
 import datawave.annotation.DateFormat;
+import jakarta.ws.rs.ext.ParamConverter;
 
 @ParamConverter.Lazy
 // Do conversion of default values when needed, not once at deploy time

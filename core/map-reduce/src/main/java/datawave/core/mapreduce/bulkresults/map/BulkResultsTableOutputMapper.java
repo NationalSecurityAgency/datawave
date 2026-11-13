@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.xml.bind.JAXBException;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -23,6 +21,7 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.mapreduce.bulkresults.map.SerializationFormat;
 import datawave.microservice.query.Query;
 import datawave.webservice.result.BaseQueryResponse;
+import jakarta.xml.bind.JAXBException;
 
 public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<Key,Value,Text,Mutation> {
 
@@ -59,8 +58,8 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
 
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(logicName);
         t = logic.getEnrichedTransformer(query);
-        Assert.notNull(logic.getMarkingFunctions());
-        Assert.notNull(logic.getResponseObjectFactory());
+        Assert.notNull(logic.getMarkingFunctions(), "Query logic has no marking functions");
+        Assert.notNull(logic.getResponseObjectFactory(), "Query logic has no response object factory");
         this.tableName = new Text(context.getConfiguration().get(TABLE_NAME));
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(BulkResultsFileOutputMapper.RESULT_SERIALIZATION_FORMAT));
 

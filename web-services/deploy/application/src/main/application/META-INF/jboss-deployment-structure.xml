@@ -22,7 +22,7 @@
             <!-- Import the services so that the service loader is able to see the bundled serializers/deserializers. -->
             <module name="io.jsonwebtoken.jjwt-impl" export="true" services="import"/>
             <module name="com.fasterxml.jackson.datatype.jackson-datatype-guava" export="true"/>
-            <module name="com.fasterxml.jackson.module.jackson-module-jaxb-annotations" export="true"/>
+            <module name="com.fasterxml.jackson.jakarta.jackson-jakarta-json-provider" export="true"/>
             <module name="org.wildfly.security.elytron" export="true"/>
             <module name="org.wildfly.extension.elytron" export="true"/>
         </dependencies>

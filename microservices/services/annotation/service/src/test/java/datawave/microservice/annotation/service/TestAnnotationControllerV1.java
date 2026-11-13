@@ -202,7 +202,7 @@ public class TestAnnotationControllerV1 {
                             org.springframework.amqp.support.AmqpHeaders.PUBLISH_CONFIRM_CORRELATION,
                             org.springframework.amqp.rabbit.connection.CorrelationData.class);
             assertNotNull(correlation);
-            correlation.getFuture().set(new org.springframework.amqp.rabbit.connection.CorrelationData.Confirm(true, null));
+            correlation.getFuture().complete(new org.springframework.amqp.rabbit.connection.CorrelationData.Confirm(true, null));
             return true;
         });
     }

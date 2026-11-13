@@ -2,9 +2,8 @@ package datawave.microservice.authorization.preauth;
 
 import java.util.Collection;
 
-import javax.servlet.http.HttpServletRequest;
-
 import datawave.security.authorization.SubjectIssuerDNPair;
+import jakarta.servlet.http.HttpServletRequest;
 
 public class AuthorizationProxiedEntityPreauthPrincipal extends ProxiedEntityPreauthPrincipal {
 

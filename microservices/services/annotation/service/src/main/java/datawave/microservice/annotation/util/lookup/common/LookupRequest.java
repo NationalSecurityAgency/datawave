@@ -9,20 +9,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.cookie.BasicCookieStore;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.protocol.BasicHttpContext;
+import org.apache.hc.core5.http.protocol.HttpContext;
+import org.apache.hc.core5.net.URIAuthority;
+import org.apache.hc.core5.net.URIBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +45,9 @@ import datawave.microservice.annotation.util.exceptions.ResourceNotFoundExceptio
 import datawave.microservice.annotation.util.exceptions.ServiceUnavailableException;
 import datawave.microservice.annotation.util.lookup.config.LookupProperties;
 import datawave.webservice.result.BaseResponse;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -76,7 +77,7 @@ public class LookupRequest {
         HttpContext context = getHttpContext();
 
         try (CloseableHttpResponse response = httpClient.execute(lookupQuery, context)) {
-            int responseCode = response.getStatusLine().getStatusCode();
+            int responseCode = response.getCode();
 
             ParsedResponse parsedResponse = new ParsedResponse();
             parsedResponse.setResponse(processResponse(response));
@@ -94,9 +95,13 @@ public class LookupRequest {
         String rawResponse = null;
         HttpEntity entity = response.getEntity();
         if (entity != null) {
-            rawResponse = EntityUtils.toString(entity, StandardCharsets.UTF_8);
+            try {
+                rawResponse = EntityUtils.toString(entity, StandardCharsets.UTF_8);
+            } catch (ParseException e) {
+                throw new IOException("Unable to parse lookup response", e);
+            }
         }
-        validateResponse(response.getStatusLine().getStatusCode(), rawResponse);
+        validateResponse(response.getCode(), rawResponse);
         return rawResponse;
     }
 
@@ -178,7 +183,8 @@ public class LookupRequest {
             // @formatter:off
             URIBuilder builder = new URIBuilder()
                     .setScheme(PROTOCOL)
-                    .setHost(lookupProperties.getDatawaveQueryHost())
+                    // the configured host may include a port; httpcore5's setHost would percent-encode the ':'
+                    .setAuthority(URIAuthority.create(lookupProperties.getDatawaveQueryHost()))
                     .setPath(uri + lookupPath)
                     .setParameter(PARAM_KEY, queryParams);
             // @formatter:on

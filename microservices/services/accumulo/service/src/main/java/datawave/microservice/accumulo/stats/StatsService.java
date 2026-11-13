@@ -3,9 +3,6 @@ package datawave.microservice.accumulo.stats;
 import java.io.StringReader;
 import java.lang.annotation.Annotation;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.UnmarshallerHandler;
-import javax.xml.bind.annotation.XmlSchema;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -29,6 +26,9 @@ import org.xml.sax.helpers.XMLFilterImpl;
 import datawave.microservice.accumulo.stats.config.StatsProperties;
 import datawave.microservice.accumulo.stats.util.AccumuloMonitorLocator;
 import datawave.webservice.response.StatsResponse;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.UnmarshallerHandler;
+import jakarta.xml.bind.annotation.XmlSchema;
 
 /**
  * This service implements Accumulo stats retrieval by using a {@link RestTemplate} client to fetch the Accumulo monitor's XML response, which is ultimately
@@ -120,8 +120,9 @@ public class StatsService implements InitializingBean {
                 nsFilter.parse(new InputSource(new StringReader(monitorResponse.getBody())));
                 response = (StatsResponse) umHandler.getResult();
             } else {
-                String errorMessage = String.format("Monitor request failed. Http Status: (%s, %s)", monitorResponse.getStatusCodeValue(),
-                                monitorResponse.getStatusCode().getReasonPhrase());
+                HttpStatus status = HttpStatus.resolve(monitorResponse.getStatusCode().value());
+                String errorMessage = String.format("Monitor request failed. Http Status: (%s, %s)", monitorResponse.getStatusCode().value(),
+                                status != null ? status.getReasonPhrase() : "");
                 log.error(errorMessage);
                 response.addException(new RuntimeException(errorMessage));
 

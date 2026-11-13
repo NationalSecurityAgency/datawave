@@ -39,8 +39,8 @@ public class AuthorizationTestUtils {
             restTemplate.exchange(requestEntity, String.class);
             fail("Non-admin request to " + uri + " shouldn't have been allowed.");
         } catch (HttpClientErrorException e) {
-            assertEquals(403, e.getRawStatusCode());
-            assertEquals("403 Forbidden: \"<html><head><title>Error</title></head><body>Forbidden</body></html>\"", e.getMessage());
+            assertEquals(403, e.getStatusCode().value());
+            assertEquals("<html><head><title>Error</title></head><body>Forbidden</body></html>", e.getResponseBodyAsString());
         }
     }
 
@@ -64,7 +64,7 @@ public class AuthorizationTestUtils {
             restTemplate.exchange(requestEntity, String.class);
             fail("Non-allowed-caller request to " + uri + " shouldn't have been allowed.");
         } catch (HttpClientErrorException e) {
-            assertEquals(403, e.getRawStatusCode());
+            assertEquals(403, e.getStatusCode().value());
             assertTrue(e.getMessage().startsWith("403 Forbidden"));
         }
     }

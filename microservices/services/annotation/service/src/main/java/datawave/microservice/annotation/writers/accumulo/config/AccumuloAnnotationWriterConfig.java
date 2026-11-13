@@ -2,8 +2,6 @@ package datawave.microservice.annotation.writers.accumulo.config;
 
 import static datawave.microservice.annotation.config.AnnotationRoleConstants.ACCUMULO_WRITER_ENABLED;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -19,6 +17,7 @@ import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.writers.AnnotationWriter;
 import datawave.microservice.annotation.writers.accumulo.AccumuloAnnotationWriter;
 import datawave.microservice.annotation.writers.accumulo.health.AccumuloHealthChecker;
+import jakarta.validation.Valid;
 
 /**
  * Configures the AccumuloAnnotationWriter to process messages received by the annotation service. This configuration is activated via the

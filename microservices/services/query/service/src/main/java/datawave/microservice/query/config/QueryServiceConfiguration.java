@@ -22,7 +22,7 @@ public class QueryServiceConfiguration {
 
     @Bean
     public WebSecurityCustomizer ignorePoolHealthEndpoint() {
-        return (web) -> web.ignoring().antMatchers("/v1/pool/{poolName}/health");
+        return (web) -> web.ignoring().requestMatchers("/v1/pool/{poolName}/health");
     }
 
     @Bean

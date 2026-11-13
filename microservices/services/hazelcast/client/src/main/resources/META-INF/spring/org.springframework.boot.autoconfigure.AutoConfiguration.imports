@@ -1,0 +1,3 @@
+datawave.microservice.cached.HazelcastDefaultClientAutoConfiguration
+datawave.microservice.cached.HazelcastDiscoveryClientAutoConfiguration
+datawave.microservice.cached.HazelcastK8sClientAutoConfiguration

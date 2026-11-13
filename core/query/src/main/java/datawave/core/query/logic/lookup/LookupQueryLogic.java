@@ -11,7 +11,6 @@ import java.util.function.Consumer;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.util.MultiValueMap;
 
 import datawave.audit.SelectorExtractor;
@@ -199,7 +198,6 @@ public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> implements C
     }
 
     @Override
-    @Required
     public void setAuditType(Auditor.AuditType auditType) {
         delegateQueryLogic.setAuditType(auditType);
     }

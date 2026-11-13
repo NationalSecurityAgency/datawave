@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
 
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserService;
@@ -74,7 +74,7 @@ public class DatawaveUserProvider {
                         .enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME)
                         .build()
                         .registerModules(new GuavaModule())
-                        .registerModules(new JaxbAnnotationModule());
+                        .registerModules(new JakartaXmlBindAnnotationModule());
                 // @formatter:on
                 String alias = sslStores.getKeyStore().aliases().nextElement();
                 X509KeyManager keyManager = (X509KeyManager) sslStores.getKeyManagers()[0];

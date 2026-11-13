@@ -14,8 +14,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-import javax.xml.bind.JAXBContext;
-
 import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import datawave.data.type.BaseType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
+import jakarta.xml.bind.JAXBContext;
 
 public class TypedValueTest {
 

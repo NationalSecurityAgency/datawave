@@ -55,7 +55,7 @@ public class AnnotationPublisher {
                             .setHeader(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, correlation)
                             .build())) {
                 // Release concurrent duplicate callers as well as the original sender.
-                correlation.getFuture().set(new CorrelationData.Confirm(false, "Local publication rejected"));
+                correlation.getFuture().complete(new CorrelationData.Confirm(false, "Local publication rejected"));
                 return Optional.empty();
             }
             // @formatter:on
@@ -75,7 +75,7 @@ public class AnnotationPublisher {
             log.warn("Annotation publication {} was not confirmed: {}", messageId, e.toString());
         } catch (RuntimeException e) {
             if (owner) {
-                correlation.getFuture().setException(e);
+                correlation.getFuture().completeExceptionally(e);
             }
             log.warn("Annotation publication {} failed: {}", messageId, e.toString());
         } finally {

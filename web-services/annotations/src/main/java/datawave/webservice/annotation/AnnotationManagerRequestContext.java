@@ -10,8 +10,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
-import javax.ejb.EJBContext;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.slf4j.Logger;
@@ -30,6 +28,7 @@ import datawave.webservice.common.rest.ResponseRewriterContext;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
+import jakarta.ejb.EJBContext;
 
 /**
  * Per-request context for the {@link AnnotationManagerBean}, holding the state and resources needed to process annotation requests. This class also implements

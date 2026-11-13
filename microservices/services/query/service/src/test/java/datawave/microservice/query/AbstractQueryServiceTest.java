@@ -26,8 +26,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.net.URLEncodedUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -494,7 +494,7 @@ public abstract class AbstractQueryServiceTest {
     }
 
     protected BaseResponse assertBaseResponse(boolean hasResults, HttpStatus.Series series, ResponseEntity response) {
-        Assertions.assertEquals(series, response.getStatusCode().series());
+        Assertions.assertEquals(series, HttpStatus.Series.resolve(response.getStatusCode().value()));
         Assertions.assertNotNull(response);
         BaseResponse baseResponse = (BaseResponse) response.getBody();
         Assertions.assertNotNull(baseResponse);
@@ -504,7 +504,7 @@ public abstract class AbstractQueryServiceTest {
 
     @SuppressWarnings("unchecked")
     protected GenericResponse<String> assertGenericResponse(boolean hasResults, HttpStatus.Series series, ResponseEntity<GenericResponse> response) {
-        Assertions.assertEquals(series, response.getStatusCode().series());
+        Assertions.assertEquals(series, HttpStatus.Series.resolve(response.getStatusCode().value()));
         Assertions.assertNotNull(response);
         GenericResponse<String> genericResponse = (GenericResponse<String>) response.getBody();
         Assertions.assertNotNull(genericResponse);

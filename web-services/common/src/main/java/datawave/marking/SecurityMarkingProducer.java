@@ -1,7 +1,7 @@
 package datawave.marking;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 
 /**
  * A CDI producer class whose purposes is to produce an implementation of {@link SecurityMarking}. The default implementation is not in a library that is marked

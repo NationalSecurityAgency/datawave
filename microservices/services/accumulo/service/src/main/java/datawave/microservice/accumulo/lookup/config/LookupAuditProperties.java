@@ -3,13 +3,13 @@ package datawave.microservice.accumulo.lookup.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import datawave.webservice.common.audit.Auditor.AuditType;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Validated
 @ConfigurationProperties(prefix = "accumulo.lookup.audit")
@@ -19,6 +19,7 @@ public class LookupAuditProperties {
      * Default audit type to be assigned to lookup audit records
      */
     @NotNull
+    @Valid
     private AuditType defaultAuditType = AuditType.ACTIVE;
 
     /**
@@ -30,7 +31,7 @@ public class LookupAuditProperties {
         return defaultAuditType;
     }
 
-    public void setDefaultAuditType(AuditType defaultAuditType) {
+    public void setDefaultAuditType(@Valid AuditType defaultAuditType) {
         this.defaultAuditType = defaultAuditType;
     }
 
@@ -55,11 +56,12 @@ public class LookupAuditProperties {
         @NotBlank
         private String colQualRegex = ".*";
         @NotNull
+        @Valid
         private AuditType auditType = null;
 
         private AuditConfiguration() {}
 
-        public AuditConfiguration(String tableRegex, String rowRegex, String colFamRegex, String colQualRegex, AuditType auditType) {
+        public AuditConfiguration(String tableRegex, String rowRegex, String colFamRegex, String colQualRegex, @Valid AuditType auditType) {
 
             this.tableRegex = tableRegex;
             if (rowRegex != null) {
@@ -122,7 +124,7 @@ public class LookupAuditProperties {
             return auditType;
         }
 
-        public void setAuditType(AuditType auditType) {
+        public void setAuditType(@Valid AuditType auditType) {
             this.auditType = auditType;
         }
 

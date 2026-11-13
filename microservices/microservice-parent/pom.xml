@@ -37,6 +37,7 @@
         <failsafe.minMemory>${surefire.minMemory}</failsafe.minMemory>
         <image.prefix>datawave/</image.prefix>
         <java.version>17</java.version>
+        <maven.compiler.parameters>true</maven.compiler.parameters>
         <maven.compiler.release>17</maven.compiler.release>
         <maven.release.arguments>-Ddist</maven.release.arguments>
         <maven.release.profiles>dist</maven.release.profiles>
@@ -61,8 +62,8 @@
         <surefire.reuseForks>false</surefire.reuseForks>
         <version.datawave-commons-security>9.0.0-SNAPSHOT</version.datawave-commons-security>
         <version.hadoop>3.3.4</version.hadoop>
-        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
-        <version.jackson>2.14.3</version.jackson>
+        <!-- keep jackson and snakeyaml in step with spring-boot-dependencies -->
+        <version.jackson>2.21.4</version.jackson>
         <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>

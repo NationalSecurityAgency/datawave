@@ -1,13 +1,12 @@
 package datawave.security.system;
 
-import javax.annotation.security.PermitAll;
-import javax.ejb.Singleton;
-import javax.inject.Inject;
-
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.cache.ElytronCacheManager;
 import datawave.security.cert.SSLStores;
+import jakarta.annotation.security.PermitAll;
+import jakarta.ejb.Singleton;
+import jakarta.inject.Inject;
 
 /**
  * Implementation of {@link SecurityEJBProvider} that will inject EJBs and make them accessible to the datawave elytron module. In order to allow methods on

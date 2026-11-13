@@ -25,7 +25,6 @@ We create several JBOSS modules that will be part of Wildfly upon startup. These
 * [datawave.commons.datawave-commons-security](src/main/wildfly/overlay/modules/datawave/commons/datawave-commons-security)
     * Contains security-related artifacts that are commonly used between the Datawave deployment, the module `datawave.webservice.datawave-security-elytron-module`, and the microservices.
 * [com.fasterxml.jackson.datatype.jackson-datatype-guava](src/main/wildfly/overlay/modules/com/fasterxml/jackson/datatype/jackson-datatype-guava)
-* [com.fasterxml.jackson.module.jackson-module-jaxb-annotations](src/main/wildfly/overlay/modules/com/fasterxml/jackson/module/jackson-module-jaxb-annotations)
 * [com.github.ben-manes.caffeine](src/main/wildfly/overlay/modules/com/github/ben-manes/caffeine)
 * [io.jsonwebtoken.jjwt-api](src/main/wildfly/overlay/modules/io/jsonwebtoken/jjwt-api)
 * [io.jsonwebtoken.jjwt-impl](src/main/wildfly/overlay/modules/io/jsonwebtoken/jjwt-impl)

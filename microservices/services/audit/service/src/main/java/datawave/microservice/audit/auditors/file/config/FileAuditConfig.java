@@ -2,8 +2,6 @@ package datawave.microservice.audit.auditors.file.config;
 
 import java.util.List;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -13,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import datawave.microservice.audit.auditors.file.FileAuditor;
 import datawave.microservice.audit.config.AuditProperties;
 import datawave.webservice.common.audit.Auditor;
+import jakarta.validation.Valid;
 
 /**
  * Configures an FileAuditor to process messages received by the audit service in the case that our messaging infrastructure has failed. This configuration is

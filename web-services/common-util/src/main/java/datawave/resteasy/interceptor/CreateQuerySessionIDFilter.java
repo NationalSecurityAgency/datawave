@@ -3,12 +3,6 @@ package datawave.resteasy.interceptor;
 import java.io.IOException;
 import java.util.UUID;
 
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ContainerResponseFilter;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.ext.Provider;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.core.ResourceMethodInvoker;
@@ -17,6 +11,11 @@ import org.jboss.resteasy.util.HttpHeaderNames;
 
 import datawave.Constants;
 import datawave.annotation.GenerateQuerySessionId;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.ext.Provider;
 
 /**
  * JAX-RS filter to create a {@link Constants#QUERY_COOKIE_NAME} cookie.

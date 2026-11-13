@@ -4,6 +4,7 @@ import static datawave.microservice.query.messaging.AcknowledgementCallback.Stat
 import static datawave.microservice.query.messaging.AcknowledgementCallback.Status.NACK;
 import static datawave.microservice.query.messaging.kafka.KafkaQueryResultsManager.TOPIC_PREFIX;
 
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -154,7 +155,7 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
                     latch.countDown();
                 });
             } catch (JsonProcessingException e) {
-                acknowledgment.nack(0);
+                acknowledgment.nack(Duration.ZERO);
                 if (log.isTraceEnabled()) {
                     log.trace("Query {} Nacking record from topic {} and partition {} at offset {} because the result could not be deserialized", queryId,
                                     data.topic(), data.partition(), data.offset());
@@ -181,21 +182,21 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
                                         data.offset());
                     }
                 } else if (ackStatus.get() == NACK) {
-                    acknowledgment.nack(0);
+                    acknowledgment.nack(Duration.ZERO);
                     if (log.isTraceEnabled()) {
                         log.trace("Query {} Nacking record {} from topic {} and partition {} at offset {} because the record was rejected", queryId, resultId,
                                         data.topic(), data.partition(), data.offset());
                     }
                 }
             } catch (InterruptedException ie) {
-                acknowledgment.nack(0);
+                acknowledgment.nack(Duration.ZERO);
                 if (log.isTraceEnabled()) {
                     log.trace("Query {} Nacking record {} from topic {} and partition {} at offset {} because the latch was interrupted", queryId, resultId,
                                     data.topic(), data.partition(), data.offset());
                 }
             }
         } else {
-            acknowledgment.nack(0);
+            acknowledgment.nack(Duration.ZERO);
             if (log.isTraceEnabled()) {
                 log.trace("Query {} Nacking record from topic {} and partition {} at offset {} because the container was stopped", queryId, data.topic(),
                                 data.partition(), data.offset());

@@ -11,13 +11,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.PositiveOrZero;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @Validated
 @ConfigurationProperties(prefix = "datawave.query")
@@ -44,8 +45,11 @@ public class QueryProperties {
     // Whether or not to wait for an executor create response before returning to the caller
     private boolean awaitExecutorCreateResponse = true;
 
+    @Valid
     private QueryExpirationProperties expiration = new QueryExpirationProperties();
+    @Valid
     private NextCallProperties nextCall = new NextCallProperties();
+    @Valid
     private DefaultParameterProperties defaultParams = new DefaultParameterProperties();
     private String poolOverride = null;
     private String poolHeader = "Pool";
@@ -145,7 +149,7 @@ public class QueryProperties {
         return expiration;
     }
 
-    public void setExpiration(QueryExpirationProperties expiration) {
+    public void setExpiration(@Valid QueryExpirationProperties expiration) {
         this.expiration = expiration;
     }
 
@@ -153,7 +157,7 @@ public class QueryProperties {
         return nextCall;
     }
 
-    public void setNextCall(NextCallProperties nextCall) {
+    public void setNextCall(@Valid NextCallProperties nextCall) {
         this.nextCall = nextCall;
     }
 
@@ -161,7 +165,7 @@ public class QueryProperties {
         return defaultParams;
     }
 
-    public void setDefaultParams(DefaultParameterProperties defaultParams) {
+    public void setDefaultParams(@Valid DefaultParameterProperties defaultParams) {
         this.defaultParams = defaultParams;
     }
 

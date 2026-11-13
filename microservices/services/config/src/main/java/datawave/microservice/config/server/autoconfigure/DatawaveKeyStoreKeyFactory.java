@@ -1,7 +1,7 @@
 package datawave.microservice.config.server.autoconfigure;
 
 import org.springframework.core.io.Resource;
-import org.springframework.security.rsa.crypto.KeyStoreKeyFactory;
+import org.springframework.security.crypto.encrypt.KeyStoreKeyFactory;
 import org.springframework.util.StringUtils;
 
 /**

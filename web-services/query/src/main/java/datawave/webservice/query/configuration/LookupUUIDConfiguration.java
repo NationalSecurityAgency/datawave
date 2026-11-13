@@ -3,13 +3,12 @@ package datawave.webservice.query.configuration;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 import datawave.microservice.query.QueryParameters;
 import datawave.query.data.UUIDType;
 import datawave.webservice.query.util.LookupUUIDConstants;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 /**
  * Configuration bean for lookupUUID web service endpoints

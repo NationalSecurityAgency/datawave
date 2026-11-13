@@ -46,6 +46,8 @@
         <failsafe.maxMemory>${surefire.maxMemory}</failsafe.maxMemory>
         <failsafe.reuseForks>${surefire.reuseForks}</failsafe.reuseForks>
         <image.prefix>datawave/</image.prefix>
+        <!-- Spring 6.1+ resolves SpEL #param names (e.g. @Cacheable keys) only from -parameters metadata -->
+        <maven.compiler.parameters>true</maven.compiler.parameters>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <registry.namespace>nationalsecurityagency/</registry.namespace>
@@ -64,7 +66,7 @@
         <surefire.reuseForks>false</surefire.reuseForks>
         <version.accumulo>2.1.6</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
-        <version.arquillian-weld-embedded>2.1.0.Final</version.arquillian-weld-embedded>
+        <version.arquillian-weld-embedded>4.0.1.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.11.4</version.avro>
         <version.awaitility>4.3.0</version.awaitility>
@@ -96,7 +98,7 @@
         <version.datawave.metrics-reporter>9.0.0-SNAPSHOT</version.datawave.metrics-reporter>
         <version.datawave.query-api>9.0.0-SNAPSHOT</version.datawave.query-api>
         <version.datawave.query-metric-api>9.0.0-SNAPSHOT</version.datawave.query-metric-api>
-        <version.deltaspike>1.9.0</version.deltaspike>
+        <version.deltaspike>2.0.1</version.deltaspike>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
@@ -114,16 +116,13 @@
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>9.0.0-SNAPSHOT</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
-        <version.jackson>2.12.7</version.jackson>
+        <!-- Jackson as shipped by WildFly 39 -->
+        <version.jackson>2.20.1</version.jackson>
+        <!-- jackson-annotations is versioned without the patch number from 2.20 on -->
+        <version.jackson-annotations>2.20</version.jackson-annotations>
         <version.jackson-mapper-asl>1.9.13</version.jackson-mapper-asl>
-        <version.jakarta>2.3.3</version.jakarta>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
-        <version.javax-annotation>1.3.2</version.javax-annotation>
-        <version.javax-validation>2.0.1.Final</version.javax-validation>
-        <version.jaxb-api>2.3.1</version.jaxb-api>
-        <version.jaxb-impl>2.3.3</version.jaxb-impl>
-        <version.jboss-ejb-api>1.0.2.Final</version.jboss-ejb-api>
         <version.jcommander>1.82</version.jcommander>
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
@@ -140,30 +139,27 @@
         <version.log4j>2.26.1</version.log4j>
         <version.lombok>1.18.36</version.lombok>
         <version.lucene>7.5.0</version.lucene>
-        <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.minlog>1.2</version.minlog>
         <version.mockito>4.11.0</version.mockito>
         <version.mysql-connector>9.3.0</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>3.3</version.objenesis>
-        <version.picketbox>5.0.3.Final</version.picketbox>
         <version.proto-google-common-protos>2.61.0</version.proto-google-common-protos>
         <version.protobuf>3.16.3</version.protobuf>
         <version.protobuf-java-util>3.16.3</version.protobuf-java-util>
         <version.protostuff>1.7.4</version.protostuff>
+        <version.rabbitmq-http-client>5.7.0</version.rabbitmq-http-client>
         <version.saxon-he>12.4</version.saxon-he>
         <version.slf4j>2.0.17</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
-        <version.spring>5.3.39</version.spring>
-        <version.spring-security>5.8.16</version.spring-security>
+        <version.spring>6.2.19</version.spring>
+        <version.spring-security>6.5.11</version.spring-security>
         <version.springframework>${version.spring}</version.springframework>
         <version.stream>2.9.6</version.stream>
         <version.thrift>0.17.0</version.thrift>
-        <version.weld>3.1.9.Final</version.weld>
-        <version.weld-se>3.1.9.Final</version.weld-se>
-        <!-- Different version of weld for tests since the Arquillian embedded EE container needs an older version. -->
-        <version.weld-test>2.3.5.Final</version.weld-test>
-        <version.wildfly>26.1.3.Final</version.wildfly>
+        <version.weld>5.1.6.Final</version.weld>
+        <version.weld-se>5.1.6.Final</version.weld-se>
+        <version.wildfly>39.0.1.Final</version.wildfly>
         <version.woodstox-core>5.4.0</version.woodstox-core>
         <version.woodstox-stax2>4.2.2</version.woodstox-stax2>
         <version.xerces>2.12.2</version.xerces>
@@ -194,8 +190,15 @@
                 <version>${version.spring-security}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${version.jackson}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>wildfly-jakartaee8-with-tools</artifactId>
+                <artifactId>wildfly-ee-with-tools</artifactId>
                 <version>${version.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -215,31 +218,6 @@
                 <groupId>com.esotericsoftware.minlog</groupId>
                 <artifactId>minlog</artifactId>
                 <version>${version.minlog}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-guava</artifactId>
-                <version>${version.jackson}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jaxb-annotations</artifactId>
-                <version>${version.jackson}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
@@ -297,6 +275,11 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${version.mysql-connector}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rabbitmq</groupId>
+                <artifactId>http-client</artifactId>
+                <version>${version.rabbitmq-http-client}</version>
             </dependency>
             <dependency>
                 <groupId>com.spotify</groupId>
@@ -695,9 +678,10 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>io.astefanutti.metrics.cdi</groupId>
-                <artifactId>metrics-cdi</artifactId>
-                <version>${version.metrics-cdi}</version>
+                <!-- @Timed/@Metric annotations; their CDI interceptors came from metrics-cdi, which has no jakarta release -->
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-annotation</artifactId>
+                <version>4.0.3</version>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -752,11 +736,6 @@
                         <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>javax.annotation</groupId>
-                <artifactId>javax.annotation-api</artifactId>
-                <version>${version.javax-annotation}</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.saxon</groupId>
@@ -1429,12 +1408,6 @@
                 <version>${project.version}</version>
                 <classifier>tests</classifier>
                 <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${version.javax-validation}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -2405,9 +2378,8 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>org.jboss.spec.javax.ejb</groupId>
-                    <artifactId>jboss-ejb-api_3.1_spec</artifactId>
-                    <version>${version.jboss-ejb-api}</version>
+                    <groupId>jakarta.ejb</groupId>
+                    <artifactId>jakarta.ejb-api</artifactId>
                 </dependency>
             </dependencies>
         </profile>

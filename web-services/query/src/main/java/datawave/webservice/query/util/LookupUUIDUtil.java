@@ -13,12 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ejb.EJBContext;
-import javax.ejb.EJBException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.StreamingOutput;
-
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -54,6 +48,11 @@ import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.result.keyword.TagCloudResponseBase;
+import jakarta.ejb.EJBContext;
+import jakarta.ejb.EJBException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.StreamingOutput;
 
 /**
  * Utility for performing optimized queries based on UUIDs

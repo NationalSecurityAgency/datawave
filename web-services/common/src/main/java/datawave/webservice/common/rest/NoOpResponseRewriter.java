@@ -1,6 +1,6 @@
 package datawave.webservice.common.rest;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * A no-operation implementation of {@link ResponseRewriter} that returns the response unchanged. This serves as the default configuration when response

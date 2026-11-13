@@ -5,15 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.InputStream;
 import java.util.Properties;
 
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +42,8 @@ import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.results.cached.CachedResultsConfiguration;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 
 /**
  * this test ensures that our various spring contexts can be deployed successfully to Wildfly
@@ -74,7 +73,7 @@ public class WiredQueryExecutorBeanTest {
         }
 
         return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.data.type", "datawave.query.language.parser.jexl",
+                        .addPackages(true, "org.apache.deltaspike", "datawave.data.type", "datawave.query.language.parser.jexl",
                                         "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration", "datawave.configuration")
                         .addClasses(DefaultResponseObjectFactory.class, QueryExpirationProperties.class, FacetedQueryPlanner.class, FacetedQueryLogic.class,
                                         DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class, ShardQueryLogic.class, CountingShardQueryLogic.class,
@@ -82,7 +81,9 @@ public class WiredQueryExecutorBeanTest {
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
                                         QueryLogicFactoryImpl.class, CachedResultsConfiguration.class, DateIndexHelperFactory.class,
                                         DefaultMapperDecorator.class)
-                        .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+                        .addAsManifestResource(
+                                        new StringAsset("<beans xmlns=\"https://jakarta.ee/xml/ns/jakartaee\" version=\"4.0\" bean-discovery-mode=\"all\"/>"),
+                                        "beans.xml");
     }
 
     @Test

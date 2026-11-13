@@ -1,7 +1,5 @@
 package datawave.ingest.config;
 
-import javax.mail.internet.MimeUtility;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 
@@ -11,6 +9,7 @@ import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.metadata.EventMetadata;
 import datawave.ingest.metadata.RawRecordMetadata;
+import jakarta.mail.internet.MimeUtility;
 
 /**
  * An implementation of {@link IngestConfiguration} used only for tests in this package. This is needed since the version in ingest-core-configuration can't be

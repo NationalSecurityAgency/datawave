@@ -1,7 +1,5 @@
 package datawave.microservice.audit.auditors.log.config;
 
-import javax.annotation.Resource;
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,6 +8,7 @@ import datawave.microservice.audit.auditors.log.LogAuditor;
 import datawave.microservice.audit.common.AuditMessageConsumer;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
+import jakarta.annotation.Resource;
 
 /**
  * Configures the LogAuditor to process messages received by the audit service. This configuration is activated via the 'audit.auditors.log.enabled' property.

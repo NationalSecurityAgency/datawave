@@ -11,9 +11,6 @@
     http://www.springframework.org/schema/util
     http://www.springframework.org/schema/util/spring-util-4.0.xsd">
 
-    <!--  part of what enforces any Required properties to be set on loading of the context -->
-    <bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor" />
-
     <!-- Database properties are retrieved from the database.properties file
         but can be overridden by system properties -->
     <context:property-placeholder location="classpath:/datawave/query/database.properties" system-properties-mode="OVERRIDE" ignore-unresolvable="true" order="0" />

@@ -5,9 +5,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 
-import javax.ejb.EJBContext;
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +19,8 @@ import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.QueryExecutor;
+import jakarta.ejb.EJBContext;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 @ExtendWith(MockitoExtension.class)
 public class LookupUUIDUtilTest {

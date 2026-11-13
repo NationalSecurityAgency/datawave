@@ -17,8 +17,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import javax.inject.Inject;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -57,6 +55,7 @@ import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
+import jakarta.inject.Inject;
 
 /**
  * Demonstrates a successful lookupUUID deployment in the context of the annotations package, if this breaks something unexpected has changed with the injection
@@ -93,7 +92,6 @@ public class AnnotationLookupUUIDTest {
                 .addPackages(
                         true,
                         "org.apache.deltaspike",
-                        "io.astefanutti.metrics.cdi",
                         "datawave.query",
                         "org.jboss.logging",
                         "datawave.webservice.query.result.event"
@@ -102,9 +100,11 @@ public class AnnotationLookupUUIDTest {
                 .deleteClass(QueryMetricQueryLogic.class)
                 .addAsManifestResource(
                         new StringAsset(
+                        "<beans xmlns=\"https://jakarta.ee/xml/ns/jakartaee\" version=\"4.0\" bean-discovery-mode=\"all\">" +
                         "<alternatives>" +
                                 "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" +
-                                "</alternatives>"),
+                                "</alternatives>" +
+                        "</beans>"),
                         "beans.xml"
                 );
         //@formatter:on

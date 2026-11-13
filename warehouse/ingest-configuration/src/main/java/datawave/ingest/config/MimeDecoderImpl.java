@@ -2,7 +2,7 @@ package datawave.ingest.config;
 
 import java.io.UnsupportedEncodingException;
 
-import javax.mail.internet.MimeUtility;
+import jakarta.mail.internet.MimeUtility;
 
 public class MimeDecoderImpl implements MimeDecoder {
 

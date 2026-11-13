@@ -23,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -77,6 +75,7 @@ import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
 import datawave.table.constants.TableName;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 @ExtendWith(SpringExtension.class)
 @ComponentScan(basePackages = "datawave.query")

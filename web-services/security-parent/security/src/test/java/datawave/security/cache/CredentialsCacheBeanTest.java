@@ -13,9 +13,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.util.TypeLiteral;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,6 +31,8 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.util.TypeLiteral;
 
 @ExtendWith(MockitoExtension.class)
 public class CredentialsCacheBeanTest {
@@ -233,6 +232,16 @@ public class CredentialsCacheBeanTest {
         @Override
         public void destroy(CachedDatawaveUserService instance) {
 
+        }
+
+        @Override
+        public Handle<CachedDatawaveUserService> getHandle() {
+            return null;
+        }
+
+        @Override
+        public Iterable<? extends Handle<CachedDatawaveUserService>> handles() {
+            return null;
         }
 
         @Override

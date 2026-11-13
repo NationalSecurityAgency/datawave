@@ -36,9 +36,9 @@
         <version.hadoop>3.3.4</version.hadoop>
         <version.in-memory-accumulo>9.0.0-SNAPSHOT</version.in-memory-accumulo>
         <!-- version set in datawave-microservice-parent, but can be overridden here -->
-        <!-- 2.14.X is the maximum version of jackson without snakeyaml version 2 causing spring-boot 2.7.1 conflict -->
-        <version.jackson>2.14.3</version.jackson>
-        <version.jaxb-impl>2.3.3</version.jaxb-impl>
+        <!-- keep jackson and snakeyaml in step with spring-boot-dependencies -->
+        <version.jackson>2.21.4</version.jackson>
+        <version.jaxb-impl>3.0.2</version.jaxb-impl>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>
         <version.protobuf-java>3.25.5</version.protobuf-java>
@@ -47,7 +47,7 @@
         <version.swagger>2.2.42</version.swagger>
         <version.webjars.datatables>1.11.4</version.webjars.datatables>
         <version.webjars.jquery>3.6.0</version.webjars.jquery>
-        <version.webjars.locator>0.50</version.webjars.locator>
+        <version.webjars.locator>1.0.1</version.webjars.locator>
         <version.zookeeper>3.9.2</version.zookeeper>
     </properties>
     <dependencyManagement>
@@ -61,11 +61,6 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${version.protobuf-java}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${version.jaxb-impl}</version>
             </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
@@ -133,7 +128,7 @@
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
                 <version>${version.swagger}</version>
             </dependency>
             <dependency>
@@ -183,6 +178,11 @@
                 <version>${version.zookeeper}</version>
             </dependency>
             <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${version.jaxb-impl}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.webjars</groupId>
                 <artifactId>datatables</artifactId>
                 <version>${version.webjars.datatables}</version>
@@ -194,7 +194,7 @@
             </dependency>
             <dependency>
                 <groupId>org.webjars</groupId>
-                <artifactId>webjars-locator-core</artifactId>
+                <artifactId>webjars-locator-lite</artifactId>
                 <version>${version.webjars.locator}</version>
             </dependency>
         </dependencies>
@@ -215,10 +215,6 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-collections</groupId>
@@ -270,11 +266,12 @@
         </dependency>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
+            <version>3.0.2</version>
         </dependency>
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
@@ -291,6 +288,10 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -334,7 +335,7 @@
         </dependency>
         <dependency>
             <groupId>org.webjars</groupId>
-            <artifactId>webjars-locator-core</artifactId>
+            <artifactId>webjars-locator-lite</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

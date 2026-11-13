@@ -32,7 +32,7 @@
         <version.guava>31.1-jre</version.guava>
         <version.hadoop>3.3.4</version.hadoop>
         <version.in-memory-accumulo>9.0.0-SNAPSHOT</version.in-memory-accumulo>
-        <version.jakarta>2.3.3</version.jakarta>
+        <version.jakarta>4.0.5</version.jakarta>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
         <version.log4j>2.26.1</version.log4j>
         <!-- dependency declared in datawave-microservice-parent, but the version can be overridden here -->
@@ -100,13 +100,8 @@
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
                 <version>${version.swagger}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.jakarta}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.accumulo</groupId>
@@ -270,7 +265,7 @@
         </dependency>
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-annotations</artifactId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.validation</groupId>

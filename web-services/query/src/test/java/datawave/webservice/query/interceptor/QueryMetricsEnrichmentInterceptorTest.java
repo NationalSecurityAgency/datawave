@@ -22,9 +22,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.ext.WriterInterceptorContext;
 
 import org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl;
 import org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext;
@@ -51,6 +48,9 @@ import datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor.Q
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.ext.WriterInterceptorContext;
 
 @ExtendWith(MockitoExtension.class)
 public class QueryMetricsEnrichmentInterceptorTest {

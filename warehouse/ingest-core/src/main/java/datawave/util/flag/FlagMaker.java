@@ -26,8 +26,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.xml.bind.JAXBException;
-
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
@@ -53,6 +51,7 @@ import datawave.util.flag.processor.DateUtils;
 import datawave.util.flag.processor.FlagDistributor;
 import datawave.util.flag.processor.SizeValidator;
 import datawave.util.flag.processor.UnusableFileException;
+import jakarta.xml.bind.JAXBException;
 
 /**
  *

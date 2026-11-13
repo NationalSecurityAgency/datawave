@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Supplier;
 
@@ -128,6 +129,11 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
 
     @Override
+    public void removeApplicationListener(ApplicationListener<?> listener) {
+        lockAndWrite(() -> configurableApplicationContext.removeApplicationListener(listener));
+    }
+
+    @Override
     public void setClassLoader(ClassLoader classLoader) {
         lockAndWrite(() -> configurableApplicationContext.setClassLoader(classLoader));
     }
@@ -155,6 +161,11 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     @Override
     public boolean isActive() {
         return lockAndRead(configurableApplicationContext::isActive);
+    }
+
+    @Override
+    public boolean isClosed() {
+        return lockAndRead(configurableApplicationContext::isClosed);
     }
 
     @Override
@@ -306,6 +317,12 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType, boolean allowFactoryBeanInit)
                     throws NoSuchBeanDefinitionException {
         return lockAndRead(() -> configurableApplicationContext.findAnnotationOnBean(beanName, annotationType, allowFactoryBeanInit));
+    }
+
+    @Override
+    public <A extends Annotation> Set<A> findAllAnnotationsOnBean(String beanName, Class<A> annotationType, boolean allowFactoryBeanInit)
+                    throws NoSuchBeanDefinitionException {
+        return lockAndRead(() -> configurableApplicationContext.findAllAnnotationsOnBean(beanName, annotationType, allowFactoryBeanInit));
     }
 
     @Override

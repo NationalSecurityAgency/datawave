@@ -317,10 +317,11 @@ public class ReplayClient {
         );
 
         if (response.getStatusCode().value() != HttpStatus.OK.value()) {
+            HttpStatus status = HttpStatus.resolve(response.getStatusCode().value());
             String errorMessage = String.format("%s request failed. Http Status: (%s, %s)",
                     replayMethod.getName(),
-                    response.getStatusCodeValue(),
-                    response.getStatusCode().getReasonPhrase());
+                    response.getStatusCode().value(),
+                    status != null ? status.getReasonPhrase() : "");
             log.error(errorMessage);
             throw new RuntimeException(errorMessage);
         }

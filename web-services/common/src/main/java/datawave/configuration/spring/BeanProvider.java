@@ -1,12 +1,12 @@
 package datawave.configuration.spring;
 
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.InjectionTarget;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.InjectionTarget;
 
 /**
  * A provider for allowing injection onto non-CDI-managed beans. We have this provider instead of using
@@ -33,7 +33,7 @@ public class BeanProvider {
         BeanManager beanManager = instance.getBeanManager();
         CreationalContext creationalContext = beanManager.createCreationalContext(null);
         AnnotatedType annotatedType = beanManager.createAnnotatedType(bean.getClass());
-        InjectionTarget injectionTarget = beanManager.createInjectionTarget(annotatedType);
+        InjectionTarget injectionTarget = beanManager.getInjectionTargetFactory(annotatedType).createInjectionTarget(null);
         if (log.isDebugEnabled()) {
             log.debug("Injecting bean " + bean.getClass() + " at injection points " + injectionTarget.getInjectionPoints());
         }

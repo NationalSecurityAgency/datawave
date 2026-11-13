@@ -1,6 +1,7 @@
 package datawave.microservice.config.server;
 
 import org.eclipse.jgit.api.TransportConfigCallback;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.config.server.config.ConfigServerProperties;
 import org.springframework.cloud.config.server.environment.EnvironmentRepository;
@@ -9,6 +10,8 @@ import org.springframework.cloud.config.server.environment.MultipleJGitEnvironme
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
+
+import io.micrometer.observation.ObservationRegistry;
 
 /**
  * Configures the Datawave Config Server by specifying an extended {@link EnvironmentRepository} that handles encrypted private SSH keys.
@@ -27,9 +30,13 @@ public class DatawaveConfigServerConfiguration {
     @Autowired(required = false)
     private TransportConfigCallback transportConfigCallback;
 
+    @Autowired
+    private ObjectProvider<ObservationRegistry> observationRegistry;
+
     @Bean
     public EnvironmentRepository environmentRepository() {
-        MultipleJGitEnvironmentRepository repository = new DatawaveJGitEnvironmentRepository(environment, properties);
+        MultipleJGitEnvironmentRepository repository = new DatawaveJGitEnvironmentRepository(environment, properties,
+                        observationRegistry.getIfAvailable(() -> ObservationRegistry.NOOP));
         repository.setTransportConfigCallback(this.transportConfigCallback);
         if (this.server.getDefaultLabel() != null) {
             repository.setDefaultLabel(this.server.getDefaultLabel());

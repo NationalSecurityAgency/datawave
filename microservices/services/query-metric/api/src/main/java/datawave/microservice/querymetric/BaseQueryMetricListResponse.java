@@ -2,13 +2,12 @@ package datawave.microservice.querymetric;
 
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
-import javax.xml.bind.annotation.XmlTransient;
-
 import org.springframework.web.servlet.ModelAndView;
 
 import datawave.webservice.result.BaseResponse;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElementWrapper;
+import jakarta.xml.bind.annotation.XmlTransient;
 
 public abstract class BaseQueryMetricListResponse<T extends BaseQueryMetric> extends BaseResponse {
 
