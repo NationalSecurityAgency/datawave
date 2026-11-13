@@ -139,7 +139,7 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
     }
 
     /**
-     * We expect the iterator to not return anything when the {@code KeywordExtractor} does not produce keywords for the found content.
+     * We expect the iterator to return an empty keyword result when content is found, distinguishing it from a missing document or view.
      */
     @Test
     public void testNoKeywordsGenerated() throws IOException {
@@ -160,7 +160,13 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
 
         iterator.seek(range, Collections.emptyList(), false);
 
-        assertFalse(iterator.hasTop());
+        assertTrue(iterator.hasTop());
+        KeywordResults results = KeywordResults.deserialize(iterator.getTopValue().get());
+        assertEquals(rowDtUid, results.getSource());
+        assertEquals("CONTENT1", results.getView());
+        assertEquals("ENGLISH", results.getLanguage());
+        assertEquals("ALL", results.getVisibility());
+        assertEquals(0, results.getKeywordCount());
     }
 
     /**
