@@ -3,10 +3,11 @@ package datawave.ingest.mapreduce.job.reindex;
 import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_END;
 import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_START;
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -24,8 +25,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.util.AccumuloUtil;
 import datawave.util.accumulo.RFileUtil;
@@ -35,7 +36,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
     private AccumuloUtil accumuloUtil;
     private RFileUtil rFileUtil;
 
-    @Before
+    @BeforeEach
     public void setup() {
         accumuloUtil = createMock(AccumuloUtil.class);
         rFileUtil = createMock(RFileUtil.class);
@@ -144,7 +145,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         // TODO
     }
 
-    @Test(expected = AccumuloException.class)
+    @Test
     public void buildSplittableRanges_noTableTest() throws Throwable {
         AccumuloUtil accumuloUtil = createMock(AccumuloUtil.class);
         RFileUtil rFileUtil = createMock(RFileUtil.class);
@@ -154,12 +155,14 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
         replayAll();
 
-        try {
-            Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
-                            "20241121", "20241122");
-        } catch (RuntimeException e) {
-            throw e.getCause();
-        }
+        assertThrows(AccumuloException.class, () -> {
+            try {
+                ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable", "20241121",
+                                "20241122");
+            } catch (RuntimeException e) {
+                throw e.getCause();
+            }
+        });
 
         verifyAll();
     }
@@ -205,11 +208,12 @@ public class ShardReindexJobTest extends EasyMockSupport {
         assertTrue(ranges.size() == 1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void buildSplitRanges_sameStartEndTest() {
         replayAll();
 
-        ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable", "20241121", "20241121");
+        assertThrows(IllegalArgumentException.class, () -> ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1,
+                        ShardReindexMapper.BatchMode.NONE, "myShardTable", "20241121", "20241121"));
 
         verifyAll();
     }
@@ -298,7 +302,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         assertEquals(expected2, itr.next());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void buildSplitRanges_mixedDataTypesTest() throws AccumuloException, IOException {
         Range splitRange = new Range("20241121", true, "20241121" + '\u0000', false);
         Range expected1 = new Range(new Key("20241121"), true, new Key("20241121", "sample" + '\u0000'), false);
@@ -308,10 +312,10 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
         replayAll();
 
-        Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
-                        "20241121", "20241122", false, false, false, Collections.singletonList("sample2"), Collections.singletonList("sample"));
-
-        verifyAll();
+        assertThrows(IllegalArgumentException.class,
+                        () -> ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
+                                        "20241121", "20241122", false, false, false, Collections.singletonList("sample2"),
+                                        Collections.singletonList("sample")));
     }
 
     @Test

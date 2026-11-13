@@ -1,5 +1,9 @@
 package datawave.query.statsd;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -8,8 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Created on 4/27/17.
@@ -41,12 +44,12 @@ public class QueryStatsdDClientTest {
         // verify the sent metrics
         Set<String> messages = new HashSet<>(server.getMessages());
         System.out.println(messages);
-        Assert.assertFalse("Did not receive messages", messages.isEmpty());
-        Assert.assertEquals("Did not receive 4 messages", 4, messages.size());
-        Assert.assertTrue("Did not receive correct seek message", messages.contains("queryid.dwquery.seek_calls:1|c"));
-        Assert.assertTrue("Did not receive correct next message", messages.contains("queryid.dwquery.next_calls:2|c"));
-        Assert.assertTrue("Did not receive correct sources message", messages.contains("queryid.dwquery.sources:3|c"));
-        Assert.assertTrue("Did not receive correct timing message", messages.contains("queryid.dwquery.MyMethod:4242|c"));
+        assertFalse(messages.isEmpty(), "Did not receive messages");
+        assertEquals(4, messages.size(), "Did not receive 4 messages");
+        assertTrue(messages.contains("queryid.dwquery.seek_calls:1|c"), "Did not receive correct seek message");
+        assertTrue(messages.contains("queryid.dwquery.next_calls:2|c"), "Did not receive correct next message");
+        assertTrue(messages.contains("queryid.dwquery.sources:3|c"), "Did not receive correct sources message");
+        assertTrue(messages.contains("queryid.dwquery.MyMethod:4242|c"), "Did not receive correct timing message");
 
         client.stop();
         server.stop();
@@ -84,18 +87,18 @@ public class QueryStatsdDClientTest {
         // verify the sent metrics
         Set<String> messages = new HashSet<>(server.getMessages());
         System.out.println(messages);
-        Assert.assertFalse("Did not receive messages", messages.isEmpty());
-        Assert.assertEquals("Did not receive 8 messages", 8, messages.size());
+        assertFalse(messages.isEmpty(), "Did not receive messages");
+        assertEquals(8, messages.size(), "Did not receive 8 messages");
 
-        Assert.assertTrue("Did not receive correct seek message", messages.contains("queryid1.dwquery.seek_calls:1|c"));
-        Assert.assertTrue("Did not receive correct next message", messages.contains("queryid1.dwquery.next_calls:2|c"));
-        Assert.assertTrue("Did not receive correct sources message", messages.contains("queryid1.dwquery.sources:3|c"));
-        Assert.assertTrue("Did not receive correct timing message", messages.contains("queryid1.dwquery.MyMethod:4242|c"));
+        assertTrue(messages.contains("queryid1.dwquery.seek_calls:1|c"), "Did not receive correct seek message");
+        assertTrue(messages.contains("queryid1.dwquery.next_calls:2|c"), "Did not receive correct next message");
+        assertTrue(messages.contains("queryid1.dwquery.sources:3|c"), "Did not receive correct sources message");
+        assertTrue(messages.contains("queryid1.dwquery.MyMethod:4242|c"), "Did not receive correct timing message");
 
-        Assert.assertTrue("Did not receive correct seek message", messages.contains("queryid2.dwquery.seek_calls:2|c"));
-        Assert.assertTrue("Did not receive correct next message", messages.contains("queryid2.dwquery.next_calls:1|c"));
-        Assert.assertTrue("Did not receive correct sources message", messages.contains("queryid2.dwquery.sources:1|c"));
-        Assert.assertTrue("Did not receive correct timing message", messages.contains("queryid2.dwquery.MyMethod:4243|c"));
+        assertTrue(messages.contains("queryid2.dwquery.seek_calls:2|c"), "Did not receive correct seek message");
+        assertTrue(messages.contains("queryid2.dwquery.next_calls:1|c"), "Did not receive correct next message");
+        assertTrue(messages.contains("queryid2.dwquery.sources:1|c"), "Did not receive correct sources message");
+        assertTrue(messages.contains("queryid2.dwquery.MyMethod:4243|c"), "Did not receive correct timing message");
 
         client1.stop();
         client2.stop();
