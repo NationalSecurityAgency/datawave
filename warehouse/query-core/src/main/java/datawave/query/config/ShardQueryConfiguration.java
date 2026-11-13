@@ -595,12 +595,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * If the days in the query date range exceed this threshold, the year index is scanned first in an effort to reduce useless scans against the day index
      */
     private int dayIndexThreshold = -1;
-    
+
     /**
      * If true, allow null-index only fields to be present during queries, and add a speciality iterator to handle the null/not-null checks.
      */
     private boolean allowNullIndexOnlyFields = false;
-    
+
     /**
      * Default constructor
      */
@@ -3628,11 +3628,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setUseNewIndexLookups(boolean useNewIndexLookups) {
         this.useNewIndexLookups = useNewIndexLookups;
     }
-    
+
     public boolean isAllowNullIndexOnlyFields() {
         return allowNullIndexOnlyFields;
     }
-    
+
     public void setAllowNullIndexOnlyFields(boolean allowNullIndexOnlyFields) {
         this.allowNullIndexOnlyFields = allowNullIndexOnlyFields;
     }

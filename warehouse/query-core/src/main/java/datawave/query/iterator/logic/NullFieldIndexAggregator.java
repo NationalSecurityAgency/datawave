@@ -20,10 +20,10 @@ import datawave.query.jexl.functions.FieldIndexAggregator;
  * A specialized {@link FieldIndexAggregator} that, instead of scanning all indexed terms for a document, returns a single key per document ID and immediately
  * seeks past the remaining terms.
  */
-public class SingleKeyPerDocumentAggregator implements FieldIndexAggregator {
-    
+public class NullFieldIndexAggregator implements FieldIndexAggregator {
+
     private static final String MAX_BOUNDARY = "\0" + Character.MAX_VALUE;
-    
+
     @Override
     public Key apply(SortedKeyValueIterator<Key,Value> itr) throws IOException {
         return apply(itr, null, Collections.emptyList(), false);

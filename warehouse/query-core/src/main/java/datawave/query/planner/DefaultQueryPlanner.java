@@ -2755,7 +2755,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.getCardinalityThreshold() > 0) { // only add option if it is set
             addOption(cfg, QueryOptions.CARDINALITY_THRESHOLD, Integer.toString(config.getCardinalityThreshold()), false);
         }
-        
+
         addOption(cfg, QueryOptions.ALLOW_NULL_INDEX_ONLY_FIELDS, Boolean.toString(config.isAllowNullIndexOnlyFields()), false);
     }
 

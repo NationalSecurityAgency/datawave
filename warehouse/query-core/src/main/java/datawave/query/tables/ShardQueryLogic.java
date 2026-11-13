@@ -3654,7 +3654,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     public void setMultDocPerGroup(boolean value) {
         getConfig().getGroupFields().setOneDocPerGroup(!value);
     }
-    
+
     public void setAllowIndexOnlyFields(boolean value) {
         getConfig().setAllowNullIndexOnlyFields(value);
     }
