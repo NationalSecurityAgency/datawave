@@ -42,8 +42,8 @@ public class GlobalIndexFieldSummaryIterator extends GlobalIndexDateSummaryItera
      * This method aggregates all information from the global index by fieldname, day, and type
      */
     protected void findTop() throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("findTop called");
+        if (log.isTraceEnabled()) {
+            log.trace("findTop called");
         }
 
         // create a map of summaries by fieldValue, fieldName and date
