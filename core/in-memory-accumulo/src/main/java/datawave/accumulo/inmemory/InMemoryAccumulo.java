@@ -22,6 +22,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.BatchScanner;
@@ -41,10 +42,10 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 
 public class InMemoryAccumulo {
-    final Map<String,InMemoryTable> tables = Collections.synchronizedMap(new HashMap<>());
-    final Map<String,InMemoryNamespace> namespaces = Collections.synchronizedMap(new HashMap<>());
-    final Map<String,String> systemProperties = Collections.synchronizedMap(new HashMap<>());
-    final Map<String,InMemoryUser> users = Collections.synchronizedMap(new HashMap<>());
+    final Map<String,InMemoryTable> tables = new ConcurrentHashMap<>();
+    final Map<String,InMemoryNamespace> namespaces = new ConcurrentHashMap<>();
+    final Map<String,String> systemProperties = new ConcurrentHashMap<>();
+    final Map<String,InMemoryUser> users = new ConcurrentHashMap<>();
     final FileSystem fs;
     final AtomicInteger tableIdCounter = new AtomicInteger(0);
 
