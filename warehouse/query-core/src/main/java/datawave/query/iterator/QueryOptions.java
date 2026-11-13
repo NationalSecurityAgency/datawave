@@ -290,6 +290,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String TERM_COUNTS = "term.counts";
     public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
 
+    public static final String ALLOW_NULL_INDEX_ONLY_FIELDS = "allow.null.field.index.only.fields";
+
     public static final Object LOCK = new Object();
 
     protected Map<String,String> options;
@@ -458,6 +460,11 @@ public class QueryOptions implements OptionDescriber {
     protected Class<? extends SortedKeyValueIterator<Key,Value>> summaryIterator = ContentSummaryIterator.class;
 
     protected String summaryFieldname;
+
+    /**
+     * Whether to handle null/not null checks against index-only fields.
+     */
+    protected boolean allNullIndexOnlyFields;
 
     // off by default, controls when to issue a seek
     private int fiFieldSeek = -1;
@@ -1335,6 +1342,10 @@ public class QueryOptions implements OptionDescriber {
         this.summaryFieldname = summaryFieldname;
     }
 
+    public void setAllNullIndexOnlyFields(boolean allNullIndexOnlyFields) {
+        this.allNullIndexOnlyFields = allNullIndexOnlyFields;
+    }
+
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -1443,6 +1454,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
         options.put(FIELD_COUNTS, "Map of field counts from the global index");
         options.put(TERM_COUNTS, "Map of term counts from the global index");
+        options.put(ALLOW_NULL_INDEX_ONLY_FIELDS,
+                        "Whether to allow null index-only fields in queries. A specialty iterator will be added to handle " + "null/not-null checks");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 

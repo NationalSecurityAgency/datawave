@@ -3,7 +3,7 @@ package datawave.query.jexl.visitors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -43,7 +43,6 @@ import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableNestedIterator;
 import datawave.query.iterator.SortedListKeyValueIterator;
@@ -137,9 +136,6 @@ public class IteratorBuildingVisitorTest {
         assertEquals(0, visitor.getDeepCopiesCalled());
     }
 
-    /**
-     * index only null value should result in an error
-     */
     @Test
     public void visitEqNode_nullValueIndexOnlyTest() {
         ASTEQNode node = (ASTEQNode) JexlNodeFactory.buildEQNode("FIELD", "blah");
@@ -148,7 +144,11 @@ public class IteratorBuildingVisitorTest {
         IteratorBuildingVisitor visitor = getDefault();
         visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
 
-        assertThrows(DatawaveFatalQueryException.class, () -> node.jjtAccept(visitor, null));
+        node.jjtAccept(visitor, null);
+
+        NestedIterator<Key> root = visitor.root();
+
+        assertNotNull(root, "Root iterator should not be null");
     }
 
     /**
@@ -170,9 +170,6 @@ public class IteratorBuildingVisitorTest {
         assertEquals(1, visitor.getDeepCopiesCalled());
     }
 
-    /**
-     * null value should result in an error. In this case a top level negation is not allowed, so pair it with an indexed lookup
-     */
     @Test
     public void visitNeNode_nullValueIndexOnlyTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar' && FIELD != null");
@@ -180,7 +177,10 @@ public class IteratorBuildingVisitorTest {
         IteratorBuildingVisitor visitor = getDefault();
         visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
 
-        assertThrows(DatawaveFatalQueryException.class, () -> query.jjtAccept(visitor, null));
+        query.jjtAccept(visitor, null);
+
+        NestedIterator<Key> root = visitor.root();
+        assertNotNull(root, "Root iterator should not be null");
     }
 
     @Test
