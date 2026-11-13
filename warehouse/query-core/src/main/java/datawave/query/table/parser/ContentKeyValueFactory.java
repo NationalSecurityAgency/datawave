@@ -93,7 +93,7 @@ public class ContentKeyValueFactory {
      * NOTE: Raw GZIP and Base64-decoded GZIP headers select streaming prefix decoding without validating the entire stored value. Base64 errors and GZIP
      * checksums beyond the consumed prefix are not necessarily detected. When decoded bytes have no GZIP header, the entire Base64 structure is checked before
      * choosing between Base64 decoding and the legacy raw-content fallback, without allocating decoded content. Malformed UTF-8 is replaced, as with the UTF-8
-     * String constructor.
+     * String constructor. Encountered GZIP errors are logged before falling back to the original bytes.
      *
      * @param contents
      *            document-column value bytes
@@ -108,20 +108,22 @@ public class ContentKeyValueFactory {
         }
 
         if (!isCompressed(contents)) {
-            try (InputStream decoded = Base64.getMimeDecoder().wrap(new ByteArrayInputStream(contents)); InputStream content = decompress(decoded)) {
-                // GZIPInputStream validates the header. Only ambiguous, non-GZIP content needs a full Base64 structure check.
-                if (content instanceof GZIPInputStream || isValidMimeBase64(contents)) {
-                    return readContent(content, maxChars);
+            try (PushbackInputStream decoded = new PushbackInputStream(Base64.getMimeDecoder().wrap(new ByteArrayInputStream(contents)), 2)) {
+                if (isCompressed(decoded)) {
+                    return readGzipContent(decoded, maxChars);
+                }
+                // Only ambiguous, non-GZIP content needs a full Base64 structure check.
+                if (isValidMimeBase64(contents)) {
+                    return readContent(decoded, maxChars);
                 }
             } catch (IOException e) {
-                // Match the legacy fallback for content that is not Base64 encoded.
+                // Preserve the legacy raw-content fallback. GZIP failures are logged by readGzipContent.
             }
         }
 
         try (InputStream raw = new ByteArrayInputStream(contents)) {
-            return readContent(decompress(raw), maxChars);
+            return isCompressed(contents) ? readGzipContent(raw, maxChars) : readContent(raw, maxChars);
         } catch (IOException e) {
-            log.error("Error reading document content prefix", e);
             return decodeContent(contents, maxChars);
         }
     }
@@ -208,8 +210,16 @@ public class ContentKeyValueFactory {
         }
     }
 
-    private static InputStream decompress(InputStream contents) throws IOException {
-        PushbackInputStream input = new PushbackInputStream(contents, 2);
+    private static String readGzipContent(InputStream contents, int maxChars) throws IOException {
+        try (InputStream gzip = new GZIPInputStream(contents)) {
+            return readContent(gzip, maxChars);
+        } catch (IOException e) {
+            log.error("Error reading GZIP document content prefix", e);
+            throw e;
+        }
+    }
+
+    private static boolean isCompressed(PushbackInputStream input) throws IOException {
         int first = input.read();
         int second = input.read();
         if (second != -1) {
@@ -218,10 +228,7 @@ public class ContentKeyValueFactory {
         if (first != -1) {
             input.unread(first);
         }
-        if (first == (GZIPInputStream.GZIP_MAGIC & 0xff) && second == (GZIPInputStream.GZIP_MAGIC >> 8)) {
-            return new GZIPInputStream(input);
-        }
-        return input;
+        return first == (GZIPInputStream.GZIP_MAGIC & 0xff) && second == (GZIPInputStream.GZIP_MAGIC >> 8);
     }
 
     private static boolean isCompressed(byte[] compressed) {

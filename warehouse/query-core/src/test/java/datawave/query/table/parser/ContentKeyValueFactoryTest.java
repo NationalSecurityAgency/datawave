@@ -9,12 +9,20 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Random;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.log4j.Level;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
+
+import datawave.common.test.logging.TestLogCollectorJUnit5;
 
 public class ContentKeyValueFactoryTest {
+
+    @RegisterExtension
+    public TestLogCollectorJUnit5 logCollector = new TestLogCollectorJUnit5.Builder().with(ContentKeyValueFactory.class, Level.ERROR).build();
 
     @Test
     public void decodedContentIsBoundedByCharactersRatherThanBytes() {
@@ -86,8 +94,8 @@ public class ContentKeyValueFactoryTest {
         byte[] encoded = Base64.getEncoder().encode(gzip("prefix content".getBytes(StandardCharsets.UTF_8)));
         // The first decoded bytes contain a valid GZIP header, but padding at the start of the next quartet is invalid.
         encoded[16] = '=';
-        assertEquals(new String(encoded, StandardCharsets.US_ASCII).substring(0, 15),
-                        ContentKeyValueFactory.decodeAndDecompressContent(encoded, 15));
+        assertEquals(new String(encoded, StandardCharsets.US_ASCII).substring(0, 15), ContentKeyValueFactory.decodeAndDecompressContent(encoded, 15));
+        assertEquals(List.of("Error reading GZIP document content prefix"), logCollector.getMessages());
     }
 
     @Test
@@ -95,8 +103,32 @@ public class ContentKeyValueFactoryTest {
         byte[] compressed = gzip("prefix content".getBytes(StandardCharsets.UTF_8));
         compressed[2] = 0; // GZIP requires the DEFLATE compression method.
         byte[] encoded = Base64.getEncoder().encode(compressed);
-        assertEquals(new String(encoded, StandardCharsets.US_ASCII).substring(0, 15),
-                        ContentKeyValueFactory.decodeAndDecompressContent(encoded, 15));
+        assertEquals(new String(encoded, StandardCharsets.US_ASCII).substring(0, 15), ContentKeyValueFactory.decodeAndDecompressContent(encoded, 15));
+        assertEquals(List.of("Error reading GZIP document content prefix"), logCollector.getMessages());
+    }
+
+    @Test
+    public void logsChecksumFailureEncounteredInBase64GzipContent() throws IOException {
+        byte[] compressed = gzip("short document".getBytes(StandardCharsets.UTF_8));
+        compressed[compressed.length - 8] ^= 1;
+        byte[] encoded = Base64.getEncoder().encode(compressed);
+        assertEquals(new String(encoded, StandardCharsets.US_ASCII), ContentKeyValueFactory.decodeAndDecompressContent(encoded, 1500));
+        assertEquals(List.of("Error reading GZIP document content prefix"), logCollector.getMessages());
+    }
+
+    @Test
+    public void logsTruncatedBase64GzipHeader() {
+        byte[] encoded = Base64.getEncoder().encode(new byte[] {(byte) 0x1f, (byte) 0x8b});
+        assertEquals(new String(encoded, StandardCharsets.US_ASCII), ContentKeyValueFactory.decodeAndDecompressContent(encoded, 1500));
+        assertEquals(List.of("Error reading GZIP document content prefix"), logCollector.getMessages());
+    }
+
+    @Test
+    public void logsCorruptRawGzipContentOnlyOnce() throws IOException {
+        byte[] compressed = gzip("short document".getBytes(StandardCharsets.UTF_8));
+        compressed[compressed.length - 8] ^= 1;
+        assertEquals(new String(compressed, StandardCharsets.UTF_8), ContentKeyValueFactory.decodeAndDecompressContent(compressed, 1500));
+        assertEquals(List.of("Error reading GZIP document content prefix"), logCollector.getMessages());
     }
 
     @Test
@@ -112,6 +144,7 @@ public class ContentKeyValueFactoryTest {
         byte[] content = {'A'};
         assertEquals("A", ContentKeyValueFactory.decodeAndDecompressContent(content, 10));
         assertArrayEquals(content, ContentKeyValueFactory.decodeAndDecompressContent(content));
+        assertEquals(List.of(), logCollector.getMessages());
     }
 
     @Test
@@ -120,6 +153,7 @@ public class ContentKeyValueFactoryTest {
         byte[] content = raw.getBytes(StandardCharsets.UTF_8);
         assertArrayEquals(content, ContentKeyValueFactory.decodeAndDecompressContent(content));
         assertEquals(raw.substring(0, 1500), ContentKeyValueFactory.decodeAndDecompressContent(content, 1500));
+        assertEquals(List.of(), logCollector.getMessages());
     }
 
     @Test
@@ -129,6 +163,7 @@ public class ContentKeyValueFactoryTest {
         assertArrayEquals(content, ContentKeyValueFactory.decodeAndDecompressContent(content));
         assertEquals(raw, ContentKeyValueFactory.decodeAndDecompressContent(content, 1500));
         assertEquals("YWJj", ContentKeyValueFactory.decodeAndDecompressContent(content, 4));
+        assertEquals(List.of(), logCollector.getMessages());
     }
 
     @Test
@@ -161,6 +196,7 @@ public class ContentKeyValueFactoryTest {
         byte[] corruptGzip = {(byte) 0x1f, (byte) 0x8b};
         assertEquals("", ContentKeyValueFactory.decodeAndDecompressContent(corruptGzip, 0));
         assertEquals("", ContentKeyValueFactory.decodeContent(corruptGzip, 0));
+        assertEquals(List.of(), logCollector.getMessages());
     }
 
     @Test
@@ -186,6 +222,7 @@ public class ContentKeyValueFactoryTest {
         compressed[compressed.length - 8] ^= 1;
         assertEquals("x".repeat(1500), ContentKeyValueFactory.decodeAndDecompressContent(Base64.getEncoder().encode(compressed), 1500));
         assertEquals("x".repeat(1500), ContentKeyValueFactory.decodeAndDecompressContent(compressed, 1500));
+        assertEquals(List.of(), logCollector.getMessages());
     }
 
     @Test
