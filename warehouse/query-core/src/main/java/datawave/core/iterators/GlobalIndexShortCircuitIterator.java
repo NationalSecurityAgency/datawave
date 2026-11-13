@@ -135,8 +135,8 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
     }
 
     public void next() throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("next called");
+        if (log.isTraceEnabled()) {
+            log.trace("next called");
         }
 
         // Return K/V from the range map
@@ -147,8 +147,8 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
     }
 
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("seek called: " + range);
+        if (log.isTraceEnabled()) {
+            log.trace("seek called: " + range);
         }
 
         this.iterator.seek(range, columnFamilies, inclusive);
@@ -161,8 +161,8 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
     }
 
     public Key getTopKey() {
-        if (log.isDebugEnabled()) {
-            log.debug("topKey: " + returnKey);
+        if (log.isTraceEnabled()) {
+            log.trace("topKey: " + returnKey);
         }
 
         return returnKey;
@@ -180,8 +180,8 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
      *             for issues with read/write
      */
     private void findTop() throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("findTop called");
+        if (log.isTraceEnabled()) {
+            log.trace("findTop called");
         }
 
         Key startingRange = this.iterator.getTopKey();
@@ -191,20 +191,20 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
         Set<Entry<String,String>> shardDatatypeRanges = new HashSet<>();
         boolean done = false;
 
-        if (log.isDebugEnabled()) {
-            log.debug("MasterRange: " + this.masterRange);
+        if (log.isTraceEnabled()) {
+            log.trace("MasterRange: " + this.masterRange);
         }
 
         do {
-            if (log.isDebugEnabled()) {
-                log.debug("top of do");
+            if (log.isTraceEnabled()) {
+                log.trace("top of do");
             }
 
             // Check for hasTop again because we are in a loop and we are calling next() and seek()
             // on the source iterator inside this loop
             if (!this.iterator.hasTop()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("source iterator no longer has top, should be done.");
+                if (log.isTraceEnabled()) {
+                    log.trace("source iterator no longer has top, should be done.");
                 }
 
                 done = true;
@@ -214,29 +214,29 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             Key currentKey = this.iterator.getTopKey();
             Value currentValue = this.iterator.getTopValue();
 
-            if (log.isDebugEnabled()) {
-                log.debug("currentKey: " + currentKey);
+            if (log.isTraceEnabled()) {
+                log.trace("currentKey: " + currentKey);
             }
 
             // If we have passed the day boundary and we have ranges to pass back, then lets break out
             // of this loop.
             if (!startDate.equals(parseDateFromColQual(currentKey)) && !ranges.isEmpty()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Not on the desired startDate and have found ranges to return");
+                if (log.isTraceEnabled()) {
+                    log.trace("Not on the desired startDate and have found ranges to return");
                 }
 
                 done = true;
                 continue;
             } else if (!this.masterRange.contains(currentKey)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("currentKey not contained in the masterRange");
+                if (log.isTraceEnabled()) {
+                    log.trace("currentKey not contained in the masterRange");
                 }
 
                 done = true;
                 continue;
             } else if (!startDate.equals(parseDateFromColQual(currentKey))) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Not on the desired startDate and have no ranges to return");
+                if (log.isTraceEnabled()) {
+                    log.trace("Not on the desired startDate and have no ranges to return");
                 }
 
                 // We have passed the date boundary but didn't have any ranges. In this case, we don't
@@ -276,8 +276,8 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             try {
                 uidList = Uid.List.parseFrom(currentValue.get());
 
-                if (log.isDebugEnabled()) {
-                    log.debug("UidCOUNT for this key: " + uidList.getCOUNT());
+                if (log.isTraceEnabled()) {
+                    log.trace("UidCOUNT for this key: " + uidList.getCOUNT());
                 }
 
                 // Add the count for this shard to the total count for the term.
@@ -292,8 +292,8 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             // b - when the number of events for that term in the Uid.List passes the EVENTS_PER_DAY threshold
             // c - when the number of shards for that day passes the SHARDS_PER_DAY threshold
             if (dayCount >= this.eventsPerDay || shardsSeen.size() > this.shardsPerDay || forcedDayRange) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Removing existing ranges and calculating a new one");
+                if (log.isTraceEnabled()) {
+                    log.trace("Removing existing ranges and calculating a new one");
                 }
 
                 // Empty the range set
@@ -314,8 +314,8 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
 
                 Range seekRange = new Range(seekKey, true, this.masterRange.getEndKey(), this.masterRange.isEndKeyInclusive());
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Exhausted this date, seeking to: " + seekRange);
+                if (log.isTraceEnabled()) {
+                    log.trace("Exhausted this date, seeking to: " + seekRange);
                 }
 
                 this.iterator.seek(seekRange, this.masterColumnFamilies, this.masterColumnFamiliesInclusive);
@@ -327,14 +327,14 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                 done = true;
                 continue;
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Handling the UID list");
+                if (log.isTraceEnabled()) {
+                    log.trace("Handling the UID list");
                 }
 
                 Text shard = new Text(shardId);
                 if (uidList.getIGNORE()) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Adding range for the shard & datatype");
+                    if (log.isTraceEnabled()) {
+                        log.trace("Adding range for the shard & datatype");
                     }
 
                     // Add a Range for the entire shard and datatype.
@@ -358,12 +358,12 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                     shardDatatypeRanges.add(new AbstractMap.SimpleEntry<>(shard.toString(), datatype));
                 } else {
                     if (shardDatatypeRanges.contains(new AbstractMap.SimpleEntry<>(shard.toString(), datatype))) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Do not need to add event-specific ranges, have already added a range for this shard and datatype");
+                        if (log.isTraceEnabled()) {
+                            log.trace("Do not need to add event-specific ranges, have already added a range for this shard and datatype");
                         }
                     } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Adding ranges for each shard, datatype, UID");
+                        if (log.isTraceEnabled()) {
+                            log.trace("Adding ranges for each shard, datatype, UID");
                         }
 
                         // Add Event specific ranges

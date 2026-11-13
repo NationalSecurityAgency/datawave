@@ -222,8 +222,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             throw new IllegalStateException("evaluationContext must be set prior to calling next");
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": next will return " + next + " ; heads at " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": next will return " + next + " ; heads at " + includeHeads.keySet());
         }
 
         prev = next;
@@ -334,8 +334,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             next = null;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": next returning " + prev + "; cached next is " + next + " ; heads at " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": next returning " + prev + "; cached next is " + next + " ; heads at " + includeHeads.keySet());
         }
 
         return prev;
