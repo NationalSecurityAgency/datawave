@@ -150,7 +150,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         AccumuloUtil accumuloUtil = createMock(AccumuloUtil.class);
         RFileUtil rFileUtil = createMock(RFileUtil.class);
 
-        expect(accumuloUtil.getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122"))
+        expect(accumuloUtil.getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122", true))
                         .andThrow(new RuntimeException("some error", new AccumuloException("table not found")));
 
         replayAll();
@@ -172,7 +172,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         AccumuloUtil accumuloUtil = createMock(AccumuloUtil.class);
         RFileUtil rFileUtil = createMock(RFileUtil.class);
 
-        expect(accumuloUtil.getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122")).andReturn(Collections.emptyList());
+        expect(accumuloUtil.getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122", true)).andReturn(Collections.emptyList());
 
         replayAll();
 
@@ -188,7 +188,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         List<Map.Entry<String,List<String>>> results = new ArrayList<>();
         results.add(new AbstractMap.SimpleImmutableEntry<>("20241121", Collections.singletonList("/some/path/to/an/rfile")));
 
-        expect(accumuloUtil.getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122")).andReturn(results);
+        expect(accumuloUtil.getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122", true)).andReturn(results);
         expect(rFileUtil.getRangeSplits(Collections.singletonList("/some/path/to/an/rfile"), new Key("20241121"),
                         new Key("20241121", "" + '\uFFFF', "" + '\uFFFF'), -1, Function.identity())).andReturn(Collections.singletonList(result));
     }

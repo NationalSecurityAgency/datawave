@@ -546,7 +546,8 @@ public class ShardReindexJob implements Tool {
 
         List<Map.Entry<String,List<String>>> filesBySplit;
         try {
-            filesBySplit = accumuloUtil.getFilesFromMetadataBySplit(table, startDay, endDay);
+            // the files only give the split points, and the job reads through Accumulo, which applies any fence on them
+            filesBySplit = accumuloUtil.getFilesFromMetadataBySplit(table, startDay, endDay, true);
         } catch (AccumuloException e) {
             throw new RuntimeException("Failed to lookup rfiles in metadata table", e);
         }
