@@ -172,11 +172,11 @@ public class TableSplitsCacheTest {
     public void setSplitsCacheDir() {
         URL url = TableSplitsCacheTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
         assertNotNull(url, "TableSplitsCacheTest#setup failed to load test cache directory.");
-        mockConfiguration.put(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
+        mockConfiguration.put(SplitsConstants.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
     }
 
     public void setSplitsCacheDir(String splitsCacheDir) {
-        mockConfiguration.put(TableSplitsCache.SPLITS_CACHE_DIR, splitsCacheDir);
+        mockConfiguration.put(SplitsConstants.SPLITS_CACHE_DIR, splitsCacheDir);
     }
 
     @AfterEach

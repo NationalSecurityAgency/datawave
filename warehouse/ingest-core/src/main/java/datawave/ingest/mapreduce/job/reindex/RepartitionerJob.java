@@ -41,7 +41,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.DelegatingPartitioner;
 import datawave.ingest.mapreduce.job.IngestJob;
 import datawave.ingest.mapreduce.job.RFileInputFormat;
-import datawave.ingest.mapreduce.job.SplitsFile;
+import datawave.ingest.mapreduce.job.SplitsCache;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
 import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
@@ -103,7 +103,7 @@ public class RepartitionerJob implements Tool {
         Configuration config = j.getConfiguration();
 
         // setup and cache table from config
-        SplitsFile.setupFile(j, config);
+        SplitsCache.getInstance(config).setupJob(j, config);
         Set<String> tableNames = IngestJob.setupAndCacheTables(config, false);
         config.setInt("splits.num.reduce", jobConfig.reducers);
 

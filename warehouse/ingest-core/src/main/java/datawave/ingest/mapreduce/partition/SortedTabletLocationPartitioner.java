@@ -7,17 +7,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
-import datawave.ingest.mapreduce.job.SplitsFile;
+import datawave.ingest.mapreduce.job.SplitsCache;
+import datawave.ingest.mapreduce.job.SplitsCacheFactory;
 
 public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner {
 
     private static final Logger log = Logger.getLogger(SortedTabletLocationPartitioner.class);
     private final Map<String,Map<Integer,Integer>> SPLIT_TO_REDUCER_MAP = new HashMap<>();
+    private SplitsCache splitsFile;
+
+    @Override
+    public void setConf(Configuration conf) {
+        super.setConf(conf);
+        splitsFile = SplitsCacheFactory.getSplitsCache(getConf());
+    }
 
     @Override
     protected int calculateIndex(int index, int numPartitions, String tableName, int cutPointArrayLength) {
@@ -36,10 +45,9 @@ public class SortedTabletLocationPartitioner extends MultiTableRangePartitioner 
     }
 
     private void assignPartitions(int numPartitions, String tableName, int cutPointArrayLength) throws IOException {
+        List<Text> splitsByTable = splitsFile.getSplits(tableName);
 
-        List<Text> splitsByTable = SplitsFile.getSplits(getConf(), tableName);
-
-        Map<Text,String> currentTableSplitToLocation = SplitsFile.getSplitsAndLocations(getConf(), tableName);
+        Map<Text,String> currentTableSplitToLocation = splitsFile.getSplitsAndLocationByTable(tableName);
         Map<Integer,Integer> tempSplitReducerMap = new HashMap<>();
         Text[] cutPointArray = splitsByTable.toArray(new Text[0]);
 

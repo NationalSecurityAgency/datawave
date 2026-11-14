@@ -362,8 +362,6 @@ public class IngestJob implements Tool {
         log.info("InputFormat: " + job.getInputFormatClass().getName());
         log.info("Mapper: " + job.getMapperClass().getName());
         log.info("Reduce tasks: " + (useMapOnly ? 0 : reduceTasks));
-        log.info("Split File: " + conf.get(TableSplitsCache.SPLITS_CACHE_DIR) + "/"
-                        + conf.get(TableSplitsCache.SPLITS_CACHE_FILE, TableSplitsCache.DEFAULT_SPLITS_CACHE_FILE));
 
         // Note that if we run any other jobs in the same vm (such as a sampler), then we may
         // need to catch and throw away an exception here
@@ -665,7 +663,7 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-disableRefreshSplits")) {
                 conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
             } else if (args[i].equals("-splitsCacheDir")) {
-                conf.set(TableSplitsCache.SPLITS_CACHE_DIR, args[++i]);
+                conf.set(SplitsConstants.SPLITS_CACHE_DIR, args[++i]);
             } else if (args[i].equals("-multipleNumShardsCacheDir")) {
                 conf.set(NumShards.MULTIPLE_NUMSHARDS_CACHE_PATH, args[++i]);
             } else if (args[i].equals("-enableAccumuloConfigCache")) {
@@ -849,7 +847,7 @@ public class IngestJob implements Tool {
         conf.setInt("splits.num.reduce", this.reduceTasks);
         // used by the output formatter and the sharded partitioner
         long before = System.currentTimeMillis();
-        SplitsFile.setupFile(job, conf);
+        SplitsCache.getInstance(conf).setupJob(job, conf);
         long after = System.currentTimeMillis();
 
         log.info("Sharded splits files setup time: " + (after - before) + "ms");
