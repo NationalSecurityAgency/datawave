@@ -49,158 +49,37 @@ public class GenerateShardSplits {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-
-        if (args.length < 3) {
-            printUsageAndExit();
+        Options opts;
+        try {
+            opts = parseOptions(args);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.exit(-1);
+            return;
         }
-        // parse out the args
-        Date startDate = null;
-        int DAYS_TO_GENERATE = -1;
-        int SHARDS = -1;
-        int splitStep = 1;
-        int balancerDelay = 5000; // 5 seconds
-        int maxBalancerDelay = 90000; // 90 seconds
-        double pctBatchBalanceRequired = .5;
-        boolean addSplits = true;
-        boolean addShardMarkers = false;
-        int splitsPerBatch = 100000;
-        String[] shardMarkerTypes = null;
-        String username = null;
-        byte[] password = null;
-        String tableName = null;
-        String instanceName = null;
-        String zookeepers = null;
-        for (int i = 0; i < args.length; i++) {
-            if (i == 0) {
-                try {
-                    startDate = DateHelper.parse(args[i]);
-                } catch (DateTimeParseException e) {
-                    System.out.println("Start Date does not match format. Exception=" + e.getMessage());
-                    System.exit(-2);
-                }
-            } else if (i == 1) {
-                try {
-                    DAYS_TO_GENERATE = Integer.parseInt(args[i]);
-                } catch (NumberFormatException e) {
-                    System.out.println("Days to Generate argument is not an integer:" + e.getMessage());
-                    System.exit(-2);
-                }
-            } else if (i == 2) {
-                try {
-                    SHARDS = Integer.parseInt(args[i]);
-                } catch (NumberFormatException e) {
-                    System.out.println("Shards argument is not an integer:" + e.getMessage());
-                    System.exit(-2);
-                }
-            } else if (i == 3) {
-                try {
-                    splitStep = Integer.parseInt(args[i]);
-                } catch (NumberFormatException e) {
-                    System.out.println("Split Step argument is not an integer:" + e.getMessage());
-                    System.exit(-2);
-                }
-            } else if ("-splitsPerBatch".equalsIgnoreCase(args[i])) {
-                if (i + 2 > args.length) {
-                    System.err.println("-splitsPerBatch must be followed a number of splits to create per batch");
-                    System.exit(-2);
-                }
-                try {
-                    splitsPerBatch = Integer.parseInt(args[i]);
-                    if (splitsPerBatch < 0) {
-                        System.out.println("splitsPerBatch cannot be less than 0");
-                        System.exit(-2);
-                    }
-                } catch (NumberFormatException e) {
-                    System.out.println("splitsPerBatch delay argument is not an integer:" + e.getMessage());
-                    System.exit(-2);
-                }
-            } else if ("-balancerDelay".equalsIgnoreCase(args[i])) {
-                if (i + 2 > args.length) {
-                    System.err.println("-balancerDelay must be followed a number of millisecond to wait for balance between batches");
-                    System.exit(-2);
-                }
-                try {
-                    balancerDelay = Integer.parseInt(args[++i]);
-                } catch (NumberFormatException e) {
-                    System.err.println("-balancerDelay must be followed a number of milliseconds to wait for balance between batches");
-                    System.exit(-2);
-                }
-            } else if ("-maxBalancerDelay".equalsIgnoreCase(args[i])) {
-                if (i + 2 > args.length) {
-                    System.err.println("-maxBalancerDelay must be followed a maximum number of milliseconds to wait for balance");
-                    System.exit(-2);
-                }
-                try {
-                    maxBalancerDelay = Integer.parseInt(args[++i]);
-                } catch (NumberFormatException e) {
-                    System.err.println("-maxBalancerDelay must be followed a maximum number of milliseconds to wait for balance");
-                    System.exit(-2);
-                }
-            } else if ("-pctBatchBalanceRequired".equalsIgnoreCase(args[i])) {
-                if (i + 2 > args.length) {
-                    System.err.println(
-                                    "-pctBatchBalanceRequired must be followed a double of the percentage of batch size that must be on a different server to continue");
-                    System.exit(-2);
-                }
-                try {
-                    pctBatchBalanceRequired = Integer.parseInt(args[++i]);
-                } catch (NumberFormatException e) {
-                    System.err.println(
-                                    "-pctBatchBalanceRequired must be followed a double of the percentage of batch size that must be on a different server to continue");
-                    System.exit(-2);
-                }
-            } else if (args[i].equals("-markersOnly")) {
-                addSplits = false;
-            } else if (args[i].equals("-addShardMarkers")) {
-                addShardMarkers = true;
-            } else if (args[i].equals("-addDataTypeMarkers")) {
-                shardMarkerTypes = args[i + 1].split(",");
-                // skip over cmd, for loop will skip over arg
-                i++;
-            } else {
-                // need at least 3 more args
-                if (i + 3 > args.length) {
-                    printUsageAndExit();
-                } else {
-                    username = args[i];
-                    password = PasswordConverter.parseArg(args[i + 1]).getBytes();
-                    tableName = args[i + 2];
-                    // skip over args
-                    i += 3;
-                }
-                // if we still have args
-                if (i < args.length) {
-                    // then we need exactly 2 more args
-                    if (i + 2 != args.length) {
-                        printUsageAndExit();
-                    } else {
-                        instanceName = args[i];
-                        zookeepers = args[i + 1];
-                        // skip over args to terminate loop
-                        i += 2;
-                    }
-                }
-            }
+
+        if (opts.printUsageAndExit) {
+            printUsageAndExit();
         }
 
         List<Text> splits = new ArrayList<>();
         List<Mutation> mutations = new ArrayList<>();
-        for (int x = 0; x < DAYS_TO_GENERATE; x++) {
+        for (int x = 0; x < opts.daysToGenerate; x++) {
 
             // Generate configured shards per day
-            for (int y = 0; y < SHARDS; y += splitStep) {
-                Text split = new Text(DateHelper.format(startDate) + "_" + y);
+            for (int y = 0; y < opts.numShardsPerDay; y += opts.numShardsPerSplit) {
+                Text split = new Text(DateHelper.format(opts.startDate) + "_" + y);
                 splits.add(split);
 
                 // add markers as required
-                if (addShardMarkers || shardMarkerTypes != null) {
-                    Date nextYear = DateUtils.addYears(startDate, 1);
+                if (opts.addShardMarkers || opts.shardMarkerTypes != null) {
+                    Date nextYear = DateUtils.addYears(opts.startDate, 1);
                     Mutation m = new Mutation(split);
-                    if (addShardMarkers) {
+                    if (opts.addShardMarkers) {
                         m.put(EMPTY_TEXT, EMPTY_TEXT, EMPTY_VIS, nextYear.getTime(), EMPTY_VALUE);
                     }
-                    if (shardMarkerTypes != null) {
-                        for (String type : shardMarkerTypes) {
+                    if (opts.shardMarkerTypes != null) {
+                        for (String type : opts.shardMarkerTypes) {
                             type = type.trim();
                             if (!type.isEmpty()) {
                                 m.put(new Text(type), EMPTY_TEXT, EMPTY_VIS, nextYear.getTime(), EMPTY_VALUE);
@@ -213,19 +92,20 @@ public class GenerateShardSplits {
                 }
             }
 
-            startDate = DateUtils.addDays(startDate, 1);
+            opts.startDate = DateUtils.addDays(opts.startDate, 1);
         }
         List<Text> results = new ArrayList(splits.size());
         calculateMidpoints(splits, results);
 
         splits = results;
 
-        if (username != null) {
+        if (opts.username != null) {
             // Connect to accumulo
-            try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, new PasswordToken(password)).build()) {
+            try (AccumuloClient client = Accumulo.newClient().to(opts.instanceName, opts.zookeepers).as(opts.username, new PasswordToken(opts.password))
+                            .build()) {
                 // add the splits
-                if (addSplits) {
-                    int batchSize = splitsPerBatch; // Make splits in batches,
+                if (opts.addSplits) {
+                    int batchSize = opts.splitsPerBatch; // Make splits in batches,
 
                     int callCount = 0;
                     int reducedBatchSize = 0;
@@ -251,34 +131,34 @@ public class GenerateShardSplits {
                         long startAddSplits = System.currentTimeMillis();
 
                         // Perform the operation on the current batch
-                        client.tableOperations().addSplits(tableName, batch);
+                        client.tableOperations().addSplits(opts.tableName, batch);
 
                         // Remove the processed batch from the list
                         splits.subList(0, reducedBatchSize).clear();
 
-                        Set<String> tabletLocations = getTabletLocations(client, tableName, rangesToWaitFor);
+                        Set<String> tabletLocations = getTabletLocations(client, opts.tableName, rangesToWaitFor);
 
                         long currentBatchDelay = System.currentTimeMillis() - startAddSplits;
 
                         // Ensure at least half the tablets have balanced off the original tserver
-                        while ((tabletLocations.size() < reducedBatchSize * pctBatchBalanceRequired) && (currentBatchDelay < maxBalancerDelay)) {
-                            tabletLocations = getTabletLocations(client, tableName, rangesToWaitFor);
-                            Thread.sleep(balancerDelay);
-                            currentBatchDelay = currentBatchDelay + balancerDelay;
+                        while ((tabletLocations.size() < reducedBatchSize * opts.pctBatchBalanceRequired) && (currentBatchDelay < opts.maxBalancerDelay)) {
+                            tabletLocations = getTabletLocations(client, opts.tableName, rangesToWaitFor);
+                            Thread.sleep(opts.balancerDelay);
+                            currentBatchDelay = currentBatchDelay + opts.balancerDelay;
                         }
                     }
                 }
 
                 // add the markers
                 if (!mutations.isEmpty()) {
-                    try (BatchWriter w = client.createBatchWriter(tableName,
+                    try (BatchWriter w = client.createBatchWriter(opts.tableName,
                                     new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(4))) {
                         w.addMutations(mutations);
                     }
                 }
             } // disconnect from accumulo
         } else {
-            if (addSplits) {
+            if (opts.addSplits) {
                 for (Text t : splits) {
                     System.out.println(t.toString());
                 }
@@ -293,6 +173,142 @@ public class GenerateShardSplits {
             }
 
         }
+    }
+
+    static Options parseOptions(String[] args) {
+        Options opts = new Options();
+        if (args.length < 3) {
+            opts.printUsageAndExit = true;
+            return opts;
+        }
+        for (int i = 0; i < args.length; i++) {
+            if (i == 0) {
+                try {
+                    opts.startDate = DateHelper.parse(args[i]);
+                } catch (DateTimeParseException e) {
+                    throw new IllegalArgumentException("Start Date does not match format. Exception=" + e.getMessage());
+                }
+            } else if (i == 1) {
+                try {
+                    opts.daysToGenerate = Integer.parseInt(args[i]);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Days to Generate argument is not an integer: " + e.getMessage());
+                }
+            } else if (i == 2) {
+                try {
+                    opts.numShardsPerDay = Integer.parseInt(args[i]);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Num Shards Per Day argument is not an integer: " + e.getMessage());
+                }
+            } else if (i == 3) {
+                try {
+                    opts.numShardsPerSplit = Integer.parseInt(args[i]);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Num Shards Per Split argument is not an integer: " + e.getMessage());
+                }
+            } else if ("-splitsPerBatch".equalsIgnoreCase(args[i])) {
+                if (i + 2 > args.length) {
+                    throw new IllegalArgumentException("-splitsPerBatch must be followed by a number of splits to create per batch");
+                }
+                try {
+                    opts.splitsPerBatch = Integer.parseInt(args[++i]);
+                    if (opts.splitsPerBatch < 10) {
+                        throw new IllegalArgumentException("-splitsPerBatch cannot be less than 10");
+                    }
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("-splitsPerBatch argument is not an integer: " + e.getMessage());
+                }
+            } else if ("-balancerDelay".equalsIgnoreCase(args[i])) {
+                if (i + 2 > args.length) {
+                    throw new IllegalArgumentException("-balancerDelay must be followed by a number of milliseconds to wait for balance between batches");
+                }
+                try {
+                    opts.balancerDelay = Integer.parseInt(args[++i]);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("-balancerDelay argument is not an integer: " + e.getMessage());
+                }
+            } else if ("-maxBalancerDelay".equalsIgnoreCase(args[i])) {
+                if (i + 2 > args.length) {
+                    throw new IllegalArgumentException("-maxBalancerDelay must be followed a maximum number of milliseconds to wait for balance");
+                }
+                try {
+                    opts.maxBalancerDelay = Integer.parseInt(args[++i]);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("-maxBalancerDelay argument is not an integer: " + e.getMessage());
+                }
+            } else if ("-pctBatchBalanceRequired".equalsIgnoreCase(args[i])) {
+                if (i + 2 > args.length) {
+                    throw new IllegalArgumentException(
+                                    "-pctBatchBalanceRequired must be followed a double of the percentage of batch size that must be on a different server to continue");
+                }
+                try {
+                    opts.pctBatchBalanceRequired = Double.parseDouble(args[++i]);
+                    if (opts.pctBatchBalanceRequired < 0 || opts.pctBatchBalanceRequired > 1) {
+                        throw new IllegalArgumentException("-pctBatchBalanceRequired must be between 0 and 1");
+                    }
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("-pctBatchBalanceRequired argument is not a double: " + e.getMessage());
+                }
+            } else if (args[i].equals("-markersOnly")) {
+                opts.addSplits = false;
+            } else if (args[i].equals("-addShardMarkers")) {
+                opts.addShardMarkers = true;
+            } else if (args[i].equals("-addDataTypeMarkers")) {
+                if (i + 2 > args.length) {
+                    throw new IllegalArgumentException("-addDataTypeMarkers must be followed a comma-delimited list of data types");
+                }
+                opts.shardMarkerTypes = args[i + 1].split(",");
+                // skip over cmd, for loop will skip over arg
+                i++;
+            } else {
+                // need at least 3 more args
+                if (i + 3 > args.length) {
+                    opts.printUsageAndExit = true;
+                    return opts;
+                } else {
+                    opts.username = args[i];
+                    opts.password = PasswordConverter.parseArg(args[i + 1]).getBytes();
+                    opts.tableName = args[i + 2];
+                    // skip over args
+                    i += 3;
+                }
+                // if we still have args
+                if (i < args.length) {
+                    // then we need exactly 2 more args
+                    if (i + 2 != args.length) {
+                        opts.printUsageAndExit = true;
+                        return opts;
+                    } else {
+                        opts.instanceName = args[i];
+                        opts.zookeepers = args[i + 1];
+                        // skip over args to terminate loop
+                        i += 2;
+                    }
+                }
+            }
+        }
+
+        return opts;
+    }
+
+    static class Options {
+        boolean printUsageAndExit = false;
+        Date startDate = null;
+        int daysToGenerate = -1;
+        int numShardsPerDay = -1;
+        int numShardsPerSplit = 1;
+        int balancerDelay = 5_000; // 5 seconds
+        int maxBalancerDelay = 90_000; // 90 seconds
+        double pctBatchBalanceRequired = .5;
+        boolean addSplits = true;
+        boolean addShardMarkers = false;
+        int splitsPerBatch = 100_000;
+        String[] shardMarkerTypes = null;
+        String username = null;
+        byte[] password = null;
+        String tableName = null;
+        String instanceName = null;
+        String zookeepers = null;
     }
 
     private static Set<String> getTabletLocations(AccumuloClient client, String tableName, List<Range> rangesToWaitFor)
