@@ -29,5 +29,7 @@ public final class TableName {
     // global secondary index, partitioned by day
     public static final String SHARD_DAY_INDEX = "shardDayIndex";
 
-    private TableName() {}
+    private TableName() {
+        throw new UnsupportedOperationException();
+    }
 }
