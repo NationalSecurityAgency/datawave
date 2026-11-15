@@ -17,7 +17,6 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import com.google.common.base.Function;
 import com.google.common.collect.Multimap;
 
-import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.composite.CompositeMetadata;
@@ -28,15 +27,17 @@ import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.Tuple3;
 import datawave.query.util.TypeMetadata;
+import datawave.table.constants.QueryConstants;
 
 /**
  * Used to create a specialized, lazy-fetching index only context that in practice was quite horrible.
  * <p>
- * Currently used ot create a {@link DelayedNonEventIndexContext} which is far more responsible with the delegated resources.
+ * Currently used to create a {@link DelayedNonEventIndexContext} which is far more responsible with the delegated resources.
  *
  * @see DelayedNonEventIndexContext
  */
 public class IndexOnlyContextCreator extends JexlContextCreator {
+
     private final Function<Range,Key> getDocumentKey;
     private final boolean includeGroupingContext;
     private final boolean includeRecordId;
@@ -44,71 +45,216 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     private final TypeMetadata typeMetadata;
     private final CompositeMetadata compositeMetadata;
     private final Range range;
-
     private final IteratorBuildingVisitor iteratorBuildingVisitor;
     private final Multimap<String,JexlNode> delayedNonEventFieldMap;
     private final Equality equality;
     private final Collection<ByteSequence> columnFamilies;
     private final boolean inclusive;
-
-    private static final String SIMPLE_NAME = IndexOnlyContextCreator.class.getSimpleName();
-    private static final String SKVI_SIMPLE_NAME = SortedKeyValueIterator.class.getSimpleName();
-    private static final String QO_SIMPLE_NAME = QueryOptions.class.getSimpleName();
-
     private final TimeFilter timeFilter;
 
     /**
-     * Constructor
-     *
-     * @param source
-     *            The iterator used to fetch index-only records, as applicable, from the shard table
-     * @param range
-     *            The range for a given document fetched from the shard table
-     * @param typeMetadata
-     *            Normalizers applied to the value(s) of fields fetched for a given document
-     * @param options
-     *            Various query parameters and helper components
-     * @param compositeMetadata
-     *            the composite metadata
-     * @param inclusive
-     *            flag indicating if the range is inclusive
-     * @param columnFamilies
-     *            the column families
-     * @param comparatorFactory
-     *            the comparator factory to use
-     * @param delayedNonEventFieldMap
-     *            map of the delayed non-event fields
-     * @param equality
-     *            the equality object
-     * @param iteratorBuildingVisitor
-     *            the iterator visitor
-     * @param variables
-     *            collection of variables
+     * Builder class for {@link IndexOnlyContextCreator} supporting fluent-style building.
      */
-    public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
-                    final CompositeMetadata compositeMetadata, final QueryOptions options, Collection<String> variables,
-                    IteratorBuildingVisitor iteratorBuildingVisitor, Multimap<String,JexlNode> delayedNonEventFieldMap, Equality equality,
-                    Collection<ByteSequence> columnFamilies, boolean inclusive, JexlContextValueComparator comparatorFactory) {
-        super(variables, comparatorFactory);
-        checkNotNull(source, SIMPLE_NAME + " cannot be initialized with a null " + SKVI_SIMPLE_NAME);
-        checkNotNull(range, SIMPLE_NAME + " cannot be initialized with a null Range");
-        checkNotNull(options, SIMPLE_NAME + " cannot be initialized with null " + QO_SIMPLE_NAME);
-        this.typeMetadata = typeMetadata;
-        this.compositeMetadata = compositeMetadata;
-        this.getDocumentKey = new CreatorOptions(options).getDocumentKey();
-        this.includeGroupingContext = options.isIncludeGroupingContext();
-        this.includeRecordId = options.isIncludeRecordId();
-        this.indexOnlyFields = options.getIndexOnlyFields();
+    public static class Builder {
 
-        // for delayed index lookup
-        this.iteratorBuildingVisitor = iteratorBuildingVisitor;
-        this.delayedNonEventFieldMap = delayedNonEventFieldMap;
-        this.equality = equality;
-        this.columnFamilies = columnFamilies;
-        this.inclusive = inclusive;
+        private Collection<String> variables;
+        private TypeMetadata typeMetadata;
+        private CompositeMetadata compositeMetadata;
+        private Range range;
+        private IteratorBuildingVisitor iteratorBuildingVisitor;
+        private Multimap<String,JexlNode> delayedNonEventFieldMap;
+        private Equality equality;
+        private Collection<ByteSequence> columnFamilies;
+        private boolean inclusive;
+        private SortedKeyValueIterator<Key,Value> source;
+        private JexlContextCreator.JexlContextValueComparator comparatorFactory;
+        private QueryOptions options;
 
-        this.range = range;
-        this.timeFilter = options.getTimeFilter();
+        /**
+         * Build and return a new {@link IndexOnlyContextCreator} using the fields of this builder.
+         *
+         * @return the new creator
+         */
+        public IndexOnlyContextCreator build() {
+            return new IndexOnlyContextCreator(this);
+        }
+
+        /**
+         * Set the collection of variables.
+         *
+         * @param variables
+         *            the variables
+         * @return this builder
+         */
+        public Builder setVariables(Collection<String> variables) {
+            this.variables = variables;
+            return this;
+        }
+
+        /**
+         * Set the comparator factory to use.
+         *
+         * @param comparatorFactory
+         *            the factory
+         * @return this builder
+         */
+        public Builder setComparatorFactory(JexlContextCreator.JexlContextValueComparator comparatorFactory) {
+            this.comparatorFactory = comparatorFactory;
+            return this;
+        }
+
+        /**
+         * Set the query options, various query parameters and helper components.
+         *
+         * @param options
+         *            the query options
+         * @return this builder
+         */
+        public Builder setOptions(QueryOptions options) {
+            this.options = options;
+            return this;
+        }
+
+        /**
+         * Set the iterator used to fetch index-only records, as applicable, from the shard table
+         *
+         * @param source
+         *            the iterator
+         * @return this builder
+         */
+        public Builder setSource(SortedKeyValueIterator<Key,Value> source) {
+            this.source = source;
+            return this;
+        }
+
+        /**
+         * Set the normalizers that are applied to the value(s) of fields fetched for a given document.
+         *
+         * @param typeMetadata
+         *            the type metadata
+         * @return this builder
+         */
+        public Builder setTypeMetadata(TypeMetadata typeMetadata) {
+            this.typeMetadata = typeMetadata;
+            return this;
+        }
+
+        /**
+         * Set the composite metadata.
+         *
+         * @param compositeMetadata
+         *            the composite metadata
+         * @return this builder
+         */
+        public Builder setCompositeMetadata(CompositeMetadata compositeMetadata) {
+            this.compositeMetadata = compositeMetadata;
+            return this;
+        }
+
+        /**
+         * Set the range for a given document fetched from the shard table.
+         *
+         * @param range
+         *            the range
+         * @return this builder
+         */
+        public Builder setRange(Range range) {
+            this.range = range;
+            return this;
+        }
+
+        /**
+         * Set the iterator visitor.
+         *
+         * @param iteratorBuildingVisitor
+         *            the visitor
+         * @return this builder
+         */
+        public Builder setIteratorBuildingVisitor(IteratorBuildingVisitor iteratorBuildingVisitor) {
+            this.iteratorBuildingVisitor = iteratorBuildingVisitor;
+            return this;
+        }
+
+        /**
+         * Set the map of delayed non-event fields.
+         *
+         * @param delayedNonEventFieldMap
+         *            the map
+         * @return this builder
+         */
+        public Builder setDelayedNonEventFieldMap(Multimap<String,JexlNode> delayedNonEventFieldMap) {
+            this.delayedNonEventFieldMap = delayedNonEventFieldMap;
+            return this;
+        }
+
+        /**
+         * Set the equality object.
+         *
+         * @param equality
+         *            the equality
+         * @return this builder
+         */
+        public Builder setEquality(Equality equality) {
+            this.equality = equality;
+            return this;
+        }
+
+        /**
+         * Set the column families.
+         *
+         * @param columnFamilies
+         *            the column families
+         * @return this builder
+         */
+        public Builder setColumnFamilies(Collection<ByteSequence> columnFamilies) {
+            this.columnFamilies = columnFamilies;
+            return this;
+        }
+
+        /**
+         * Set whether the range is inclusive.
+         *
+         * @param inclusive
+         *            the range inclusivity
+         * @return this builder
+         */
+        public Builder setInclusive(boolean inclusive) {
+            this.inclusive = inclusive;
+            return this;
+        }
+    }
+
+    /**
+     * Return a new {@link IndexOnlyContextCreator.Builder} instance.
+     *
+     * @return the new builder
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public IndexOnlyContextCreator(Builder builder) {
+        super(builder.variables, builder.comparatorFactory);
+        checkNotNull(builder.source, "source must not be null");
+        checkNotNull(builder.range, "range must not be null");
+        checkNotNull(builder.options, "options must not be null");
+
+        this.typeMetadata = builder.typeMetadata;
+        this.compositeMetadata = builder.compositeMetadata;
+        this.getDocumentKey = builder.options.getDocumentKey();
+        this.includeGroupingContext = builder.options.isIncludeGroupingContext();
+        this.includeRecordId = builder.options.isIncludeRecordId();
+        this.indexOnlyFields = builder.options.getIndexOnlyFields();
+
+        // For delayed index lookup.
+        this.iteratorBuildingVisitor = builder.iteratorBuildingVisitor;
+        this.delayedNonEventFieldMap = builder.delayedNonEventFieldMap;
+        this.equality = builder.equality;
+        this.columnFamilies = builder.columnFamilies;
+        this.inclusive = builder.inclusive;
+
+        this.range = builder.range;
+        this.timeFilter = builder.options.getTimeFilter();
     }
 
     @Override
@@ -172,7 +318,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
             // build the current document range from the document Key to end of the document, even though for some query logics this may be too large a range,
             // it will be narrowed with equality later
             Key startKey = new Key(from.first().getRow(), from.first().getColumnFamily());
-            Key endKey = new Key(startKey.getRow().toString(), startKey.getColumnFamily() + Constants.MAX_UNICODE_STRING);
+            Key endKey = new Key(startKey.getRow().toString(), startKey.getColumnFamily() + QueryConstants.MAX_UNICODE_STRING);
             Range docRange = new Range(startKey, true, endKey, false);
 
             newContext = new DelayedNonEventIndexContext(newContext, iteratorBuildingVisitor, delayedNonEventFieldMap, docRange, columnFamilies, inclusive,
@@ -195,19 +341,6 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
             if (this.indexOnlyFields.contains(var) && !context.has(var)) {
                 context.set(var, FunctionalSet.empty());
             }
-        }
-    }
-
-    /*
-     * Deep copy of standard QueryOptions that adds a getter for obtaining the value of the "getDocumentKey"
-     */
-    private static class CreatorOptions extends QueryOptions {
-        public CreatorOptions(final QueryOptions other) {
-            this.deepCopy(other);
-        }
-
-        public Function<Range,Key> getDocumentKey() {
-            return super.getDocumentKey;
         }
     }
 }
