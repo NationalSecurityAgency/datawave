@@ -153,6 +153,13 @@ public class CompositeTimestamp {
      * @return The composite timestamp
      */
     public static long getCompositeTimeStamp(long eventDate, long ageOffDate) {
+        // Check if the 'eventDate' and 'ageOffDate' are the same value, if so
+        // then the composite time stamp is not being used; we return the 'eventDate'
+        // but verify that it is a valid event timestamp
+        if (eventDate == ageOffDate) {
+            validateEventDate(eventDate);
+            return eventDate;
+        }
         return getCompositeTimeStamp(eventDate, ageOffDate, TimeZone.getTimeZone("GMT"));
     }
 
