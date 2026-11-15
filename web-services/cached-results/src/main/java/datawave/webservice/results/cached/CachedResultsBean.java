@@ -402,7 +402,7 @@ public class CachedResultsBean {
                     QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
                                     settings.getQueryLogicName());
                     if (limiterResponse.metLimit()) {
-                        BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED,
+                        BadRequestQueryException qe = new BadRequestQueryException(limiterResponse.getLimitOwner().getErrorCode(),
                                         limiterResponse.getMessage());
                         response.addException(qe);
                         throw new BadRequestException(qe, response);

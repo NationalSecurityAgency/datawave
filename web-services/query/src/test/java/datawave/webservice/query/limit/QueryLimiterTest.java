@@ -101,7 +101,7 @@ class QueryLimiterTest {
         startQueries(1, userA, system2, tldQueryLogic);
 
         // Verify that after we've created five queries for the same user (across different servers and query logics), we have met a limit.
-        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 5 running queries");
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 5 running queries", LimitOwner.USER);
     }
 
     /**
@@ -124,7 +124,7 @@ class QueryLimiterTest {
         startQueries(1, userB, system1, tldQueryLogic);
 
         // Verify that after we've created seven queries for the same system (across different users and query logics), we have met a limit.
-        assertLimitMet(userA, system1, tldQueryLogic, "System 'SYSTEM-01' has reached limit of 8 running queries");
+        assertLimitMet(userA, system1, tldQueryLogic, "System 'SYSTEM-01' has reached limit of 8 running queries", LimitOwner.SYSTEM);
     }
 
     /**
@@ -153,7 +153,8 @@ class QueryLimiterTest {
         startQueries(1, userA, system2, tldQueryLogic);
 
         // Verify that after we've created three queries for userA (across different servers), we have met a limit.
-        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 3 running queries for query logic group 'TLD'");
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 3 running queries for query logic group 'TLD'",
+                        LimitOwner.USER);
 
         // Assert that the user could still create queries for the EventQueryLogic.
         assertLimitNotMet(userA, system1, eventQueryLogic);
@@ -184,12 +185,12 @@ class QueryLimiterTest {
         startQueries(1, userA, system2, tldQueryLogic);
 
         // Verify that after we've created four TLDQueryLogic queries for userA (across different servers), we have met a limit.
-        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 8 running queries");
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 8 running queries", LimitOwner.USER);
 
         startQueries(5, userB, system1, eventQueryLogic);
 
         // Verify that userB, who has no custom limit, may not have more than 5 queries.
-        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 5 running queries");
+        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 5 running queries", LimitOwner.USER);
     }
 
     /**
@@ -224,7 +225,8 @@ class QueryLimiterTest {
         startQueries(1, userA, system2, tldQueryLogic);
 
         // Verify that after we've created three TLDQueryLogic queries for userA (across different servers), we have met a limit.
-        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 3 running queries for query logic group 'TLD'");
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 3 running queries for query logic group 'TLD'",
+                        LimitOwner.USER);
 
         // Verify that userB, who has no custom limit, may have up to 5 TLDQueryLogic queries.
         startQueries(4, userB, system1, tldQueryLogic);
@@ -233,7 +235,8 @@ class QueryLimiterTest {
 
         startQueries(1, userB, system1, tldQueryLogic);
 
-        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 5 running queries for query logic group 'TLD'");
+        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 5 running queries for query logic group 'TLD'",
+                        LimitOwner.USER);
     }
 
     /**
@@ -261,7 +264,7 @@ class QueryLimiterTest {
         startQueries(1, userA, system2, eventQueryLogic);
 
         // Verify that after we've created ten queries for system2 (across different users), we have met a limit.
-        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries");
+        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries", LimitOwner.SYSTEM);
 
         // Verify that system1 is not bound to the same limit as system2.
         startQueries(15, userB, system1, eventQueryLogic);
@@ -300,7 +303,8 @@ class QueryLimiterTest {
         startQueries(1, userA, system2, tldQueryLogic);
 
         // Verify that after we've created ten TLDQueryLogic queries on system2 (across different users), we have met a limit.
-        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries for query logic group 'TLD'");
+        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries for query logic group 'TLD'",
+                        LimitOwner.SYSTEM);
 
         // Verify that system1, which has no custom limit, will not enforce any system-wide limits for TLDQueryLogic queries. TLDQueryLogic query limits outside
         // system2 only apply to individual users
@@ -309,8 +313,10 @@ class QueryLimiterTest {
         startQueries(15, userA, system1, tldQueryLogic);
         startQueries(15, userB, system1, tldQueryLogic);
 
-        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
-        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 20 running queries for query logic group 'TLD'",
+                        LimitOwner.USER);
+        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 20 running queries for query logic group 'TLD'",
+                        LimitOwner.USER);
     }
 
     /**
@@ -339,7 +345,7 @@ class QueryLimiterTest {
         startQueries(1, userA, system2, eventQueryLogic);
 
         // Verify that after we've created ten queries for system2 (across different users), we have met a limit.
-        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries");
+        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries", LimitOwner.SYSTEM);
 
         // Verify that system1 is not bound to the same limit as system2.
         startQueries(15, userB, system1, eventQueryLogic);
@@ -380,7 +386,8 @@ class QueryLimiterTest {
         startQueries(1, userA, system2, tldQueryLogic);
 
         // Verify that after we've created ten TLDQueryLogic queries on system2 (across different users), we have met a limit.
-        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries for query logic group 'TLD'");
+        assertLimitMet(userA, system2, tldQueryLogic, "System 'SYSTEM-02' has reached limit of 10 running queries for query logic group 'TLD'",
+                        LimitOwner.SYSTEM);
 
         // Verify that system1, which has no custom limit, will not enforce any system-wide limits for TLDQueryLogic queries. TLDQueryLogic query limits outside
         // system2 only apply to individual users, and system2 queries do not count against the user limit.
@@ -396,8 +403,10 @@ class QueryLimiterTest {
         startQueries(1, userA, system1, tldQueryLogic);
         startQueries(1, userB, system1, tldQueryLogic);
 
-        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
-        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 20 running queries for query logic group 'TLD'");
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 20 running queries for query logic group 'TLD'",
+                        LimitOwner.USER);
+        assertLimitMet(userB, system1, tldQueryLogic, "User 'cn=testuserb, c=us' has reached limit of 20 running queries for query logic group 'TLD'",
+                        LimitOwner.USER);
     }
 
     /**
@@ -436,7 +445,8 @@ class QueryLimiterTest {
         // Verify that after creating 10 TLDQueryLogic queries on system1 for userA, we meet the TLDQueryLogicLimit.
         startQueries(10, userA, system1, tldQueryLogic);
 
-        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries for query logic group 'TLD'");
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries for query logic group 'TLD'",
+                        LimitOwner.USER);
     }
 
     /**
@@ -452,7 +462,7 @@ class QueryLimiterTest {
         List<String> queryIds = startQueries(10, userA, system1, tldQueryLogic);
 
         // Verify that 10 queries for userA meets a limit.
-        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries");
+        assertLimitMet(userA, system1, tldQueryLogic, "User 'cn=testusera, c=us' has reached limit of 10 running queries", LimitOwner.USER);
 
         // Stop one of the queries. Doesn't matter which, they're all for userA.
         getLimiter(system1).stopCountingQueryTowardsLimits(queryIds.get(0));
@@ -493,11 +503,12 @@ class QueryLimiterTest {
         assertThat(response.metLimit()).isFalse();
     }
 
-    private void assertLimitMet(String userDn, String system, String queryLogic, String message) throws Exception {
+    private void assertLimitMet(String userDn, String system, String queryLogic, String message, LimitOwner limitOwner) throws Exception {
         QueryLimiter limiter = getLimiter(system);
         QueryLimiterResponse response = limiter.checkForLimits(userDn, system, queryLogic);
         assertThat(response.getMessage()).isEqualTo(message);
         assertThat(response.metLimit()).isTrue();
+        assertThat(response.getLimitOwner()).isEqualTo(limitOwner);
     }
 
     private void givenConfig(QueryLimitConfiguration config) {

@@ -166,7 +166,7 @@ public class QueryLimiter {
         LimitChecker checker = new LimitChecker(userDn, system, queryLogic);
         checker.checkLimits();
         if (checker.metLimit) {
-            return QueryLimiterResponse.metLimit(checker.message);
+            return QueryLimiterResponse.metLimit(checker.message, checker.limitOwner);
         } else {
             return QueryLimiterResponse.hasNotMetLimit();
         }
@@ -261,6 +261,7 @@ public class QueryLimiter {
         private final String queryLogic;
 
         private boolean metLimit;
+        private LimitOwner limitOwner;
         private String message;
         private List<String> distinctQueryLogics;
 
@@ -282,6 +283,11 @@ public class QueryLimiter {
 
             // If no limits were met, check against any system limits.
             checkSystemLimits();
+        }
+
+        private void markLimitMet(LimitOwner limitOwner) {
+            this.limitOwner = limitOwner;
+            this.metLimit = true;
         }
 
         /**
@@ -350,7 +356,7 @@ public class QueryLimiter {
                     for (QueryLogicGroupLimitChecker limitChecker : limitCheckers) {
                         limitChecker.incrementTotal(queryLogic, totalQueriesForQueryLogic);
                         if (limitChecker.limitMet()) {
-                            this.metLimit = true;
+                            markLimitMet(LimitOwner.USER);
                             this.message = "User '" + userDn + "' has reached limit of " + limitChecker.limit + " running queries for query logic group '"
                                             + limitChecker.group + "'";
                             return;
@@ -360,7 +366,7 @@ public class QueryLimiter {
                     // Update the current total user queries, and check if we've met a limit. If so, update our status the return early.
                     totalUserQueries += totalQueriesForQueryLogic;
                     if (totalUserQueries >= queryLimit) {
-                        this.metLimit = true;
+                        markLimitMet(LimitOwner.USER);
                         this.message = "User '" + userDn + "' has reached limit of " + queryLimit + " running queries";
                         return;
                     }
@@ -370,7 +376,7 @@ public class QueryLimiter {
             // If we've reached this point, we did not meet any user limits configured for the query logic. Check if the total number of queries for the user
             // meets their max query limit. Pass in the query logics we already counted as well as the current total to avoid unnecessary scanning in Zookeeper.
             if (tracker.totalUserQueriesMeetsLimit(userDn, queryLimit, queryLogics, totalUserQueries)) {
-                this.metLimit = true;
+                markLimitMet(LimitOwner.USER);
                 this.message = "User '" + userDn + "' has reached limit of " + queryLimit + " running queries";
             }
         }
@@ -410,7 +416,7 @@ public class QueryLimiter {
                             for (QueryLogicGroupLimitChecker limitChecker : limitCheckers) {
                                 limitChecker.incrementTotal(queryLogic, totalQueriesForQueryLogic);
                                 if (limitChecker.limitMet()) {
-                                    this.metLimit = true;
+                                    markLimitMet(LimitOwner.SYSTEM);
                                     this.message = "System '" + system + "' has reached limit of " + limitChecker.limit
                                                     + " running queries for query logic group '" + limitChecker.group + "'";
                                     return;
@@ -422,7 +428,7 @@ public class QueryLimiter {
                                 // Update the current total system queries, and check if we've met a limit. If so, update our status the return early.
                                 totalSystemQueries += totalQueriesForQueryLogic;
                                 if (totalSystemQueries >= queryLimit) {
-                                    this.metLimit = true;
+                                    markLimitMet(LimitOwner.SYSTEM);
                                     this.message = "System '" + system + "' has reached limit of " + queryLimit + " running queries";
                                     return;
                                 }
@@ -437,7 +443,7 @@ public class QueryLimiter {
             // Zookeeper.
             if (queryLimit != QueryLimitConstants.NO_LIMIT) {
                 if (tracker.totalSystemQueriesMeetsLimit(system, queryLimit, queryLogics, totalSystemQueries)) {
-                    this.metLimit = true;
+                    markLimitMet(LimitOwner.SYSTEM);
                     this.message = "System '" + system + "' has reached limit of " + queryLimit + " running queries";
                 }
             }
