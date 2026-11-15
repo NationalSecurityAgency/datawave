@@ -2,10 +2,12 @@ package datawave.next;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.junit.jupiter.api.Test;
@@ -50,22 +52,24 @@ public class ScanResultTest {
         ScanResult right = createScanResult(2, 4);
         left.union(right);
         assertResults(Set.of(1, 2, 3, 4), left.getResults());
-        assertFalse(left.isTimeout());
-        assertFalse(right.isTimeout());
+        assertFalse(left.isPartialScan());
+        assertFalse(right.isPartialScan());
     }
 
     @Test
     public void testUnionOfPartialResult() {
         ScanResult left = createScanResult(1, 3);
         ScanResult right = createScanResult(2, 4);
-        right.setTimeout(true);
-        assertFalse(left.isTimeout());
-        assertTrue(right.isTimeout());
+        right.setPartialScan(true);
+        assertFalse(left.isPartialScan());
+        assertTrue(right.isPartialScan());
 
         left.union(right);
         assertResults(Set.of(1, 2, 3, 4), left.getResults());
-        assertTrue(left.isTimeout());
-        assertTrue(right.isTimeout());
+        assertTrue(left.isPartialScan());
+        assertTrue(right.isPartialScan());
+        assertFalse(left.isExact());
+        assertFalse(right.isExact());
     }
 
     @Test
@@ -184,48 +188,64 @@ public class ScanResultTest {
     }
 
     @Test
+    public void testPartialIntersectionWithEmptyReceiver() {
+        testPartialIntersection(createScanResult(), createScanResult(1, 2), Set.of());
+    }
+
+    @Test
+    public void testEmptyPartialScanDoesNotRemoveCandidates() {
+        // An empty partial scan has no completed key range, so it cannot rule out any candidates.
+        testPartialIntersection(createScanResult(1, 2, 3), createScanResult(), Set.of(1, 2, 3));
+    }
+
+    @Test
+    public void testPartialIntersectionWithBothOperandsEmpty() {
+        testPartialIntersection(createScanResult(), createScanResult(), Set.of());
+    }
+
+    @Test
     public void testPartialIntersectionNotPossibleWithTimeoutRegex() {
         ScanResult left = createScanResult(3, 4);
         ScanResult right = createScanResult(1, 2);
-        right.setTimeout(true);
+        right.setPartialScan(true);
         right.setSource(SOURCE.ER);
 
         left.intersect(right);
 
         // a regex timeout cannot be intersected
         assertResults(Set.of(3, 4), left.getResults());
-        assertFalse(left.isTimeout());
-        assertTrue(right.isTimeout());
+        assertFalse(left.isPartialScan());
+        assertTrue(right.isPartialScan());
     }
 
     @Test
     public void testPartialIntersectionNotPossibleWithTimeoutRange() {
         ScanResult left = createScanResult(3, 4);
         ScanResult right = createScanResult(1, 2);
-        right.setTimeout(true);
+        right.setPartialScan(true);
         right.setSource(SOURCE.RANGE);
 
         left.intersect(right);
 
         // a bounded range timeout cannot be intersected
         assertResults(Set.of(3, 4), left.getResults());
-        assertFalse(left.isTimeout());
-        assertTrue(right.isTimeout());
+        assertFalse(left.isPartialScan());
+        assertTrue(right.isPartialScan());
     }
 
     @Test
     public void testPartialIntersectionNotPossibleWithTimeoutList() {
         ScanResult left = createScanResult(3, 4);
         ScanResult right = createScanResult(1, 2);
-        right.setTimeout(true);
+        right.setPartialScan(true);
         right.setSource(SOURCE.LIST);
 
         left.intersect(right);
 
         // a list ivarator timeout cannot be intersected
         assertResults(Set.of(3, 4), left.getResults());
-        assertFalse(left.isTimeout());
-        assertTrue(right.isTimeout());
+        assertFalse(left.isPartialScan());
+        assertTrue(right.isPartialScan());
     }
 
     @Test
@@ -295,23 +315,38 @@ public class ScanResultTest {
     private void testStandardIntersection(ScanResult left, ScanResult right, int expected) {
         left.intersect(right);
         assertEquals(expected, left.getResults().size());
+        assertBounds(left);
     }
 
     private void testStandardIntersection(ScanResult left, ScanResult right, Set<Integer> expected) {
         left.intersect(right);
         assertResults(expected, left.getResults());
+        assertBounds(left);
     }
 
     private void testPartialIntersection(ScanResult left, ScanResult right, int expected) {
         setPartial(left, right);
         left.intersect(right);
         assertEquals(expected, left.getResults().size());
+        assertBounds(left);
     }
 
     private void testPartialIntersection(ScanResult left, ScanResult right, Set<Integer> expected) {
         setPartial(left, right);
         left.intersect(right);
         assertResults(expected, left.getResults());
+        assertBounds(left);
+    }
+
+    private void assertBounds(ScanResult result) {
+        TreeSet<Key> keys = new TreeSet<>(result.getResults());
+        if (keys.isEmpty()) {
+            assertNull(result.getMin());
+            assertNull(result.getMax());
+        } else {
+            assertEquals(keys.first(), result.getMin());
+            assertEquals(keys.last(), result.getMax());
+        }
     }
 
     /**
@@ -326,7 +361,7 @@ public class ScanResultTest {
         left.setAllowPartialIntersections(true);
         right.setAllowPartialIntersections(true);
         right.setSource(SOURCE.EQ);
-        right.setTimeout(true);
+        right.setPartialScan(true);
     }
 
     /**

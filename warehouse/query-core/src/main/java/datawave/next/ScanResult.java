@@ -12,10 +12,23 @@ import com.google.common.base.Preconditions;
 /**
  * This class allows us to retain knowledge of the min and max keys from a scan without requiring an expensive sorted set. Future scan ranges are restricted by
  * the min and max
+ * <p>
+ * A ScanResult is a bound on the documents a query subtree can match, not simply a set of hits. The {@link Polarity} says which side of the key set the
+ * candidates lie on, and a null ScanResult means no bound at all. Compose them with {@link #and(ScanResult, ScanResult)}, {@link #or(ScanResult, ScanResult)}
+ * and {@link #negate(ScanResult)}, which are null tolerant and always widen rather than narrow when precision is lost, so a bound never excludes a document the
+ * query can match.
  */
 public class ScanResult {
 
     private static final Logger log = LoggerFactory.getLogger(ScanResult.class);
+
+    /** Which side of the key set the candidate documents lie on */
+    public enum Polarity {
+        /** the candidates are the keys in this result */
+        INCLUDE,
+        /** the candidates are every document except the keys in this result, so on its own this result bounds nothing */
+        EXCLUDE
+    }
 
     private Key min;
     private Key max;
@@ -27,7 +40,19 @@ public class ScanResult {
 
     private SOURCE source;
 
-    private boolean timeout = false;
+    private Polarity polarity = Polarity.INCLUDE;
+
+    /**
+     * Whether the bound describes the subtree's matches exactly. When false, {@link #partialScan} distinguishes an incomplete set of known matches from a
+     * conservative bound on the possible matches.
+     */
+    private boolean exact = true;
+
+    /**
+     * Whether the keys are an incomplete set of known matches. A timed-out scan sets this flag, and unions of partial scans may retain it. Negation converts
+     * those known matches to an exclusion bound and clears the flag; it does not make the original scan complete.
+     */
+    private boolean partialScan = false;
     private boolean allowPartialIntersections = false;
 
     /**
@@ -49,6 +74,236 @@ public class ScanResult {
     }
 
     /**
+     * Bounds the documents matching an intersection of two subtrees.
+     * <p>
+     * A null operand contributes no bound, leaving the other operand as a superset of the truth.
+     *
+     * @param left
+     *            one operand, possibly null
+     * @param right
+     *            the other operand, possibly null
+     * @return the bound on the intersection, or null when neither operand bounds anything
+     */
+    public static ScanResult and(ScanResult left, ScanResult right) {
+        if (left == null) {
+            return loosen(right);
+        }
+        if (right == null) {
+            return loosen(left);
+        }
+
+        if (left.partialScan || right.partialScan) {
+            return andPartial(left, right);
+        }
+
+        boolean exact = left.exact && right.exact;
+
+        if (left.polarity == Polarity.INCLUDE && right.polarity == Polarity.INCLUDE) {
+            ScanResult result = copy(left);
+            result.intersect(right);
+            return bound(result, Polarity.INCLUDE, exact);
+        }
+
+        if (left.polarity == Polarity.INCLUDE) {
+            return difference(left, right, exact);
+        }
+
+        if (right.polarity == Polarity.INCLUDE) {
+            return difference(right, left, exact);
+        }
+
+        // neither side can match what the other excludes, so the exclusions accumulate
+        ScanResult result = copy(left);
+        result.addKeys(right.getResults());
+        return bound(result, Polarity.EXCLUDE, exact);
+    }
+
+    /**
+     * Bounds the documents matching a union of two subtrees.
+     * <p>
+     * A null operand could be true for any document, so the union bounds nothing.
+     *
+     * @param left
+     *            one operand, possibly null
+     * @param right
+     *            the other operand, possibly null
+     * @return the bound on the union, or null when either operand bounds nothing
+     */
+    public static ScanResult or(ScanResult left, ScanResult right) {
+        if (left == null || right == null) {
+            return null;
+        }
+
+        if (left.partialScan || right.partialScan) {
+            return orPartial(left, right);
+        }
+
+        boolean exact = left.exact && right.exact;
+
+        if (left.polarity == Polarity.INCLUDE && right.polarity == Polarity.INCLUDE) {
+            ScanResult result = copy(left);
+            result.union(right);
+            return bound(result, Polarity.INCLUDE, exact);
+        }
+
+        if (left.polarity == Polarity.EXCLUDE && right.polarity == Polarity.EXCLUDE) {
+            // only a document both sides exclude is excluded by the union
+            ScanResult result = copy(left);
+            result.results.retainAll(right.getResults());
+            result.updateMinMax();
+            return bound(result, Polarity.EXCLUDE, exact);
+        }
+
+        // a document the positive side matches is no longer excluded by the union
+        ScanResult include = left.polarity == Polarity.INCLUDE ? left : right;
+        ScanResult exclude = left.polarity == Polarity.INCLUDE ? right : left;
+        ScanResult result = copy(exclude);
+        result.results.removeAll(include.getResults());
+        result.updateMinMax();
+        return bound(result, Polarity.EXCLUDE, exact);
+    }
+
+    /**
+     * Bounds the documents matching the negation of a subtree.
+     * <p>
+     * Negation needs the operand's match set from below, so a result that merely contains the match set cannot be negated at all. A partial scan is the one
+     * case where an inexact result still negates: its keys are known matches, and removing fewer documents than the query would is always safe.
+     *
+     * @param value
+     *            the operand, possibly null
+     * @return the bound on the negation, or null when the operand cannot be complemented
+     */
+    public static ScanResult negate(ScanResult value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value.partialScan) {
+            ScanResult result = copy(value);
+            result.setPartialScan(false);
+            return bound(result, opposite(value.polarity), false);
+        }
+
+        if (!value.exact) {
+            return null;
+        }
+
+        return bound(copy(value), opposite(value.polarity), true);
+    }
+
+    /**
+     * Intersects when at least one operand is a partial scan. A partial scan holds only some of its matches, so it bounds nothing on its own, but two positive
+     * operands can still go through {@link #intersect(ScanResult)}, which knows a partial scan is complete within its own key range.
+     *
+     * @param left
+     *            one operand
+     * @param right
+     *            the other operand
+     * @return the bound on the intersection, or null
+     */
+    private static ScanResult andPartial(ScanResult left, ScanResult right) {
+        if (left.polarity == Polarity.INCLUDE && right.polarity == Polarity.INCLUDE) {
+            // intersect requires a whole set on the left
+            ScanResult whole = left.partialScan ? right : left;
+            ScanResult partial = left.partialScan ? left : right;
+            if (!whole.partialScan) {
+                ScanResult result = copy(whole);
+                result.intersect(partial);
+                return bound(result, Polarity.INCLUDE, false);
+            }
+        }
+
+        // anywhere else a partial scan is no bound at all
+        return and(left.partialScan ? null : left, right.partialScan ? null : right);
+    }
+
+    /**
+     * Unions when at least one operand is a partial scan. Two positive operands stay a partial union only if both contain known matches: exact results or
+     * partial scans. A completed inexact bound may contain nonmatches, so combining it with a partial scan yields no safe bound. A partial scan also cannot
+     * bound a union that has to exclude: the missing hits would enlarge the exclusion and drop candidates the query can match.
+     *
+     * @param left
+     *            one operand
+     * @param right
+     *            the other operand
+     * @return the bound on the union, or null
+     */
+    private static ScanResult orPartial(ScanResult left, ScanResult right) {
+        if (left.polarity == Polarity.INCLUDE && right.polarity == Polarity.INCLUDE) {
+            if ((!left.exact && !left.partialScan) || (!right.exact && !right.partialScan)) {
+                // Negation can subtract a partial union's keys, so none may be merely possible matches.
+                return null;
+            }
+            ScanResult result = copy(left);
+            result.union(right);
+            return bound(result, Polarity.INCLUDE, false);
+        }
+        return null;
+    }
+
+    /**
+     * Removes the excluded keys from the included keys
+     *
+     * @param include
+     *            the positive operand
+     * @param exclude
+     *            the negative operand
+     * @param exact
+     *            whether the difference is the true match set
+     * @return a positive ScanResult
+     */
+    private static ScanResult difference(ScanResult include, ScanResult exclude, boolean exact) {
+        ScanResult result = copy(include);
+        result.results.removeAll(exclude.getResults());
+        result.updateMinMax();
+        return bound(result, Polarity.INCLUDE, exact);
+    }
+
+    /**
+     * Weakens a result to a superset of the truth, for when it is combined with something this visitor could not decide
+     *
+     * @param source
+     *            the result to weaken, possibly null
+     * @return a weakened copy, or null if there is nothing left to bound
+     */
+    private static ScanResult loosen(ScanResult source) {
+        if (source == null || source.partialScan) {
+            // a partial scan holds only some of its matches, so on its own it bounds nothing
+            return null;
+        }
+        return bound(copy(source), source.polarity, false);
+    }
+
+    private static ScanResult bound(ScanResult result, Polarity polarity, boolean exact) {
+        result.polarity = polarity;
+        result.exact = exact;
+        return result;
+    }
+
+    private static Polarity opposite(Polarity polarity) {
+        return polarity == Polarity.INCLUDE ? Polarity.EXCLUDE : Polarity.INCLUDE;
+    }
+
+    /**
+     * Copies a ScanResult's keys and state into a new, independent instance, so that composing results never mutates an operand.
+     * <p>
+     * The source term is deliberately not carried over: it is only read to decide whether a timed out scan still permits a partial intersection, which a set
+     * derived from several terms cannot answer.
+     *
+     * @param source
+     *            the ScanResult to copy
+     * @return a new ScanResult with the same keys
+     */
+    private static ScanResult copy(ScanResult source) {
+        ScanResult result = new ScanResult(source.allowPartialIntersections);
+        result.addKeys(source.getResults());
+        result.partialScan = source.partialScan;
+        result.polarity = source.polarity;
+        result.exact = source.exact;
+        return result;
+    }
+
+    /**
      * Performs a union with another scan result
      * <p>
      * If either scan result is partial (i.e., timed out) then the result is considered partial
@@ -57,10 +312,9 @@ public class ScanResult {
      *            another ScanResult
      */
     public void union(ScanResult other) {
-        if (other.isTimeout()) {
-            // a union can have one or both sides timeout, the entire union
-            // is considered a timeout
-            this.timeout = true;
+        if (other.isPartialScan()) {
+            // An incomplete operand makes the union partial and inexact.
+            setPartialScan(true);
         }
         addKeys(other.getResults());
     }
@@ -76,9 +330,9 @@ public class ScanResult {
      */
     public void intersect(ScanResult other) {
 
-        Preconditions.checkArgument(!isTimeout(), "Left side of intersection should never be a timeout");
+        Preconditions.checkArgument(!isPartialScan(), "Left side of intersection must be a complete candidate bound");
 
-        if (other.isTimeout()) {
+        if (other.isPartialScan()) {
 
             if (!allowPartialIntersections) {
                 return;
@@ -97,6 +351,7 @@ public class ScanResult {
         if (!isIntersectionPossible(other)) {
             log.info("Intersection not possible, skipping");
             results.clear();
+            updateMinMax();
             return;
         }
 
@@ -111,6 +366,10 @@ public class ScanResult {
      *            the external set
      */
     protected void partialIntersection(ScanResult other) {
+        // An empty receiver has nothing to intersect. An empty partial scan has no completed range that could eliminate candidates.
+        if (results.isEmpty() || other.results.isEmpty()) {
+            return;
+        }
 
         // special case where the external set sorts entirely before this one
         boolean externalFullyBefore = other.getMax().compareTo(this.min) < 0;
@@ -122,11 +381,13 @@ public class ScanResult {
         boolean externalFullyAfter = other.getMin().compareTo(this.max) > 0;
         if (externalFullyAfter) {
             results.clear();
+            updateMinMax();
             return;
         }
 
         int originalSize = results.size();
         results.removeIf(result -> nominate(result, other.getMin(), other.getMax(), other.getResults()));
+        updateMinMax();
 
         int newSize = results.size();
         int delta = originalSize - newSize;
@@ -270,16 +531,52 @@ public class ScanResult {
         this.source = source;
     }
 
-    public void setTimeout(boolean timeout) {
-        this.timeout = timeout;
+    /**
+     * Marks whether this result holds known matches from an incomplete scan. Setting the flag clears {@link #isExact()}; clearing the flag does not restore
+     * exactness, as when negation converts partial matches into a conservative exclusion bound.
+     *
+     * @param partialScan
+     *            whether the keys represent an incomplete set of known matches
+     */
+    public void setPartialScan(boolean partialScan) {
+        this.partialScan = partialScan;
+        if (partialScan) {
+            this.exact = false;
+        }
+    }
+
+    public Polarity getPolarity() {
+        return polarity;
+    }
+
+    /**
+     * Whether these keys are the documents the query matches rather than a superset of them. An inexact result is safe to generate candidates from, since
+     * evaluating each document discards the extras, but must not be counted.
+     * <p>
+     * Exactness is relative to the context the scan was given. A result scanned inside another result's key range is exact within that range, which is the only
+     * place its enclosing intersection uses it.
+     *
+     * @return true if the keys are exactly the documents the query matches
+     */
+    public boolean isExact() {
+        return exact;
+    }
+
+    /**
+     * Whether this result names the candidate documents. A negative result names documents that cannot match, leaving the candidates unbounded.
+     *
+     * @return true if the keys are the candidates
+     */
+    public boolean isBounded() {
+        return polarity == Polarity.INCLUDE;
     }
 
     public void setAllowPartialIntersections(boolean allowPartialIntersections) {
         this.allowPartialIntersections = allowPartialIntersections;
     }
 
-    public boolean isTimeout() {
-        return timeout;
+    public boolean isPartialScan() {
+        return partialScan;
     }
 
     public Key getMin() {
