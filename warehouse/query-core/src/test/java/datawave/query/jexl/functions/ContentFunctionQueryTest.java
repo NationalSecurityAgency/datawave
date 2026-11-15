@@ -417,9 +417,8 @@ public class ContentFunctionQueryTest extends AbstractQueryTest {
 
         private void getShardIndexFIKey(final NormalizedFieldAndValue nfv, final RawRecordContainer event, final Multimap values) {
             Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID(this.eventUid).build();
-            Multimap<BulkIngestKey,Value> termIndex = createTermIndexColumn(event, nfv.getEventFieldName(), nfv.getEventFieldValue(), getVisibility(event, nfv),
-                            null, null, shardId, this.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
-            values.putAll(termIndex);
+            createTermIndexColumn(event, values, nfv.getEventFieldName(), nfv.getEventFieldValue(), getVisibility(event, nfv), null, null, shardId,
+                            this.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
         }
 
         private void getTFKey(final NormalizedFieldAndValue nfv, final RawRecordContainer event, final Multimap values, final TermWeight.Info info) {

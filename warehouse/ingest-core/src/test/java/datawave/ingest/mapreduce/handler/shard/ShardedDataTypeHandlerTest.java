@@ -2,6 +2,9 @@ package datawave.ingest.mapreduce.handler.shard;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -157,8 +160,9 @@ public class ShardedDataTypeHandlerTest {
         byte[] visibility = new byte[] {65, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
 
-        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId,
-                        handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
+        Multimap<BulkIngestKey,Value> termIndex = HashMultimap.create();
+        handler.createTermIndexColumn(record, termIndex, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId, handler.getShardIndexTableName(),
+                        new Value(uid.toByteArray()), Direction.FORWARD);
 
         assertEquals(1, termIndex.size());
     }
@@ -179,8 +183,9 @@ public class ShardedDataTypeHandlerTest {
         byte[] maskVisibility = new byte[] {67, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
 
-        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility,
-                        maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
+        Multimap<BulkIngestKey,Value> termIndex = HashMultimap.create();
+        handler.createTermIndexColumn(record, termIndex, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility, maskedFieldHelper, shardId,
+                        handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
 
         assertEquals(2, termIndex.size());
         boolean foundValue = false;
@@ -209,8 +214,9 @@ public class ShardedDataTypeHandlerTest {
         byte[] maskVisibility = new byte[] {67, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
 
-        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility,
-                        maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
+        Multimap<BulkIngestKey,Value> termIndex = HashMultimap.create();
+        handler.createTermIndexColumn(record, termIndex, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility, maskedFieldHelper, shardId,
+                        handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
 
         assertEquals(2, termIndex.size());
         boolean foundValue = false;
@@ -238,8 +244,9 @@ public class ShardedDataTypeHandlerTest {
         byte[] visibility = new byte[] {65, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
 
-        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId,
-                        handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
+        Multimap<BulkIngestKey,Value> termIndex = HashMultimap.create();
+        handler.createTermIndexColumn(record, termIndex, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId, handler.getShardIndexTableName(),
+                        new Value(uid.toByteArray()), Direction.REVERSE);
 
         assertEquals(1, termIndex.size());
         boolean foundValue = false;
@@ -268,8 +275,9 @@ public class ShardedDataTypeHandlerTest {
         byte[] maskVisibility = new byte[] {67, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
 
-        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "OTHER_COL", "FIELD_VALUE", visibility, maskVisibility,
-                        maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
+        Multimap<BulkIngestKey,Value> termIndex = HashMultimap.create();
+        handler.createTermIndexColumn(record, termIndex, "OTHER_COL", "FIELD_VALUE", visibility, maskVisibility, maskedFieldHelper, shardId,
+                        handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
 
         assertEquals(1, termIndex.size());
         for (BulkIngestKey k : termIndex.keySet()) {
@@ -333,11 +341,157 @@ public class ShardedDataTypeHandlerTest {
     }
 
     @Test
+    public void testSkippedColumnsPreserveSharedOutput() {
+        RawRecordContainer record = createRawRecordContainer();
+        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+        BulkIngestKey existingKey = createExpectedBulkIngestKey();
+        Value existingValue = createValueWithUid();
+        values.put(existingKey, existingValue);
+
+        handler.createShardEventColumn(record, values, new byte[0], new NormalizedFieldAndValue("FIELD", (String) null), visibility, null, null, shardId);
+        handler.createShardFieldIndexColumn(record, values, "FIELD", "", visibility, null, null, shardId, null);
+        handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, null, null, shardId, null, existingValue, Direction.FORWARD);
+
+        assertEquals(1, values.size());
+        assertBulkIngestKey(values, existingKey, existingValue);
+        assertTrue(values.isEmpty());
+    }
+
+    @Test
+    public void testBulkKeyComponentsAreScopedToEachEvent() {
+        // Verify that key components are reused within an event and recomputed for the next event, even when the same record container is reused.
+        // This guards against stale datatype, UID, shard, timestamp, or bitset data leaking between events.
+        class CountingHandler extends AbstractColumnBasedHandler<Text> {
+            private int bitsetValueCalls;
+
+            @Override
+            public Value getValueForBitsetIndex(String shard) {
+                bitsetValueCalls++;
+                return super.getValueForBitsetIndex(shard);
+            }
+        }
+        CountingHandler countingHandler = new CountingHandler();
+        countingHandler.setup(new TaskAttemptContextImpl(configuration, new TaskAttemptID()));
+        countingHandler.helper = ingestHelper;
+        handler = countingHandler;
+        ingestHelper.addIndexedField("FIELD");
+        ingestHelper.addReverseIndexedField("FIELD");
+        enableBitsetIndex();
+        enableDayIndex();
+        enableYearIndex();
+        handler.setIndexStatsTableName(new Text("stats"));
+        handler.setProduceStats(true);
+
+        Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
+        fields.put("FIELD", new NormalizedFieldAndValue("FIELD", "alpha"));
+        fields.put("FIELD", new NormalizedFieldAndValue("FIELD", "beta"));
+        RawRecordContainer record = createRawRecordContainer();
+        record.setVisibility(new ColumnVisibility("PUBLIC"));
+        Multimap<BulkIngestKey,Value> previousOutput = null;
+        Multimap<BulkIngestKey,Value> previousSnapshot = null;
+        Value previousBitsetValue = null;
+
+        // Reuse the record container, changing every event-specific component between calls.
+        for (int i = 0; i < 2; i++) {
+            String dataType = "wkt" + i;
+            record.setDataType(new Type(dataType, TestIngestHelper.class, null, null, 10, null));
+            record.setRawData(("event" + i).getBytes(StandardCharsets.UTF_8));
+            record.setId(HashUID.builder().newId(record.getRawData()));
+            long day = 1749168000000L + i * MS_PER_DAY; // June 6 and 7, 2025
+            record.setTimestamp(CompositeTimestamp.getCompositeTimeStamp(day + 12345, day + 11 * MS_PER_DAY + 67890));
+            long indexTimestamp = CompositeTimestamp.getCompositeTimeStamp(day, day + 11 * MS_PER_DAY);
+            String shard = new String(handler.getShardId(record), StandardCharsets.UTF_8);
+            String uid = record.getId().toString();
+
+            Multimap<BulkIngestKey,Value> output = handler.processBulk(null, record, fields, null);
+            assertEquals(24, output.size());
+            assertEquals(i + 1, countingHandler.bitsetValueCalls);
+            for (String value : new String[] {"alpha", "beta"}) {
+                assertTrue(output.containsEntry(new BulkIngestKey(handler.getShardTableName(),
+                                new Key(shard, dataType + '\0' + uid, "FIELD\0" + value, "PUBLIC", record.getTimestamp())), new Value()));
+                assertTrue(output.containsEntry(
+                                new BulkIngestKey(handler.getShardTableName(),
+                                                new Key(shard, "fi\0FIELD", value + '\0' + dataType + '\0' + uid, "PUBLIC", record.getTimestamp())),
+                                new Value()));
+                assertTrue(output.containsEntry(
+                                new BulkIngestKey(handler.getShardIndexTableName(), new Key(value, "FIELD", shard + '\0' + dataType, "PUBLIC", indexTimestamp)),
+                                createValueWithUid(uid)));
+                assertTrue(output.containsEntry(new BulkIngestKey(handler.getShardReverseIndexTableName(),
+                                new Key(reverse(value), "FIELD", shard + '\0' + dataType, "PUBLIC", indexTimestamp)), createValueWithUid(uid)));
+            }
+
+            for (Text table : new Text[] {handler.getShardBitsetIndexTableName(), handler.getShardDayIndexTableName(), handler.getShardYearIndexTableName()}) {
+                BitSet bits = new BitSet();
+                bits.set(table.equals(handler.getShardYearIndexTableName()) ? 157 + i : Integer.parseInt(shard.substring(shard.indexOf('_') + 1)));
+                Value expected = new Value(bits.toByteArray());
+                Value sharedValue = null;
+                int entries = 0;
+                for (var entry : output.entries()) {
+                    if (entry.getKey().getTableName().equals(table)) {
+                        assertEquals(indexTimestamp, entry.getKey().getKey().getTimestamp());
+                        assertEquals(expected, entry.getValue());
+                        if (sharedValue == null) {
+                            sharedValue = entry.getValue();
+                        } else {
+                            assertSame(sharedValue, entry.getValue());
+                        }
+                        entries++;
+                    }
+                }
+                assertEquals(4, entries);
+                if (table.equals(handler.getShardBitsetIndexTableName())) {
+                    assertNotSame(previousBitsetValue, sharedValue);
+                    previousBitsetValue = sharedValue;
+                }
+            }
+            if (previousOutput != null) {
+                assertNotSame(previousOutput, output);
+                assertEquals(previousSnapshot, previousOutput);
+            }
+            previousOutput = output;
+            previousSnapshot = HashMultimap.create(output);
+        }
+    }
+
+    @Test
+    public void testSharedContextPreservesMaskedDeleteKeys() {
+        TestIngestHelper deleteHelper = new TestIngestHelper() {
+            @Override
+            public boolean getDeleteMode() {
+                return true;
+            }
+        };
+        deleteHelper.setup(configuration);
+        ((AbstractColumnBasedHandler<Text>) handler).helper = deleteHelper;
+        RawRecordContainer record = createRawRecordContainer();
+        ShardedDataTypeHandler<Text>.EventKeyContext keyContext = handler.new EventKeyContext(record, shardId);
+        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+        Value indexValue = createValueWithUid();
+
+        handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper, keyContext,
+                        handler.getShardIndexTableName(), indexValue, Direction.FORWARD);
+        handler.createTermIndexColumn(record, values, "FIELD", "eulav", visibility, maskedVisibility, maskedFieldHelper, keyContext,
+                        handler.getShardReverseIndexTableName(), indexValue, Direction.REVERSE);
+
+        assertEquals(4, values.size());
+        for (BulkIngestKey bulkKey : values.keySet()) {
+            Key key = bulkKey.getKey();
+            assertEquals(getTimestamp(), key.getTimestamp());
+            if (key.getColumnVisibility().toString().equals("PRIVATE")) {
+                assertFalse(key.isDeleted());
+            } else {
+                assertTrue(key.isDeleted());
+            }
+        }
+    }
+
+    @Test
     public void testSimpleForwardIndex() {
         RawRecordContainer record = createRawRecordContainer();
         Value value = createValueWithUid();
-        Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
-                        handler.getShardIndexTableName(), value, Direction.FORWARD);
+        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+        handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, null, null, shardId, handler.getShardIndexTableName(), value,
+                        Direction.FORWARD);
 
         assertEquals(1, values.size());
         assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
@@ -350,8 +504,9 @@ public class ShardedDataTypeHandlerTest {
         Value value = createValueWithUid();
         try {
             enableBitsetIndex();
-            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
-                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+            Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+            handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, null, null, shardId, handler.getShardIndexTableName(), value,
+                            Direction.FORWARD);
 
             assertEquals(2, values.size());
             assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
@@ -368,8 +523,9 @@ public class ShardedDataTypeHandlerTest {
         Value value = createValueWithUid();
         try {
             enableDayIndex();
-            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
-                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+            Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+            handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, null, null, shardId, handler.getShardIndexTableName(), value,
+                            Direction.FORWARD);
 
             assertEquals(2, values.size());
             assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
@@ -386,8 +542,9 @@ public class ShardedDataTypeHandlerTest {
         Value value = createValueWithUid();
         try {
             enableYearIndex();
-            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
-                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+            Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+            handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, null, null, shardId, handler.getShardIndexTableName(), value,
+                            Direction.FORWARD);
 
             assertEquals(2, values.size());
             assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
@@ -406,8 +563,9 @@ public class ShardedDataTypeHandlerTest {
         try {
             enableDayIndex();
             enableYearIndex();
-            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
-                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+            Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+            handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, null, null, shardId, handler.getShardIndexTableName(), value,
+                            Direction.FORWARD);
 
             assertEquals(3, values.size());
             assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
@@ -424,7 +582,8 @@ public class ShardedDataTypeHandlerTest {
     public void testMaskedSimpleForwardIndex() {
         RawRecordContainer record = createRawRecordContainer();
         Value value = createValueWithUid();
-        Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper, shardId,
+        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+        handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper, shardId,
                         handler.getShardIndexTableName(), value, Direction.FORWARD);
 
         assertEquals(2, values.size());
@@ -439,8 +598,9 @@ public class ShardedDataTypeHandlerTest {
         Value value = createValueWithUid();
         try {
             enableBitsetIndex();
-            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper,
-                            shardId, handler.getShardIndexTableName(), value, Direction.FORWARD);
+            Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+            handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
 
             assertEquals(4, values.size());
             assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
@@ -459,8 +619,9 @@ public class ShardedDataTypeHandlerTest {
         Value value = createValueWithUid();
         try {
             enableDayIndex();
-            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper,
-                            shardId, handler.getShardIndexTableName(), value, Direction.FORWARD);
+            Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+            handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
 
             assertEquals(4, values.size());
             assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
@@ -479,8 +640,9 @@ public class ShardedDataTypeHandlerTest {
         Value value = createValueWithUid();
         try {
             enableYearIndex();
-            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper,
-                            shardId, handler.getShardIndexTableName(), value, Direction.FORWARD);
+            Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+            handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
 
             assertEquals(4, values.size());
             assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
@@ -501,8 +663,9 @@ public class ShardedDataTypeHandlerTest {
         try {
             enableDayIndex();
             enableYearIndex();
-            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper,
-                            shardId, handler.getShardIndexTableName(), value, Direction.FORWARD);
+            Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+            handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, maskedVisibility, maskedFieldHelper, shardId,
+                            handler.getShardIndexTableName(), value, Direction.FORWARD);
 
             assertEquals(6, values.size());
             assertBulkIngestKey(values, createExpectedBulkIngestKey(), createValueWithUid());
@@ -522,8 +685,9 @@ public class ShardedDataTypeHandlerTest {
     public void testSimpleReverseIndex() {
         RawRecordContainer record = createRawRecordContainer();
         Value value = createValueWithUid();
-        Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", reverse("value"), visibility, null, null, shardId,
-                        handler.getShardReverseIndexTableName(), value, Direction.REVERSE);
+        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+        handler.createTermIndexColumn(record, values, "FIELD", reverse("value"), visibility, null, null, shardId, handler.getShardReverseIndexTableName(),
+                        value, Direction.REVERSE);
 
         assertEquals(1, values.size());
         assertBulkIngestKey(values, createExpectedBulkIngestKeyReversed(), createValueWithUid());
@@ -583,8 +747,9 @@ public class ShardedDataTypeHandlerTest {
             disableStandardIndex();
             enableBitsetIndex();
 
-            Multimap<BulkIngestKey,Value> values = handler.createTermIndexColumn(record, "FIELD", "value", visibility, null, null, shardId,
-                            handler.getShardIndexTableName(), value, Direction.FORWARD);
+            Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+            handler.createTermIndexColumn(record, values, "FIELD", "value", visibility, null, null, shardId, handler.getShardIndexTableName(), value,
+                            Direction.FORWARD);
 
             assertEquals(1, values.size());
             assertBulkIngestKey(values, createExpectedBulkIngestKeyForBitsetIndex(), createBitsetIndexValue());

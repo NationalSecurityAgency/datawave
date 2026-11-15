@@ -145,9 +145,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         this.eventDataTypeName = event.getDataType().outputName();
         this.eventUid = event.getId().toString();
 
-        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
         // get the typical shard/index information
-        values.putAll(super.processBulk(key, event, eventFields, reporter));
+        Multimap<BulkIngestKey,Value> values = super.processBulk(key, event, eventFields, reporter);
 
         flushTokenOffsetCache(event, values);
 

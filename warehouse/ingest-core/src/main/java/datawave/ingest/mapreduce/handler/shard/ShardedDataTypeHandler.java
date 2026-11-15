@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -213,6 +212,108 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     boolean isReindexEnabled;
     private Collection<String> requestedFieldsForReindex;
+
+    // Start with a modest capacity, then size each output map for the preceding event's distinct keys.
+    private int previousColumnKeyCount = 32;
+
+    /**
+     * Components shared by keys for one event. Populate lazily so standalone writers and disabled indexes do not require unused components. The cached arrays
+     * and values are treated as read-only after construction.
+     */
+    protected final class EventKeyContext {
+        private final RawRecordContainer event;
+        private final byte[] shardId;
+        private byte[] dataType;
+        private String uid;
+        private byte[] dataTypeUid;
+        private byte[] indexQualifier;
+        private byte[] bitsetQualifier;
+        private String fullShard;
+        private Long indexTimestamp;
+        private Value bitsetValue;
+        private Value dayValue;
+        private Value yearValue;
+
+        protected EventKeyContext(RawRecordContainer event, byte[] shardId) {
+            this.event = event;
+            this.shardId = shardId;
+        }
+
+        private byte[] getDataType() {
+            if (dataType == null) {
+                dataType = ShardUtil.utf8(event.getDataType().outputName());
+            }
+            return dataType;
+        }
+
+        private String getUid() {
+            if (uid == null) {
+                uid = event.getId().toString();
+            }
+            return uid;
+        }
+
+        private byte[] getDataTypeUid() {
+            if (dataTypeUid == null) {
+                dataTypeUid = ShardUtil.joinWithNulls(getDataType(), ShardUtil.utf8(getUid()));
+            }
+            return dataTypeUid;
+        }
+
+        private byte[] getIndexQualifier() {
+            if (indexQualifier == null) {
+                indexQualifier = ShardUtil.joinWithNulls(shardId, getDataType());
+            }
+            return indexQualifier;
+        }
+
+        private byte[] getBitsetQualifier() {
+            if (bitsetQualifier == null) {
+                bitsetQualifier = ShardUtil.shardPrefixedBytes(shardId, 8, getDataType());
+            }
+            return bitsetQualifier;
+        }
+
+        private String getFullShard() {
+            if (fullShard == null) {
+                fullShard = new String(shardId, StandardCharsets.UTF_8);
+            }
+            return fullShard;
+        }
+
+        private long getIndexTimestamp() {
+            if (indexTimestamp == null) {
+                indexTimestamp = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
+            }
+            return indexTimestamp;
+        }
+
+        private Value getBitsetValue() {
+            if (bitsetValue == null) {
+                bitsetValue = getValueForBitsetIndex(getFullShard());
+            }
+            return bitsetValue;
+        }
+
+        private Value getDayValue() {
+            if (dayValue == null) {
+                dayValue = DateIndexUtil.getValueForDayIndex(getFullShard());
+            }
+            return dayValue;
+        }
+
+        private Value getYearValue() {
+            if (yearValue == null) {
+                yearValue = DateIndexUtil.getValueForYearIndex(getFullShard());
+            }
+            return yearValue;
+        }
+
+        private Key createIndexKey(String row, String field, byte[] colq, byte[] visibility, boolean deleteMode) {
+            byte[] colf = ShardUtil.utf8(field);
+            return ShardUtil.buildKey(ShardUtil.utf8(row), colf, colf.length, colq, colq.length, visibility, getIndexTimestamp(), deleteMode);
+        }
+    }
 
     @Override
     public void setup(TaskAttemptContext context) {
@@ -484,7 +585,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     StatusReporter reporter) {
         IngestHelperInterface helper = this.getHelper(event.getDataType());
 
-        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+        // Share one output map across all key-generation helpers for this event.
+        Multimap<BulkIngestKey,Value> values = HashMultimap.create(previousColumnKeyCount, 1);
 
         byte[] maskedVisibility = computeMaskedVisibility(event);
         MaskedFieldHelper maskedFieldHelper = createMaskedFieldHelper(helper, event);
@@ -497,16 +599,17 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // Colf: DataType : UID
             // Colq: FieldName : FieldValue
             // Value: NULL
-            byte[] colf = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName()), ShardUtil.utf8(event.getId().toString()));
+            EventKeyContext keyContext = new EventKeyContext(event, shardId);
+            byte[] colf = keyContext.getDataTypeUid();
 
-            Value indexedValue = createUidArray(event.getId().toString(), helper.getDeleteMode());
+            Value indexedValue = createUidArray(keyContext.getUid(), helper.getDeleteMode());
 
             if (!getSuppressEventKeys()) {
                 for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
                     NormalizedContentInterface value = e.getValue();
                     byte[] visibility = getVisibility(event, value);
 
-                    values.putAll(createShardEventColumn(event, colf, value, visibility, maskedVisibility, maskedFieldHelper, shardId));
+                    createShardEventColumn(event, values, colf, value, visibility, maskedVisibility, maskedFieldHelper, shardId);
 
                 }
             }
@@ -518,11 +621,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     log.trace("Is " + e.getKey() + " indexed? " + hasIndexTerm(e.getKey()) + " " + helper.isIndexedField(e.getKey()));
                 }
 
-                values.putAll(createForwardIndices(helper, event, fields, value, visibility, maskedVisibility, maskedFieldHelper, shardId, indexedValue,
-                                reporter));
+                createForwardIndices(helper, event, values, fields, value, visibility, maskedVisibility, maskedFieldHelper, keyContext, indexedValue, reporter);
 
                 if (getProduceStats())
-                    values.putAll(createStats(helper, event, fields, value, visibility, maskedVisibility, maskedFieldHelper, shardId, indexedValue, reporter));
+                    createStats(helper, event, values, fields, value, visibility, maskedVisibility, maskedFieldHelper, keyContext, indexedValue, reporter);
 
                 if (getShardDictionaryIndexTableName() != null) {
                     final String cacheKey = value.getIndexedFieldName() + value.getIndexedFieldValue() + Arrays.toString(visibility)
@@ -541,13 +643,13 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             for (Entry<String,NormalizedContentInterface> e : getGlobalReverseIndexTerms().entries()) {
                 NormalizedContentInterface value = e.getValue();
                 byte[] visibility = getVisibility(event, value);
-                values.putAll(createReverseIndices(helper, event, fields, value, visibility, maskedVisibility, maskedFieldHelper, shardId, indexedValue,
-                                reporter));
+                createReverseIndices(helper, event, values, fields, value, visibility, maskedVisibility, maskedFieldHelper, keyContext, indexedValue, reporter);
 
             }
 
         }
 
+        previousColumnKeyCount = values.keySet().size();
         return values;
     }
 
@@ -559,21 +661,17 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         return null;
     }
 
-    protected Multimap<BulkIngestKey,Value> createStats(IngestHelperInterface helper, RawRecordContainer event,
+    protected void createStats(IngestHelperInterface helper, RawRecordContainer event, Multimap<BulkIngestKey,Value> values,
                     Multimap<String,NormalizedContentInterface> fields, NormalizedContentInterface value, byte[] visibility, byte[] maskedVisibility,
-                    MaskedFieldHelper maskedFieldHelper, byte[] shardId, Value indexValue, StatusReporter reporter) {
-        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
-
+                    MaskedFieldHelper maskedFieldHelper, EventKeyContext keyContext, Value indexValue, StatusReporter reporter) {
         // produce cardinality of terms
-        values.putAll(createTermIndexColumn(event, value.getIndexedFieldName(), value.getIndexedFieldValue(), visibility, maskedVisibility, maskedFieldHelper,
-                        shardId, this.getIndexStatsTableName(), indexValue, Direction.FORWARD));
+        createTermIndexColumn(event, values, value.getIndexedFieldName(), value.getIndexedFieldValue(), visibility, maskedVisibility, maskedFieldHelper,
+                        keyContext, this.getIndexStatsTableName(), indexValue, Direction.FORWARD);
 
         String reverse = new StringBuilder(value.getIndexedFieldValue()).reverse().toString();
 
-        values.putAll(createTermIndexColumn(event, value.getIndexedFieldName(), reverse, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        this.getIndexStatsTableName(), indexValue, Direction.REVERSE));
-
-        return values;
+        createTermIndexColumn(event, values, value.getIndexedFieldName(), reverse, visibility, maskedVisibility, maskedFieldHelper, keyContext,
+                        this.getIndexStatsTableName(), indexValue, Direction.REVERSE);
     }
 
     /**
@@ -581,6 +679,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *            the ingest helper
      * @param event
      *            the event container
+     * @param values
+     *            the output map to append to
      * @param fields
      *            the event fields
      * @param value
@@ -591,45 +691,36 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *            the masked visibility
      * @param maskedFieldHelper
      *            the masked field helper
-     * @param shardId
-     *            the shard id
+     * @param keyContext
+     *            the components shared by keys for this event
      * @param indexValue
      *            the index value
      * @param reporter
      *            the status reporter
-     * @return the forward indices
      */
-    protected Multimap<BulkIngestKey,Value> createForwardIndices(IngestHelperInterface helper, RawRecordContainer event,
+    protected void createForwardIndices(IngestHelperInterface helper, RawRecordContainer event, Multimap<BulkIngestKey,Value> values,
                     Multimap<String,NormalizedContentInterface> fields, NormalizedContentInterface value, byte[] visibility, byte[] maskedVisibility,
-                    MaskedFieldHelper maskedFieldHelper, byte[] shardId, Value indexValue, StatusReporter reporter) {
-
-        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+                    MaskedFieldHelper maskedFieldHelper, EventKeyContext keyContext, Value indexValue, StatusReporter reporter) {
 
         String fieldName = value.getIndexedFieldName();
         String fieldValue = value.getIndexedFieldValue();
         // produce field index.
-        values.putAll(createShardFieldIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, NULL_VALUE));
+        createShardFieldIndexColumn(event, values, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, keyContext, NULL_VALUE);
 
         // produce index column
-        values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        this.getShardIndexTableName(), indexValue, Direction.FORWARD));
-
-        return values;
+        createTermIndexColumn(event, values, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, keyContext, this.getShardIndexTableName(),
+                        indexValue, Direction.FORWARD);
     }
 
-    protected Multimap<BulkIngestKey,Value> createReverseIndices(IngestHelperInterface helper, RawRecordContainer event,
+    protected void createReverseIndices(IngestHelperInterface helper, RawRecordContainer event, Multimap<BulkIngestKey,Value> values,
                     Multimap<String,NormalizedContentInterface> fields, NormalizedContentInterface value, byte[] visibility, byte[] maskedVisibility,
-                    MaskedFieldHelper maskedFieldHelper, byte[] shardId, Value indexValue, StatusReporter reporter) {
-
-        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
+                    MaskedFieldHelper maskedFieldHelper, EventKeyContext keyContext, Value indexValue, StatusReporter reporter) {
 
         String fieldName = value.getIndexedFieldName();
         String fieldValue = value.getIndexedFieldValue();
         // produce index column
-        values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        this.getShardReverseIndexTableName(), indexValue, Direction.REVERSE));
-
-        return values;
+        createTermIndexColumn(event, values, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, keyContext,
+                        this.getShardReverseIndexTableName(), indexValue, Direction.REVERSE);
     }
 
     private Multimap<String,NormalizedContentInterface> filterByRequestedFields(Multimap<String,NormalizedContentInterface> eventFields) {
@@ -646,6 +737,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *
      * @param event
      *            the event
+     * @param values
+     *            the output map to append to
      * @param column
      *            the column
      * @param fieldValue
@@ -664,17 +757,21 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *            the index value
      * @param direction
      *            the direction
-     * @return the term index
      */
-    protected Multimap<BulkIngestKey,Value> createTermIndexColumn(RawRecordContainer event, String column, String fieldValue, byte[] visibility,
+    protected void createTermIndexColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String column, String fieldValue, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Text tableName, Value indexValue, Direction direction) {
+        createTermIndexColumn(event, values, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, new EventKeyContext(event, shardId),
+                        tableName, indexValue, direction);
+    }
+
+    protected void createTermIndexColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String column, String fieldValue, byte[] visibility,
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, EventKeyContext keyContext, Text tableName, Value indexValue,
+                    Direction direction) {
         // Shard Global Index Table Structure
         // Row: Field Value
         // Colf: Field Name
         // Colq: Shard Id : DataType
         // Value: UID
-
-        Multimap<BulkIngestKey,Value> values = ArrayListMultimap.create();
 
         if (log.isTraceEnabled()) {
             log.trace("Create index column " + tableName);
@@ -690,28 +787,33 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     log.trace("Index table name is null, not creating index keys");
                 }
             } else {
-                writeStandardIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction, tableName,
+                writeStandardIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, keyContext, direction, tableName,
                                 indexValue);
             }
         }
 
         if (bitsetIndexEnabled) {
-            writeBitsetIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction);
+            writeBitsetIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, keyContext, direction);
         }
 
         if (dayIndexEnabled) {
-            writeShardDayIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction);
+            writeShardDayIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, keyContext, direction);
         }
 
         if (yearIndexEnabled) {
-            writeShardYearIndexKeyBitSet(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId, direction);
+            writeShardYearIndexKeyBitSet(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, keyContext, direction);
         }
-
-        return values;
     }
 
     public void writeStandardIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String column, String fieldValue, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction, Text tableName, Value indexValue) {
+        writeStandardIndexKey(values, event, column, fieldValue, visibility, maskedVisibility, maskedFieldHelper, new EventKeyContext(event, shardId),
+                        direction, tableName, indexValue);
+    }
+
+    protected void writeStandardIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String column, String fieldValue, byte[] visibility,
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, EventKeyContext keyContext, Direction direction, Text tableName,
+                    Value indexValue) {
         // hold on to the helper
         IngestHelperInterface helper = this.getHelper(event.getDataType());
         boolean deleteMode = helper.getDeleteMode();
@@ -721,7 +823,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // It was observed that the normalized mask values aren't coming back reversed, so account for that before creating the row.
             String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
 
-            byte[] colq = ShardUtil.joinWithNulls(shardId, ShardUtil.utf8(event.getDataType().outputName()));
+            byte[] colq = keyContext.getIndexQualifier();
 
             // if this method was called with the intention to create reverse index keys, ensure the masked values are reversed.
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
@@ -732,19 +834,19 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                     }
                 }
                 // Create a key for the masked field value with the masked visibility.
-                Key k = ShardUtil.createIndexKey(normalizedMaskedValue, column, colq, maskedVisibility, event.getTimestamp(), false);
+                Key k = keyContext.createIndexKey(normalizedMaskedValue, column, colq, maskedVisibility, false);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, indexValue);
             }
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
-                Key k = ShardUtil.createIndexKey(fieldValue, column, colq, visibility, event.getTimestamp(), deleteMode);
+                Key k = keyContext.createIndexKey(fieldValue, column, colq, visibility, deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, indexValue);
             }
         } else if (!StringUtils.isEmpty(fieldValue)) {
             // This field is not masked. Add a key with the original field value and masked visibility
-            byte[] colq = ShardUtil.joinWithNulls(shardId, ShardUtil.utf8(event.getDataType().outputName()));
+            byte[] colq = keyContext.getIndexQualifier();
 
             /*
              * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
@@ -756,7 +858,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 refVisibility = maskedVisibility;
             }
 
-            Key k = ShardUtil.createIndexKey(fieldValue, column, colq, refVisibility, event.getTimestamp(), deleteMode);
+            Key k = keyContext.createIndexKey(fieldValue, column, colq, refVisibility, deleteMode);
             BulkIngestKey bkey = new BulkIngestKey(tableName, k);
             values.put(bkey, indexValue);
         }
@@ -790,15 +892,20 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     public void writeBitsetIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
+        writeBitsetIndexKey(values, event, field, value, visibility, maskedVisibility, maskedFieldHelper, new EventKeyContext(event, shardId), direction);
+    }
+
+    protected void writeBitsetIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, EventKeyContext keyContext, Direction direction) {
+        byte[] shardId = keyContext.shardId;
         if (shardId != null && value != null && field != null && visibility != null) {
-            String fullShard = new String(shardId, StandardCharsets.UTF_8);
             byte[] cf = ShardUtil.utf8(field);
-            byte[] cq = ShardUtil.shardPrefixedBytes(shardId, 8, ShardUtil.utf8(event.getDataType().outputName()));
-            long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
+            byte[] cq = keyContext.getBitsetQualifier();
+            long ts = keyContext.getIndexTimestamp();
 
             Key key = ShardUtil.buildKey(ShardUtil.utf8(value), cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardBitsetIndexTableName(), key);
-            Value bitSetValue = getValueForBitsetIndex(fullShard);
+            Value bitSetValue = keyContext.getBitsetValue();
             values.put(bulkIngestKey, bitSetValue);
 
             if (maskedFieldHelper != null && maskedFieldHelper.contains(field)) {
@@ -840,16 +947,21 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     public void writeShardDayIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
+        writeShardDayIndexKey(values, event, field, value, visibility, maskedVisibility, maskedFieldHelper, new EventKeyContext(event, shardId), direction);
+    }
+
+    protected void writeShardDayIndexKey(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, EventKeyContext keyContext, Direction direction) {
+        byte[] shardId = keyContext.shardId;
         if (shardId != null && value != null && field != null && visibility != null) {
-            String fullShard = new String(shardId, StandardCharsets.UTF_8);
             byte[] cf = ShardUtil.utf8(field);
-            byte[] cq = ShardUtil.utf8(event.getDataType().outputName());
+            byte[] cq = keyContext.getDataType();
             byte[] row = ShardUtil.shardPrefixedBytes(shardId, 8, ShardUtil.utf8(value));
-            long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
+            long ts = keyContext.getIndexTimestamp();
 
             Key key = ShardUtil.buildKey(row, cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
-            Value bitSetValue = DateIndexUtil.getValueForDayIndex(fullShard);
+            Value bitSetValue = keyContext.getDayValue();
             values.put(bulkIngestKey, bitSetValue);
 
             if (maskedFieldHelper != null && maskedFieldHelper.contains(field)) {
@@ -906,18 +1018,24 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     public void writeShardYearIndexKeyBitSet(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Direction direction) {
+        writeShardYearIndexKeyBitSet(values, event, field, value, visibility, maskedVisibility, maskedFieldHelper, new EventKeyContext(event, shardId),
+                        direction);
+    }
+
+    protected void writeShardYearIndexKeyBitSet(Multimap<BulkIngestKey,Value> values, RawRecordContainer event, String field, String value, byte[] visibility,
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, EventKeyContext keyContext, Direction direction) {
+        byte[] shardId = keyContext.shardId;
 
         if (shardId != null && value != null && field != null && visibility != null) {
-            String fullShard = new String(shardId, StandardCharsets.UTF_8);
             byte[] cf = ShardUtil.utf8(field);
-            byte[] cq = ShardUtil.utf8(event.getDataType().outputName());
+            byte[] cq = keyContext.getDataType();
             // you are insane if the data is from the year 999 or 10,000
             byte[] row = ShardUtil.shardPrefixedBytes(shardId, 4, ShardUtil.utf8(value));
-            long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
+            long ts = keyContext.getIndexTimestamp();
 
             Key key = ShardUtil.buildKey(row, cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), key);
-            Value bitsetValue = DateIndexUtil.getValueForYearIndex(fullShard);
+            Value bitsetValue = keyContext.getYearValue();
             values.put(bulkIngestKey, bitsetValue);
 
             if (maskedFieldHelper != null && maskedFieldHelper.contains(field)) {
@@ -966,6 +1084,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *
      * @param event
      *            the event container
+     * @param values
+     *            the output map to append to
      * @param colf
      *            the column family
      * @param nFV
@@ -978,12 +1098,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *            the masked field helper
      * @param shardId
      *            the shard id
-     * @return the shard event column
      */
-    protected Multimap<BulkIngestKey,Value> createShardEventColumn(RawRecordContainer event, byte[] colf, NormalizedContentInterface nFV, byte[] visibility,
-                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId) {
+    protected void createShardEventColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, byte[] colf, NormalizedContentInterface nFV,
+                    byte[] visibility, byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId) {
 
-        Multimap<BulkIngestKey,Value> values = ArrayListMultimap.create();
         // hold on to the helper
         IngestHelperInterface helper = this.getHelper(event.getDataType());
         boolean replaceMalformedUTF8 = helper.getReplaceMalformedUTF8();
@@ -994,12 +1112,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         String indexedFieldName = nFV.getIndexedFieldName();
 
         if (helper.isIndexOnlyField(indexedFieldName) || null == fieldValue) {
-            return values;
+            return;
         }
 
         // don't put composite fields into the event table, unless it is an overloaded composite field
         if (helper.isCompositeField(indexedFieldName) && !helper.isOverloadedCompositeField(indexedFieldName)) {
-            return values;
+            return;
         }
 
         // Create unmasked colq. This is only needed (and only computed) when there is a field value to key on, both to
@@ -1041,9 +1159,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
                 log.trace("Creating bulk ingest Key " + bKey);
             values.put(bKey, NULL_VALUE);
         }
-
-        return values;
-
     }
 
     // Note: replaceMalformedUTF8 is retained for signature compatibility with overriding subclasses but is no longer
@@ -1064,85 +1179,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     public void createShardFieldIndexColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String fieldName, String fieldValue,
                     byte[] visibility, byte[] shardId, String uid, long eventTimestamp, Value value) {
-        values.putAll(createShardFieldIndexColumn(event, fieldName, fieldValue, visibility, visibility, null, shardId, value));
-
-    }
-
-    /**
-     * Creates a shard field index column Key and applies masking logic
-     *
-     * @param event
-     *            the event
-     * @param fieldName
-     *            the field name
-     * @param fieldValue
-     *            the field value
-     * @param visibility
-     *            the visibility
-     * @param maskedVisibility
-     *            the masked visibility
-     * @param maskedFieldHelper
-     *            the masked field helper
-     * @param shardId
-     *            the shard id
-     * @param value
-     *            the value
-     * @return the shard field index column
-     */
-    protected Multimap<BulkIngestKey,Value> createShardFieldIndexColumn(RawRecordContainer event, String fieldName, String fieldValue, byte[] visibility,
-                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Value value) {
-        if (log.isTraceEnabled())
-            log.trace("Field value is " + fieldValue);
-
-        // hold on to the helper
-        IngestHelperInterface helper = this.getHelper(event.getDataType());
-        boolean deleteMode = helper.getDeleteMode();
-
-        Multimap<BulkIngestKey,Value> values = HashMultimap.create();
-
-        if (!StringUtils.isEmpty(fieldValue)) {
-            byte[] colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName));
-            byte[] idSuffix = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName()), ShardUtil.utf8(event.getId().toString()));
-            byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue), idSuffix);
-
-            if (value == null) {
-                value = NULL_VALUE;
-            }
-
-            if (null != maskedFieldHelper && maskedFieldHelper.contains(fieldName)) {
-                // Put unmasked colq with original visibility
-                Key k = ShardUtil.createKey(shardId, colf, unmaskedColq, visibility, event.getTimestamp(), deleteMode);
-                BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
-                values.put(bKey, value);
-
-                // We need to use the normalized masked values
-                final String normalizedMaskedValue = helper.getNormalizedMaskedValue(fieldName);
-                if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                    byte[] maskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(normalizedMaskedValue), idSuffix);
-
-                    // Put masked colq with masked visibility
-                    Key key = ShardUtil.createKey(shardId, colf, maskedColq, maskedVisibility, event.getTimestamp(), deleteMode);
-                    BulkIngestKey bulkIngestKey = new BulkIngestKey(this.getShardTableName(), key);
-                    values.put(bulkIngestKey, value);
-                }
-            } else if (!StringUtils.isEmpty(fieldValue)) {
-                /**
-                 * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at
-                 * the lower visibility
-                 */
-                byte[] refVisibility = visibility;
-
-                if (null != maskedFieldHelper) {
-                    refVisibility = maskedVisibility;
-                }
-
-                Key k = ShardUtil.createKey(shardId, colf, unmaskedColq, refVisibility, event.getTimestamp(), deleteMode);
-                BulkIngestKey bKey = new BulkIngestKey(this.getShardTableName(), k);
-                values.put(bKey, value);
-            }
-        }
-
-        return values;
+        createShardFieldIndexColumn(event, values, fieldName, fieldValue, visibility, visibility, null, shardId, value);
     }
 
     /**
@@ -1169,13 +1206,23 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     protected void createShardFieldIndexColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String fieldName, String fieldValue,
                     byte[] visibility, byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Value value) {
+        createShardFieldIndexColumn(event, values, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, new EventKeyContext(event, shardId),
+                        value);
+    }
+
+    protected void createShardFieldIndexColumn(RawRecordContainer event, Multimap<BulkIngestKey,Value> values, String fieldName, String fieldValue,
+                    byte[] visibility, byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, EventKeyContext keyContext, Value value) {
+        byte[] shardId = keyContext.shardId;
+        if (log.isTraceEnabled())
+            log.trace("Field value is " + fieldValue);
+
         // hold on to the helper
         IngestHelperInterface helper = this.getHelper(event.getDataType());
         boolean deleteMode = helper.getDeleteMode();
 
         if (!StringUtils.isEmpty(fieldValue)) {
             byte[] colf = ShardUtil.joinWithNulls(FI_COLF_PREFIX, ShardUtil.utf8(fieldName));
-            byte[] idSuffix = ShardUtil.joinWithNulls(ShardUtil.utf8(event.getDataType().outputName()), ShardUtil.utf8(event.getId().toString()));
+            byte[] idSuffix = keyContext.getDataTypeUid();
             byte[] unmaskedColq = ShardUtil.joinWithNulls(ShardUtil.utf8(fieldValue), idSuffix);
 
             if (value == null) {
