@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -181,6 +182,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     protected static final byte[] FI_COLF_PREFIX = {'f', 'i'};
 
+    /**
+     * Default size of the marking to byte CV cache.
+     */
+    protected static final int MARKING_TO_BYTES_DEFAULT_SIZE = 1000;
+
     private Text shardTableName = null;
     private Text shardIndexTableName = null;
     private Text shardBitsetIndexTableName = null;
@@ -196,6 +202,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     private LoadingCache<String,String> dCache = null;
     protected MarkingFunctions<?> markingFunctions;
     protected IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
+    protected LRUMap<Markings<?>,byte[]> markingToCvBytes = new LRUMap<>(MARKING_TO_BYTES_DEFAULT_SIZE);
 
     // default setting is a standard index with uid and event keys
     private boolean shardIndexEnabled = true;
@@ -944,10 +951,16 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     public byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
         ColumnVisibility visibility = event.getVisibility();
         Markings<?> markings = value.getMarkings();
+        byte[] cvBytes;
         if (markings != null && !markings.isEmpty()) {
-            visibility = markings.toColumnVisibility();
+            cvBytes = markingToCvBytes.computeIfAbsent(markings, (m) -> {
+                ColumnVisibility cv = m.toColumnVisibility();
+                return flatten(cv);
+            });
+        } else {
+            cvBytes = flatten(visibility);
         }
-        return flatten(visibility);
+        return cvBytes;
     }
 
     /**
