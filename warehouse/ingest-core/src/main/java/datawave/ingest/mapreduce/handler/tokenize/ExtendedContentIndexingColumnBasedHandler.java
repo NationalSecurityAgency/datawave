@@ -885,7 +885,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             if (getYearIndexEnabled()) {
                 String rowForYear = shard.substring(0, 4) + '\u0000' + nFV.getEventFieldValue();
                 Key key = new Key(rowForYear, nFV.getEventFieldName(), cq, viz);
-                Value value = DateIndexUtil.getValueForYearIndex(shard);
+                Value value = getValueForYearIndex(shard);
                 BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), key);
                 contextWriter.write(bulkIngestKey, value, context);
             }

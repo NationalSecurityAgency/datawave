@@ -206,6 +206,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     private boolean dayIndexEnabled = false;
     private boolean yearIndexEnabled = false;
 
+    // The index timestamp and year index offset depend only on the event timestamp and shard, which are the same for every key in an event,
+    // so keep the last computed result. The holders are immutable, so a racing thread at worst recomputes.
+    private CachedIndexTimestamp cachedIndexTimestamp = null;
+    private CachedYearIndexValue cachedYearIndexValue = null;
+
     /**
      * Determines whether or not we produce cardinality estimates for data
      */
@@ -794,7 +799,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             String fullShard = new String(shardId, StandardCharsets.UTF_8);
             byte[] cf = ShardUtil.utf8(field);
             byte[] cq = ShardUtil.shardPrefixedBytes(shardId, 8, ShardUtil.utf8(event.getDataType().outputName()));
-            long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
+            long ts = getIndexTimestamp(event);
 
             Key key = ShardUtil.buildKey(ShardUtil.utf8(value), cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardBitsetIndexTableName(), key);
@@ -845,7 +850,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             byte[] cf = ShardUtil.utf8(field);
             byte[] cq = ShardUtil.utf8(event.getDataType().outputName());
             byte[] row = ShardUtil.shardPrefixedBytes(shardId, 8, ShardUtil.utf8(value));
-            long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
+            long ts = getIndexTimestamp(event);
 
             Key key = ShardUtil.buildKey(row, cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardDayIndexTableName(), key);
@@ -876,6 +881,60 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      */
     public Value getValueForBitsetIndex(String shard) {
         return DateIndexUtil.getValueForDayIndex(shard);
+    }
+
+    /**
+     * Returns {@link DateIndexUtil#getIndexTimestamp(long)} for the event's timestamp, computed once per event rather than once per index key.
+     *
+     * @param event
+     *            the event
+     * @return the timestamp to use for index entries
+     */
+    protected long getIndexTimestamp(RawRecordContainer event) {
+        long timestamp = event.getTimestamp();
+        CachedIndexTimestamp cached = cachedIndexTimestamp;
+        if (cached == null || cached.eventTimestamp != timestamp) {
+            cached = new CachedIndexTimestamp(timestamp, DateIndexUtil.getIndexTimestamp(timestamp));
+            cachedIndexTimestamp = cached;
+        }
+        return cached.indexTimestamp;
+    }
+
+    /**
+     * Returns {@link DateIndexUtil#getValueForYearIndex(String)} for the shard, computed once per event rather than once per index key.
+     *
+     * @param shard
+     *            the full shard
+     * @return a new Value containing a BitSet with the year index offset bit set
+     */
+    protected Value getValueForYearIndex(String shard) {
+        CachedYearIndexValue cached = cachedYearIndexValue;
+        if (cached == null || !cached.shard.equals(shard)) {
+            cached = new CachedYearIndexValue(shard, DateIndexUtil.getValueForYearIndex(shard).get());
+            cachedYearIndexValue = cached;
+        }
+        // copy so the cached bytes are never shared with a caller
+        return new Value(cached.bitset, true);
+    }
+
+    private static final class CachedIndexTimestamp {
+        private final long eventTimestamp;
+        private final long indexTimestamp;
+
+        private CachedIndexTimestamp(long eventTimestamp, long indexTimestamp) {
+            this.eventTimestamp = eventTimestamp;
+            this.indexTimestamp = indexTimestamp;
+        }
+    }
+
+    private static final class CachedYearIndexValue {
+        private final String shard;
+        private final byte[] bitset;
+
+        private CachedYearIndexValue(String shard, byte[] bitset) {
+            this.shard = shard;
+            this.bitset = bitset;
+        }
     }
 
     /**
@@ -913,11 +972,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             byte[] cq = ShardUtil.utf8(event.getDataType().outputName());
             // you are insane if the data is from the year 999 or 10,000
             byte[] row = ShardUtil.shardPrefixedBytes(shardId, 4, ShardUtil.utf8(value));
-            long ts = DateIndexUtil.getIndexTimestamp(event.getTimestamp());
+            long ts = getIndexTimestamp(event);
 
             Key key = ShardUtil.buildKey(row, cf, cf.length, cq, cq.length, visibility, ts, false);
             BulkIngestKey bulkIngestKey = new BulkIngestKey(getShardYearIndexTableName(), key);
-            Value bitsetValue = DateIndexUtil.getValueForYearIndex(fullShard);
+            Value bitsetValue = getValueForYearIndex(fullShard);
             values.put(bulkIngestKey, bitsetValue);
 
             if (maskedFieldHelper != null && maskedFieldHelper.contains(field)) {

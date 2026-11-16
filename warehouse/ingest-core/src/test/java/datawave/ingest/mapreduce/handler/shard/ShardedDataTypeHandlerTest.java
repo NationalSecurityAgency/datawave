@@ -399,6 +399,32 @@ public class ShardedDataTypeHandlerTest {
     }
 
     @Test
+    public void testYearIndexCacheRefreshesForNextEvent() {
+        // the same container is reused across events, as record readers do
+        RawRecordContainer record = createRawRecordContainer();
+        try {
+            enableYearIndex();
+            Multimap<BulkIngestKey,Value> first = HashMultimap.create();
+            handler.writeShardYearIndexKeyBitSet(first, record, "FIELD", "value", visibility, null, null, shardId, Direction.FORWARD);
+            assertBulkIngestKey(first, createExpectedBulkIngestKeyForYearIndex(), createYearIndexValue());
+            assertTrue(first.isEmpty());
+
+            long nextTimestamp = timestamp + 3 * MS_PER_DAY;
+            record.setTimestamp(DateIndexUtil.getIndexTimestamp(nextTimestamp));
+            Multimap<BulkIngestKey,Value> second = HashMultimap.create();
+            handler.writeShardYearIndexKeyBitSet(second, record, "FIELD", "value", visibility, null, null, "20240101_7".getBytes(), Direction.FORWARD);
+
+            Key key = new Key("2024\0value", "FIELD", "wkt", "PUBLIC", DateIndexUtil.getIndexTimestamp(nextTimestamp));
+            BitSet bits = new BitSet();
+            bits.set(1); // 1 January is the first day of the year
+            assertBulkIngestKey(second, new BulkIngestKey(new Text(TableName.SHARD_YEAR_INDEX), key), new Value(bits.toByteArray()));
+            assertTrue(second.isEmpty());
+        } finally {
+            disableYearIndex();
+        }
+    }
+
+    @Test
     public void testSimpleForwardIndexWithDayAndYearIndex() {
         // there is no 'overkill', only 'open fire' and 'reload'
         RawRecordContainer record = createRawRecordContainer();
