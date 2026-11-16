@@ -667,6 +667,9 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("allHitsQueryConfig", new AllHitsQueryConfig());
         defaultValues.put("originalJexlQuery", null);
         updatedValues.put("originalJexlQuery", "FIELD == 'VALUE'");
+
+        defaultValues.put("allowIndexOnlyNullChecks", false);
+        updatedValues.put("allowIndexOnlyNullChecks", true);
     }
 
     private Query createQuery(String query) {

@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -58,6 +59,11 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     private final TimeFilter timeFilter;
 
     /**
+     * Index-only fields that the query references only in null checks, which are evaluated at the field index when null index-only fields are allowed.
+     */
+    private final Set<String> indexOnlyNullCheckFields;
+
+    /**
      * Constructor
      *
      * @param source
@@ -88,7 +94,8 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
                     final CompositeMetadata compositeMetadata, final QueryOptions options, Collection<String> variables,
                     IteratorBuildingVisitor iteratorBuildingVisitor, Multimap<String,JexlNode> delayedNonEventFieldMap, Equality equality,
-                    Collection<ByteSequence> columnFamilies, boolean inclusive, JexlContextValueComparator comparatorFactory) {
+                    Collection<ByteSequence> columnFamilies, boolean inclusive, JexlContextValueComparator comparatorFactory,
+                    Collection<String> indexOnlyNullCheckFields) {
         super(variables, comparatorFactory);
         checkNotNull(source, SIMPLE_NAME + " cannot be initialized with a null " + SKVI_SIMPLE_NAME);
         checkNotNull(range, SIMPLE_NAME + " cannot be initialized with a null Range");
@@ -109,6 +116,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
 
         this.range = range;
         this.timeFilter = options.getTimeFilter();
+        this.indexOnlyNullCheckFields = indexOnlyNullCheckFields == null ? Set.of() : Set.copyOf(indexOnlyNullCheckFields);
     }
 
     @Override
@@ -192,7 +200,9 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         // Make sure that index-only fields being queried are represented in the context, in
         // order to avoid potential downstream eval misfire (see #1204)
         for (String var : this.variables) {
-            if (this.indexOnlyFields.contains(var) && !context.has(var)) {
+            // A field referenced only in null checks is left absent so that FIELD == null evaluates true. Its presence is added to the document by the
+            // field index filter when the field exists, see IndexOnlyFieldPresenceFilter.
+            if (this.indexOnlyFields.contains(var) && !this.indexOnlyNullCheckFields.contains(var) && !context.has(var)) {
                 context.set(var, FunctionalSet.empty());
             }
         }

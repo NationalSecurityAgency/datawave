@@ -32,10 +32,11 @@ public class IndexOnlyContextCreatorBuilder {
     private SortedKeyValueIterator<Key,Value> source;
     private JexlContextCreator.JexlContextValueComparator comparatorFactory;
     private QueryOptions options;
+    private Collection<String> indexOnlyNullCheckFields;
 
     public IndexOnlyContextCreator build() {
         return new IndexOnlyContextCreator(source, range, typeMetadata, compositeMetadata, options, variables, iteratorBuildingVisitor, delayedNonEventFieldMap,
-                        equality, columnFamilies, inclusive, comparatorFactory);
+                        equality, columnFamilies, inclusive, comparatorFactory, indexOnlyNullCheckFields);
     }
 
     public IndexOnlyContextCreatorBuilder setVariables(Collection<String> variables) {
@@ -95,6 +96,18 @@ public class IndexOnlyContextCreatorBuilder {
 
     public IndexOnlyContextCreatorBuilder setInclusive(boolean inclusive) {
         this.inclusive = inclusive;
+        return this;
+    }
+
+    /**
+     * Set the index-only fields that the query references only in null checks. These fields are not added to the context as empty values when absent from the
+     * document.
+     *
+     * @param fields
+     *            the fields referenced only in null checks
+     */
+    public IndexOnlyContextCreatorBuilder setIndexOnlyNullCheckFields(Collection<String> fields) {
+        this.indexOnlyNullCheckFields = fields;
         return this;
     }
 }

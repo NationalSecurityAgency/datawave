@@ -1,7 +1,7 @@
 package datawave.table.util;
 
-import static datawave.table.constants.QueryConstants.MAX_UNICODE_STRING;
-import static datawave.table.constants.QueryConstants.NULL;
+import static datawave.table.constants.QueryConstants.MAX_UNICODE_STR;
+import static datawave.table.constants.QueryConstants.NULL_BYTE_STR;
 import static datawave.table.hash.UIDConstants.DEFAULT_SEPARATOR;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
@@ -331,7 +331,7 @@ public class TLD {
      */
     public static Key getNextParentKey(Key docKey) {
         Text startCF = docKey.getColumnFamily();
-        if (startCF.find(NULL) != -1) {
+        if (startCF.find(NULL_BYTE_STR) != -1) {
             // we have a start key with a document uid, add to the end of the cf to ensure we go to the next doc
             // parse out the uid
             String cf = startCF.toString();
@@ -346,7 +346,7 @@ public class TLD {
                 if (!uid.isEmpty()) {
                     uid = parseRootPointerFromId(uid);
                     // to get to the next doc, add the separator for the UID 'extra' (child doc) portion and then the max unicode string
-                    Text nextDoc = new Text(cf.substring(0, index) + NULL_BYTE + uid + DEFAULT_SEPARATOR + MAX_UNICODE_STRING);
+                    Text nextDoc = new Text(cf.substring(0, index) + NULL_BYTE + uid + DEFAULT_SEPARATOR + MAX_UNICODE_STR);
                     docKey = new Key(docKey.getRow(), nextDoc, docKey.getColumnQualifier(), docKey.getColumnVisibility(), docKey.getTimestamp());
                 }
             }

@@ -60,6 +60,10 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             if (isQueryFullySatisfied == true) {
                 throw new RuntimeException("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
             }
+            if (allowIndexOnlyNullChecks && indexOnlyFields.contains(builder.getField())) {
+                // INDEX_ONLY_FIELD != null is satisfied when the field is present anywhere in the document tree
+                ((AbstractIteratorBuilder) data).addInclude(buildNullIndexOnlyFieldFilter(builder.getField()).withTldMatching(true));
+            }
             return null;
         }
 
@@ -144,6 +148,14 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         if (builder.getValue() == null) {
             if (isQueryFullySatisfied) {
                 throw new RuntimeException("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
+            }
+            if (allowIndexOnlyNullChecks && indexOnlyFields.contains(builder.getField())) {
+                if (data == null) {
+                    // no parent to supply candidates
+                    throw nullIndexOnlyFieldException(builder.getField());
+                }
+                // INDEX_ONLY_FIELD == null is satisfied when the field is absent from the entire document tree
+                ((AbstractIteratorBuilder) data).addExclude(buildNullIndexOnlyFieldFilter(builder.getField()).withTldMatching(true));
             }
             return null;
         }

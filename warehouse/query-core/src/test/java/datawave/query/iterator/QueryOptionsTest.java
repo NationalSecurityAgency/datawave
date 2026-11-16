@@ -288,6 +288,30 @@ public class QueryOptionsTest {
         assertEquals(initialString, decompressOptions);
     }
 
+    @Test
+    public void testAllowNullIndexOnlyFieldsOption() {
+        Map<String,String> optionsMap = new HashMap<>();
+        optionsMap.put(QUERY, "FOO == 'bar'");
+        optionsMap.put(QueryOptions.INDEX_ONLY_FIELDS, "FIELD");
+        optionsMap.put(QueryOptions.START_TIME, "0");
+        optionsMap.put(QueryOptions.END_TIME, "1");
+
+        // option absent: defaults to false
+        QueryOptions options = new QueryOptions();
+        options.validateOptions(optionsMap);
+        assertFalse(options.isAllowIndexOnlyNullChecks());
+
+        optionsMap.put(QueryOptions.ALLOW_INDEX_ONLY_NULL_CHECKS, "true");
+        options = new QueryOptions();
+        options.validateOptions(optionsMap);
+        assertTrue(options.isAllowIndexOnlyNullChecks());
+
+        optionsMap.put(QueryOptions.ALLOW_INDEX_ONLY_NULL_CHECKS, "false");
+        options = new QueryOptions();
+        options.validateOptions(optionsMap);
+        assertFalse(options.isAllowIndexOnlyNullChecks());
+    }
+
     private static class WrappedQueryOptions extends QueryOptions {
         protected static String decompressOption(final String buffer, Charset characterSet) throws IOException {
             return QueryOptions.decompressOption(buffer, characterSet);

@@ -3,6 +3,7 @@ package datawave.query.jexl.visitors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -49,10 +50,12 @@ import datawave.query.iterator.SeekableNestedIterator;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.AndIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.predicate.TimeFilter;
+import datawave.query.tld.TLDIndexBuildingVisitor;
 import datawave.query.util.TypeMetadata;
 
 public class IteratorBuildingVisitorTest {
@@ -181,6 +184,155 @@ public class IteratorBuildingVisitorTest {
         visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
 
         assertThrows(DatawaveFatalQueryException.class, () -> query.jjtAccept(visitor, null));
+    }
+
+    /**
+     * When null index-only fields are allowed, an index-only null check against a top level EQ node still has no anchor term and results in an error
+     */
+    @Test
+    public void visitEqNode_nullValueIndexOnlyAllowedWithoutAnchorTest() throws ParseException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FIELD == null");
+
+        IteratorBuildingVisitor visitor = getDefault();
+        visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
+        visitor.setAllowIndexOnlyNullChecks(true);
+
+        assertThrows(DatawaveFatalQueryException.class, () -> query.jjtAccept(visitor, null));
+    }
+
+    @Test
+    public void visitEqNode_nullValueIndexOnlyAllowedTest() throws ParseException {
+        // FIELD == null is satisfied by the absence of the field, the presence filter is a context exclude
+        assertNullIndexOnlyFilter("FOO == 'bar' && FIELD == null",
+                        "Deferred Includes: [], Excludes: [], Deferred Excludes: [IndexOnlyFieldPresenceFilter[field='FIELD', tldMatching=false]]");
+    }
+
+    @Test
+    public void visitNeNode_nullValueIndexOnlyAllowedTest() throws ParseException {
+        // FIELD != null is satisfied by the presence of the field, the presence filter is a context include
+        assertNullIndexOnlyFilter("FOO == 'bar' && FIELD != null",
+                        "Deferred Includes: [IndexOnlyFieldPresenceFilter[field='FIELD', tldMatching=false]], Excludes: [], Deferred Excludes: []");
+    }
+
+    @Test
+    public void visitNotEqNode_nullValueIndexOnlyAllowedTest() throws ParseException {
+        // the negation flips the exclude to an include
+        assertNullIndexOnlyFilter("FOO == 'bar' && !(FIELD == null)",
+                        "Deferred Includes: [IndexOnlyFieldPresenceFilter[field='FIELD', tldMatching=false]], Excludes: [], Deferred Excludes: []");
+    }
+
+    /**
+     * Allowing null index-only fields does not change the handling of null checks against fields that are not index-only
+     */
+    @Test
+    public void visitNullValueIndexedFieldAllowedTest() throws ParseException {
+        for (String query : List.of("FOO == 'bar' && FIELD == null", "FOO == 'bar' && FIELD != null", "FOO == 'bar' && !(FIELD == null)")) {
+            IteratorBuildingVisitor visitor = getDefault();
+            visitor.setIndexOnlyFields(Collections.singleton("OTHER"));
+            visitor.setAllowIndexOnlyNullChecks(true);
+
+            JexlASTHelper.parseJexlQuery(query).jjtAccept(visitor, null);
+            NestedIterator<Key> root = visitor.root();
+
+            // the only leaf in the iterator is FOO == 'bar'
+            assertNotNull(root, query);
+            assertEquals(1, root.leaves().size(), query);
+            assertTrue(root.leaves().iterator().next().toString().contains("FOO"), query);
+            assertFalse(root.toString().contains("IndexOnlyFieldPresenceFilter"), query);
+        }
+    }
+
+    @Test
+    public void visitEqNode_nullValueIndexOnlyAllowedTldTest() throws ParseException {
+        assertNullIndexOnlyFilter(getDefaultTld(), "FOO == 'bar' && FIELD == null",
+                        "Deferred Includes: [], Excludes: [], Deferred Excludes: [IndexOnlyFieldPresenceFilter[field='FIELD', tldMatching=true]]", 2);
+    }
+
+    @Test
+    public void visitNeNode_nullValueIndexOnlyAllowedTldTest() throws ParseException {
+        // the TLD visitor deep copies the source for every NE node before inspecting its value, so there is one extra copy
+        assertNullIndexOnlyFilter(getDefaultTld(), "FOO == 'bar' && FIELD != null",
+                        "Deferred Includes: [IndexOnlyFieldPresenceFilter[field='FIELD', tldMatching=true]], Excludes: [], Deferred Excludes: []", 3);
+    }
+
+    @Test
+    public void visitNotEqNode_nullValueIndexOnlyAllowedTldTest() throws ParseException {
+        assertNullIndexOnlyFilter(getDefaultTld(), "FOO == 'bar' && !(FIELD == null)",
+                        "Deferred Includes: [IndexOnlyFieldPresenceFilter[field='FIELD', tldMatching=true]], Excludes: [], Deferred Excludes: []", 2);
+    }
+
+    /**
+     * With the flag disabled the TLD visitor keeps its existing behavior: an index-only null check builds no iterator and throws no error
+     */
+    @Test
+    public void visitNullValueIndexOnlyTldFlagDisabledTest() throws ParseException {
+        for (String query : List.of("FOO == 'bar' && FIELD == null", "FOO == 'bar' && FIELD != null", "FOO == 'bar' && !(FIELD == null)")) {
+            IteratorBuildingVisitor visitor = getDefaultTld();
+            visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
+
+            JexlASTHelper.parseJexlQuery(query).jjtAccept(visitor, null);
+            NestedIterator<Key> root = visitor.root();
+
+            assertNotNull(root, query);
+            assertEquals(1, root.leaves().size(), query);
+            assertFalse(root.toString().contains("IndexOnlyFieldPresenceFilter"), query);
+        }
+    }
+
+    @Test
+    public void visitNullValueIndexedFieldAllowedTldTest() throws ParseException {
+        for (String query : List.of("FOO == 'bar' && FIELD == null", "FOO == 'bar' && FIELD != null", "FOO == 'bar' && !(FIELD == null)")) {
+            IteratorBuildingVisitor visitor = getDefaultTld();
+            visitor.setIndexOnlyFields(Collections.singleton("OTHER"));
+            visitor.setAllowIndexOnlyNullChecks(true);
+
+            JexlASTHelper.parseJexlQuery(query).jjtAccept(visitor, null);
+            NestedIterator<Key> root = visitor.root();
+
+            assertNotNull(root, query);
+            assertEquals(1, root.leaves().size(), query);
+            assertFalse(root.toString().contains("IndexOnlyFieldPresenceFilter"), query);
+        }
+    }
+
+    @Test
+    public void visitEqNode_nullValueIndexOnlyAllowedWithoutAnchorTldTest() throws ParseException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FIELD == null");
+
+        IteratorBuildingVisitor visitor = getDefaultTld();
+        visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
+        visitor.setAllowIndexOnlyNullChecks(true);
+
+        assertThrows(DatawaveFatalQueryException.class, () -> query.jjtAccept(visitor, null));
+    }
+
+    private IteratorBuildingVisitor getDefaultTld() {
+        IteratorBuildingVisitor visitor = new TLDIndexBuildingVisitor();
+        visitor.setSource(new SourceFactory(Collections.emptyIterator()), new TestIteratorEnvironment());
+        visitor.setTypeMetadata(new TypeMetadata());
+        visitor.setTimeFilter(TimeFilter.alwaysTrue());
+        return visitor;
+    }
+
+    private void assertNullIndexOnlyFilter(String query, String expectedContext) throws ParseException {
+        assertNullIndexOnlyFilter(getDefault(), query, expectedContext, 2);
+    }
+
+    private void assertNullIndexOnlyFilter(IteratorBuildingVisitor visitor, String query, String expectedContext, int expectedDeepCopies)
+                    throws ParseException {
+        visitor.setIndexOnlyFields(Collections.singleton("FIELD"));
+        visitor.setAllowIndexOnlyNullChecks(true);
+
+        JexlASTHelper.parseJexlQuery(query).jjtAccept(visitor, null);
+        NestedIterator<Key> root = visitor.root();
+
+        assertNotNull(root);
+        assertTrue(root instanceof AndIterator, "expected an AndIterator but was " + root);
+        assertTrue(root.toString().endsWith(expectedContext), "unexpected iterator tree: " + root);
+        assertEquals(1, root.leaves().size());
+        assertTrue(root.leaves().iterator().next().toString().contains("FOO"));
+        // one copy for FOO, one for the presence filter
+        assertEquals(expectedDeepCopies, visitor.getDeepCopiesCalled());
     }
 
     @Test

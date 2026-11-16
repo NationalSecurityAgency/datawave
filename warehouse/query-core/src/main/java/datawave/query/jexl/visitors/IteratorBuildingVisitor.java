@@ -91,6 +91,7 @@ import datawave.query.iterator.builder.OrIteratorBuilder;
 import datawave.query.iterator.builder.TermFrequencyIndexBuilder;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.IndexOnlyFieldPresenceFilter;
 import datawave.query.iterator.logic.OrIterator;
 import datawave.query.iterator.logic.RangeFilterIterator;
 import datawave.query.iterator.logic.RegexFilterIterator;
@@ -222,6 +223,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected Map<String,Object> exceededOrEvaluationCache;
     private int deepCopiesCalled = 0;
+
+    /**
+     * Whether null and not-null checks against index-only fields are filtered at the field index using a {@link IndexOnlyFieldPresenceFilter}.
+     */
+    protected boolean allowIndexOnlyNullChecks;
 
     public boolean isQueryFullySatisfied() {
         if (limitLookup) {
@@ -622,12 +628,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             return null;
         }
 
-        // the evaluation can handle a term in the form 'FIELD == null', however no IndexIterator should be built
+        // The evaluation can handle a term in the form 'FIELD != null', however no IndexIterator should be built. If the field is index-only and null
+        // index-only fields are allowed, the term is filtered at the field index in the context of the parent's candidates.
         if (builder.getValue() == null) {
             if (this.indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
-                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
-                throw new DatawaveFatalQueryException(qe);
+                // FIELD != null is satisfied when the field is present.
+                ((AbstractIteratorBuilder) data).addInclude(buildNullIndexOnlyFieldFilter(builder.getField()));
             }
 
             // FIELD != null should have set satisfied to false
@@ -680,12 +686,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             return null;
         }
 
-        // the evaluation can handle a term in the form 'FIELD == null', however no IndexIterator should be built
+        // The evaluation can handle a term in the form 'FIELD == null', however no IndexIterator should be built. If the field is index-only and null
+        // index-only fields are allowed, the term is filtered at the field index in the context of the parent's candidates.
         if (builder.getValue() == null) {
             if (indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
-                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
-                throw new DatawaveFatalQueryException(qe);
+                if (data == null) {
+                    // no parent to supply candidates
+                    throw nullIndexOnlyFieldException(builder.getField());
+                }
+                // FIELD == null is satisfied when the field is absent.
+                ((AbstractIteratorBuilder) data).addExclude(buildNullIndexOnlyFieldFilter(builder.getField()));
             }
             return null;
         }
@@ -722,6 +732,31 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
 
         return null;
+    }
+
+    /**
+     * Build a context required filter that determines if an index-only field is present for a candidate document. Used as an include for
+     * <code>FIELD != null</code> and as an exclude for <code>FIELD == null</code>.
+     *
+     * @param field
+     *            the index-only field
+     * @return a field presence filter
+     * @throws DatawaveFatalQueryException
+     *             if null index-only fields are not allowed
+     */
+    protected IndexOnlyFieldPresenceFilter buildNullIndexOnlyFieldFilter(String field) {
+        if (!this.allowIndexOnlyNullChecks) {
+            throw nullIndexOnlyFieldException(field);
+        }
+        // The attribute factory records the presence of the field for evaluation, see IndexOnlyContextCreator.
+        return new IndexOnlyFieldPresenceFilter(field, deepCopySource()).withTimeFilter(timeFilter.getKeyTimeFilter())
+                        .withAttributeFactory(new PreNormalizedAttributeFactory(typeMetadata));
+    }
+
+    protected DatawaveFatalQueryException nullIndexOnlyFieldException(String field) {
+        QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
+                        MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", field, "against null"));
+        return new DatawaveFatalQueryException(qe);
     }
 
     /**
@@ -1913,6 +1948,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     public IteratorBuildingVisitor setUseRegexFilter(boolean useRegexFilter) {
         this.useRegexFilter = useRegexFilter;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setAllowIndexOnlyNullChecks(boolean allowIndexOnlyNullChecks) {
+        this.allowIndexOnlyNullChecks = allowIndexOnlyNullChecks;
         return this;
     }
 
