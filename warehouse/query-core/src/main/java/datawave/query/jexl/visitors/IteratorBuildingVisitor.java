@@ -94,6 +94,7 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.OrIterator;
 import datawave.query.iterator.logic.RangeFilterIterator;
 import datawave.query.iterator.logic.RegexFilterIterator;
+import datawave.query.iterator.logic.NullFieldIndexAggregator;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.ArithmeticJexlEngines;
@@ -222,6 +223,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected Map<String,Object> exceededOrEvaluationCache;
     private int deepCopiesCalled = 0;
+
+    /**
+     * Whether we should use the {@link NullFieldIndexAggregator} when encountering null values for index-only fields.
+     */
+    protected boolean allowNullIndexOnlyFields;
 
     public boolean isQueryFullySatisfied() {
         if (limitLookup) {
@@ -622,17 +628,17 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             return null;
         }
 
-        // the evaluation can handle a term in the form 'FIELD == null', however no IndexIterator should be built
+        boolean keyTransformSet = false;
+        // The evaluation can handle a term in the form 'FIELD == null'. If the field is an index field and handling null index fields is indicated, we should
+        // do so, otherwise no IndexIterator should be built.
         if (builder.getValue() == null) {
             if (this.indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
-                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
-                throw new DatawaveFatalQueryException(qe);
+                updateBuilderForNullIndexOnlyFields(builder);
+                keyTransformSet = true;
+            } else {
+                checkForSatisfactionError();
+                return null;
             }
-
-            // FIELD != null should have set satisfied to false
-            checkForSatisfactionError();
-            return null;
         }
 
         AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
@@ -649,7 +655,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setTypeMetadata(typeMetadata);
             builder.setTimeFilter(timeFilter);
             builder.setDatatypeFilter(getDatatypeFilter());
-            builder.setKeyTransform(getFiAggregator());
+            // Use the default aggregator only if a custom aggregator wasn't set above.
+            if (!keyTransformSet) {
+                builder.setKeyTransform(getFiAggregator());
+            }
             builder.setEnv(env);
             builder.setNode(node);
 
@@ -680,14 +689,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             return null;
         }
 
-        // the evaluation can handle a term in the form 'FIELD == null', however no IndexIterator should be built
+        // The evaluation can handle a term in the form 'FIELD == null'. If the field is an index field and handling null index fields is indicated, we should
+        // do so, otherwise no IndexIterator should be built.
         if (builder.getValue() == null) {
             if (indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
-                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
-                throw new DatawaveFatalQueryException(qe);
+                updateBuilderForNullIndexOnlyFields(builder);
+            } else {
+                return null;
             }
-            return null;
         }
 
         // check to see if there is a mismatch between included and exclude references.
@@ -722,6 +731,28 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
 
         return null;
+    }
+
+    /**
+     * If a null value was encountered for an index-only field, and null index-only fields are allowed, set the key transform for the builder to only return one
+     * key per document ID, and the builder's value of a blank string.
+     *
+     * @param builder
+     *            the builder to update
+     * @throws DatawaveFatalQueryException
+     *             if null index-only fields are not allowed
+     */
+    private void updateBuilderForNullIndexOnlyFields(IndexIteratorBuilder builder) {
+        if (this.allowNullIndexOnlyFields) {
+            // If we want to allow handling null index-only fields, set the key transform to return only one key per document ID.
+            builder.setKeyTransform(new NullFieldIndexAggregator());
+            builder.setValue("");
+        } else {
+            // Otherwise throw an error.
+            QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
+                            MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
+            throw new DatawaveFatalQueryException(qe);
+        }
     }
 
     /**
@@ -1913,6 +1944,11 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     public IteratorBuildingVisitor setUseRegexFilter(boolean useRegexFilter) {
         this.useRegexFilter = useRegexFilter;
+        return this;
+    }
+
+    public IteratorBuildingVisitor setAllowNullIndexOnlyFields(boolean allowNullIndexOnlyFields) {
+        this.allowNullIndexOnlyFields = allowNullIndexOnlyFields;
         return this;
     }
 

@@ -597,6 +597,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int dayIndexThreshold = -1;
 
     /**
+     * If true, allow null-index only fields to be present during queries, and add a speciality iterator to handle the null/not-null checks.
+     */
+    private boolean allowNullIndexOnlyFields = false;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -862,6 +867,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTruncatedIndexTableName(other.getTruncatedIndexTableName());
         this.setOriginalJexlQuery(other.getOriginalJexlQuery());
         this.setAllHitsQueryConfig(other.getAllHitsQueryConfig());
+        this.setAllowNullIndexOnlyFields(other.isAllowNullIndexOnlyFields());
     }
 
     /**
@@ -919,6 +925,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
         this.setSortedUIDs(other.isSortedUIDs());
         this.setBloom(other.getBloom());
+        this.setAllowNullIndexOnlyFields(other.isAllowNullIndexOnlyFields());
     }
 
     @Override
@@ -3232,7 +3239,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
                 getTruncatedIndexTableName() == that.getTruncatedIndexTableName() &&
                 Objects.equals(getOriginalJexlQuery(), that.getOriginalJexlQuery()) &&
-                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig());
+                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig()) &&
+                isAllowNullIndexOnlyFields() == that.isAllowNullIndexOnlyFields();
         // @formatter:on
     }
 
@@ -3470,7 +3478,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseTruncatedIndex(),
                 getTruncatedIndexTableName(),
                 getOriginalJexlQuery(),
-                getAllHitsQueryConfig()
+                getAllHitsQueryConfig(),
+                isAllowNullIndexOnlyFields()
         );
         // @formatter:on
     }
@@ -3618,5 +3627,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     @Deprecated
     public void setUseNewIndexLookups(boolean useNewIndexLookups) {
         this.useNewIndexLookups = useNewIndexLookups;
+    }
+
+    public boolean isAllowNullIndexOnlyFields() {
+        return allowNullIndexOnlyFields;
+    }
+
+    public void setAllowNullIndexOnlyFields(boolean allowNullIndexOnlyFields) {
+        this.allowNullIndexOnlyFields = allowNullIndexOnlyFields;
     }
 }
