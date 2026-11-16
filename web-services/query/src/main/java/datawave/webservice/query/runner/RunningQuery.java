@@ -63,7 +63,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * Keep a small, bounded number of transformed results ready for the request thread. A capacity of one effectively serializes the producer and consumer and
      * used to require the producer to poll the queue every millisecond. Keeping this bounded limits the amount of result data retained per running query.
      */
-    private static final int RESULTS_THREAD_QUEUE_CAPACITY = 3;
+    private static final int RESULTS_THREAD_QUEUE_CAPACITY = 2;
 
     private static Logger log = Logger.getLogger(RunningQuery.class);
 
