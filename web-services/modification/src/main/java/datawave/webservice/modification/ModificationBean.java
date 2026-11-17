@@ -21,8 +21,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.annotation.Required;
 import datawave.configuration.spring.SpringBean;
@@ -49,7 +50,7 @@ import datawave.webservice.results.modification.ModificationConfigurationRespons
 @TransactionManagement(TransactionManagementType.BEAN)
 public class ModificationBean {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     @Resource
     private EJBContext ctx;

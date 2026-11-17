@@ -28,8 +28,9 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.extjs.ExtJsResponse;
@@ -49,7 +50,7 @@ import datawave.webservice.query.runner.QueryExecutorBean;
 @DeclareRoles("AuthorizedUser")
 public class DashboardBean {
 
-    private static final Logger log = Logger.getLogger(DashboardBean.class);
+    private static final Logger log = LoggerFactory.getLogger(DashboardBean.class);
     private static final long MS_IN_12_HRS = 43_200_000;// timestamps seem to be about 11 hours behind
     private static final String TABLE_NAME_JMC = "DpsJmcLogs";
     @Inject

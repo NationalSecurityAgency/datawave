@@ -7,7 +7,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -17,7 +18,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
  */
 public class QueryHeartbeatCache {
 
-    private static final Logger log = Logger.getLogger(QueryHeartbeatCache.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryHeartbeatCache.class);
 
     private final Cache<String,QueryHeartbeat> cache = Caffeine.newBuilder().removalListener((key, value, cause) -> {
         if (cause.wasEvicted()) {

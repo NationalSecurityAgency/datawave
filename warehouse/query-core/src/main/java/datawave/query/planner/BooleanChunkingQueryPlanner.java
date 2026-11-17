@@ -6,7 +6,8 @@ import java.util.Iterator;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
@@ -28,7 +29,7 @@ import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
 
 public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
-    private static final Logger log = Logger.getLogger(BooleanChunkingQueryPlanner.class);
+    private static final Logger log = LoggerFactory.getLogger(BooleanChunkingQueryPlanner.class);
 
     public BooleanChunkingQueryPlanner(BooleanChunkingQueryPlanner booleanChunkingQueryPlanner) {
         super(booleanChunkingQueryPlanner);
@@ -52,7 +53,7 @@ public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
         if (log.isDebugEnabled() && queryTree != null) {
             log.debug("Query after flattening tree");
             for (String line : PrintingVisitor.formattedQueryStringList(queryTree)) {
-                log.debug(line);
+                log.debug(String.valueOf(line));
             }
             log.debug("");
         }
@@ -65,7 +66,7 @@ public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
         if (log.isDebugEnabled() && queryTree != null) {
             log.debug("Query after optimizing boolean logic");
             for (String line : PrintingVisitor.formattedQueryStringList(queryTree)) {
-                log.debug(line);
+                log.debug(String.valueOf(line));
             }
             log.debug("");
         }
@@ -78,7 +79,7 @@ public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
         if (log.isDebugEnabled() && queryTree != null) {
             log.debug("Query after wrapping tree");
             for (String line : PrintingVisitor.formattedQueryStringList(queryTree)) {
-                log.debug(line);
+                log.debug(String.valueOf(line));
             }
             log.debug("");
         }
@@ -103,7 +104,7 @@ public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
             throw new DatawaveFatalQueryException("Query string after query modification was empty. Cannot run query.");
         } else if (log.isDebugEnabled()) {
             log.debug("Final query passed to QueryIterator:");
-            log.debug(newQueryString);
+            log.debug(String.valueOf(newQueryString));
         }
 
         final ArrayList<QueryData> data = Lists.newArrayList();

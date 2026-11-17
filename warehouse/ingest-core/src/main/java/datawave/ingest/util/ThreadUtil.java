@@ -4,7 +4,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.concurrent.ThreadUtils;
 
@@ -13,7 +14,7 @@ import datawave.concurrent.ThreadUtils;
  */
 public final class ThreadUtil {
 
-    private static final Logger logger = Logger.getLogger(ThreadUtil.class);
+    private static final Logger logger = LoggerFactory.getLogger(ThreadUtil.class);
 
     /**
      * Shuts down the executor and gives tasks that are still in progress the given amount of time before continuing.

@@ -28,7 +28,8 @@ import javax.annotation.Nullable;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -61,7 +62,7 @@ import datawave.query.util.Tuple2;
  * This Transform will lookup and search annotations for hits as well as provide context
  */
 public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocumentTransform {
-    private static final Logger log = Logger.getLogger(AnnotationHitsTransformer.class);
+    private static final Logger log = LoggerFactory.getLogger(AnnotationHitsTransformer.class);
 
     public static final String ENABLED_PARAMETER = "annotation.all.hits";
     public static final String CONTEXT_SIZE_PARAMETER = "annotation.all.hits.contextSize";

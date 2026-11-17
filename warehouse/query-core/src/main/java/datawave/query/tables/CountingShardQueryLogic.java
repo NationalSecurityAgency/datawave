@@ -6,7 +6,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.iterators.ResultCountingIterator;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -30,7 +31,7 @@ import datawave.query.transformer.ShardQueryCountTableTransformer;
  * TODO: optimize this so a specialized query iterator returns single counts that are then aggregated
  */
 public class CountingShardQueryLogic extends ShardQueryLogic {
-    private static final Logger log = Logger.getLogger(CountingShardQueryLogic.class);
+    private static final Logger log = LoggerFactory.getLogger(CountingShardQueryLogic.class);
 
     // the time to wait before returning an intermediate result. Zero would return an intermediate result
     // on every call to next(), before the aggregating thread has had any chance to produce the count.

@@ -36,7 +36,8 @@ import org.apache.commons.jexl3.parser.Parser;
 import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
@@ -81,7 +82,7 @@ import datawave.util.time.DateHelper;
 
 public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
     public static final String PRE_FILTER_DISABLE_KEYWORD = "__DISABLE_PREFILTER__";
-    private static final Logger log = Logger.getLogger(EdgeQueryLogic.class);
+    private static final Logger log = LoggerFactory.getLogger(EdgeQueryLogic.class);
 
     protected EdgeQueryConfiguration config;
 

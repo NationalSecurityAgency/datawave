@@ -6,7 +6,8 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
@@ -19,7 +20,7 @@ import datawave.query.tables.chained.ChainedQueryTable;
  */
 public class SSDeepChainedDiscoveryQueryLogic extends ChainedQueryTable<ScoredSSDeepPair,DiscoveredSSDeep> {
 
-    private static final Logger log = Logger.getLogger(SSDeepChainedDiscoveryQueryLogic.class);
+    private static final Logger log = LoggerFactory.getLogger(SSDeepChainedDiscoveryQueryLogic.class);
 
     private Query discoveryQuery = null;
 
@@ -53,7 +54,9 @@ public class SSDeepChainedDiscoveryQueryLogic extends ChainedQueryTable<ScoredSS
     public void setupQuery(GenericQueryConfiguration config) throws Exception {
         if (null == this.getChainStrategy()) {
             final String error = "No transformed ChainStrategy provided for SSDeepChainedDiscoveryQueryLogic!";
-            log.error(error);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(error));
+            }
             throw new RuntimeException(error);
         }
 

@@ -14,14 +14,15 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates mutations for each data and ingest type, based on timestamp, for the duration of each ingest segment.
  *
  */
 public class MetricsCorrelatorReducer extends Reducer<Text,LongArrayWritable,Text,Mutation> {
-    static Logger log = Logger.getLogger(MetricsCorrelatorReducer.class);
+    static Logger log = LoggerFactory.getLogger(MetricsCorrelatorReducer.class);
 
     private ByteArrayOutputStream valueBuffer = new ByteArrayOutputStream();
 

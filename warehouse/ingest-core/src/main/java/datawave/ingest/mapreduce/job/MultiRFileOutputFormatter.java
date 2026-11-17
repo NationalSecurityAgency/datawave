@@ -50,7 +50,8 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -67,7 +68,7 @@ import datawave.util.StringUtils;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
 
-    private static final Logger log = Logger.getLogger(MultiRFileOutputFormatter.class);
+    private static final Logger log = LoggerFactory.getLogger(MultiRFileOutputFormatter.class);
 
     protected Map<String,SizeTrackingWriter> writers = null;
     protected boolean loadPlanningEnabled = false;

@@ -1,7 +1,7 @@
 package datawave.query.planner;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.config.ShardQueryConfiguration;
@@ -36,7 +36,9 @@ public class MetadataHelperQueryModelProvider implements QueryModelProvider {
                 config.setQueryModel(queryModel);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.QUERY_MODEL_FETCH_ERROR, e);
-                log.error(qe);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(qe));
+                }
                 throw new DatawaveFatalQueryException(qe);
             }
 

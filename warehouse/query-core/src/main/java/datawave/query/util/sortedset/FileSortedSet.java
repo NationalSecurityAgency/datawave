@@ -18,7 +18,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -32,7 +33,7 @@ import datawave.webservice.query.exception.QueryException;
  *            type of set
  */
 public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
-    private static final Logger log = Logger.getLogger(FileSortedSet.class);
+    private static final Logger log = LoggerFactory.getLogger(FileSortedSet.class);
     protected boolean persisted;
     protected E[] range;
     protected SortedSet<E> set;

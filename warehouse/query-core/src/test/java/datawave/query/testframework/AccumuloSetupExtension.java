@@ -40,10 +40,11 @@ import org.apache.hadoop.mapreduce.lib.map.WrappedMapper;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -66,7 +67,7 @@ import datawave.query.RebuildingScannerTestHelper;
  */
 public class AccumuloSetupExtension implements BeforeAllCallback, AfterAllCallback {
 
-    private static final Logger log = Logger.getLogger(AccumuloSetupExtension.class);
+    private static final Logger log = LoggerFactory.getLogger(AccumuloSetupExtension.class);
 
     /**
      * Whether to cause tests to fail with an {@link org.opentest4j.AssertionFailedError} if resources are left undeleted after the {@code @AfterAll} lifecycle

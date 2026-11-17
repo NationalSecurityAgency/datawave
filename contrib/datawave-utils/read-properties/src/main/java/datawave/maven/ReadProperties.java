@@ -1,5 +1,8 @@
 package datawave.maven;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -21,6 +24,7 @@ import java.util.Properties;
 @Mojo(name = "read-properties", defaultPhase = LifecyclePhase.VALIDATE, threadSafe=true)
 @SuppressWarnings("unused")
 public class ReadProperties extends AbstractMojo {
+    private static final Logger log = LoggerFactory.getLogger(ReadProperties.class);
 
     @Parameter(defaultValue = "{project}", required = true, readonly = true)
     private MavenProject project;
@@ -39,23 +43,23 @@ public class ReadProperties extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        getLog().info("------------------------------------------------------------------------");
-        getLog().info("ReadProperties");
-        getLog().info("------------------------------------------------------------------------");
+        log.info("------------------------------------------------------------------------");
+        log.info("ReadProperties");
+        log.info("------------------------------------------------------------------------");
 
         List<File> dirList = new ArrayList<>();
 
         for (File directory : directories) {
             if (!directory.exists()) {
-                getLog().warn("directory " + directory.getAbsolutePath() + " does not exist");
+                log.warn("directory " + directory.getAbsolutePath() + " does not exist");
                 continue;
             }
             if (!directory.isDirectory()) {
-                getLog().warn("directory " + directory.getAbsolutePath() + " is not a directory");
+                log.warn("directory " + directory.getAbsolutePath() + " is not a directory");
                 continue;
             }
             if (!directory.canRead()) {
-                getLog().warn("directory " + directory.getAbsolutePath() + " is not readable");
+                log.warn("directory " + directory.getAbsolutePath() + " is not readable");
                 continue;
             }
             dirList.add(directory);
@@ -73,12 +77,12 @@ public class ReadProperties extends AbstractMojo {
                 if (file.exists()) {
                     maxFilenameLength = Math.max(filename.length(), maxFilenameLength);
                     try {
-                        getLog().info("Loading property file: " + file.getAbsolutePath());
+                        log.info("Loading property file: " + file.getAbsolutePath());
 
                         try (FileInputStream stream = new FileInputStream(file)) {
                             currentProperties.load(stream);
 
-                            if (getLog().isDebugEnabled()) {
+                            if (log.isDebugEnabled()) {
                                 for (Enumeration<?> n = currentProperties.propertyNames(); n.hasMoreElements(); ) {
                                     String k = (String) n.nextElement();
                                     propertyToFileMap.put(k, filename);
@@ -90,7 +94,7 @@ public class ReadProperties extends AbstractMojo {
                     }
                 } else {
                     if (quiet) {
-                        getLog().debug("Ignoring missing properties file: " + file.getAbsolutePath());
+                        log.debug("Ignoring missing properties file: " + file.getAbsolutePath());
                     } else {
                         throw new MojoExecutionException("Properties file not found: " + file.getAbsolutePath());
                     }
@@ -100,7 +104,7 @@ public class ReadProperties extends AbstractMojo {
             }
         }
 
-        getLog().info("------------------------------------------------------------------------");
+        log.info("------------------------------------------------------------------------");
 
         PropertyPlaceholderHelper pph = new PropertyPlaceholderHelper("${", "}", null, true);
         PropertyPlaceholderHelper.PlaceholderResolver resolver = new PlaceholderResolver(mergedProperties);
@@ -111,16 +115,16 @@ public class ReadProperties extends AbstractMojo {
             mergedProperties.setProperty(k, pph.replacePlaceholders(v, resolver));
         }
 
-        if (getLog().isDebugEnabled()) {
-            getLog().debug("------------------------------------------------------------------------");
-            getLog().debug("MERGED PROPERTIES");
-            getLog().debug("------------------------------------------------------------------------");
+        if (log.isDebugEnabled()) {
+            log.debug("------------------------------------------------------------------------");
+            log.debug("MERGED PROPERTIES");
+            log.debug("------------------------------------------------------------------------");
             for (Enumeration<?> n = mergedProperties.propertyNames(); n.hasMoreElements(); ) {
                 String k = (String) n.nextElement();
                 String p = (String) mergedProperties.get(k);
                 String filename = propertyToFileMap.get(k);
                 int padding = maxFilenameLength - filename.length() + 2;
-                getLog().debug("[" + filename + "]" + String.format("%" + padding + "s", "") + k + "=" + p);
+                log.debug("[" + filename + "]" + String.format("%" + padding + "s", "") + k + "=" + p);
             }
         }
 

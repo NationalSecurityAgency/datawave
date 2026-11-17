@@ -15,13 +15,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BoundedBlockingQueueTest {
 
-    private static final Logger log = LogManager.getLogger(BoundedBlockingQueueTest.class);
+    private static final Logger log = LoggerFactory.getLogger(BoundedBlockingQueueTest.class);
 
     @Test
     public void testQueueBounds() throws Exception {

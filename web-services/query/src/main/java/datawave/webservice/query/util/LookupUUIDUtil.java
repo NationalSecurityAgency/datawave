@@ -21,8 +21,9 @@ import javax.ws.rs.core.StreamingOutput;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
@@ -60,7 +61,7 @@ import datawave.webservice.result.keyword.TagCloudResponseBase;
  */
 public class LookupUUIDUtil {
 
-    private static final Logger log = Logger.getLogger(LookupUUIDUtil.class);
+    private static final Logger log = LoggerFactory.getLogger(LookupUUIDUtil.class);
 
     protected static final String EMPTY_STRING = "";
 
@@ -1011,7 +1012,9 @@ public class LookupUUIDUtil {
                 this.queryExecutor.close(queryId);
             } catch (final Exception e) {
                 final String message = "Unable to close UUID lookup query " + queryId + " while performing a content lookup";
-                log.error(message, e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(message), e);
+                }
             }
         }
 

@@ -19,7 +19,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
@@ -68,7 +69,7 @@ import datawave.table.util.TLD;
  */
 public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 
-    private static final Logger log = Logger.getLogger(CreateUidsIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(CreateUidsIterator.class);
 
     public static final ValueSerializerType DEFAULT_VALUE_ENCODING_TYPE = WRITABLE;
 

@@ -9,7 +9,8 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
@@ -29,7 +30,7 @@ import datawave.query.tables.async.ScannerChunk;
  */
 public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> {
 
-    private static final Logger log = Logger.getLogger(PushdownFunction.class);
+    private static final Logger log = LoggerFactory.getLogger(PushdownFunction.class);
 
     /**
      * The shard query config

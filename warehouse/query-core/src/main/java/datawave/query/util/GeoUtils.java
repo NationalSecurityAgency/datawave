@@ -11,13 +11,13 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.slf4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 

@@ -34,9 +34,9 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.log4j.Logger;
 import org.apache.lucene.store.OutputStreamDataOutput;
 import org.apache.lucene.util.fst.FST;
+import org.slf4j.Logger;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedListMultimap;

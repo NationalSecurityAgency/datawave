@@ -15,7 +15,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.hadoop.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -26,7 +27,7 @@ import org.xml.sax.SAXException;
 import datawave.iterators.filter.AgeOffConfigParams;
 
 public class XmlRuleProcessor {
-    private static final Logger log = Logger.getLogger(XmlRuleProcessor.class);
+    private static final Logger log = LoggerFactory.getLogger(XmlRuleProcessor.class);
 
     private final AgeOffFileLoaderDependencyProvider loaderConfig;
 

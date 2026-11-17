@@ -1,6 +1,6 @@
 package datawave.policy;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.RawDataErrorNames;

@@ -19,11 +19,12 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -59,7 +60,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 // @formatter:on
 public class TermFrequencyQueryTableTest {
 
-    private static final Logger log = Logger.getLogger(TermFrequencyQueryTableTest.class);
+    private static final Logger log = LoggerFactory.getLogger(TermFrequencyQueryTableTest.class);
 
     private static final Authorizations auths = new Authorizations("ALL");
     private static final Set<Authorizations> authSet = Collections.singleton(auths);

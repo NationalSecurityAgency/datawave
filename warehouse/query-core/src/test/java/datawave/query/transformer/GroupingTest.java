@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.log4j.Logger;
 import org.assertj.core.util.Sets;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -32,6 +31,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.CacheManager;
@@ -218,7 +219,7 @@ public class GroupingTest extends AbstractQueryTest {
 
     private static final String COUNT_FIELD = "COUNT";
     private static final Set<String> FIELDS_OF_INTEREST = ImmutableSet.of("GENDER", "GEN", "BIRTHDAY", "AGE", "AG", "RECORD", "BIRTH_DATE");
-    private static final Logger log = Logger.getLogger(GroupingTest.class);
+    private static final Logger log = LoggerFactory.getLogger(GroupingTest.class);
     private static final String COLVIS_MARKING = "columnVisibility";
     private static final String REDUCED_COLVIS = "ALL&E&I";
     private static final Authorizations auths = new Authorizations("ALL", "E", "I");

@@ -25,7 +25,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -44,7 +45,7 @@ public class IndexStatsClient {
     public static final Double DEFAULT_VALUE = Double.MAX_VALUE;
     public static final ImmutableMap<String,Double> EMPTY_STATS = ImmutableMap.of(DEFAULT_STRING, DEFAULT_VALUE);
 
-    private static final Logger log = Logger.getLogger(IndexStatsClient.class);
+    private static final Logger log = LoggerFactory.getLogger(IndexStatsClient.class);
 
     private AccumuloClient client;
     private String table;
@@ -116,7 +117,9 @@ public class IndexStatsClient {
                 scanner = bScanner;
             }
         } catch (Exception e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             throw new IOException(e);
         }
 

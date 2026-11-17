@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -205,7 +205,9 @@ public final class DatePartitioner {
             msg.append("; overlaps:").append(overlapsFound);
             msg.append("; matching:").append(matchingFieldSetsFound);
             msg.append("; ").append(timeline);
-            log.error(msg);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(msg));
+            }
             throw new DatawaveFatalQueryException(msg.toString());
         }
 

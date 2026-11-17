@@ -33,7 +33,8 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
@@ -56,7 +57,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
 
     public static final String MAX_SPLIT_DECREASE = "datawave.ingest.splits.max.decrease.number";
     public static final String MAX_SPLIT_PERCENTAGE_DECREASE = "datawave.ingest.splits.max.decrease.percentage";
-    private static final Logger log = Logger.getLogger(TableSplitsCache.class);
+    private static final Logger log = LoggerFactory.getLogger(TableSplitsCache.class);
     private static final String DEFAULT_SPLITS_CACHE_DIR = "/data/splitsCache";
     public static final String DEFAULT_SPLITS_CACHE_FILE = "all-splits.txt";
     private static final short DEFAULT_MAX_SPLIT_DECREASE = 42;
@@ -178,7 +179,9 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
             splitsStatus = FileSystem.get(this.splitsPath.toUri(), conf).getFileStatus(this.splitsPath);
         } catch (IOException ex) {
             String logMessage = ex instanceof FileNotFoundException ? "No splits file present" : "Could not get the FileStatus of the splits file";
-            log.warn(logMessage);
+            if (log.isWarnEnabled()) {
+                log.warn(String.valueOf(logMessage));
+            }
         }
         return splitsStatus;
     }

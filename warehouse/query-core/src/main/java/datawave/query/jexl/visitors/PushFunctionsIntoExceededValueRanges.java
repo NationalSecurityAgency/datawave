@@ -21,7 +21,7 @@ import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;

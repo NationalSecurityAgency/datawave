@@ -18,7 +18,8 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.metrics.config.MetricsConfig;
 import datawave.util.StringUtils;
@@ -26,7 +27,7 @@ import datawave.util.time.DateHelper;
 
 public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
 
-    private static final Logger log = Logger.getLogger(ProcessingErrorsReducer.class);
+    private static final Logger log = LoggerFactory.getLogger(ProcessingErrorsReducer.class);
 
     protected AccumuloClient client;
 

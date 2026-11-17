@@ -7,7 +7,8 @@ import javax.interceptor.InvocationContext;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.annotation.Required;
 
@@ -16,7 +17,7 @@ import datawave.annotation.Required;
  */
 public class RequiredInterceptor {
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     @AroundInvoke
     public Object checkRequiredParameters(InvocationContext ctx) throws Exception {
@@ -59,7 +60,9 @@ public class RequiredInterceptor {
                             if (null != validValues)
                                 errMsg.append(" Valid values: ").append(ArrayUtils.toString(validValues));
                             String error = errMsg.toString();
-                            log.error(error);
+                            if (log.isErrorEnabled()) {
+                                log.error(String.valueOf(error));
+                            }
                             throw new IllegalArgumentException(error);
                         }
                     }

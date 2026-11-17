@@ -6,7 +6,8 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.query.logic.QueryLogic;
 import datawave.microservice.query.Query;
@@ -18,7 +19,7 @@ import datawave.query.tables.chained.strategy.FullChainStrategy;
  * that similarity query. Effectively allows the user to discover information related to hashes that are similar to one or more query hashes
  */
 public class FullSSDeepDiscoveryChainStrategy extends FullChainStrategy<ScoredSSDeepPair,DiscoveredSSDeep> {
-    private static final Logger log = Logger.getLogger(FullSSDeepDiscoveryChainStrategy.class);
+    private static final Logger log = LoggerFactory.getLogger(FullSSDeepDiscoveryChainStrategy.class);
 
     /**
      * configurable batch size in the chain, -1 is no batching

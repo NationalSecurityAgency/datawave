@@ -4,7 +4,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -18,7 +19,7 @@ import datawave.query.util.TypeMetadata;
  */
 public class NumericValueRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(NumericValueRule.class);
+    private static final Logger log = LoggerFactory.getLogger(NumericValueRule.class);
 
     private static final String NUMBER_TYPE = NumberType.class.getName();
 

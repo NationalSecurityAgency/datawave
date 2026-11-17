@@ -21,10 +21,11 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.log4j.Logger;
-import org.jboss.logging.NDC;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.logging.NestedDiagnosticContext;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
@@ -65,7 +66,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      */
     private static final int RESULTS_THREAD_QUEUE_CAPACITY = 2;
 
-    private static Logger log = Logger.getLogger(RunningQuery.class);
+    private static Logger log = LoggerFactory.getLogger(RunningQuery.class);
 
     private transient AccumuloClient client = null;
     private AccumuloConnectionFactory.Priority connectionPriority = null;
@@ -183,16 +184,20 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         return runningQuery;
     }
 
-    private void addNDC() {
+    private boolean addNDC() {
         String user = this.settings.getUserDN();
         UUID uuid = this.settings.getId();
         if (user != null && uuid != null) {
-            NDC.push("[" + user + "] [" + uuid + "]");
+            NestedDiagnosticContext.push("[" + user + "] [" + uuid + "]");
+            return true;
         }
+        return false;
     }
 
-    private void removeNDC() {
-        NDC.pop();
+    private void removeNDC(boolean pushed) {
+        if (pushed) {
+            NestedDiagnosticContext.pop();
+        }
     }
 
     public void setClient(AccumuloClient client) throws Exception {
@@ -203,8 +208,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             return;
         }
 
+        boolean ndcPushed = false;
         try {
-            addNDC();
+            ndcPushed = addNDC();
             applyPrediction(null);
             this.client = client;
             if (this.client instanceof WrappedAccumuloClient && this.logic.getClientConfig() != null) {
@@ -244,7 +250,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         } finally {
             // update AbstractRunningQuery.lastUsed in case this operation took a long time
             touch();
-            removeNDC();
+            removeNDC(ndcPushed);
             if (this.queryMetrics != null) {
                 try {
                     this.queryMetrics.updateMetric(this.getMetric());
@@ -502,10 +508,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         long currentPageBytes = 0;
         int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
 
+        boolean ndcPushed = false;
         int returnPageCount = 0;
 
         try {
-            addNDC();
+            ndcPushed = addNDC();
 
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
@@ -661,7 +668,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
             // update AbstractRunningQuery.lastUsed in case this operation took a long time
             touch();
-            removeNDC();
+            removeNDC(ndcPushed);
 
             if (this.queryMetrics != null) {
                 try {
@@ -803,13 +810,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         }
 
         if (logic != null) {
+            boolean ndcPushed = false;
             try {
-                addNDC();
+                ndcPushed = addNDC();
                 logic.close();
             } catch (Exception e) {
                 log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
             } finally {
-                removeNDC();
+                removeNDC(ndcPushed);
             }
         }
     }

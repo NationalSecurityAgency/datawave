@@ -30,7 +30,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.PeekingIterator;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
@@ -68,7 +69,7 @@ import datawave.query.util.ValueSerializer;
  */
 public class RangeStreamScanner extends ScannerSession implements Callable<RangeStreamScanner> {
 
-    private static final Logger log = Logger.getLogger(RangeStreamScanner.class);
+    private static final Logger log = LoggerFactory.getLogger(RangeStreamScanner.class);
     // simply compare the strings. no need for a date formatter
     protected static final int DATE_CF_LENGTH = 8;
     protected boolean seenUnexpectedKey = false;
@@ -378,7 +379,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
 
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    log.error(e);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(e));
+                    }
                     throw new RuntimeException(e);
                 }
                 // if we pulled no data and we are not running, and there is no data in the queue
@@ -394,7 +397,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 try {
                     stats.getTimer(TIMERS.HASNEXT).suspend();
                 } catch (Exception e) {
-                    log.error(e);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(e));
+                    }
                 }
             }
             if (uncaughtExceptionHandler.hasUncaughtException()) {
@@ -524,7 +529,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             }
             return info;
         } catch (IOException e) {
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             throw new DatawaveFatalQueryException(e);
         }
     }
@@ -776,7 +783,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
 
         } catch (Exception e) {
 
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             throw e;
 
         } finally {

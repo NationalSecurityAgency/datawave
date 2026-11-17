@@ -7,7 +7,7 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.ingest.table.config.AbstractTableConfigHelper;
 

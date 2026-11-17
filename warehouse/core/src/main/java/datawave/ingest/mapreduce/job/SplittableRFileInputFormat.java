@@ -15,12 +15,13 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.util.accumulo.RFileUtil;
 
 public class SplittableRFileInputFormat extends RFileInputFormat {
-    private static final Logger log = Logger.getLogger(SplittableRFileInputFormat.class);
+    private static final Logger log = LoggerFactory.getLogger(SplittableRFileInputFormat.class);
     public static final String MIN_BLOCKS_PER_SPLIT = SplittableRFileInputFormat.class.getName() + ".minBlocksPerSplit";
 
     @Override

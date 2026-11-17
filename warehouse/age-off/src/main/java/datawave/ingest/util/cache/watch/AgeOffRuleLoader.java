@@ -8,14 +8,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.ageoff.FilterOptions;
 import datawave.iterators.filter.ageoff.FilterRule;
 
 public class AgeOffRuleLoader {
-    private static final Logger log = Logger.getLogger(AgeOffRuleLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(AgeOffRuleLoader.class);
     private final IteratorEnvironment iterEnv;
     private final XmlRuleProcessor xmlRuleProcessor;
 

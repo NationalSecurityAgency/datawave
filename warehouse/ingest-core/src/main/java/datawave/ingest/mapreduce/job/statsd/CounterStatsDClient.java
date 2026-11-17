@@ -21,7 +21,8 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.security.Credentials;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.timgroup.statsd.NonBlockingStatsDClient;
 import com.timgroup.statsd.StatsDClient;
@@ -30,7 +31,7 @@ import com.timgroup.statsd.StatsDClient;
  * Created on 4/25/16.
  */
 public class CounterStatsDClient {
-    private static Logger log = Logger.getLogger(CounterStatsDClient.class);
+    private static Logger log = LoggerFactory.getLogger(CounterStatsDClient.class);
 
     protected StatsDClient client = null;
     protected CounterToStatsDConfiguration config;

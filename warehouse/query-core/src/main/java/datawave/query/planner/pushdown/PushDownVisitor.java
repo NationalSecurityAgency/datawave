@@ -6,7 +6,8 @@ import java.util.Collection;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -24,7 +25,7 @@ import datawave.query.util.MetadataHelper;
  */
 public class PushDownVisitor extends RebuildingVisitor {
 
-    private static final Logger log = Logger.getLogger(PushDownVisitor.class);
+    private static final Logger log = LoggerFactory.getLogger(PushDownVisitor.class);
     private final Collection<PushDownRule> pushDownRules;
     private final ShardQueryConfiguration config;
     private final ScannerFactory scannerFactory;

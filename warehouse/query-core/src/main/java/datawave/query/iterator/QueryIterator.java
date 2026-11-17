@@ -42,8 +42,9 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -163,7 +164,7 @@ import datawave.query.util.sortedset.FileSortedSet;
 public class QueryIterator extends QueryOptions implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
                 SourceFactory<Key,Value>, SortedKeyValueIterator<Key,Value> {
 
-    private static final Logger log = Logger.getLogger(QueryIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryIterator.class);
 
     protected SortedKeyValueIterator<Key,Value> source;
     protected SortedKeyValueIterator<Key,Value> sourceForDeepCopies;
@@ -1211,7 +1212,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 synchronized (this) {
                     log.trace("=== produced " + numberOfDeepCopies + " source deep copies ===");
                     for (String stage : deepCopyStages) {
-                        log.trace(stage);
+                        log.trace(String.valueOf(stage));
                     }
                 }
             }
@@ -1255,7 +1256,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     private void debugBooleanLogicIterator(NestedIterator<Key> root, String prefix) {
-        log.debug(root);
+        if (log.isDebugEnabled()) {
+            log.debug(String.valueOf(root));
+        }
 
         if (null == root || null == root.children()) {
             return;
@@ -1284,7 +1287,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                             new Projection(this.disallowListedFields, Projection.ProjectionType.EXCLUDES));
         } else {
             String msg = "Configured to use projection, but no allowlist or disallowlist was provided";
-            log.error(msg);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(msg));
+            }
             throw new IllegalArgumentException(msg);
         }
     }
@@ -1471,7 +1476,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     boolean isQueryFullySatisfied, boolean sortedUIDs) throws MalformedURLException, ConfigException, IllegalAccessException,
                     InstantiationException, NoSuchMethodException, InvocationTargetException {
         if (log.isTraceEnabled()) {
-            log.trace(documentRange);
+            log.trace(String.valueOf(documentRange));
         }
 
         // determine the list of indexed fields

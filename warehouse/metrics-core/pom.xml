@@ -51,6 +51,10 @@
             <artifactId>jetty</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-minicluster</artifactId>
             <version>${version.accumulo}</version>

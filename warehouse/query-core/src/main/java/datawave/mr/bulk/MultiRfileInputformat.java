@@ -21,7 +21,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.LoadingCache;
@@ -48,7 +49,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
     public static final String CACHE_METADATA_EXPIRE_SECONDS = "rfile.cache.expire.seconds";
     public static final String CACHE_RETRIEVE_SIZE = "rfile.size.compute";
     public static final String CACHE_METADATA_SIZE = "rfile.cache.metdata.size";
-    private static final Logger log = Logger.getLogger(MultiRfileInputformat.class);
+    private static final Logger log = LoggerFactory.getLogger(MultiRfileInputformat.class);
 
     private static LoadingCache<Range,Set<Tuple2<String,Set<String>>>> locationMap = null;
 

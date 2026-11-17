@@ -17,18 +17,21 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler;
 
 public class DateIndexTableConfigHelperTest {
 
-    private static final Logger logger = Logger.getLogger(DateIndexTableConfigHelperTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(DateIndexTableConfigHelperTest.class);
     private static Level testDriverLevel;
 
     public static final String DEFAULT_EXCEPTION_MESSAGE = "This is a test exception.  NOTHING IS ACTUALLY WRONG....";
@@ -214,15 +217,15 @@ public class DateIndexTableConfigHelperTest {
     public void setup() {
         Level desiredLevel = Level.ALL;
 
-        Logger log = Logger.getLogger(DateIndexTableConfigHelperTest.class);
-        DateIndexTableConfigHelperTest.testDriverLevel = log.getLevel();
-        log.setLevel(desiredLevel);
+        Logger log = LoggerFactory.getLogger(DateIndexTableConfigHelperTest.class);
+        DateIndexTableConfigHelperTest.testDriverLevel = LogManager.getLogger(log.getName()).getLevel();
+        Configurator.setLevel(log.getName(), desiredLevel);
     }
 
     @AfterEach
     public void teardown() {
 
-        DateIndexTableConfigHelperTest.logger.setLevel(DateIndexTableConfigHelperTest.testDriverLevel);
+        Configurator.setLevel(DateIndexTableConfigHelperTest.logger.getName(), DateIndexTableConfigHelperTest.testDriverLevel);
     }
 
     @Test

@@ -16,7 +16,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.attributes.Document;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
@@ -24,7 +25,7 @@ import datawave.query.util.TypeMetadata;
 
 public class TestLookupTask<T extends QueryIterator> {
 
-    private static final Logger log = Logger.getLogger(TestLookupTask.class);
+    private static final Logger log = LoggerFactory.getLogger(TestLookupTask.class);
     private TypeMetadata typeMetadata = null;
     private Class<T> iteratorClass;
     private QueryIterator iterator;

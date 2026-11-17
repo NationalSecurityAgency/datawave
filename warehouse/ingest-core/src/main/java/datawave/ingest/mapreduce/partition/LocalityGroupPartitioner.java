@@ -7,7 +7,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
@@ -17,7 +18,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
  *
  */
 public class LocalityGroupPartitioner extends Partitioner<BulkIngestKey,Value> implements DelegatePartitioner {
-    private static Logger log = Logger.getLogger(LocalityGroupPartitioner.class);
+    private static Logger log = LoggerFactory.getLogger(LocalityGroupPartitioner.class);
 
     public static final String COLUMN_FAMILIES = "LocalityGroupPartitioner.colfams"; // csv
 

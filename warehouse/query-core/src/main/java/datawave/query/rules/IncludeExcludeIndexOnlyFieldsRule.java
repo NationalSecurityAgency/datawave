@@ -5,7 +5,8 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -20,7 +21,7 @@ import datawave.query.util.MetadataHelper;
  */
 public class IncludeExcludeIndexOnlyFieldsRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(IncludeExcludeIndexOnlyFieldsRule.class);
+    private static final Logger log = LoggerFactory.getLogger(IncludeExcludeIndexOnlyFieldsRule.class);
 
     private static final Set<Pair<String,String>> functions = Collections.unmodifiableSet(Sets.newHashSet(
                     Pair.of(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE, EvaluationPhaseFilterFunctionsDescriptor.INCLUDE_REGEX),

@@ -7,7 +7,8 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
@@ -35,7 +36,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Value>,EventBase>
                 implements WritesQueryMetrics, WritesResultCardinalities, Flushable<EventBase> {
 
-    private static final Logger log = Logger.getLogger(DocumentTransformer.class);
+    private static final Logger log = LoggerFactory.getLogger(DocumentTransformer.class);
 
     /**
      * By default, assume each cell still has the visibility attached to it

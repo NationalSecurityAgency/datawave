@@ -5,7 +5,8 @@ import java.util.Date;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
@@ -20,7 +21,7 @@ import datawave.util.CompositeTimestamp;
  */
 public abstract class TokenFilterBase extends AppliedRule {
 
-    private static final Logger log = Logger.getLogger(TokenFilterBase.class);
+    private static final Logger log = LoggerFactory.getLogger(TokenFilterBase.class);
     private byte[][] patternBytes;
     private boolean ruleApplied;
 

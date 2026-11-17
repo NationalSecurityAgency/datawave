@@ -24,7 +24,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.core.iterators.IteratorThreadPoolManager;
 import datawave.query.attributes.Document;
@@ -45,7 +46,7 @@ import datawave.query.util.Tuple2;
  */
 public class PipelineIterator implements Iterator<Entry<Key,Document>> {
 
-    private final Logger log = Logger.getLogger(getClass());
+    private final Logger log = LoggerFactory.getLogger(getClass());
     protected final YieldCallback<Key> yieldCallback;
     protected final long yieldThresholdMs;
     protected final NestedIterator<Key> docSource;
@@ -298,7 +299,9 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
         for (Pair<Key,String> h : e.getYieldKeyHistory()) {
             log.debug(prefix + " yieldKeyHistory-" + n++ + ": " + h);
         }
-        log.trace(prefix, e);
+        if (log.isTraceEnabled()) {
+            log.trace(String.valueOf(prefix), e);
+        }
     }
 
     /**

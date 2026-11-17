@@ -6,7 +6,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 
@@ -22,7 +23,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 
 public class ShardedAnnotationDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN>
                 implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
-    private static final Logger log = Logger.getLogger(ShardedAnnotationDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(ShardedAnnotationDataTypeHandler.class);
     protected Configuration conf = null;
 
     // ANNOTATION_HELPER_INTEGRATION_POINT

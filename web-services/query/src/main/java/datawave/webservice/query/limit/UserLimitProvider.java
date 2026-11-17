@@ -10,14 +10,15 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is responsible for identifying and providing limits that should be enforced for users.
  */
 public class UserLimitProvider {
 
-    private static final Logger log = Logger.getLogger(UserLimitProvider.class);
+    private static final Logger log = LoggerFactory.getLogger(UserLimitProvider.class);
 
     private final int defaultUserQueryLimit;
 

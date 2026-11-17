@@ -25,9 +25,10 @@ import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.util.bloom.BloomFilter;
-import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -53,7 +54,7 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.util.TextUtil;
 
 public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VALUEOUT> {
-    private static final Logger log = Logger.getLogger(WikipediaDataTypeHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(WikipediaDataTypeHandler.class);
 
     private static final String REVISION_TEXT_FIELD_NAME = "REVISION_TEXT";
     private static final String REVISION_TEXT_TOKEN = "REVISION_TEXT_TOKEN";

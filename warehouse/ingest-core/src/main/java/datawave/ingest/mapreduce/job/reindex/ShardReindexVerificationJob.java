@@ -20,7 +20,8 @@ import org.apache.hadoop.io.compress.ZStandardCodec;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -33,7 +34,7 @@ import datawave.util.accumulo.RFileUtil;
  * Verify the equivalence of two inputs. Primarily used for verifying ShardReindexJob correctness
  */
 public class ShardReindexVerificationJob implements Tool {
-    private static final Logger log = Logger.getLogger(ShardReindexVerificationJob.class);
+    private static final Logger log = LoggerFactory.getLogger(ShardReindexVerificationJob.class);
 
     private Configuration configuration;
     private JobConfig jobConfig = new JobConfig();

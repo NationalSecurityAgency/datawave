@@ -24,7 +24,7 @@
         <version.cache-api>1.1.1</version.cache-api>
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-lang3>3.20.0</version.commons-lang3>
-        <version.datawave>8.0.0</version.datawave>
+        <version.datawave>8.6.0-SNAPSHOT</version.datawave>
         <version.datawave.accumulo-api>4.0.6</version.datawave.accumulo-api>
         <version.datawave.audit-api>4.0.5</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.5</version.datawave.authorization-api>
@@ -570,8 +570,8 @@
             <artifactId>httpcore</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -652,6 +652,11 @@
         <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>webjars-locator-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

@@ -19,7 +19,8 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -34,7 +35,7 @@ import datawave.data.normalizer.Normalizer;
  */
 public class BooksDataManager extends AbstractDataManager {
 
-    private static final Logger log = Logger.getLogger(BooksDataManager.class);
+    private static final Logger log = LoggerFactory.getLogger(BooksDataManager.class);
 
     private final String datatype;
     private final AccumuloClient accumuloClient;

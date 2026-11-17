@@ -8,7 +8,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.type.LcNoDiacriticsType;
@@ -26,7 +27,7 @@ import datawave.ingest.input.reader.EventRecordReader;
  */
 public class GroupsDataType extends AbstractDataTypeConfig {
 
-    private static final Logger log = Logger.getLogger(GroupsDataType.class);
+    private static final Logger log = LoggerFactory.getLogger(GroupsDataType.class);
 
     /**
      * Predefined groups datatype test entries.

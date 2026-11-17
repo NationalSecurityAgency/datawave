@@ -16,7 +16,8 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -41,7 +42,7 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 // by default all methods are blocking
 public class QueryExpirationBean {
 
-    private static final Logger log = Logger.getLogger(QueryExpirationBean.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryExpirationBean.class);
 
     @Inject
     private QueryCache queryCache;

@@ -33,7 +33,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -69,7 +70,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     protected HashSet<Text> TSDedupTables = new HashSet<>();
     TableConfigurationUtil tcu;
 
-    private static final Logger log = Logger.getLogger(AggregatingReducer.class);
+    private static final Logger log = LoggerFactory.getLogger(AggregatingReducer.class);
 
     /**
      * Setup the reducer. Delegates to setup(Configuration)
@@ -213,7 +214,9 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         // to the corresponding value. The return list aggregators should be applied in order.
         Set<String> tables = tcu.getJobOutputTableNames(conf);
         for (String table : tables) {
-            log.info(table);
+            if (log.isInfoEnabled()) {
+                log.info(String.valueOf(table));
+            }
 
             Map<Integer,Map<String,String>> priorityOptions = tcu.getTableAggregators(table);
             if (priorityOptions != null) {

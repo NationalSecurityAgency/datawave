@@ -19,7 +19,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -68,7 +69,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
 
     protected Boolean reducedResponse;
 
-    private static final Logger log = Logger.getLogger(DocumentTransformerSupport.class);
+    private static final Logger log = LoggerFactory.getLogger(DocumentTransformerSupport.class);
 
     private long sourceCount = 0;
     private long nextCount = 0;

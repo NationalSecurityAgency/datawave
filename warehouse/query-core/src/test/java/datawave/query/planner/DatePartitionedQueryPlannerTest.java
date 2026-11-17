@@ -29,8 +29,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,6 +38,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.opentest4j.AssertionFailedError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -83,7 +85,7 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 // @formatter:on
 public class DatePartitionedQueryPlannerTest {
 
-    private static final Logger log = Logger.getLogger(DatePartitionedQueryPlannerTest.class);
+    private static final Logger log = LoggerFactory.getLogger(DatePartitionedQueryPlannerTest.class);
 
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
@@ -157,7 +159,7 @@ public class DatePartitionedQueryPlannerTest {
     @BeforeEach
     public void setup() throws Exception {
         // change to debug to see planning
-        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.WARN);
+        Configurator.setLevel(DefaultQueryPlanner.class.getName(), Level.WARN);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setMaxDepthThreshold(100);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);

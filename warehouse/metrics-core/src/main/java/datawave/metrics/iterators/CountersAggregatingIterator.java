@@ -14,7 +14,8 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.hadoop.mapreduce.Counters;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
@@ -24,7 +25,7 @@ import com.google.common.io.ByteStreams;
  */
 public class CountersAggregatingIterator extends WrappingIterator implements OptionDescriber {
     private static String MAX_AGGREGATE_OPT = "maxAgg";
-    private static Logger log = Logger.getLogger(CountersAggregatingIterator.class);
+    private static Logger log = LoggerFactory.getLogger(CountersAggregatingIterator.class);
     private long maxRecordCount = -1;
     private Key topKey;
     private Value topValue;

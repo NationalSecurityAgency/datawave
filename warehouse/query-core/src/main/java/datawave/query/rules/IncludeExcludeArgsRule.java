@@ -2,8 +2,9 @@ package datawave.query.rules;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.lucene.visitors.InvalidIncludeExcludeArgsVisitor;
 
@@ -12,7 +13,7 @@ import datawave.query.lucene.visitors.InvalidIncludeExcludeArgsVisitor;
  */
 public class IncludeExcludeArgsRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(IncludeExcludeArgsRule.class);
+    private static final Logger log = LoggerFactory.getLogger(IncludeExcludeArgsRule.class);
 
     private static final String NO_ARGS_MESSAGE = "Function #%s supplied with no arguments. Must supply at least a field and value, e.g. #%s(FIELD, 'value').";
     private static final String UNEVEN_ARGS_MESSAGE = "Function #%s supplied with uneven number of arguments. Must supply field/value pairs, e.g. "

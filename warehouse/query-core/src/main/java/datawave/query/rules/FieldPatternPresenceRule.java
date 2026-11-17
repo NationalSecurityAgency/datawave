@@ -8,7 +8,8 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -20,7 +21,7 @@ import datawave.query.jexl.visitors.QueryPatternsVisitor;
  */
 public class FieldPatternPresenceRule extends ShardQueryRule {
 
-    private static final Logger log = Logger.getLogger(FieldPatternPresenceRule.class);
+    private static final Logger log = LoggerFactory.getLogger(FieldPatternPresenceRule.class);
 
     private Map<String,String> fieldMessages = Collections.emptyMap();
     private Map<String,String> patternMessages = Collections.emptyMap();

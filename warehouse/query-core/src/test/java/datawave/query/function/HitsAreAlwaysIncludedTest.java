@@ -19,13 +19,14 @@ import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.ComponentScan;
@@ -65,7 +66,7 @@ import datawave.table.constants.TableName;
 // @formatter:on
 public class HitsAreAlwaysIncludedTest extends AbstractQueryTest {
 
-    private static final Logger log = Logger.getLogger(HitsAreAlwaysIncludedTest.class);
+    private static final Logger log = LoggerFactory.getLogger(HitsAreAlwaysIncludedTest.class);
     private static final Authorizations auths = new Authorizations("ALL");
     // Under certain conditions a Date-normalized field value is returned without normalization.
     private static final Set<String> dateFields = Set.of("FOO_1_BAR_1.FOO.0", "FOO_1_BAR_1");

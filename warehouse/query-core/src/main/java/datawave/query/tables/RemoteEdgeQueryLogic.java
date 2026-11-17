@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.GenericQueryConfiguration;

@@ -10,7 +10,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
@@ -35,7 +36,7 @@ public class JexlRule extends AppliedRule {
 
     private HashMap<String,String> iterOptions;
 
-    private static final Logger log = Logger.getLogger(JexlRule.class);
+    private static final Logger log = LoggerFactory.getLogger(JexlRule.class);
 
     @Override
     public void init(FilterOptions options) {
@@ -98,12 +99,14 @@ public class JexlRule extends AppliedRule {
 
                 Key topKey = iter.getTopKey();
                 if (log.isDebugEnabled())
-                    log.debug(topKey);
+                    log.debug(String.valueOf(topKey));
                 queryIter.seek(new Range(new Key(topKey.getRow(), topKey.getColumnFamily()), true, topKey.followingKey(PartialKey.ROW_COLFAM), false),
                                 Collections.emptyList(), false);
 
             } catch (IOException e) {
-                log.error(e);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(e));
+                }
                 // review
                 return false;
             }
@@ -113,7 +116,7 @@ public class JexlRule extends AppliedRule {
             // amirite?
             if (queryIter.hasTop()) {
                 if (log.isDebugEnabled())
-                    log.debug(queryIter.getTopKey());
+                    log.debug(String.valueOf(queryIter.getTopKey()));
                 return true;
             } else {
                 if (log.isDebugEnabled())
@@ -141,7 +144,7 @@ public class JexlRule extends AppliedRule {
             return true;
         else {
             if (log.isDebugEnabled())
-                log.debug(topKey);
+                log.debug(String.valueOf(topKey));
         }
 
         return false;

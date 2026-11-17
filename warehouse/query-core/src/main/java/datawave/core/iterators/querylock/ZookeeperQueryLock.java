@@ -15,10 +15,11 @@ import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
 import org.apache.curator.framework.recipes.atomic.PromotedToLock;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeer.QuorumServer;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created on 2/6/17. This query lock will create a {@code /query/<queryid>} file upon query start, and will remove it upon query stop. The query is considered
@@ -26,7 +27,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
  * zookeeper client after the specified interval of non-use.
  */
 public class ZookeeperQueryLock implements QueryLock {
-    private static Logger log = Logger.getLogger(ZookeeperQueryLock.class);
+    private static Logger log = LoggerFactory.getLogger(ZookeeperQueryLock.class);
     private String queryId;
     private String zookeeperConfig;
     private Timer timer = null;

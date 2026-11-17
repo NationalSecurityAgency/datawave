@@ -12,7 +12,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -24,7 +25,7 @@ import datawave.ingest.protobuf.Uid;
  */
 public class GlobalIndexTermMatchingFilter extends Filter {
 
-    protected static final Logger log = Logger.getLogger(GlobalIndexTermMatchingFilter.class);
+    protected static final Logger log = LoggerFactory.getLogger(GlobalIndexTermMatchingFilter.class);
     public static final String LITERAL = "term.literal.";
     public static final String PATTERN = "term.pattern.";
     public static final String REVERSE_INDEX = "reverse.index";
@@ -86,7 +87,9 @@ public class GlobalIndexTermMatchingFilter extends Filter {
         } catch (InvalidProtocolBufferException e) {
             // if we cannot parse the protocol buffer, then we
             // won't be able to use it for evaluation anyway
-            log.error(e);
+            if (log.isErrorEnabled()) {
+                log.error(String.valueOf(e));
+            }
             return false;
         }
     }

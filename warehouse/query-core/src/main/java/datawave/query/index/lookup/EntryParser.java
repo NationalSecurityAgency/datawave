@@ -10,7 +10,8 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 
@@ -44,7 +45,7 @@ public class EntryParser implements Function<Result,Tuple2<String,IndexInfo>> {
     private boolean skipNodeDelay;
 
     private Set<String> indexOnlyFields = null;
-    private static final Logger log = Logger.getLogger(EntryParser.class);
+    private static final Logger log = LoggerFactory.getLogger(EntryParser.class);
 
     public EntryParser(ASTEQNode node, String fieldName, String literal, ValueSerializerType serializerType) {
         currNode = node;

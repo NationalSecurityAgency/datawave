@@ -48,11 +48,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.opentest4j.AssertionFailedError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -111,7 +113,7 @@ public abstract class AbstractFunctionalQueryJUnit5 implements QueryLogicTestHar
     protected static final String VALUE_THRESHOLD_JEXL_NODE = EXCEEDED_VALUE.getLabel();
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
 
-    private static final Logger log = Logger.getLogger(AbstractFunctionalQueryJUnit5.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractFunctionalQueryJUnit5.class);
 
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -363,11 +365,11 @@ public abstract class AbstractFunctionalQueryJUnit5 implements QueryLogicTestHar
     protected abstract void testInit();
 
     public void debugQuery() {
-        Logger.getRootLogger().setLevel(Level.DEBUG);
-        Logger.getLogger("datawave.query").setLevel(Level.DEBUG);
-        Logger.getLogger("datawave.query.planner").setLevel(Level.DEBUG);
-        Logger.getLogger("datawave.query.planner.DefaultQueryPlanner").setLevel(Level.DEBUG);
-        Logger.getLogger("datawave.query.planner.FederatedQueryPlanner").setLevel(Level.DEBUG);
+        Configurator.setRootLevel(Level.DEBUG);
+        Configurator.setLevel("datawave.query", Level.DEBUG);
+        Configurator.setLevel("datawave.query.planner", Level.DEBUG);
+        Configurator.setLevel("datawave.query.planner.DefaultQueryPlanner", Level.DEBUG);
+        Configurator.setLevel("datawave.query.planner.FederatedQueryPlanner", Level.DEBUG);
     }
 
     // ============================================

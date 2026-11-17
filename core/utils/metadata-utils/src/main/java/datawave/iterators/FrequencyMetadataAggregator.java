@@ -25,7 +25,8 @@ import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnSet;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 
@@ -52,7 +53,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
     public static final String COLUMNS_OPTION = "columns";
     public static final String AGGREGATED = "AGG";
 
-    private static final Logger log = Logger.getLogger(FrequencyMetadataAggregator.class);
+    private static final Logger log = LoggerFactory.getLogger(FrequencyMetadataAggregator.class);
     private static final String NULL_BYTE = "\0";
     private final MarkingFunctions<?> markingFunctions;
 

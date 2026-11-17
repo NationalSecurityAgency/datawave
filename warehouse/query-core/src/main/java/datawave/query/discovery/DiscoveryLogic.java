@@ -36,8 +36,9 @@ import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.log4j.Logger;
 import org.javatuples.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Stopwatch;
@@ -72,7 +73,7 @@ import datawave.webservice.query.exception.QueryException;
 
 public class DiscoveryLogic extends ShardIndexQueryTable {
 
-    private static final Logger log = Logger.getLogger(DiscoveryLogic.class);
+    private static final Logger log = LoggerFactory.getLogger(DiscoveryLogic.class);
 
     /**
      * Used to specify if counts should be separated by column visibility.
@@ -656,7 +657,9 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 try {
                     aw.readFields(in);
                 } catch (IOException e) {
-                    log.error(e);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(e));
+                    }
                     return null;
                 }
                 ArrayList<DiscoveredThing> thangs = Lists.newArrayListWithCapacity(aw.get().length);

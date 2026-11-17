@@ -7,7 +7,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -21,7 +22,7 @@ import com.timgroup.statsd.StatsDClientException;
  * A client that can be used to record live query metrics. This client will cache results and will periodically send them with a specified max cache size.
  */
 public class QueryStatsDClient extends ConvenienceMethodProvidingStatsDClient {
-    private static final Logger log = Logger.getLogger(QueryStatsDClient.class);
+    private static final Logger log = LoggerFactory.getLogger(QueryStatsDClient.class);
 
     // the statsd configuration
     private final String queryId;

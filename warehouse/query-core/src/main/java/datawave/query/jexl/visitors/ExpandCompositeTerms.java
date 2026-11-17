@@ -31,7 +31,7 @@ import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;

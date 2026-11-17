@@ -7,13 +7,14 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  */
 public class DocWriter implements Runnable {
-    private static final Logger log = Logger.getLogger(DocWriter.class);
+    private static final Logger log = LoggerFactory.getLogger(DocWriter.class);
 
     Key k;
     byte[] shardId;

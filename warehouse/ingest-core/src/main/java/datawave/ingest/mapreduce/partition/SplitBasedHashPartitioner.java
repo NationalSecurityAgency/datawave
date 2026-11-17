@@ -3,7 +3,8 @@ package datawave.ingest.mapreduce.partition;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
@@ -23,7 +24,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
  */
 public class SplitBasedHashPartitioner extends MultiTableRangePartitioner implements Configurable, DelegatePartitioner {
     public static final String PARTITIONER_SPACE_MULTIPLIER = "split.based.hash.partitioner.multiplier";
-    private static Logger log = Logger.getLogger(SplitBasedHashPartitioner.class);
+    private static Logger log = LoggerFactory.getLogger(SplitBasedHashPartitioner.class);
     private int spaceMultiplier = 0;
 
     public void setMultiplier(int multiplier) {

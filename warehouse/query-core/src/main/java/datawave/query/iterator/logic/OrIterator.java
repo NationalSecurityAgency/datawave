@@ -18,7 +18,8 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -54,7 +55,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
     private T evaluationContext;
 
-    private static final Logger log = Logger.getLogger(OrIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(OrIterator.class);
 
     public OrIterator(Iterable<NestedIterator<T>> sources) {
         this(sources, null, null);

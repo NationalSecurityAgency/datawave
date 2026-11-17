@@ -20,12 +20,15 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.common.test.logging.TestLogCollectorJUnit5;
 import datawave.data.hash.UID;
@@ -36,7 +39,7 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 public class CBMutationOutputFormatterTest {
 
     protected static final String SIMULATION_MODE = "AccumuloOutputFormat.Features.SimulationMode";
-    protected static final Logger logger = Logger.getLogger(CBMutationOutputFormatterTest.class);
+    protected static final Logger logger = LoggerFactory.getLogger(CBMutationOutputFormatterTest.class);
 
     protected Level testDriverLevel;
 
@@ -62,14 +65,14 @@ public class CBMutationOutputFormatterTest {
 
     @BeforeEach
     public void setup() {
-        testDriverLevel = CBMutationOutputFormatterTest.logger.getLevel();
-        CBMutationOutputFormatterTest.logger.setLevel(Level.ALL);
+        testDriverLevel = LogManager.getLogger(CBMutationOutputFormatterTest.logger.getName()).getLevel();
+        Configurator.setLevel(CBMutationOutputFormatterTest.logger.getName(), Level.ALL);
         TypeRegistry.reset();
     }
 
     @AfterEach
     public void teardown() {
-        CBMutationOutputFormatterTest.logger.setLevel(testDriverLevel);
+        Configurator.setLevel(CBMutationOutputFormatterTest.logger.getName(), testDriverLevel);
     }
 
     @Test

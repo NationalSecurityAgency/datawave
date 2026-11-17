@@ -35,9 +35,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.logic.QueryLogic;
@@ -74,7 +75,7 @@ public class IdTranslatorBean {
     @Resource
     private EJBContext ctx;
 
-    private Logger log = Logger.getLogger(this.getClass());
+    private Logger log = LoggerFactory.getLogger(this.getClass());
 
     private String columnVisibility = null;
     private Date beginDate = null;

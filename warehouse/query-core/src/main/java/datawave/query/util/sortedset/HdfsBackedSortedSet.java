@@ -12,13 +12,14 @@ import java.util.SortedSet;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 
 public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> implements SortedSet<E> {
-    private static final Logger log = Logger.getLogger(HdfsBackedSortedSet.class);
+    private static final Logger log = LoggerFactory.getLogger(HdfsBackedSortedSet.class);
     private static final String FILENAME_PREFIX = "SortedSetFile.";
 
     public static class Builder<B extends Builder<B,E>,E> extends BufferedFileBackedSortedSet.Builder<B,E> {

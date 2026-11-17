@@ -31,10 +31,11 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
@@ -63,7 +64,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 /** Simple unit test against the SSDeepIndex / SSDeepSimilarityLogic code */
 public class SSDeepIndexQueryTest {
 
-    private static final Logger log = Logger.getLogger(SSDeepIndexQueryTest.class);
+    private static final Logger log = LoggerFactory.getLogger(SSDeepIndexQueryTest.class);
 
     private static final Authorizations auths = AbstractDataTypeConfig.getTestAuths();
 
@@ -192,7 +193,9 @@ public class SSDeepIndexQueryTest {
         log.debug("*************** " + tableName + " ********************");
         while (iterator.hasNext()) {
             Map.Entry<Key,Value> entry = iterator.next();
-            log.debug(entry);
+            if (log.isDebugEnabled()) {
+                log.debug(String.valueOf(entry));
+            }
         }
         scanner.close();
     }

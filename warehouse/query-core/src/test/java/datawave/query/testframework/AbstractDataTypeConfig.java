@@ -22,7 +22,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
@@ -48,7 +49,7 @@ import datawave.policy.IngestPolicyEnforcer;
  */
 public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
 
-    private static final Logger log = Logger.getLogger(AbstractDataTypeConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractDataTypeConfig.class);
 
     // ===============================================
     // common constants for all data types

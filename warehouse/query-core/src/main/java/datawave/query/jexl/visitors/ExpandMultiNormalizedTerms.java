@@ -33,7 +33,7 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -514,7 +514,9 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.NODE_EXPANSION_ERROR, e,
                                     MessageFormat.format("Node: {0}, Datatypes: {1}", PrintingVisitor.formattedQueryString(node), dataTypes));
-                    log.error(qe);
+                    if (log.isErrorEnabled()) {
+                        log.error(String.valueOf(qe));
+                    }
                     throw new DatawaveFatalQueryException(qe);
                 }
             }

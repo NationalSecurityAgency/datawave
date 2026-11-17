@@ -1,13 +1,14 @@
 package datawave.query.language.tree;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import datawave.query.search.FieldedTerm;
 import datawave.query.search.Term;
 import datawave.query.search.WildcardFieldedTerm;
 
 public class SelectorNode extends QueryNode {
-    private static final Logger log = Logger.getLogger(SelectorNode.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(SelectorNode.class.getName());
 
     private Term query;
 

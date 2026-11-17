@@ -18,8 +18,9 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.google.common.base.Splitter;
@@ -52,7 +53,7 @@ import datawave.query.util.TypeMetadata;
  *
  */
 public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
-    private static final Logger log = Logger.getLogger(DynamicFacetIterator.class);
+    private static final Logger log = LoggerFactory.getLogger(DynamicFacetIterator.class);
 
     public static final String FACETED_SEARCH_TYPE = "query.facet.type";
     public static final String FACETED_MINIMUM = "query.facet.minimum";
@@ -94,7 +95,9 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
             try {
                 configuration.setMinimumCount(Integer.parseInt(options.get(FACETED_MINIMUM)));
             } catch (NumberFormatException nfe) {
-                log.error(nfe);
+                if (log.isErrorEnabled()) {
+                    log.error(String.valueOf(nfe));
+                }
                 // defaulting to 1
             }
         }

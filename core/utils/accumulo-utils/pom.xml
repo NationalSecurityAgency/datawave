@@ -32,12 +32,6 @@
                 <artifactId>snappy-java</artifactId>
                 <version>${version.snappy}</version>
             </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
-                <version>${version.slf4j}</version>
-                <scope>test</scope>
-            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -126,11 +120,6 @@
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
