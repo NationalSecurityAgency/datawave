@@ -1,13 +1,13 @@
 package datawave.webservice;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import io.protostuff.LinkedBuffer;
 import io.protostuff.Message;
@@ -17,15 +17,15 @@ import io.protostuff.ProtobufIOUtil;
 public class ProtobufSerializationTestBase {
     protected LinkedBuffer buffer;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         buffer = LinkedBuffer.allocate(4096);
     }
 
     protected <T extends Message<T>> void testFieldNames(String[] fieldNames, Class<T> clazz) {
         Field[] fields = clazz.getDeclaredFields();
-        assertEquals("The number of fields in " + clazz.getName() + " has changed.  Please update " + getClass().getName() + ".", fieldNames.length,
-                        fields.length);
+        assertEquals(fieldNames.length, fields.length,
+                        "The number of fields in " + clazz.getName() + " has changed.  Please update " + getClass().getName() + ".");
 
         String[] actualFieldNames = new String[fields.length];
         for (int i = 0; i < fields.length; ++i)
@@ -33,7 +33,7 @@ public class ProtobufSerializationTestBase {
 
         Arrays.sort(fieldNames);
         Arrays.sort(actualFieldNames);
-        assertArrayEquals("Serialization/deserialization of " + clazz.getName() + " failed.", fieldNames, actualFieldNames);
+        assertArrayEquals(fieldNames, actualFieldNames, "Serialization/deserialization of " + clazz.getName() + " failed.");
     }
 
     protected <T extends Message<T>> void testRoundTrip(Class<T> clazz, String[] fieldNames, Object[] fieldValues) throws Exception {

@@ -12,8 +12,8 @@ import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -28,7 +28,7 @@ public abstract class MockTableTest {
     protected BatchWriter writer;
     protected TableOperations tableOperations;
 
-    @Before
+    @BeforeEach
     public void setup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
         InMemoryInstance i = new InMemoryInstance(this.getClass().toString());
         client = new InMemoryAccumuloClient("root", i);
@@ -39,7 +39,7 @@ public abstract class MockTableTest {
         tableOperations = client.tableOperations();
     }
 
-    @After
+    @AfterEach
     public void cleanup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         client.tableOperations().delete(TABLE_NAME);
     }

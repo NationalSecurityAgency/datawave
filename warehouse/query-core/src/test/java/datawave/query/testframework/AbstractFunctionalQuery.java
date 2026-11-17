@@ -1,15 +1,16 @@
 package datawave.query.testframework;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -48,10 +49,9 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.ComparisonFailure;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
+import org.opentest4j.AssertionFailedError;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -102,15 +102,12 @@ import datawave.webservice.result.EventQueryResponseBase;
  * <li>DATAWAVE_INGEST_HOME => target directory</li>
  * <li>hadoop.home.dir => target directory</li>
  * </ul>
- * This is the JUnit 4 functional-query fixture.
- *
- * @deprecated Use {@link AbstractFunctionalQueryJUnit5} for Jupiter tests.
+ * This is the functional-query fixture.
  */
-@Deprecated
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    Path temporaryDirectory;
 
     protected static final String VALUE_THRESHOLD_JEXL_NODE = EXCEEDED_VALUE.getLabel();
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
@@ -263,7 +260,11 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         }
     }
 
-    @Before
+    @BeforeEach
+    public void setUpFunctionalQuery() throws IOException {
+        querySetUp();
+    }
+
     public void querySetUp() throws IOException {
         log.debug("---------  querySetUp  ---------");
 
@@ -313,10 +314,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     @Override
     public String parse(Key key, Document document) {
         Attribute<?> attr = document.get(this.documentKey);
-        assertNotNull("document key(" + this.documentKey + ") attribute is null", attr);
+        assertNotNull(attr, "document key(" + this.documentKey + ") attribute is null");
 
         Object data = attr.getData();
-        assertNotNull("document key attribute is null: key(" + this.documentKey + ")", data);
+        assertNotNull(data, "document key attribute is null: key(" + this.documentKey + ")");
         String keyVal = null;
         if (data instanceof Type) {
             keyVal = ((Type<?>) data).getDelegate().toString();
@@ -354,7 +355,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
                 test = test.substring(idx + subStr.length());
             }
         } while (-1 < idx);
-        assertEquals("marker (" + subStr + ") in plan: " + plan, expect, total);
+        assertEquals(expect, total, "marker (" + subStr + ") in plan: " + plan);
     }
 
     /**
@@ -713,7 +714,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     }
 
     protected File createTemporaryFolder() throws IOException {
-        return temporaryFolder.newFolder();
+        return Files.createTempDirectory(temporaryDirectory, "query-").toFile();
     }
 
     /**
@@ -734,7 +735,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         ASTJexlScript queryTree = JexlASTHelper.parseAndFlattenJexlQuery(query);
         TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedTree, queryTree);
         if (!comparison.isEqual()) {
-            throw new ComparisonFailure(comparison.getReason(), expected, query);
+            throw new AssertionFailedError(comparison.getReason(), expected, query);
         }
     }
 

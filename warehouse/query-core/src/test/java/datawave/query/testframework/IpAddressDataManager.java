@@ -1,7 +1,7 @@
 package datawave.query.testframework;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -45,7 +45,7 @@ public class IpAddressDataManager extends AbstractDataManager {
 
     @Override
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
-        assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
+        assertFalse(this.rawData.containsKey(datatype), "datatype has already been configured(" + datatype + ")");
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             String[] data;
             int count = 0;
@@ -65,7 +65,7 @@ public class IpAddressDataManager extends AbstractDataManager {
 
         IpAddrRawData(final String datatype, final String fields[]) {
             super(datatype, fields, IpAddrField.headers(), IpAddrField.getFieldsMetadata());
-            assertEquals("ingest data field count is invalid", IpAddrField.headers().size(), fields.length);
+            assertEquals(IpAddrField.headers().size(), fields.length, "ingest data field count is invalid");
         }
     }
 }

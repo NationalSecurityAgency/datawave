@@ -1,6 +1,6 @@
 package datawave.query.testframework;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.ParseException;
 import java.util.Date;

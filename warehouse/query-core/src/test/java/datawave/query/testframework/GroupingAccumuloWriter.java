@@ -1,8 +1,8 @@
 package datawave.query.testframework;
 
 import static datawave.query.testframework.AbstractDataTypeConfig.YMD_DateFormat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Calendar;
 import java.util.Collection;
@@ -209,8 +209,8 @@ class GroupingAccumuloWriter {
 
     private String extractShard(Multimap<String,String> data) {
         Collection<String> shard = data.get(this.shardField);
-        assertNotNull("shard date field not found in raw data", shard);
-        assertEquals("shard date is invalid", 1, shard.size());
+        assertNotNull(shard, "shard date field not found in raw data");
+        assertEquals(1, shard.size(), "shard date is invalid");
         return shard.iterator().next();
     }
 

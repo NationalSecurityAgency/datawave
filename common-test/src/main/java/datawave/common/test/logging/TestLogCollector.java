@@ -18,10 +18,12 @@ import org.apache.logging.log4j.core.StringLayout;
 import org.apache.logging.log4j.core.appender.WriterAppender;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * JUnit Rule for aggregating the log output from a given set of loggers into a simple string list.
+ * JUnit extension for aggregating the log output from a given set of loggers into a simple string list.
  * <p>
  * This class replaces our legacy CommonTestAppender, which implemented a pattern of usage that is broken and no longer valid in log4j 2x
  * </p>
@@ -29,7 +31,7 @@ import org.junit.rules.ExternalResource;
  * @deprecated Use {@link TestLogCollectorJUnit5} for JUnit 5 tests.
  */
 @Deprecated
-public class TestLogCollector extends ExternalResource {
+public class TestLogCollector implements BeforeEachCallback, AfterEachCallback {
 
     private List<String> messages = Collections.synchronizedList(new ArrayList<>());
 
@@ -40,7 +42,6 @@ public class TestLogCollector extends ExternalResource {
         this.loggers = b.classLoggers;
     }
 
-    @Override
     protected void before() {
         StringLayout layout = PatternLayout.newBuilder().withPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
         Appender appender = WriterAppender.newBuilder().setName(TestLogCollector.class.getSimpleName()).setFilter(FilterAdapter.adapt(new Filter() {
@@ -54,7 +55,6 @@ public class TestLogCollector extends ExternalResource {
         this.loggers.stream().forEach(l -> l.setAppender(appender));
     }
 
-    @Override
     protected void after() {
         this.loggers.stream().forEach(l -> l.reset());
         clearMessages();
@@ -63,6 +63,16 @@ public class TestLogCollector extends ExternalResource {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void beforeEach(ExtensionContext context) {
+        before();
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) {
+        after();
     }
 
     public List<String> getMessages() {

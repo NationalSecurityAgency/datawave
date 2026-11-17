@@ -1,9 +1,9 @@
 package datawave.ingest.csv.mr.handler;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,7 +69,7 @@ public class ColumnBasedHandlerTestUtil {
 
     public static InputSplit getSplit(String file) throws URISyntaxException {
         URL data = ColumnBasedHandlerTestUtil.class.getResource(file);
-        assertNotNull("Did not find test resource", data);
+        assertNotNull(data, "Did not find test resource");
         File dataFile = new File(data.toURI());
         Path p = new Path(dataFile.toURI().toString());
         return new FileSplit(p, 0, dataFile.length(), null);
@@ -77,7 +77,7 @@ public class ColumnBasedHandlerTestUtil {
 
     public static void processEvent(DataTypeHandler<Text> handler, RawRecordContainer event, Set<Key> expectedShardKeys, Set<Key> expectedShardIndexKeys,
                     Set<Key> expectedShardReverseIndexKeys) {
-        assertNotNull("Event was null.", event);
+        assertNotNull(event, "Event was null.");
         Multimap<String,NormalizedContentInterface> eventFields = handler.getHelper(event.getDataType()).getEventFields(event);
         VirtualIngest vHelper = (VirtualIngest) handler.getHelper(event.getDataType());
         Multimap<String,NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(eventFields);
@@ -187,13 +187,13 @@ public class ColumnBasedHandlerTestUtil {
         for (String error : errors) {
             log.error(error.trim());
         }
-        assertTrue("Observed errors:\n" + errors, errors.isEmpty());
+        assertTrue(errors.isEmpty(), "Observed errors:\n" + errors);
     }
 
     public static void processEvent(DataTypeHandler<Text> handler, ExtendedDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler, RawRecordContainer event,
                     int expectedShardKeys, int expectedShardIndexKeys, int expectedShardReverseIndexKeys, int expectedEdgeKeys, boolean printKeysOnlyOnFail) {
 
-        assertNotNull("Event was null.", event);
+        assertNotNull(event, "Event was null.");
         Multimap<String,NormalizedContentInterface> eventFields = handler.getHelper(event.getDataType()).getEventFields(event);
         VirtualIngest vHelper = (VirtualIngest) handler.getHelper(event.getDataType());
         Multimap<String,NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(eventFields);

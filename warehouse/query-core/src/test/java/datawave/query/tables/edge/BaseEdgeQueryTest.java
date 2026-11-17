@@ -1,8 +1,8 @@
 package datawave.query.tables.edge;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -33,7 +33,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -185,7 +185,7 @@ public abstract class BaseEdgeQueryTest {
                     Map.Entry<Key,Value> next = iter.next();
                     Key k = next.getKey();
                     System.out.println("key = " + k.toStringNoTime());
-                    assertTrue(UNEXPECTED_RECORD + " : " + k.toStringNoTime(), expected.contains(k.toStringNoTime()));
+                    assertTrue(expected.contains(k.toStringNoTime()), UNEXPECTED_RECORD + " : " + k.toStringNoTime());
                     recordsFound++;
                     cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
                 }
@@ -195,12 +195,12 @@ public abstract class BaseEdgeQueryTest {
                 foundKeys.add(entry.getKey());
                 Key k = entry.getKey();
                 System.out.println("key = " + k.toStringNoTime());
-                assertTrue(UNEXPECTED_RECORD + " : " + k.toStringNoTime(), expected.contains(k.toStringNoTime()));
+                assertTrue(expected.contains(k.toStringNoTime()), UNEXPECTED_RECORD + " : " + k.toStringNoTime());
                 recordsFound++;
             }
         }
 
-        assertEquals(UNEXPECTED_NUM_RECORDS, expected.size(), recordsFound);
+        assertEquals(expected.size(), recordsFound, UNEXPECTED_NUM_RECORDS);
     }
 
     public static void addEdges() throws IOException, InterruptedException {
@@ -222,7 +222,7 @@ public abstract class BaseEdgeQueryTest {
         recordWriter.close(context);
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         System.setProperty("file.encoding", "UTF8");

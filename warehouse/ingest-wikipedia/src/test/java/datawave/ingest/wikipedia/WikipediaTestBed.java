@@ -1,6 +1,6 @@
 package datawave.ingest.wikipedia;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -14,7 +14,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -39,18 +39,18 @@ public class WikipediaTestBed {
     protected Multimap<String,String> expectedRawFieldsRecord1 = HashMultimap.create(), expectedRawFieldsRecord2 = HashMultimap.create(),
                     expectedNormalizedFieldsRecord1 = HashMultimap.create(), expectedNormalizedFieldsRecord2 = HashMultimap.create();
 
-    @Before
+    @BeforeEach
     public void initializeInputData() throws Exception {
 
         conf = new Configuration();
         conf.set("all" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, ExampleIngestPolicyEnforcer.class.getName());
 
         URL url = ClassLoader.getSystemResource("config/ingest/wikipedia-config.xml");
-        assertNotNull("URL to wikipedia-config.xml was null", url);
+        assertNotNull(url, "URL to wikipedia-config.xml was null");
         conf.addResource(url);
 
         url = ClassLoader.getSystemResource("config/ingest/metadata-config.xml");
-        assertNotNull("URL to metadata-config.xml was null", url);
+        assertNotNull(url, "URL to metadata-config.xml was null");
         conf.addResource(url);
 
         conf.setInt(ShardedDataTypeHandler.NUM_SHARDS, 1);
@@ -79,7 +79,7 @@ public class WikipediaTestBed {
                 data = fileObj.toURI().toURL();
             }
         }
-        assertNotNull("Did not find test resource", data);
+        assertNotNull(data, "Did not find test resource");
 
         File dataFile = new File(data.toURI());
         Path p = new Path(dataFile.toURI().toString());
