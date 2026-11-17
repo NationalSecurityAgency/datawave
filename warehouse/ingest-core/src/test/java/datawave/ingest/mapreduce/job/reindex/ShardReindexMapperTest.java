@@ -2180,7 +2180,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         event.setTimestamp(d.getTime());
         event.setId(HashUID.parse(uid));
 
-        return shardIdFactory.getShardId(event);
+        return shardIdFactory.getShardId(event, null);
     }
 
     private long getTimestamp(Date d) {

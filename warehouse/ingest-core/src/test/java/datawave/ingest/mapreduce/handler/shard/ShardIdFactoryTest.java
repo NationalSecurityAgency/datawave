@@ -6,12 +6,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.google.common.collect.Multimap;
+
 import datawave.data.hash.HashUID;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.RawRecordContainerImplTest;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.util.time.DateHelper;
 
@@ -37,13 +40,13 @@ class ShardIdFactoryTest {
     }
 
     /**
-     * Verify that when no {@link ShardIdGenerator} instances have been configured for the factory, that {@link ShardIdFactory#getShardId(RawRecordContainer)}
-     * returns the base shard id.
+     * Verify that when no {@link ShardIdGenerator} instances have been configured for the factory, that
+     * {@link ShardIdFactory#getShardId(RawRecordContainer, Multimap)} returns the base shard id.
      */
     @Test
     void testGetShardIdWithNoGenerators() {
         RawRecordContainer event = createEvent(uid, date, dataType);
-        String shardId = new ShardIdFactory(conf).getShardId(event);
+        String shardId = new ShardIdFactory(conf).getShardId(event, null);
         assertEquals("20240115_2", shardId);
     }
 
@@ -62,7 +65,7 @@ class ShardIdFactoryTest {
         conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2.partition", "10");
 
         RawRecordContainer event = createEvent(uid, date, dataType);
-        String shardId = new ShardIdFactory(conf).getShardId(event);
+        String shardId = new ShardIdFactory(conf).getShardId(event, null);
         assertEquals("20240115_2", shardId);
     }
 
@@ -81,7 +84,7 @@ class ShardIdFactoryTest {
         conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2.partition", "10");
 
         RawRecordContainer event = createEvent(uid, date, dataType);
-        String shardId = new ShardIdFactory(conf).getShardId(event);
+        String shardId = new ShardIdFactory(conf).getShardId(event, null);
         assertEquals("20240115_10", shardId);
     }
 
@@ -100,7 +103,7 @@ class ShardIdFactoryTest {
         conf.set(ShardIdFactory.SHARD_ID_GENERATOR + ".2.partition", "10");
 
         RawRecordContainer event = createEvent(uid, date, dataType);
-        String shardId = new ShardIdFactory(conf).getShardId(event);
+        String shardId = new ShardIdFactory(conf).getShardId(event, null);
         assertEquals("20240115_20", shardId);
     }
 
@@ -112,7 +115,7 @@ class ShardIdFactoryTest {
         RawRecordContainer event = new EventWithShardId(expectedShardId);
         initEvent(event, uid, date, dataType);
 
-        String actualShardId = new ShardIdFactory(conf).getShardId(event);
+        String actualShardId = new ShardIdFactory(conf).getShardId(event, null);
 
         assertEquals(expectedShardId, actualShardId);
     }
@@ -153,12 +156,12 @@ class ShardIdFactoryTest {
         }
 
         @Override
-        public boolean isApplicable(RawRecordContainer record) {
+        public boolean isApplicable(RawRecordContainer record, Multimap<String,NormalizedContentInterface> eventFields) {
             return record.getDataType().typeName().equals(typeName);
         }
 
         @Override
-        public String getShardId(RawRecordContainer record, String baseShardId, int numShards) {
+        public String getShardId(RawRecordContainer record, Multimap<String,NormalizedContentInterface> eventFields, String baseShardId, int numShards) {
             return DateHelper.format(record.getDate()) + "_" + partition;
         }
     }
