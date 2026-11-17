@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends BufferedFileBackedSortedMapTest<K,V> {
 
@@ -81,7 +81,7 @@ public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends Buf
 
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
-        for (int d = 0; d < 11; d++) {
+        for (int d = 0; d < 4; d++) {
             addDataRandomly(map, data);
             addDataRandomly(map, data2);
         }

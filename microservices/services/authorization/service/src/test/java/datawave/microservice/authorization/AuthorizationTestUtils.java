@@ -48,10 +48,10 @@ public class AuthorizationTestUtils {
         UriComponents uri = UriComponentsBuilder.newInstance().scheme(scheme).host("localhost").port(webServicePort).path(path).query(query).build();
         RequestEntity requestEntity = createRequestEntity(null, authUser, HttpMethod.GET, uri);
         ResponseEntity<String> entity = restTemplate.exchange(requestEntity, String.class);
-        assertEquals(HttpStatus.OK, entity.getStatusCode(), "Authorizaed admin request to " + uri + " did not return a 200.");
+        assertEquals(HttpStatus.OK, entity.getStatusCode(), "Authorized admin request to " + uri + " did not return a 200.");
     }
 
-    public void testAuthorizeMethodFailure(DatawaveUserDetails unauthUser, String path, boolean useTrustedHeader, boolean useJWT) throws Exception {
+    public void testNotAllowedMethodFailure(DatawaveUserDetails unauthUser, String path, boolean useTrustedHeader, boolean useJWT) throws Exception {
         UriComponents uri = UriComponentsBuilder.newInstance().scheme(scheme).host("localhost").port(webServicePort).path(path).build();
         try {
             RequestEntity requestEntity;
@@ -69,7 +69,7 @@ public class AuthorizationTestUtils {
         }
     }
 
-    public void testAuthorizeMethodSuccess(DatawaveUserDetails authUser, String path, boolean useTrustedHeader, boolean useJWT) throws Exception {
+    public void testAllowedMethodSuccess(DatawaveUserDetails authUser, String path, boolean useTrustedHeader, boolean useJWT) throws Exception {
         UriComponents uri = UriComponentsBuilder.newInstance().scheme(scheme).host("localhost").port(webServicePort).path(path).build();
         RequestEntity requestEntity;
         DatawaveUserDetails trustedHeaderUser = useTrustedHeader ? authUser : null;
@@ -79,7 +79,7 @@ public class AuthorizationTestUtils {
             requestEntity = createRequestEntity(trustedHeaderUser, null, HttpMethod.GET, uri);
         }
         ResponseEntity<String> responseEntity = restTemplate.exchange(requestEntity, String.class);
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode(), "Authorized request to " + uri + " did not return a 200.");
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode(), "Allowed request to " + uri + " did not return a 200.");
     }
 
     public <T> RequestEntity<T> createRequestEntity(DatawaveUserDetails trustedUser, DatawaveUserDetails jwtUser, HttpMethod method, UriComponents uri) {

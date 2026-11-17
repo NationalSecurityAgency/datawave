@@ -28,7 +28,7 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.util.Tuple2;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 public class TruncatedIndexScannerTest {
 
@@ -188,7 +188,7 @@ public class TruncatedIndexScannerTest {
     }
 
     private void scan() {
-        TruncatedIndexScanner scanner = new TruncatedIndexScanner(client, startDate, endDate);
+        TruncatedIndexScanner scanner = new TruncatedIndexScanner(client, startDate, endDate, null, null);
         scanner.setFieldValue(field, value);
         scanner.setAuths(auths);
         scanner.setTableName(indexTableName);

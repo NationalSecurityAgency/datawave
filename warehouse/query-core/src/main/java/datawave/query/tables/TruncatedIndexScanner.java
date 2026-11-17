@@ -8,7 +8,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -25,6 +25,8 @@ import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.TruncatedIndexIterator;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.Tuple2;
+import datawave.scan.ExecutionHintHelper;
+import datawave.scan.ScannerBuilder;
 import datawave.util.time.DateHelper;
 
 /**
@@ -42,6 +44,8 @@ public class TruncatedIndexScanner implements Iterator<Tuple2<String,IndexInfo>>
     private final AccumuloClient client;
     private Authorizations auths;
     private String tableName;
+    private final Map<String,ConsistencyLevel> consistencyLevels;
+    private final Map<String,Map<String,String>> tableHints;
 
     private Text columnFamily;
     private String currentDay;
@@ -53,13 +57,18 @@ public class TruncatedIndexScanner implements Iterator<Tuple2<String,IndexInfo>>
     private final BitSetIterator bitsetIterator;
 
     public TruncatedIndexScanner(ShardQueryConfiguration config) {
-        this(config.getClient(), DateHelper.format(config.getBeginDate()), DateHelper.format(config.getEndDate()));
+        this(config.getClient(), DateHelper.format(config.getBeginDate()), DateHelper.format(config.getEndDate()), config.getTableConsistencyLevels(),
+                        config.getTableHints());
     }
 
-    public TruncatedIndexScanner(AccumuloClient client, String startDate, String endDate) {
+    public TruncatedIndexScanner(AccumuloClient client, String startDate, String endDate, Map<String,ConsistencyLevel> consistencyLevels,
+                    Map<String,Map<String,String>> tableHints) {
         this.client = client;
         this.dateIterator = new DateIterator(startDate, endDate);
         this.bitsetIterator = new BitSetIterator(null);
+
+        this.tableHints = tableHints;
+        this.consistencyLevels = consistencyLevels;
     }
 
     public void setFieldValue(String field, String value) {
@@ -139,7 +148,21 @@ public class TruncatedIndexScanner implements Iterator<Tuple2<String,IndexInfo>>
     private BitSet scanNextDay(String date) {
         Objects.requireNonNull(tableName, "must set the index table name");
         Objects.requireNonNull(auths, "authorizations must be set");
-        try (var scanner = client.createScanner(tableName, auths)) {
+
+        ScannerBuilder builder = ScannerBuilder.create(client).setTableName(tableName).setAuthorizations(auths);
+
+        ConsistencyLevel consistencyLevel = ExecutionHintHelper.getConsistencyLevel(tableName, consistencyLevels);
+        if (consistencyLevel != null) {
+            builder.setConsistencyLevel(consistencyLevel);
+        }
+
+        Map<String,String> hints = ExecutionHintHelper.getExecutionHints(tableName, tableHints);
+        if (hints != null) {
+            builder.setScanType(ExecutionHintHelper.getScanType(hints));
+            builder.setScanPriority(ExecutionHintHelper.getPriority(hints));
+        }
+
+        try (var scanner = builder.build()) {
 
             Range range = createScanRange(value, field, date);
             scanner.setRange(range);
@@ -168,8 +191,6 @@ public class TruncatedIndexScanner implements Iterator<Tuple2<String,IndexInfo>>
             }
 
             return bitset;
-        } catch (TableNotFoundException e) {
-            throw new RuntimeException(e);
         }
     }
 

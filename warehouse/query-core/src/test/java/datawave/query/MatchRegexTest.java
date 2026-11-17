@@ -1,9 +1,9 @@
 package datawave.query;
 
 import static datawave.query.testframework.CitiesDataType.CityEntry;
+import static datawave.query.testframework.CitiesDataType.CityEntry.nullState;
 import static datawave.query.testframework.CitiesDataType.CityField;
 import static datawave.query.testframework.CitiesDataType.getManager;
-import static datawave.query.testframework.CitiesDataType.CityEntry.nullState;
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
@@ -12,12 +12,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CityDataManager;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -28,16 +28,16 @@ import datawave.query.testframework.GenericCityFields;
 /**
  * Contains functional tests for the f:matchRegex query function.
  */
-public class MatchRegexTest extends AbstractFunctionalQuery {
+public class MatchRegexTest extends AbstractFunctionalQueryJUnit5 {
 
-    @ClassRule
-    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    @RegisterExtension
+    public static AccumuloSetupExtension accumuloSetup = AccumuloSetupExtension.create();
 
     private static final Logger log = Logger.getLogger(MatchRegexTest.class);
 
     private static final String MatchRegex = "f:matchRegex(";
 
-    @BeforeClass
+    @BeforeAll
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();

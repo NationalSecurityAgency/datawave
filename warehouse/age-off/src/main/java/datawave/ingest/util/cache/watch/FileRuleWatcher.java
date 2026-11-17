@@ -88,7 +88,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     @Override
     protected Collection<FilterRule> loadContents(InputStream in) throws IOException {
         try {
-            AgeOffRuleLoader ruleLoader = new AgeOffRuleLoader(new FileLoaderDependencyProvider(fs, filePath, iterEnv));
+            AgeOffRuleLoader ruleLoader = new AgeOffRuleLoader(new FileLoaderDependencyProvider(fs, filePath), iterEnv);
             return ruleLoader.load(in);
         } finally {
             IOUtils.closeStream(in);

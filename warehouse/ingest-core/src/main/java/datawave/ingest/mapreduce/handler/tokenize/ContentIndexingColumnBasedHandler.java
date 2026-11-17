@@ -38,8 +38,8 @@ import datawave.ingest.data.tokenize.TokenizationHelper;
 import datawave.ingest.data.tokenize.TokenizationHelper.HeartBeatThread;
 import datawave.ingest.data.tokenize.TokenizationHelper.TokenizerTimeoutException;
 import datawave.ingest.data.tokenize.TruncateAttribute;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardUtil;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue;
 import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
@@ -48,10 +48,8 @@ import datawave.ingest.mapreduce.handler.shard.content.OffsetQueue;
 import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.protobuf.TermWeight;
-import datawave.ingest.util.BloomFilterUtil;
-import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.Identity;
-import datawave.ingest.util.TimeoutStrategy;
+import datawave.table.constants.ColumnFamilyConstants;
 import datawave.util.TextUtil;
 
 /**
@@ -94,8 +92,6 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
     protected Configuration conf;
 
-    private BloomFilterUtil bloomFilterUtil;
-
     private TokenSearch searchUtil;
 
     private TokenSearch searchUtilReverse;
@@ -135,11 +131,6 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         tokenHelper.configureSearchUtil(searchUtilReverse);
 
         tokenOffsetCache = new BoundedOffsetQueue<>(tokenHelper.getTokenOffsetCacheMaxSize());
-
-        // Conditionally create an NGrams factory
-        if (this.getBloomFiltersEnabled()) {
-            this.bloomFilterUtil = newBloomFilterUtil(this.conf);
-        }
     }
 
     @Override
@@ -238,7 +229,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
 
         Text colq = new Text(fieldName);
         TextUtil.textAppend(colq, fieldValue, helper.getReplaceMalformedUTF8());
-        Key k = createKey(shardId, colf, colq, fieldVisibility, event.getTimestamp(), helper.getDeleteMode());
+        Key k = ShardUtil.createKey(shardId, colf, colq, fieldVisibility, event.getTimestamp(), helper.getDeleteMode());
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), k);
         values.put(bKey, NULL_VALUE);
     }
@@ -359,6 +350,10 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         String indexedFieldName = nci.getIndexedFieldName();
         String modifiedFieldName = indexedFieldName + tokenFieldNameSuffix;
         String content = nci.getIndexedFieldValue();
+
+        if (tokenHelper.isContentContextEnabled()) {
+            modifiedFieldName = modifiedFieldName + "." + tokenHelper.getContentContextHash(content);
+        }
 
         TokenStream tokenizer = a.tokenStream(indexedFieldName, new StringReader(content));
         tokenizer.reset();
@@ -599,9 +594,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                         .append(nfv.getIndexedFieldName());
 
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()),
-                        new Key(shardId, ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility,
-                                        event.getTimestamp(), helper.getDeleteMode()));
+        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(),
+                        colq.toString().getBytes(), visibility, event.getTimestamp(), helper.getDeleteMode()));
 
         values.put(bKey, value);
     }
@@ -622,65 +616,6 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
             field = field.substring(0, (field.length() - tokenFieldNameSuffix.length()));
         }
         return contentHelper.isContentIndexField(field) || contentHelper.isReverseContentIndexField(field);
-    }
-
-    @Override
-    protected BloomFilterWrapper createBloomFilter(final Multimap<String,NormalizedContentInterface> fields) {
-        // Declare and create a bloom filter. If bloom filtering is enabled, an NGramsFactory
-        // should have been created during setup. Otherwise, let the parent create it.
-        final BloomFilterWrapper result;
-        if (null != this.bloomFilterUtil) {
-            result = this.bloomFilterUtil.newNGramBasedFilter(fields);
-        } else {
-            result = super.createBloomFilter(fields);
-        }
-
-        return result;
-    }
-
-    /**
-     * Create a new factory instance based on a specialized content-indexing, column-based {@link ShardedDataTypeHandler}.
-     *
-     * @param configuration
-     *            the Hadoop job configuration
-     * @return a non-null factory instance
-     *
-     * @see ShardedDataTypeHandler
-     * @see ContentIndexingColumnBasedHandler
-     */
-    protected BloomFilterUtil newBloomFilterUtil(final Configuration configuration) {
-        // Conditionally create an NGrams factory
-        final BloomFilterUtil util;
-        final AbstractContentIngestHelper helper;
-        if ((null != (helper = getContentIndexingDataTypeHelper()))) {
-            float diskThreshold = getBloomFilteringDiskThreshold();
-            final String diskThresholdPath = getBloomFilteringDiskThresholdPath();
-            float memoryThreshold = getBloomFilteringMemoryThreshold();
-            int maxFilterSize = getBloomFilteringOptimumMaxFilterSize();
-            int timeoutMillis = -1;
-            if (null != configuration) {
-                float taskTimeout = configuration.getFloat(TimeoutStrategy.MAPRED_TASK_TIMEOUT, -1);
-                if (taskTimeout > 0) {
-                    float timeoutThreshold = getBloomFilteringTimeoutThreshold();
-                    if ((timeoutThreshold > 0) && (timeoutThreshold <= 1)) {
-                        timeoutMillis = Math.round(((1.0f - timeoutThreshold) * taskTimeout));
-                    }
-                }
-            }
-
-            util = BloomFilterUtil.newInstance(helper, memoryThreshold, diskThreshold, diskThresholdPath, timeoutMillis);
-            util.setOptimumFilterSize(maxFilterSize);
-        }
-        // This should not happen, so log it
-        else {
-            util = null;
-
-            final String message = "Unable to create factory for N-grams. ContentIngestHelperInterface is null.";
-            ;
-            Logger.getLogger(BloomFilterUtil.class).warn(message, new IllegalStateException());
-        }
-
-        return util;
     }
 
     protected void indexListEntries(final NormalizedContentInterface nci, boolean indexField, boolean reverseIndexField, StatusReporter reporter) {

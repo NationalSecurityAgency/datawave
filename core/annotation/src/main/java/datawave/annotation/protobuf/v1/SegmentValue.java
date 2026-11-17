@@ -58,6 +58,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                                         datawave.annotation.protobuf.v1.SegmentValue.Builder.class);
     }
 
+    private int bitField0_;
     public static final int VALUEHASH_FIELD_NUMBER = 1;
     private volatile java.lang.Object valueHash_;
 
@@ -152,6 +153,20 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
     public static final int SCORE_FIELD_NUMBER = 3;
     private float score_;
+
+    /**
+     * <pre>
+     * e.g., confidence
+     * </pre>
+     *
+     * <code>float score = 3;</code>
+     *
+     * @return Whether the score field is set.
+     */
+    @java.lang.Override
+    public boolean hasScore() {
+        return ((bitField0_ & 0x00000001) != 0);
+    }
 
     /**
      * <pre>
@@ -285,7 +300,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         if (!getValueBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 2, value_);
         }
-        if (score_ != 0F) {
+        if (((bitField0_ & 0x00000001) != 0)) {
             output.writeFloat(3, score_);
         }
         com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetExtension(), ExtensionDefaultEntryHolder.defaultEntry, 4);
@@ -305,7 +320,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         if (!getValueBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, value_);
         }
-        if (score_ != 0F) {
+        if (((bitField0_ & 0x00000001) != 0)) {
             size += com.google.protobuf.CodedOutputStream.computeFloatSize(3, score_);
         }
         for (java.util.Map.Entry<java.lang.String,java.lang.String> entry : internalGetExtension().getMap().entrySet()) {
@@ -332,8 +347,12 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             return false;
         if (!getValue().equals(other.getValue()))
             return false;
-        if (java.lang.Float.floatToIntBits(getScore()) != java.lang.Float.floatToIntBits(other.getScore()))
+        if (hasScore() != other.hasScore())
             return false;
+        if (hasScore()) {
+            if (java.lang.Float.floatToIntBits(getScore()) != java.lang.Float.floatToIntBits(other.getScore()))
+                return false;
+        }
         if (!internalGetExtension().equals(other.internalGetExtension()))
             return false;
         if (!getUnknownFields().equals(other.getUnknownFields()))
@@ -352,8 +371,10 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         hash = (53 * hash) + getValueHash().hashCode();
         hash = (37 * hash) + VALUE_FIELD_NUMBER;
         hash = (53 * hash) + getValue().hashCode();
-        hash = (37 * hash) + SCORE_FIELD_NUMBER;
-        hash = (53 * hash) + java.lang.Float.floatToIntBits(getScore());
+        if (hasScore()) {
+            hash = (37 * hash) + SCORE_FIELD_NUMBER;
+            hash = (53 * hash) + java.lang.Float.floatToIntBits(getScore());
+        }
         if (!internalGetExtension().getMap().isEmpty()) {
             hash = (37 * hash) + EXTENSION_FIELD_NUMBER;
             hash = (53 * hash) + internalGetExtension().hashCode();
@@ -501,7 +522,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             value_ = "";
 
             score_ = 0F;
-
+            bitField0_ = (bitField0_ & ~0x00000001);
             internalGetMutableExtension().clear();
             return this;
         }
@@ -529,11 +550,16 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         public datawave.annotation.protobuf.v1.SegmentValue buildPartial() {
             datawave.annotation.protobuf.v1.SegmentValue result = new datawave.annotation.protobuf.v1.SegmentValue(this);
             int from_bitField0_ = bitField0_;
+            int to_bitField0_ = 0;
             result.valueHash_ = valueHash_;
             result.value_ = value_;
-            result.score_ = score_;
+            if (((from_bitField0_ & 0x00000001) != 0)) {
+                result.score_ = score_;
+                to_bitField0_ |= 0x00000001;
+            }
             result.extension_ = internalGetExtension();
             result.extension_.makeImmutable();
+            result.bitField0_ = to_bitField0_;
             onBuilt();
             return result;
         }
@@ -589,7 +615,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                 value_ = other.value_;
                 onChanged();
             }
-            if (other.getScore() != 0F) {
+            if (other.hasScore()) {
                 setScore(other.getScore());
             }
             internalGetMutableExtension().mergeFrom(other.internalGetExtension());
@@ -629,7 +655,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                         } // case 18
                         case 29: {
                             score_ = input.readFloat();
-
+                            bitField0_ |= 0x00000001;
                             break;
                         } // case 29
                         case 34: {
@@ -869,6 +895,20 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          *
          * <code>float score = 3;</code>
          *
+         * @return Whether the score field is set.
+         */
+        @java.lang.Override
+        public boolean hasScore() {
+            return ((bitField0_ & 0x00000001) != 0);
+        }
+
+        /**
+         * <pre>
+         * e.g., confidence
+         * </pre>
+         *
+         * <code>float score = 3;</code>
+         *
          * @return The score.
          */
         @java.lang.Override
@@ -888,7 +928,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * @return This builder for chaining.
          */
         public Builder setScore(float value) {
-
+            bitField0_ |= 0x00000001;
             score_ = value;
             onChanged();
             return this;
@@ -904,7 +944,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * @return This builder for chaining.
          */
         public Builder clearScore() {
-
+            bitField0_ = (bitField0_ & ~0x00000001);
             score_ = 0F;
             onChanged();
             return this;

@@ -11,6 +11,7 @@ import org.apache.accumulo.core.data.Key;
  * <li>sharded year index key</li>
  * </ul>
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public interface IndexKeyParser {
 
     boolean isStandardKey();

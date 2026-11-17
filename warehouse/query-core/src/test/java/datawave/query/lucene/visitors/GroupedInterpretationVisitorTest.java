@@ -1,5 +1,7 @@
 package datawave.query.lucene.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,7 +11,6 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
@@ -220,6 +221,6 @@ class GroupedInterpretationVisitorTest {
         // Compare the lists via their query strings.
         List<String> actualStrs = actual.stream().map(node -> node.toQueryString(escapedSyntax).toString()).collect(Collectors.toList());
         List<String> expectedStrs = expectedNodes.stream().map(node -> node.toQueryString(escapedSyntax).toString()).collect(Collectors.toList());
-        Assertions.assertEquals(expectedStrs, actualStrs);
+        assertEquals(expectedStrs, actualStrs);
     }
 }

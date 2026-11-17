@@ -2,30 +2,24 @@ package datawave.query.planner;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.microservice.query.QueryParameters.QUERY_END;
-import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.microservice.query.QueryParameters.QUERY_NAME;
-import static datawave.microservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -40,28 +34,23 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.QueryData;
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.GeometryType;
 import datawave.data.type.NumberType;
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -80,28 +69,31 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.microservice.query.DefaultQueryParameters;
-import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.testframework.MockStatusReporter;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.query.util.AbstractQueryTest;
+import datawave.table.constants.MetadataColumnFamilyConstants;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 
-@RunWith(Arquillian.class)
-public class CompositeIndexTest {
-
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
+public class CompositeIndexTest extends AbstractQueryTest {
 
     private static final int NUM_SHARDS = 3;
     private static final String DATA_TYPE_NAME = "wkt";
@@ -111,18 +103,18 @@ public class CompositeIndexTest {
     private static final String WKT_BYTE_LENGTH_FIELD = "WKT_BYTE_LENGTH";
 
     private static final String AUTHS = "ALL";
+    private static final Authorizations auths = new Authorizations(AUTHS);
 
     private static final String formatPattern = "yyyyMMdd HHmmss.SSS";
     private static final SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
 
-    private static final String LEGACY_BEGIN_DATE = "20000101 000000.000";
+    // the legacy data sits on the three days immediately before the composite transition date, and the composite data on the three days from it, so that a
+    // query spanning the transition covers only six shard days rather than two years' worth
+    private static final String LEGACY_BEGIN_DATE = "20001229 000000.000";
     private static final String COMPOSITE_BEGIN_DATE = "20010101 000000.000";
 
-    private static final String BEGIN_DATE = "20000101 000000.000";
-    private static final String END_DATE = "20020101 000000.000";
-
-    private static final String USER = "testcorp";
-    private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
+    private static final String BEGIN_DATE = "20001229 000000.000";
+    private static final String END_DATE = "20010103 235959.999";
 
     private static final Configuration conf = new Configuration();
 
@@ -144,8 +136,8 @@ public class CompositeIndexTest {
 
     private static final long[] legacyDates = {
             0,
-            TimeUnit.DAYS.toMillis(90),
-            TimeUnit.DAYS.toMillis(180),
+            TimeUnit.DAYS.toMillis(1),
+            TimeUnit.DAYS.toMillis(2),
             0};
 
     private static final String[] wktCompositeData = {
@@ -176,42 +168,108 @@ public class CompositeIndexTest {
 
     private static final long[] compositeDates = {
             0,
-            TimeUnit.DAYS.toMillis(90),
+            TimeUnit.DAYS.toMillis(1),
 
-            TimeUnit.DAYS.toMillis(180),
+            TimeUnit.DAYS.toMillis(2),
             0,
 
-            TimeUnit.DAYS.toMillis(90),
-            TimeUnit.DAYS.toMillis(180),
+            TimeUnit.DAYS.toMillis(1),
+            TimeUnit.DAYS.toMillis(2),
 
             0,
-            TimeUnit.DAYS.toMillis(90)};
+            TimeUnit.DAYS.toMillis(1)};
     // @formatter:on
 
-    @Inject
-    @SpringBean(name = "EventQuery")
-    ShardQueryLogic logic;
+    @Autowired
+    @Qualifier("EventQuery")
+    protected ShardQueryLogic logic;
 
-    private static InMemoryInstance instance;
-
+    private static AccumuloClient clientForTest;
     private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
-
     private static final IndexIngestUtil ingestUtil = new IndexIngestUtil();
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.core.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
+    private ShardQueryLogic currentLogic;
+    private List<DefaultEvent> events = new ArrayList<>();
+    private int expectedEventCount = -1;
+
+    @Override
+    public ShardQueryLogic getLogic() {
+        return currentLogic;
     }
 
-    @BeforeClass
-    public static void setupClass() throws Exception {
+    @Override
+    public Authorizations getAuths() {
+        return auths;
+    }
+
+    @Override
+    protected void extraConfigurations() {
+        disableQueryPlanAssertion();
+    }
+
+    @Override
+    protected QueryImpl getSettings() throws Exception {
+        QueryImpl settings = new QueryImpl();
+        settings.setBeginDate(formatter.parse(BEGIN_DATE));
+        settings.setEndDate(formatter.parse(END_DATE));
+        settings.setPagesize(Integer.MAX_VALUE);
+        settings.setQueryAuthorizations(getAuths().serialize());
+        settings.setQuery(getQuery());
+        settings.setParameters(getParameters());
+        settings.setId(UUID.randomUUID());
+        return settings;
+    }
+
+    @Override
+    protected void executeQuery(ShardQueryLogic logic) throws Exception {
+        try {
+            Iterator<?> iter = logic.getTransformIterator(logic.getConfig().getQuery());
+            events = new ArrayList<>();
+            while (iter.hasNext()) {
+                events.add((DefaultEvent) iter.next());
+            }
+        } finally {
+            logic.close();
+        }
+    }
+
+    @Override
+    protected void extraAssertions() {
+        assertEquals(expectedEventCount, events.size());
+
+        List<String> wktList = new ArrayList<>();
+        wktList.addAll(Arrays.asList(wktLegacyData));
+        wktList.addAll(Arrays.asList(wktCompositeData));
+
+        List<Integer> wktByteLengthList = new ArrayList<>();
+        wktByteLengthList.addAll(Arrays.asList(wktByteLengthLegacyData));
+        wktByteLengthList.addAll(Arrays.asList(wktByteLengthCompositeData));
+
+        for (DefaultEvent event : events) {
+            String wkt = null;
+            Integer wktByteLength = null;
+
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD))
+                    wkt = field.getValueString();
+                else if (field.getName().equals(WKT_BYTE_LENGTH_FIELD))
+                    wktByteLength = Integer.parseInt(field.getValueString());
+            }
+
+            // shouldn't get back a null wktByteLength
+            assertNotNull(wktByteLength);
+
+            // ensure that this is one of the ingested events
+            assertTrue(wktList.remove(wkt));
+            assertTrue(wktByteLengthList.remove(wktByteLength));
+        }
+
+        assertEquals(wktLegacyData.length + wktCompositeData.length - expectedEventCount, wktList.size());
+        assertEquals(wktByteLengthLegacyData.length + wktByteLengthCompositeData.length - expectedEventCount, wktByteLengthList.size());
+    }
+
+    @BeforeAll
+    public static void setupClass(@TempDir Path tempDir) throws Exception {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
 
         setupConfiguration(conf);
@@ -280,18 +338,21 @@ public class CompositeIndexTest {
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
 
         // Write the composite transition date manually
-        Key tdKey = new Key(new Text(GEO_FIELD), new Text(ColumnFamilyConstants.COLF_CITD), new Text(DATA_TYPE_NAME + "\0" + COMPOSITE_BEGIN_DATE), new Text(),
-                        new SimpleDateFormat(CompositeMetadataHelper.transitionDateFormat).parse(COMPOSITE_BEGIN_DATE).getTime());
+        Key tdKey = new Key(new Text(GEO_FIELD), new Text(MetadataColumnFamilyConstants.COLF_CITD), new Text(DATA_TYPE_NAME + "\0" + COMPOSITE_BEGIN_DATE),
+                        new Text(), new SimpleDateFormat(CompositeMetadataHelper.transitionDateFormat).parse(COMPOSITE_BEGIN_DATE).getTime());
         keyValues.put(new BulkIngestKey(new Text(TableName.METADATA), tdKey), new Value());
 
         // write these values to their respective tables
-        instance = new InMemoryInstance();
+        InMemoryInstance instance = new InMemoryInstance();
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
 
         writeKeyValues(client, keyValues);
+        clientForTest = client;
 
-        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
+        Path ivaratorDir = tempDir.resolve("ivarator");
+        Files.createDirectories(ivaratorDir);
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(ivaratorDir.toUri().toString()));
 
         ingestUtil.write(client, new Authorizations(AUTHS));
     }
@@ -352,6 +413,14 @@ public class CompositeIndexTest {
         }
     }
 
+    private void runGeoQuery(ShardQueryLogic queryLogic, String query, int expectedCount) throws Exception {
+        setClientForTest(clientForTest);
+        currentLogic = queryLogic;
+        this.expectedEventCount = expectedCount;
+        givenQuery(query);
+        planAndExecuteQuery();
+    }
+
     @Test
     public void compositeWithoutIvaratorTest() throws Exception {
         // @formatter:off
@@ -363,101 +432,37 @@ public class CompositeIndexTest {
                 "((_Bounded_ = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
 
-        ShardQueryLogic logic = getShardQueryLogic(false);
-        logic.setIntermediateMaxTermThreshold(50);
-        logic.setIndexedMaxTermThreshold(50);
-        logic.setFinalMaxTermThreshold(50);
+        ShardQueryLogic rangeLogic = getShardQueryLogic(false);
+        rangeLogic.setIntermediateMaxTermThreshold(50);
+        rangeLogic.setIndexedMaxTermThreshold(50);
+        rangeLogic.setFinalMaxTermThreshold(50);
 
-        if (!logic.isUseDocumentScheduler()) {
-            List<QueryData> queries = getQueryRanges(logic, query, false);
-            if (logic.isUseShardedIndex()) {
-                Assert.assertEquals(17, queries.size());
+        if (!rangeLogic.isUseDocumentScheduler()) {
+            List<QueryData> queries = getQueryRanges(rangeLogic, query);
+            if (rangeLogic.isUseShardedIndex()) {
+                assertEquals(17, queries.size());
             } else {
-                Assert.assertEquals(10, queries.size());
+                assertEquals(10, queries.size());
             }
         }
 
-        List<DefaultEvent> events = getQueryResults(logic, query, false);
-        Assert.assertEquals(9, events.size());
-
-        List<String> wktList = new ArrayList<>();
-        wktList.addAll(Arrays.asList(wktLegacyData));
-        wktList.addAll(Arrays.asList(wktCompositeData));
-
-        List<Integer> wktByteLengthList = new ArrayList<>();
-        wktByteLengthList.addAll(Arrays.asList(wktByteLengthLegacyData));
-        wktByteLengthList.addAll(Arrays.asList(wktByteLengthCompositeData));
-
-        for (DefaultEvent event : events) {
-            String wkt = null;
-            Integer wktByteLength = null;
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
-                else if (field.getName().equals(WKT_BYTE_LENGTH_FIELD))
-                    wktByteLength = Integer.parseInt(field.getValueString());
-            }
-
-            // shouldn't get back a null wktByteLength
-            Assert.assertNotNull(wktByteLength);
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(wktList.remove(wkt));
-            Assert.assertTrue(wktByteLengthList.remove(wktByteLength));
-        }
-
-        Assert.assertEquals(3, wktList.size());
-        Assert.assertEquals(3, wktByteLengthList.size());
-
-        Assert.assertEquals(9, events.size());
+        runGeoQuery(rangeLogic, query, 9);
     }
 
     // the bounded range is fixed by the QueryPropertyMarkerSourceConsolidator
     // if ASTValidation is enabled the query will fail on the first visitor, InvertSwappedNodes
-    @Ignore
+    @Disabled
     @Test
     public void testRecordOfIncorrectQueryStringWorking() throws Exception {
         // original "((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355'))";
         String query = "(((_Bounded_ = true) && GEO >= '0500aa' && GEO <= '050355'))";
-        if (!logic.isUseDocumentScheduler()) {
-            List<QueryData> queries = getQueryRanges(query, false);
-            Assert.assertEquals(1, queries.size());
+        ShardQueryLogic rangeLogic = getShardQueryLogic(false);
+        if (!rangeLogic.isUseDocumentScheduler()) {
+            List<QueryData> queries = getQueryRanges(rangeLogic, query);
+            assertEquals(1, queries.size());
         }
 
-        List<DefaultEvent> events = getQueryResults(query, false);
-        Assert.assertEquals(1, events.size());
-
-        List<String> wktList = new ArrayList<>();
-        wktList.addAll(Arrays.asList(wktLegacyData));
-        wktList.addAll(Arrays.asList(wktCompositeData));
-
-        List<Integer> wktByteLengthList = new ArrayList<>();
-        wktByteLengthList.addAll(Arrays.asList(wktByteLengthLegacyData));
-        wktByteLengthList.addAll(Arrays.asList(wktByteLengthCompositeData));
-
-        for (DefaultEvent event : events) {
-            String wkt = null;
-            Integer wktByteLength = null;
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
-                else if (field.getName().equals(WKT_BYTE_LENGTH_FIELD))
-                    wktByteLength = Integer.parseInt(field.getValueString());
-            }
-
-            // shouldn't get back a null wktByteLength
-            Assert.assertNotNull(wktByteLength);
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(wktList.remove(wkt));
-            Assert.assertTrue(wktByteLengthList.remove(wktByteLength));
-        }
-
-        Assert.assertEquals(11, wktList.size());
-        Assert.assertEquals(11, wktByteLengthList.size());
-        Assert.assertEquals(1, events.size());
+        runGeoQuery(rangeLogic, query, 1);
     }
 
     @Test
@@ -471,152 +476,58 @@ public class CompositeIndexTest {
                 "((_Bounded_ = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
 
-        if (!logic.isUseDocumentScheduler()) {
-            List<QueryData> queries = getQueryRanges(query, true);
-            Assert.assertEquals(2196, queries.size());
+        ShardQueryLogic rangeLogic = getShardQueryLogic(true);
+        if (!rangeLogic.isUseDocumentScheduler()) {
+            // the ivarator forces a full scan of the query's date range: six shard days at NUM_SHARDS shards apiece
+            List<QueryData> queries = getQueryRanges(rangeLogic, query);
+            assertEquals(6 * NUM_SHARDS, queries.size());
         }
 
-        List<DefaultEvent> events = getQueryResults(query, true);
-        Assert.assertEquals(9, events.size());
-
-        List<String> wktList = new ArrayList<>();
-        wktList.addAll(Arrays.asList(wktLegacyData));
-        wktList.addAll(Arrays.asList(wktCompositeData));
-
-        List<Integer> wktByteLengthList = new ArrayList<>();
-        wktByteLengthList.addAll(Arrays.asList(wktByteLengthLegacyData));
-        wktByteLengthList.addAll(Arrays.asList(wktByteLengthCompositeData));
-
-        for (DefaultEvent event : events) {
-            String wkt = null;
-            Integer wktByteLength = null;
-
-            for (DefaultField field : event.getFields()) {
-                if (field.getName().equals(GEO_FIELD))
-                    wkt = field.getValueString();
-                else if (field.getName().equals(WKT_BYTE_LENGTH_FIELD))
-                    wktByteLength = Integer.parseInt(field.getValueString());
-            }
-
-            // shouldn't get back a null wktByteLength
-            Assert.assertNotNull(wktByteLength);
-
-            // ensure that this is one of the ingested events
-            Assert.assertTrue(wktList.remove(wkt));
-            Assert.assertTrue(wktByteLengthList.remove(wktByteLength));
-        }
-
-        Assert.assertEquals(3, wktList.size());
-        Assert.assertEquals(3, wktByteLengthList.size());
-
-        Assert.assertEquals(9, events.size());
+        runGeoQuery(rangeLogic, query, 9);
     }
 
-    private List<QueryData> getQueryRanges(String queryString, boolean useIvarator) throws Exception {
-        ShardQueryLogic logic = getShardQueryLogic(useIvarator);
-        return getQueryRanges(logic, queryString, useIvarator);
-    }
+    private List<QueryData> getQueryRanges(ShardQueryLogic rangeLogic, String queryString) throws Exception {
+        QueryImpl query = new QueryImpl();
+        query.setBeginDate(formatter.parse(BEGIN_DATE));
+        query.setEndDate(formatter.parse(END_DATE));
+        query.setPagesize(Integer.MAX_VALUE);
+        query.setQueryAuthorizations(auths.serialize());
+        query.setQuery(queryString);
+        query.setId(UUID.randomUUID());
 
-    private List<QueryData> getQueryRanges(ShardQueryLogic logic, String queryString, boolean useIvarator) throws Exception {
-        Iterator iter = getQueryRangesIterator(queryString, logic);
+        ShardQueryConfiguration config = ShardQueryConfiguration.create(rangeLogic, query);
+
+        rangeLogic.initialize(config, clientForTest, query, Collections.singleton(auths));
+        rangeLogic.setupQuery(config);
+
         List<QueryData> queryData = new ArrayList<>();
+        Iterator<QueryData> iter = config.getQueriesIter();
         while (iter.hasNext()) {
-            queryData.add((QueryData) iter.next());
+            queryData.add(iter.next());
         }
         return queryData;
     }
 
-    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator) throws Exception {
-        ShardQueryLogic logic = getShardQueryLogic(useIvarator);
-        return getQueryResults(logic, queryString, useIvarator);
-    }
-
-    private List<DefaultEvent> getQueryResults(ShardQueryLogic logic, String queryString, boolean useIvarator) throws Exception {
-        Iterator iter = getResultsIterator(queryString, logic);
-        List<DefaultEvent> events = new ArrayList<>();
-        while (iter.hasNext())
-            events.add((DefaultEvent) iter.next());
-        return events;
-    }
-
-    private Iterator getQueryRangesIterator(String queryString, ShardQueryLogic logic) throws Exception {
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
-        params.putSingle(QUERY_STRING, queryString);
-        params.putSingle(QUERY_NAME, "geoQuery");
-        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
-        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
-        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
-        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
-        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
-        params.putSingle(QUERY_END, END_DATE);
-
-        QueryParameters queryParams = new DefaultQueryParameters();
-        queryParams.validate(params);
-
-        Set<Authorizations> auths = new HashSet<>();
-        auths.add(new Authorizations(AUTHS));
-
-        Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
-
-        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-
-        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
-
-        logic.setupQuery(config);
-
-        return config.getQueriesIter();
-    }
-
-    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic) throws Exception {
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
-        params.putSingle(QUERY_STRING, queryString);
-        params.putSingle(QUERY_NAME, "geoQuery");
-        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
-        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
-        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
-        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
-        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
-        params.putSingle(QUERY_END, END_DATE);
-
-        QueryParameters queryParams = new DefaultQueryParameters();
-        queryParams.validate(params);
-
-        Set<Authorizations> auths = new HashSet<>();
-        auths.add(new Authorizations(AUTHS));
-
-        Query query = new QueryImpl();
-        query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
-
-        ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-
-        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
-
-        logic.setupQuery(config);
-
-        return logic.getTransformIterator(query);
-    }
-
     private ShardQueryLogic getShardQueryLogic(boolean useIvarator) {
-        ShardQueryLogic logic = new ShardQueryLogic(this.logic);
+        ShardQueryLogic clonedLogic = new ShardQueryLogic(this.logic);
 
         // increase the depth threshold
-        logic.setMaxDepthThreshold(20);
-        logic.setInitialMaxTermThreshold(15);
-        logic.setIntermediateMaxTermThreshold(15);
-        logic.setFinalMaxTermThreshold(15);
+        clonedLogic.setMaxDepthThreshold(20);
+        clonedLogic.setInitialMaxTermThreshold(15);
+        clonedLogic.setIntermediateMaxTermThreshold(15);
+        clonedLogic.setFinalMaxTermThreshold(15);
 
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
+        ((DefaultQueryPlanner) (clonedLogic.getQueryPlanner())).setPushdownThreshold(1000000);
 
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
-        logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
-        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
+        clonedLogic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
+        clonedLogic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
 
         if (useIvarator)
-            setupIvarator(logic);
+            setupIvarator(clonedLogic);
 
-        return logic;
+        return clonedLogic;
     }
 
     private void setupIvarator(ShardQueryLogic logic) {

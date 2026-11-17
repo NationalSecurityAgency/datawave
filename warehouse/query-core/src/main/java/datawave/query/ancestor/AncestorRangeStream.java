@@ -14,6 +14,12 @@ import datawave.query.util.MetadataHelper;
  * Prevent ranges that are from the same document from both being returned, resulting in duplicate rows across the ancestor
  */
 public class AncestorRangeStream extends RangeStream {
+
+    public AncestorRangeStream(ShardQueryConfiguration config, MetadataHelper metadataHelper) {
+        super(config, metadataHelper);
+    }
+
+    @Deprecated(forRemoval = true, since = "7.41.0")
     public AncestorRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         super(config, scanners, metadataHelper);
     }

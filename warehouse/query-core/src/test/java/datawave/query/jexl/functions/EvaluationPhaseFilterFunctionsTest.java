@@ -3,24 +3,32 @@ package datawave.query.jexl.functions;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.text.DateFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -34,17 +42,17 @@ import datawave.query.collections.FunctionalSet;
 
 /**
  * Due to the expansive nature of {@link EvaluationPhaseFilterFunctions}, tests for individual methods are encapsulated within their own test suites represented
- * by the nested classes found herein. The {@link Enclosed} runner will run all tests within these test suites.
+ * by the nested classes found herein. The {@code @Nested} runner will run all tests within these test suites.
  */
-@RunWith(Enclosed.class)
 public class EvaluationPhaseFilterFunctionsTest {
 
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#occurrence(Object, int)} and {@link EvaluationPhaseFilterFunctions#occurrence(Object, String, int)}.
      */
-    public static class OccurrenceSingularValueTests {
+    @Nested
+    public class OccurrenceSingularValueTests {
 
-        private static final Object singularFieldValue = toValueTuple("FOO.1,BAR,bar");
+        private final Object singularFieldValue = toValueTuple("FOO.1,BAR,bar");
 
         private Object fieldValue;
         private String operator;
@@ -219,17 +227,18 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#occurrence(Iterable, String, int)} and {@link EvaluationPhaseFilterFunctions#occurrence(Iterable, int)}.
      */
-    public static class OccurrenceIterableValueTests {
+    @Nested
+    public class OccurrenceIterableValueTests {
 
-        private static final ValueTuple indexFieldValue = toValueTuple("FOO.1,INDEX,index");
-        private static final ValueTuple eventFieldValue = toValueTuple("FOO.1,EVENT,event");
-        private static final Object object = new Object();
+        private final ValueTuple indexFieldValue = toValueTuple("FOO.1,INDEX,index");
+        private final ValueTuple eventFieldValue = toValueTuple("FOO.1,EVENT,event");
+        private final Object object = new Object();
 
         private Iterable<?> fieldValue;
         private String operator;
 
-        @BeforeClass
-        public static void setup() {
+        @BeforeEach
+        public void setup() {
             indexFieldValue.getSource().setFromIndex(true);
             eventFieldValue.getSource().setFromIndex(false);
         }
@@ -477,7 +486,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#isNotNull(Object)}.
      */
-    public static class IsNotNullTests {
+    @Nested
+    public class IsNotNullTests {
 
         private Object fieldValue;
 
@@ -524,7 +534,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#isNull(Object)}
      */
-    public static class IsNullTests {
+    @Nested
+    public class IsNullTests {
 
         private Object fieldValue;
 
@@ -568,7 +579,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#excludeRegex(Object, String)} (Object, String)}.
      */
-    public static class ExcludeRegexSingularValueTests {
+    @Nested
+    public class ExcludeRegexSingularValueTests {
 
         private Object fieldValue;
         private String regex;
@@ -631,7 +643,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#excludeRegex(Object, String)} (Iterable, String)}.
      */
-    public static class ExcludeRegexIterableValueTests {
+    @Nested
+    public class ExcludeRegexIterableValueTests {
 
         private Iterable<Object> fieldValues;
         private String regex;
@@ -709,7 +722,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#includeRegex(Object, String)}.
      */
-    public static class IncludeRegexSingularValueTests {
+    @Nested
+    public class IncludeRegexSingularValueTests {
 
         private Object fieldValue;
         private String regex;
@@ -775,7 +789,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#includeRegex(Iterable, String)}.
      */
-    public static class IncludeRegexIterableValueTests {
+    @Nested
+    public class IncludeRegexIterableValueTests {
 
         private Iterable<Object> fieldValues;
         private String regex;
@@ -849,7 +864,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getAllMatches(Object, String)}.
      */
-    public static class GetAllMatchesSingularValueTests {
+    @Nested
+    public class GetAllMatchesSingularValueTests {
 
         private Object fieldValue;
         private String regex;
@@ -915,7 +931,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getAllMatches(Iterable, String)}.
      */
-    public static class GetAllMatchesIterableValueTests {
+    @Nested
+    public class GetAllMatchesIterableValueTests {
 
         private Iterable<Object> fieldValues;
         private String regex;
@@ -983,7 +1000,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#matchesAtLeastCountOf(Object[])}.
      */
-    public static class MatchesAtLeastCountOfTests {
+    @Nested
+    public class MatchesAtLeastCountOfTests {
 
         private int minimum;
         private Iterable<Object> fieldValues;
@@ -1039,7 +1057,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getMatchToLeftOfPeriod(String, int)}.
      */
-    public static class GetMatchToLeftOfPeriodTests {
+    @Nested
+    public class GetMatchToLeftOfPeriodTests {
 
         @SuppressWarnings("FieldCanBeLocal")
         private final String input = "first.second.third.fourth";
@@ -1075,7 +1094,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getMatchToRightOfPeriod(String, int)}.
      */
-    public static class GetMatchToRightOfPeriodTests {
+    @Nested
+    public class GetMatchToRightOfPeriodTests {
 
         private final String input = "first.second.third.fourth";
         private int position;
@@ -1113,7 +1133,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#betweenInclusive(long, long, long)}.
      */
-    public static class BetweenInclusiveTests {
+    @Nested
+    public class BetweenInclusiveTests {
 
         @Test
         public void testLessThanRange() {
@@ -1144,13 +1165,14 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getTime(Object, boolean)}.
      */
-    public static class GetTimeTests {
+    @Nested
+    public class GetTimeTests {
 
-        private static final long ONEMILLISECOND = 1L;
-        private static final long ONESECOND = TimeUnit.SECONDS.toMillis(1);
-        private static final long ONEMINUTE = TimeUnit.MINUTES.toMillis(1);
-        private static final long ONEHOUR = TimeUnit.HOURS.toMillis(1);
-        private static final long ONEDAY = TimeUnit.DAYS.toMillis(1);
+        private final long ONEMILLISECOND = 1L;
+        private final long ONESECOND = TimeUnit.SECONDS.toMillis(1);
+        private final long ONEMINUTE = TimeUnit.MINUTES.toMillis(1);
+        private final long ONEHOUR = TimeUnit.HOURS.toMillis(1);
+        private final long ONEDAY = TimeUnit.DAYS.toMillis(1);
 
         private long expectedTime;
 
@@ -1291,13 +1313,100 @@ public class EvaluationPhaseFilterFunctionsTest {
     }
 
     /**
+     * Tests that verify the {@link DateFormat} instances backing {@link EvaluationPhaseFilterFunctions#getTime(Object, boolean)} are confined to the calling
+     * thread, and may therefore be used by concurrent scans without any locking.
+     */
+    @Nested
+    public class GetTimeConcurrencyTests {
+
+        private final int THREADS = 8;
+        private final int ITERATIONS = 250;
+        private final long TIMEOUT_MINUTES = 1L;
+
+        // A sampling of the supported date formats, paired with the epoch millis each must parse to.
+        // @formatter:off
+        private final Map<String,Long> DATES_TO_EPOCH_MILLIS = Map.of(
+                        "2021-Oct", 1633046400000L,
+                        "2021-10-06", 1633478400000L,
+                        "10/06/2021", 1633478400000L,
+                        "2021100616", 1633536000000L,
+                        "202110061651", 1633539060000L,
+                        "2021-10-06 16:51:34", 1633539094000L,
+                        "6 Oct 2021 16:51:34 GMT", 1633539094000L,
+                        "2021-10-06 16:51:34 -0500", 1633557094000L,
+                        "20211006:16:51:34:215", 1633539094215L,
+                        "2021-10-06T16:51:34.215Z", 1633539094215L);
+        // @formatter:on
+
+        // Verify that many threads can parse the supported formats at the same time and all see the correct time. When the formats were shared statics this
+        // was a genuine race: interleaved SimpleDateFormat.parse() calls corrupt the formatter's Calendar, yielding wrong times or spurious ParseExceptions.
+        // It passed previously only because every parse serialized on a global lock. It now passes because each thread has its own formats.
+        @Test
+        public void testConcurrentParsing() throws Exception {
+            ExecutorService executor = Executors.newFixedThreadPool(THREADS);
+            CountDownLatch startGate = new CountDownLatch(1);
+            List<Future<?>> futures = new ArrayList<>();
+            try {
+                for (int thread = 0; thread < THREADS; thread++) {
+                    futures.add(executor.submit(() -> {
+                        // Do not start parsing until every thread is ready, so that the parsing actually overlaps.
+                        assertTrue(startGate.await(TIMEOUT_MINUTES, TimeUnit.MINUTES));
+                        for (int iteration = 0; iteration < ITERATIONS; iteration++) {
+                            for (Map.Entry<String,Long> date : DATES_TO_EPOCH_MILLIS.entrySet()) {
+                                assertEquals(date.getValue().longValue(), EvaluationPhaseFilterFunctions.getTime(date.getKey()), date.getKey());
+                                assertEquals(date.getValue().longValue(), EvaluationPhaseFilterFunctions.getTime(date.getKey(), false), date.getKey());
+                            }
+                        }
+                        return null;
+                    }));
+                }
+                startGate.countDown();
+                // Any assertion failure or exception thrown by a worker is rethrown here.
+                for (Future<?> future : futures) {
+                    future.get(TIMEOUT_MINUTES, TimeUnit.MINUTES);
+                }
+            } finally {
+                executor.shutdownNow();
+            }
+        }
+
+        // Verify that the confinement actually holds, i.e. that no two threads see the same DateFormat instance.
+        @Test
+        public void testEachThreadHasItsOwnFormats() throws Exception {
+            ExecutorService executor = Executors.newFixedThreadPool(2);
+            CountDownLatch bothStarted = new CountDownLatch(2);
+            try {
+                Callable<List<DateFormat>> task = () -> {
+                    // Keep both tasks in flight so that they are guaranteed to run on different threads.
+                    bothStarted.countDown();
+                    assertTrue(bothStarted.await(TIMEOUT_MINUTES, TimeUnit.MINUTES));
+                    return EvaluationPhaseFilterFunctions.DATE_FORMATS.get();
+                };
+                Future<List<DateFormat>> firstFuture = executor.submit(task);
+                Future<List<DateFormat>> secondFuture = executor.submit(task);
+                List<DateFormat> first = firstFuture.get(TIMEOUT_MINUTES, TimeUnit.MINUTES);
+                List<DateFormat> second = secondFuture.get(TIMEOUT_MINUTES, TimeUnit.MINUTES);
+
+                assertEquals(EvaluationPhaseFilterFunctions.DATE_FORMAT_STRINGS.length, first.size());
+                assertEquals(first.size(), second.size());
+                for (int i = 0; i < first.size(); i++) {
+                    assertNotSame(first.get(i), second.get(i), "Threads shared the format for " + EvaluationPhaseFilterFunctions.DATE_FORMAT_STRINGS[i]);
+                }
+            } finally {
+                executor.shutdownNow();
+            }
+        }
+    }
+
+    /**
      * Contains tests for {@link EvaluationPhaseFilterFunctions#compare(Object, String, String, Object)}.
      */
-    public static class CompareTests {
+    @Nested
+    public class CompareTests {
 
-        private static final ValueTuple A = toValueTuple("FOO.3,A,a");
-        private static final ValueTuple B = toValueTuple("FOO.2,B,b");
-        private static final ValueTuple C = toValueTuple("FOO.1,C,c");
+        private final ValueTuple A = toValueTuple("FOO.3,A,a");
+        private final ValueTuple B = toValueTuple("FOO.2,B,b");
+        private final ValueTuple C = toValueTuple("FOO.1,C,c");
 
         private Object field1;
         private Object field2;
@@ -1762,7 +1871,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Contains tests for {@link EvaluationPhaseFilterFunctions#afterDate(Iterable, String)}
      */
-    public static class AfterDateTests {
+    @Nested
+    public class AfterDateTests {
         @Test
         public void testAfterDateIterator() {
             FunctionalSet<ValueTuple> values = new FunctionalSet<>();
@@ -1773,7 +1883,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
 
@@ -1787,7 +1897,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
 
@@ -1801,7 +1911,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
     }
@@ -1809,7 +1919,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Contains tests for {@link EvaluationPhaseFilterFunctions#beforeDate(Iterable, String)}.
      */
-    public static class BeforeDateTests {
+    @Nested
+    public class BeforeDateTests {
 
         @Test
         public void testBeforeDateIterator() {
@@ -1821,7 +1932,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
 
@@ -1835,7 +1946,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
 
@@ -1849,7 +1960,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertNotNull(result);
             assertEquals(1, result.size());
             for (ValueTuple valueTuple : result) {
-                Assert.assertEquals("2021-10-15", valueTuple.getValue());
+                assertEquals("2021-10-15", valueTuple.getValue());
             }
         }
     }
@@ -1857,7 +1968,8 @@ public class EvaluationPhaseFilterFunctionsTest {
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#timeFunction(Object, Object, String, String, long)}.
      */
-    public static class TimeFunctionTests {
+    @Nested
+    public class TimeFunctionTests {
 
         @Test
         public void testNullTimeValues() {

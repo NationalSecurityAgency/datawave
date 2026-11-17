@@ -1,17 +1,16 @@
 package datawave.ingest.mapreduce;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.OverridingConfiguration;
 
 public class OverridingConfigurationTest {
 
     @Test
-    public void shouldOverrideConfs() {
+    public void shouldOverrideConfigs() {
         Configuration base = new Configuration();
         base.set("test.table.name", "new table");
         base.set("flag", "old flag");
@@ -20,7 +19,7 @@ public class OverridingConfigurationTest {
 
         OverridingConfiguration conf = new OverridingConfiguration("test", base);
 
-        assertThat(conf.get("table.name"), is("new table"));
-        assertThat(conf.get("flag"), is("old flag"));
+        assertEquals("new table", conf.get("table.name"));
+        assertEquals("old flag", conf.get("flag"));
     }
 }

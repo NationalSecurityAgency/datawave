@@ -1,10 +1,11 @@
 package datawave.ingest.metadata;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Iterator;
 
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MetadataCounterGroupTest {
 
@@ -36,21 +37,21 @@ public class MetadataCounterGroupTest {
         counters.addToCount(1, dataType + "2", fieldName, date);
         counters.addToCount(1, dataType + "2", fieldName, date);
 
-        Assert.assertEquals(2, counters.getEntries().size());
+        assertEquals(2, counters.getEntries().size());
 
         Iterator<MetadataCounterGroup.Components> iterator = counters.getEntries().iterator();
         MetadataCounterGroup.Components first = iterator.next();
-        Assert.assertEquals(dataType + "2", first.getDataType());
-        Assert.assertEquals(2, first.getCount());
+        assertEquals(dataType + "2", first.getDataType());
+        assertEquals(2, first.getCount());
 
         MetadataCounterGroup.Components second = iterator.next();
-        Assert.assertEquals(dataType, second.getDataType());
-        Assert.assertEquals(1, second.getCount());
+        assertEquals(dataType, second.getDataType());
+        assertEquals(1, second.getCount());
     }
 
     private void assertOneEntryWithExpectedCount(MetadataCounterGroup counters, int expectedCount) {
-        Assert.assertEquals(1, counters.getEntries().size());
-        Assert.assertEquals(expectedCount, getOnlyEntry(counters).getCount());
+        assertEquals(1, counters.getEntries().size());
+        assertEquals(expectedCount, getOnlyEntry(counters).getCount());
     }
 
     private MetadataCounterGroup.Components getOnlyEntry(MetadataCounterGroup counters) {
@@ -79,8 +80,8 @@ public class MetadataCounterGroupTest {
         MetadataCounterGroup counters = new MetadataCounterGroup(COLUMN_FAMILY);
         counters.addToCount(1, dataType, fieldName, date);
         MetadataCounterGroup.Components entry = getOnlyEntry(counters);
-        Assert.assertEquals(dataType, entry.getDataType());
-        Assert.assertEquals(fieldName, entry.getRowId());
-        Assert.assertEquals(date, entry.getDate());
+        assertEquals(dataType, entry.getDataType());
+        assertEquals(fieldName, entry.getRowId());
+        assertEquals(date, entry.getDate());
     }
 }

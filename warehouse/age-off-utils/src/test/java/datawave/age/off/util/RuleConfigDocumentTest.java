@@ -1,6 +1,6 @@
 package datawave.age.off.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -17,113 +17,116 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.xerces.dom.DocumentImpl;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
-import datawave.ingest.util.cache.watch.AgeOffRuleLoader;
+import datawave.ingest.util.cache.watch.RuleConfig;
 
 public class RuleConfigDocumentTest {
 
     @Test
     public void includesFilterClass() throws IOException {
-        String actual = transformToXmlString(new AgeOffRuleLoader.RuleConfig("myclass", 1));
+        String actual = transformToXmlString(new RuleConfig.Builder("myclass", 1).build());
 
         // @formatter:off
         String expected = "<rule>\n" +
                 "  <filterClass>myclass</filterClass>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
     public void includesTtl() throws IOException {
-        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig("myclass", 1);
-        ruleConfig.ttlUnits("h");
-        ruleConfig.ttlValue("2468");
-        String actual = transformToXmlString(ruleConfig);
         // @formatter:off
+        RuleConfig.Builder builder = new RuleConfig.Builder("myclass", 1)
+                .setTtlUnits("h")
+                .setTtlValue("2468");
+        String actual = transformToXmlString(builder.build());
+
         String expected = "<rule>\n" +
                 "  <filterClass>myclass</filterClass>\n" +
                 "  <ttl units=\"h\">2468</ttl>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
     public void includesMatchPattern() throws IOException {
-        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig("myclass", 1);
-        ruleConfig.matchPattern("1234\n");
-        String actual = transformToXmlString(ruleConfig);
-
         // @formatter:off
+        RuleConfig.Builder builder = new RuleConfig.Builder("myclass", 1)
+                .setMatchPattern("1234\n");
+        String actual = transformToXmlString(builder.build());
+
         String expected = "<rule>\n" +
                 "  <filterClass>myclass</filterClass>\n" +
                 "  <matchPattern>\n1234\n</matchPattern>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
     public void includesMerge() throws IOException {
-        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig("myclass", 1);
-        ruleConfig.setIsMerge(true);
-        String actual = transformToXmlString(ruleConfig);
-
         // @formatter:off
+        RuleConfig.Builder builder = new RuleConfig.Builder("myclass", 1)
+                .setMerge(true);
+        String actual = transformToXmlString(builder.build());
+
         String expected = "<rule mode=\"merge\">\n" +
                 "  <filterClass>myclass</filterClass>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
     public void includesCustomElements() throws IOException {
-        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig("myclass", 1);
         List<Element> elements = Arrays.asList(new DocumentImpl().createElement("a"), new DocumentImpl().createElement("b"));
-        ruleConfig.customElements(elements);
-        String actual = transformToXmlString(ruleConfig);
 
         // @formatter:off
+        RuleConfig.Builder builder = new RuleConfig.Builder("myclass", 1)
+                .setCustomElements(elements);
+        String actual = transformToXmlString(builder.build());
+
         String expected = "<rule>\n" +
                 "  <filterClass>myclass</filterClass>\n" +
                 "  <a/>\n" +
                 "  <b/>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
     public void includesLabel() throws IOException {
-        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig("myclass", 1);
-        ruleConfig.label("tag");
-        String actual = transformToXmlString(ruleConfig);
-
         // @formatter:off
+        RuleConfig.Builder builder = new RuleConfig.Builder("myclass", 1)
+                .setLabel("tag");
+        String actual = transformToXmlString(builder.build());
+
         String expected = "<rule label=\"tag\">\n" +
                 "  <filterClass>myclass</filterClass>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
     @Test
     public void includesAll() throws IOException {
-        AgeOffRuleLoader.RuleConfig ruleConfig = new AgeOffRuleLoader.RuleConfig("myclass", 1);
-        ruleConfig.ttlUnits("h");
-        ruleConfig.ttlValue("2468");
-        ruleConfig.matchPattern("1234\n");
-        ruleConfig.setIsMerge(true);
         List<Element> elements = Arrays.asList(new DocumentImpl().createElement("a"), new DocumentImpl().createElement("b"));
-        ruleConfig.customElements(elements);
-        ruleConfig.label("tag");
-        String actual = transformToXmlString(ruleConfig);
 
         // @formatter:off
+        RuleConfig.Builder builder = new RuleConfig.Builder("myclass", 1)
+                .setTtlUnits("h")
+                .setTtlValue("2468")
+                .setMatchPattern("1234\n")
+                .setMerge(true)
+                .setCustomElements(elements)
+                .setLabel("tag");
+        String actual = transformToXmlString(builder.build());
+
         String expected = "<rule label=\"tag\" mode=\"merge\">\n" +
                 "  <filterClass>myclass</filterClass>\n" +
                 "  <ttl units=\"h\">2468</ttl>\n" +
@@ -134,10 +137,10 @@ public class RuleConfigDocumentTest {
                 "  <b/>\n" +
                 "</rule>\n";
         // @formatter:on
-        assertEquals(actual, expected, actual);
+        assertEquals(expected, actual, actual);
     }
 
-    private String transformToXmlString(AgeOffRuleLoader.RuleConfig ruleConfig) throws IOException {
+    private String transformToXmlString(RuleConfig ruleConfig) throws IOException {
         try {
             Transformer transformer = initializeXmlTransformer();
 

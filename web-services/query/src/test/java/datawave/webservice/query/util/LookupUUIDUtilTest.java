@@ -1,8 +1,7 @@
 package datawave.webservice.query.util;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.powermock.api.easymock.PowerMock.replayAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 
@@ -10,12 +9,10 @@ import javax.ejb.EJBContext;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.jboss.resteasy.util.FindAnnotation;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.microservice.query.Query;
@@ -26,8 +23,7 @@ import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.runner.QueryExecutor;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(FindAnnotation.class)
+@ExtendWith(MockitoExtension.class)
 public class LookupUUIDUtilTest {
 
     @Mock
@@ -45,17 +41,17 @@ public class LookupUUIDUtilTest {
 
     @Test
     public void testCreateSettings() {
-        expect(configuration.getContentLookupTypes()).andReturn(Collections.emptyMap());
-        expect(configuration.getUuidTypes()).andReturn(Collections.singletonList(new UUIDType("ID", "LuceneUUIDEventQuery", 28)));
-        expect(configuration.getBeginDate()).andReturn("20230101");
-        expect(configuration.getBatchLookupUpperLimit()).andReturn(10);
-        expect(configuration.getTagCloudLookupUpperLimit()).andReturn(50);
+        when(configuration.getContentLookupTypes()).thenReturn(Collections.emptyMap());
+        when(configuration.getUuidTypes()).thenReturn(Collections.singletonList(new UUIDType("ID", "LuceneUUIDEventQuery", 28)));
+        when(configuration.getBeginDate()).thenReturn("20230101");
+        when(configuration.getBatchLookupUpperLimit()).thenReturn(10);
+        when(configuration.getTagCloudLookupUpperLimit()).thenReturn(50);
         MultivaluedMap<String,String> defaultParams = new MultivaluedMapImpl<>();
         defaultParams.putSingle("foo", "bar");
         defaultParams.putSingle("foo2", "default");
-        expect(configuration.optionalParamsToMap()).andReturn(defaultParams);
-        expect(responseObjectFactory.getQueryImpl()).andReturn(new QueryImpl());
-        replayAll();
+        when(configuration.optionalParamsToMap()).thenReturn(defaultParams);
+        when(responseObjectFactory.getQueryImpl()).thenReturn(new QueryImpl());
+
         LookupUUIDUtil utils = new LookupUUIDUtil(configuration, queryExecutor, context, responseObjectFactory, queryLogicFactory, userOperations);
 
         MultivaluedMap<String,String> properties = new MultivaluedMapImpl<>();

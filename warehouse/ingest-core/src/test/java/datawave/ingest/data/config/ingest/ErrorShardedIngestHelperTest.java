@@ -1,9 +1,12 @@
 package datawave.ingest.data.config.ingest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import datawave.TestBaseIngestHelper;
@@ -27,21 +30,21 @@ class ErrorShardedIngestHelperTest {
         ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
         helper.setup(config);
 
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields());
-        Assertions.assertFalse(helper.hasIndexDisallowlist());
+        assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields());
+        assertFalse(helper.hasIndexDisallowlist());
 
         // The fields FOO, BAR, and HAT should be considered indexed fields.
-        Assertions.assertTrue(helper.isIndexedField("FOO"));
-        Assertions.assertTrue(helper.isIndexedField("BAR"));
-        Assertions.assertTrue(helper.isIndexedField("HAT"));
+        assertTrue(helper.isIndexedField("FOO"));
+        assertTrue(helper.isIndexedField("BAR"));
+        assertTrue(helper.isIndexedField("HAT"));
 
-        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields());
-        Assertions.assertFalse(helper.hasReverseIndexDisallowlist());
+        assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields());
+        assertFalse(helper.hasReverseIndexDisallowlist());
 
         // The fields APPLE, BANANA, and KIWI should be considered reverse indexed fields.
-        Assertions.assertTrue(helper.isReverseIndexedField("APPLE"));
-        Assertions.assertTrue(helper.isReverseIndexedField("BANANA"));
-        Assertions.assertTrue(helper.isReverseIndexedField("KIWI"));
+        assertTrue(helper.isReverseIndexedField("APPLE"));
+        assertTrue(helper.isReverseIndexedField("BANANA"));
+        assertTrue(helper.isReverseIndexedField("KIWI"));
     }
 
     /**
@@ -56,22 +59,22 @@ class ErrorShardedIngestHelperTest {
         ErrorShardedIngestHelper helper = new ErrorShardedIngestHelper();
         helper.setup(config);
 
-        Assertions.assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields());
-        Assertions.assertTrue(helper.hasIndexDisallowlist());
+        assertEquals(Set.of("FOO", "BAR", "HAT"), helper.getIndexedFields());
+        assertTrue(helper.hasIndexDisallowlist());
 
         // Although getIndexedFields() will return FOO, BAR, and HAT, they should not be considered indexed fields due to the disallow list. Verify this as a
         // sanity check.
-        Assertions.assertFalse(helper.isIndexedField("FOO"));
-        Assertions.assertFalse(helper.isIndexedField("BAR"));
-        Assertions.assertFalse(helper.isIndexedField("HAT"));
+        assertFalse(helper.isIndexedField("FOO"));
+        assertFalse(helper.isIndexedField("BAR"));
+        assertFalse(helper.isIndexedField("HAT"));
 
-        Assertions.assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields());
-        Assertions.assertTrue(helper.hasReverseIndexDisallowlist());
+        assertEquals(Set.of("APPLE", "BANANA", "KIWI"), helper.getReverseIndexedFields());
+        assertTrue(helper.hasReverseIndexDisallowlist());
 
         // Repeat the sanity check for APPLE, BANANA, and KIWI as reverse indexed fields.
-        Assertions.assertFalse(helper.isReverseIndexedField("APPLE"));
-        Assertions.assertFalse(helper.isReverseIndexedField("BANANA"));
-        Assertions.assertFalse(helper.isReverseIndexedField("KIWI"));
+        assertFalse(helper.isReverseIndexedField("APPLE"));
+        assertFalse(helper.isReverseIndexedField("BANANA"));
+        assertFalse(helper.isReverseIndexedField("KIWI"));
     }
 
     private Configuration getBaseConfig() {

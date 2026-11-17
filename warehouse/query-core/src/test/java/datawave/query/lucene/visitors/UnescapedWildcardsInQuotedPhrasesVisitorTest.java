@@ -1,5 +1,7 @@
 package datawave.query.lucene.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,7 +11,6 @@ import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
@@ -91,6 +92,6 @@ class UnescapedWildcardsInQuotedPhrasesVisitorTest {
                         .collect(Collectors.toList());
         // @formatter:on
 
-        Assertions.assertEquals(expectedPhrases, actual);
+        assertEquals(expectedPhrases, actual);
     }
 }

@@ -2,8 +2,8 @@ package datawave.query.tables;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,9 +39,9 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
@@ -53,9 +53,9 @@ import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.common.json.DefaultMapperDecorator;
-import datawave.webservice.common.remote.TestJSSESecurityDomain;
+import datawave.webservice.common.remote.TestSSLStores;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.edge.DefaultEdge;
 import datawave.webservice.query.result.edge.EdgeBase;
@@ -101,10 +101,10 @@ public class RemoteEdgeQueryLogicHttpTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
-        System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
+        System.setProperty(DnProperties.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
         KeyPairGenerator generater = KeyPairGenerator.getInstance("RSA");
         generater.initialize(keysize);
         KeyPair keypair = generater.generateKeyPair();
@@ -218,14 +218,14 @@ public class RemoteEdgeQueryLogicHttpTest {
         remote.setExecutorService(null);
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
         remote.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        remote.setJsseSecurityDomain(new TestJSSESecurityDomain(alias, privKey, keyPass, chain));
+        remote.setSslStores(new TestSSLStores(alias, privKey, keyPass, chain));
         remote.setNextQueryResponseClass(remote.getResponseObjectFactory().getEdgeQueryResponse().getClass());
 
         logic.setRemoteQueryService(remote);
         logic.setRemoteQueryLogic("TestQuery");
     }
 
-    @After
+    @AfterEach
     public void after() {
         if (server != null) {
             server.stop(0);

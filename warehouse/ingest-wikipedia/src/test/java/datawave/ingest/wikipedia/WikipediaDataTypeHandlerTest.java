@@ -1,16 +1,16 @@
 package datawave.ingest.wikipedia;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -21,13 +21,12 @@ import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  *
  */
-@RunWith(JUnit4.class)
-public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
+public class WikipediaDataTypeHandlerTest extends WikipediaTestBedJUnit5 {
 
     protected static WikipediaDataTypeHandler<Text,BulkIngestKey,Value> handler = null;
 
@@ -46,7 +45,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         }
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void before() throws Exception {
         handler = new WikipediaDataTypeHandler<>();
         System.setProperty("LOADDATES_TABLE_ENABLED", "true");
@@ -59,7 +58,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         reader.initialize(split, ctx);
         reader.setInputDate(System.currentTimeMillis());
 
-        Assert.assertTrue(reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue());
 
         RawRecordContainer e = reader.getEvent();
 
@@ -94,24 +93,24 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             tableToKey.put(biKey.getTableName().toString(), biKey);
         }
 
-        Assert.assertEquals(82, tableToKey.get(TableName.SHARD).size());
-        Assert.assertEquals(38, tableToKey.get(TableName.SHARD_INDEX).size());
-        Assert.assertEquals(25, tableToKey.get(TableName.SHARD_RINDEX).size());
+        assertEquals(82, tableToKey.get(TableName.SHARD).size());
+        assertEquals(38, tableToKey.get(TableName.SHARD_INDEX).size());
+        assertEquals(25, tableToKey.get(TableName.SHARD_RINDEX).size());
 
-        Assert.assertEquals(handler.getDayIndexEnabled(), tableToKey.containsKey(TableName.SHARD_DAY_INDEX));
+        assertEquals(handler.getDayIndexEnabled(), tableToKey.containsKey(TableName.SHARD_DAY_INDEX));
         if (tableToKey.containsKey(TableName.SHARD_DAY_INDEX)) {
-            Assert.assertEquals(40, tableToKey.get(TableName.SHARD_DAY_INDEX).size());
+            assertEquals(40, tableToKey.get(TableName.SHARD_DAY_INDEX).size());
         }
 
-        Assert.assertEquals(handler.getYearIndexEnabled(), tableToKey.containsKey(TableName.SHARD_YEAR_INDEX));
+        assertEquals(handler.getYearIndexEnabled(), tableToKey.containsKey(TableName.SHARD_YEAR_INDEX));
         if (tableToKey.containsKey(TableName.SHARD_YEAR_INDEX)) {
-            Assert.assertEquals(25, tableToKey.get(TableName.SHARD_YEAR_INDEX).size());
+            assertEquals(25, tableToKey.get(TableName.SHARD_YEAR_INDEX).size());
         }
 
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
         int numberOfLoadDateEntries = 14;
         int numberOfDatawaveMetadataEntries = 18;
-        Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
+        assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
 
         int expected = 137 + numberOfDatawaveMetadataEntries + numberOfLoadDateEntries;
         if (handler.getDayIndexEnabled()) {
@@ -121,13 +120,13 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             expected += 40;
         }
 
-        Assert.assertEquals(expected, results.size());
+        assertEquals(expected, results.size());
 
         contextWriter = new MyCachingContextWriter();
 
         // ///////////////
 
-        Assert.assertTrue(reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue());
 
         e = reader.getEvent();
 
@@ -155,22 +154,22 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
             tableToKey.put(biKey.getTableName().toString(), biKey);
         }
 
-        Assert.assertEquals(9785, tableToKey.get(TableName.SHARD).size());
-        Assert.assertEquals(4890, tableToKey.get(TableName.SHARD_INDEX).size());
-        Assert.assertEquals(4877, tableToKey.get(TableName.SHARD_RINDEX).size());
+        assertEquals(9785, tableToKey.get(TableName.SHARD).size());
+        assertEquals(4890, tableToKey.get(TableName.SHARD_INDEX).size());
+        assertEquals(4877, tableToKey.get(TableName.SHARD_RINDEX).size());
 
-        Assert.assertEquals(handler.getDayIndexEnabled(), tableToKey.containsKey(TableName.SHARD_DAY_INDEX));
+        assertEquals(handler.getDayIndexEnabled(), tableToKey.containsKey(TableName.SHARD_DAY_INDEX));
         if (tableToKey.containsKey(TableName.SHARD_DAY_INDEX)) {
-            Assert.assertEquals(5219, tableToKey.get(TableName.SHARD_DAY_INDEX).size());
+            assertEquals(5219, tableToKey.get(TableName.SHARD_DAY_INDEX).size());
         }
 
-        Assert.assertEquals(handler.getYearIndexEnabled(), tableToKey.containsKey(TableName.SHARD_YEAR_INDEX));
+        assertEquals(handler.getYearIndexEnabled(), tableToKey.containsKey(TableName.SHARD_YEAR_INDEX));
         if (tableToKey.containsKey(TableName.SHARD_YEAR_INDEX)) {
-            Assert.assertEquals(5204, tableToKey.get(TableName.SHARD_YEAR_INDEX).size());
+            assertEquals(5204, tableToKey.get(TableName.SHARD_YEAR_INDEX).size());
         }
 
         // These are only the *_TERM_COUNT things. The rest are handled via EventMapper's EventMetadata instance
-        Assert.assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
+        assertEquals(numberOfDatawaveMetadataEntries, tableToKey.get(TableName.METADATA).size());
 
         int resultSize = results.size();
         expected = 22798;
@@ -180,7 +179,7 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         if (handler.getYearIndexEnabled()) {
             expected += 5219;
         }
-        Assert.assertEquals(expected, resultSize);
+        assertEquals(expected, resultSize);
     }
 
 }

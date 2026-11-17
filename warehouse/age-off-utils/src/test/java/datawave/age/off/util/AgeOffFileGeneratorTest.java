@@ -1,8 +1,8 @@
 package datawave.age.off.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -14,19 +14,19 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.xerces.dom.DocumentImpl;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import datawave.ingest.util.cache.watch.AgeOffFileLoaderDependencyProvider;
 import datawave.ingest.util.cache.watch.AgeOffRuleLoader;
 import datawave.ingest.util.cache.watch.TestFilter;
 import datawave.iterators.filter.ColumnVisibilityLabeledFilter;
@@ -203,8 +203,8 @@ public class AgeOffFileGeneratorTest {
             "</ageoffConfiguration>\n";
     // @formatter:on
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    Path temporaryDirectory;
 
     @Test
     public void generateFileContentsWithMultipleRules() throws IOException {
@@ -249,7 +249,7 @@ public class AgeOffFileGeneratorTest {
 
     @Test
     public void fileLoadable() throws IOException, InvocationTargetException, NoSuchMethodException {
-        AgeOffRuleLoader.AgeOffFileLoaderDependencyProvider provider = new TestProvider();
+        AgeOffFileLoaderDependencyProvider provider = new TestProvider();
 
         List<FilterRule> rules = loadAgeOffFilterFile(provider, EXPECTED_FILE_CONTENTS);
         assertEquals(3, rules.size());
@@ -267,16 +267,16 @@ public class AgeOffFileGeneratorTest {
         for (FilterRule filterRule : rules) {
             boolean result = ((AppliedRule) filterRule).accept(key, new Value());
             if (filterRule.getClass() == TestFilter.class) {
-                assertFalse(filterRule.toString(), result);
+                assertFalse(result, filterRule.toString());
             } else {
-                assertTrue(filterRule.toString(), result);
+                assertTrue(result, filterRule.toString());
             }
         }
     }
 
-    private List<FilterRule> loadAgeOffFilterFile(AgeOffRuleLoader.AgeOffFileLoaderDependencyProvider provider, String fileContents)
+    private List<FilterRule> loadAgeOffFilterFile(AgeOffFileLoaderDependencyProvider provider, String fileContents)
                     throws IOException, InvocationTargetException, NoSuchMethodException {
-        return new AgeOffRuleLoader(provider).load(toInputStream(fileContents));
+        return new AgeOffRuleLoader(provider, new ConfigurableIteratorEnvironment()).load(toInputStream(fileContents));
     }
 
     private ByteArrayInputStream toInputStream(String fileContents) {
@@ -381,7 +381,7 @@ public class AgeOffFileGeneratorTest {
     }
 
     private File writeToFile(AgeOffFileConfiguration.Builder builder) throws IOException {
-        File temporaryFile = temporaryFolder.newFile();
+        File temporaryFile = Files.createTempFile(temporaryDirectory, "age-off-", ".xml").toFile();
         Writer writer = Files.newBufferedWriter(temporaryFile.toPath());
         AgeOffFileGenerator generator = new AgeOffFileGenerator(builder.build());
         generator.format(writer);
@@ -389,12 +389,7 @@ public class AgeOffFileGeneratorTest {
         return temporaryFile;
     }
 
-    private class TestProvider implements AgeOffRuleLoader.AgeOffFileLoaderDependencyProvider {
-        @Override
-        public IteratorEnvironment getIterEnv() {
-            return new ConfigurableIteratorEnvironment();
-        }
-
+    private class TestProvider implements AgeOffFileLoaderDependencyProvider {
         @Override
         public InputStream getParentStream(Node parent) {
             return this.getClass().getResourceAsStream("/filter/" + parent.getTextContent());

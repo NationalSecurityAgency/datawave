@@ -3,7 +3,6 @@ package datawave.webservice.query.result.event;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -16,6 +15,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
+import datawave.marking.Markings;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -65,11 +65,12 @@ public class DefaultFieldCardinality extends FieldCardinalityBase implements Ser
     }
 
     @Override
-    public void setMarkings(Map<String,String> markings) {
+    public void setMarkings(Markings<?> markings) {
         this.markings = markings;
     }
 
-    public Map<String,String> getMarkings() {
+    @Override
+    public Markings<?> getMarkings() {
         return this.markings;
     }
 

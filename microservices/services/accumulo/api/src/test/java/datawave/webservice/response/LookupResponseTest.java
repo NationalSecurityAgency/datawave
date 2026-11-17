@@ -6,9 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +17,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 
+import datawave.marking.AccessExpressionMarkings;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.response.objects.DefaultKey;
 import datawave.webservice.response.objects.Entry;
@@ -39,8 +38,7 @@ public class LookupResponseTest {
         lookupResponse = new LookupResponse();
         List<Entry> entryList = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            Map<String,String> markings = new HashMap<>();
-            markings.put("columnVisibility", "A&B&C" + i);
+            AccessExpressionMarkings markings = AccessExpressionMarkings.builder().columnVisibility("A&B&C" + i).build();
             KeyBase responseKey = new DefaultKey();
             responseKey.setRow("row" + i);
             responseKey.setColFam("cf" + i);

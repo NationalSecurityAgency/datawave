@@ -1,9 +1,10 @@
 package datawave.data.type;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.util.Assert;
 
@@ -44,10 +45,7 @@ public class ListTypeTest {
         String str = "3,2,1,banana";
 
         NumberListType nt = new NumberListType();
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            nt.normalizeToMany(str);
-        });
-
+        assertThrows(IllegalArgumentException.class, () -> nt.normalizeToMany(str));
     }
 
 }

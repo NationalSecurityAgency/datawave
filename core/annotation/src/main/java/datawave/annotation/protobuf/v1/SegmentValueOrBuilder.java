@@ -58,6 +58,17 @@ public interface SegmentValueOrBuilder extends
      *
      * <code>float score = 3;</code>
      *
+     * @return Whether the score field is set.
+     */
+    boolean hasScore();
+
+    /**
+     * <pre>
+     * e.g., confidence
+     * </pre>
+     *
+     * <code>float score = 3;</code>
+     *
      * @return The score.
      */
     float getScore();

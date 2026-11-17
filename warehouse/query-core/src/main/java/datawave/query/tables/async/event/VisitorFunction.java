@@ -65,6 +65,7 @@ import datawave.query.tables.async.ScannerChunk;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.TypeMetadataSerializer;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -91,6 +92,8 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     private Cache<String,String> queryCache;
 
     private TypeMetadata cachedTypeMetadata = null;
+    // not thread-safe; consistent with cachedTypeMetadata above, this assumes a VisitorFunction instance is confined to a single thread
+    private final transient TypeMetadataSerializer typeMetadataSerializer = new TypeMetadataSerializer();
 
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
 
@@ -573,10 +576,14 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      * @param newIteratorSetting
      *            the iterator settings
      */
-    private void reduceIngestTypes(ASTJexlScript script, IteratorSetting newIteratorSetting) {
+    protected void reduceIngestTypes(ASTJexlScript script, IteratorSetting newIteratorSetting) {
         if (cachedTypeMetadata == null) {
             String serializedTypeMetadata = newIteratorSetting.getOptions().get(QueryOptions.TYPE_METADATA);
-            cachedTypeMetadata = new TypeMetadata(serializedTypeMetadata);
+            if (Boolean.parseBoolean(newIteratorSetting.getOptions().get(QueryOptions.TYPE_METADATA_KRYO))) {
+                cachedTypeMetadata = typeMetadataSerializer.deserialize(serializedTypeMetadata);
+            } else {
+                cachedTypeMetadata = new TypeMetadata(serializedTypeMetadata);
+            }
         }
 
         // get requested types

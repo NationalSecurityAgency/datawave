@@ -1,64 +1,294 @@
 volumes:
-  quickstart_data:
-  hadoop_conf:
+  hdfs_name:
+  hdfs_data:
+  zookeeper_data:
+  datawave_accumulo_ext:
 
 services:
-  quickstart:
-    profiles:
-      - quickstart
-    # To run the wildfly webservice, change `--accumulo` to `--web`
-    command: ["datawave-bootstrap.sh", "--accumulo"]
-    image: nationalsecurityagency/datawave/quickstart-compose
-    environment:
-      - DW_CONTAINER_HOST=quickstart
-      - DW_DATAWAVE_WEB_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787 -Duser.timezone=GMT -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=true
-    ports:
-      # resource manager web ui
-      - "8088:8088"
-      # resource manager
-      - "8032:8032"
-      # node manager web ui
-      - "8042:8042"
-      # namenode server
-      - "9000:9000"
-      # namenode web ui
-      - "9870:9870"
-      # datanode web ui
-      - "9864:9864"
-      # jobhistory web ui
-      - "8021:8021"
-      # zookeeper
-      - "2181:2181"
-      # accumulo monitor
-      - "9995:9995"
-      # accumulo tserver
-      - "9997:9997"
-      # web server
-      - "9443:8443"
-      # web server debug port
-      - "5011:8787"
-    extra_hosts:
-      - "${DW_HOSTNAME}:${DW_HOST_IP}"
-      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+  datawave-extlib:
+    profiles: [datawave-stack]
+    image: nationalsecurityagency/datawave/ingest-compose:${VERSION:-latest}
+    user: root
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        target=/opt/accumulo/lib/ext
+        rm -f "$${target}/"*.jar
+        cp /opt/datawave-ingest/current/accumulo-warehouse/lib/*.jar "$${target}/"
+        cp /opt/datawave-ingest/current/accumulo-warehouse/lib/ext/*.jar "$${target}/"
+        cp /opt/datawave-ingest/current/lib/accumulo-access-core-*.jar "$${target}/"
+        cp /opt/datawave-ingest/current/lib/jaxb-api-*.jar "$${target}/"
+        chmod 0644 "$${target}/"*.jar
     volumes:
-      - hadoop_conf:/opt/datawave/contrib/datawave-quickstart/hadoop/client/conf
-      - quickstart_data:/opt/datawave/contrib/datawave-quickstart/data
-      - ./logs:/logs
-      - ~/.m2:/root/.m2
-    networks:
-      - demo
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext
+    networks: [demo]
+
+  hdfs-nn:
+    profiles: [datawave-stack]
+    image: &stack-image ghcr.io/nationalsecurityagency/datawave-stack-accumulo:${DATAWAVE_STACK_ACCUMULO_VERSION:-2.1.6}
+    user: hdfs
+    entrypoint: ["/bin/bash", "/stack/start-hadoop.sh"]
+    command: [namenode]
+    environment:
+      - HADOOP_CONF_DIR=/stack
+    ports:
+      - "9000:9000"
+      - "9870:9870"
+    volumes:
+      - ./stack:/stack:ro
+      - hdfs_name:/var/lib/hadoop-hdfs
+    networks: [demo]
     healthcheck:
-      test: ["CMD-SHELL", "ss -ln | grep 2181 && ss -ln | grep 9997"]
-      interval: 10s
-      timeout: 2s
-      start_period: 120s
+      test: ["CMD-SHELL", "hdfs dfsadmin -safemode get | grep -q OFF"]
+      interval: 2s
+      timeout: 5s
+      start_period: 15s
       retries: 30
+
+  hdfs-dn:
+    profiles: [datawave-stack]
+    image: *stack-image
+    user: hdfs
+    entrypoint: ["/bin/bash", "/stack/start-hadoop.sh"]
+    command: [datanode]
+    environment:
+      - HADOOP_CONF_DIR=/stack
+    ports:
+      - "9864:9864"
+    volumes:
+      - ./stack:/stack:ro
+      - hdfs_data:/var/lib/hadoop-hdfs
+    networks: [demo]
+    depends_on:
+      hdfs-nn:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "hdfs dfsadmin -report | grep -q 'Live datanodes (1)' "]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  yarn-rm:
+    profiles: [datawave-stack]
+    image: *stack-image
+    user: hdfs
+    entrypoint: ["/bin/bash", "/stack/start-hadoop.sh"]
+    command: [resourcemanager]
+    environment:
+      - HADOOP_CONF_DIR=/stack
+      - YARN_CONF_DIR=/stack
+    ports:
+      - "8032:8032"
+      - "8088:8088"
+    volumes:
+      - ./stack:/stack:ro
+    networks: [demo]
+    depends_on:
+      hdfs-dn:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8032'"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  yarn-nm:
+    profiles: [datawave-stack]
+    image: *stack-image
+    user: hdfs
+    entrypoint: ["/bin/bash", "/stack/start-hadoop.sh"]
+    command: [nodemanager]
+    environment:
+      - HADOOP_CONF_DIR=/stack
+      - YARN_CONF_DIR=/stack
+    ports:
+      - "8042:8042"
+    volumes:
+      - ./stack:/stack:ro
+    networks: [demo]
+    depends_on:
+      yarn-rm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8042'"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  zookeeper:
+    profiles: [datawave-stack]
+    image: *stack-image
+    user: zookeeper
+    entrypoint: ["/usr/lib/zookeeper/bin/zkServer.sh"]
+    command: ["--config", "/etc/zookeeper/conf.dist", "start-foreground"]
+    environment:
+      - ZOOBINDIR=/usr/lib/zookeeper/bin
+      - ZOO_LOG_DIR=/var/log/zookeeper
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper
+    networks: [demo]
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | timeout 2 bash -c 'cat > /dev/tcp/localhost/2181' "]
+      interval: 2s
+      timeout: 3s
+      start_period: 10s
+      retries: 30
+
+  accumulo-manager:
+    profiles: [datawave-stack]
+    image: *stack-image
+    command: [manager]
+    environment:
+      - ACCUMULO_INSTANCE_NAME=my-instance-01
+      - ACCUMULO_ROOT_PASSWORD=secret
+      - HADOOP_CONF_DIR=/stack
+    volumes:
+      - ./stack:/stack:ro
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
+      - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
+    networks: [demo]
+    depends_on:
+      datawave-extlib:
+        condition: service_completed_successfully
+      hdfs-dn:
+        condition: service_healthy
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9999'"]
+      interval: 3s
+      timeout: 5s
+      start_period: 20s
+      retries: 40
+
+  accumulo-tserver:
+    profiles: [datawave-stack]
+    image: *stack-image
+    command: [tserver]
+    environment:
+      - HADOOP_CONF_DIR=/stack
+    volumes:
+      - ./stack:/stack:ro
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
+      - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
+    networks: [demo]
+    depends_on:
+      accumulo-manager:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9997'"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  accumulo-gc:
+    profiles: [datawave-stack]
+    image: *stack-image
+    command: [gc]
+    environment:
+      - HADOOP_CONF_DIR=/stack
+    volumes:
+      - ./stack:/stack:ro
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
+      - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
+    networks: [demo]
+    depends_on:
+      accumulo-manager:
+        condition: service_healthy
+
+  accumulo-monitor:
+    profiles: [datawave-stack]
+    image: *stack-image
+    command: [monitor]
+    environment:
+      - HADOOP_CONF_DIR=/stack
+    ports:
+      - "9995:9995"
+    volumes:
+      - ./stack:/stack:ro
+      - datawave_accumulo_ext:/opt/accumulo/lib/ext:ro
+      - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
+    networks: [demo]
+    depends_on:
+      accumulo-manager:
+        condition: service_healthy
+
+  ingest:
+    profiles: [datawave-stack]
+    image: nationalsecurityagency/datawave/ingest-compose:${VERSION:-latest}
+    user: datawave
+    entrypoint: ["/bin/bash", "/stack/initialize-datawave.sh"]
+    environment:
+      - HADOOP_CONF_DIR=/stack
+    volumes:
+      - ./stack:/stack:ro
+      - ./stack/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./stack/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./stack/accumulo-env.sh:/opt/accumulo/conf/accumulo-env.sh:ro
+      - ./stack/ingest-passwd.sh:/opt/datawave-ingest/ingest-passwd.sh:ro
+      - ../warehouse/ingest-wikipedia/src/test/resources/input:/opt/datawave-test-data/wikipedia:ro
+      - ../warehouse/ingest-annotation/src/test/resources/input:/opt/datawave-test-data/annotation:ro
+      - ../warehouse/ingest-json/src/test/resources/input:/opt/datawave-test-data/json:ro
+      - ../warehouse/ingest-csv/src/test/resources/input:/opt/datawave-test-data/csv:ro
+    networks: [demo]
+    depends_on:
+      accumulo-tserver:
+        condition: service_healthy
+      yarn-nm:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/datawave-ready"]
+      interval: 5s
+      timeout: 2s
+      start_period: 30s
+      retries: 120
+
+  webservice:
+    profiles: [datawave-stack]
+    image: nationalsecurityagency/datawave/webservice-compose:${VERSION:-latest}
+    environment:
+      - ACCUMULO_PASSWORD=secret
+      - KEYSTORE=/opt/jboss/wildfly/standalone/configuration/certificates/testServer.p12
+      - KEYSTORE_TYPE=PKCS12
+      - KEYSTORE_PASSWORD=ChangeIt
+      - TRUSTSTORE=/opt/jboss/wildfly/standalone/configuration/certificates/ca.jks
+      - TRUSTSTORE_TYPE=JKS
+      - TRUSTSTORE_PASSWORD=ChangeIt
+    ports:
+      - "9443:8443" # web server
+      - "9990:9990" # wildfly admin
+    volumes:
+      - ./stack:/stack:ro
+      - ./logs:/logs
+    networks: [demo]
+    depends_on:
+      ingest:
+        condition: service_healthy
+      authorization:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8443'"]
+      interval: 5s
+      timeout: 3s
+      start_period: 60s
+      retries: 60
 
   consul:
     image: docker.io/hashicorp/consul:1.15.4
     hostname: localhost
     environment:
-      - 'CONSUL_LOCAL_CONFIG={"log_level": "trace", "datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "addresses": {"https": "0.0.0.0"}, "ports": {"https": 8501, "grpc_tls": 8503}, "tls": {"defaults": {"key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true}, "internal_rpc": {"verify_server_hostname": false}}}'
+      - 'CONSUL_LOCAL_CONFIG={"log_level": "ERROR", "datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "addresses": {"https": "0.0.0.0"}, "ports": {"https": 8501, "grpc_tls": 8503}, "tls": {"defaults": {"key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true}, "internal_rpc": {"verify_server_hostname": false}}}'
       - CONSUL_BIND_INTERFACE=eth0
     # defined as host:container
     ports:
@@ -81,7 +311,32 @@ services:
       - TCP_PORTS=15672, 5672
       - RABBITMQ_ERLANG_COOKIE="mycookie"
     ports:
+      - "5672:5672"
       - "15672:15672"
+    networks:
+      - demo
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      start_period: 30s
+      retries: 20
+    depends_on:
+      consul:
+        condition: service_started
+
+  qr-rabbitmq:
+    image: docker.io/rabbitmq:3.12.4
+    volumes:
+      - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
+      - ./logs:/logs
+    environment:
+      - TCP_PORTS=25672, 15672, 5672
+      - RABBITMQ_ERLANG_COOKIE="mycookie"
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+      - "25673:25672"
     networks:
       - demo
     depends_on:
@@ -131,7 +386,7 @@ services:
 
   configuration:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009","-jar","app.jar" ]
-    image: nationalsecurityagency/datawave/config-service
+    image: nationalsecurityagency/datawave/config-service:${VERSION:-latest}
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
@@ -161,7 +416,7 @@ services:
         condition: service_started
 
   cache:
-    image: nationalsecurityagency/datawave/hazelcast-service
+    image: nationalsecurityagency/datawave/hazelcast-service:${VERSION:-latest}
     scale: 1
     command:
       - --spring.profiles.active=consul,compose,remoteauth
@@ -187,12 +442,76 @@ services:
       configuration:
         condition: service_healthy
 
+  annotation-cache:
+    profiles:
+      - annotation-cache
+    image: nationalsecurityagency/datawave/annotation-cache-service:${VERSION:-latest}
+    scale: 2
+    command:
+      - --spring.profiles.active=consul,compose
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    ports:
+      - "5701"
+      - "8080"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/annotation-cache/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      configuration:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  annotation:
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5959","-jar","app.jar" ]
+    profiles:
+      - annotation
+    image: nationalsecurityagency/datawave/annotation-service:1.0.0-SNAPSHOT
+    scale: 1
+    command:
+      - --spring.profiles.active=combined,consul,compose,remoteauth,log-disabled
+      - --spring.output.ansi.enabled=NEVER
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+      - "BACKEND=${BACKEND:-rabbitmq}"
+    ports:
+      - "5959:5959"
+      - "8748:8748"
+      - "8080"
+      - "9543:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/annotation/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      configuration:
+        condition: service_healthy
+
   query-cache:
     profiles:
       - querycache
       # To enable an additional Hazelcast cluster, enable the "querycache" profile
       # Set an environment variable: QUERY_CACHE=query-cache. This will force the query and executor service to use a separate "query-cache" Hazelcast cluster.
-    image: nationalsecurityagency/datawave/hazelcast-service
+    image: nationalsecurityagency/datawave/hazelcast-service:${VERSION:-latest}
     scale: 1
     command:
       - --spring.application.name=query-cache
@@ -266,7 +585,7 @@ services:
 
   authorization:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
-    image: nationalsecurityagency/datawave/authorization-service
+    image: nationalsecurityagency/datawave/authorization-service:${VERSION:-latest}
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose,federation
@@ -295,7 +614,7 @@ services:
     profiles:
       - accumulo
       - full
-    image: nationalsecurityagency/datawave/accumulo-service
+    image: nationalsecurityagency/datawave/accumulo-service:${VERSION:-latest}
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -328,7 +647,7 @@ services:
         condition: service_healthy
 
   audit:
-    image: nationalsecurityagency/datawave/audit-service
+    image: nationalsecurityagency/datawave/audit-service:${VERSION:-latest}
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -394,7 +713,7 @@ services:
     depends_on:
       authorization:
         condition: service_healthy
-      quickstart:
+      ingest:
         condition: service_healthy
 
   dictionary:
@@ -480,7 +799,8 @@ services:
     environment:
       - AUDIT_SERVER_URL=http://audit:8080/audit
       - HADOOP_HOST=${DW_HADOOP_HOST}
-      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - YARN_HOST=${DW_YARN_HOST}
+      - HADOOP_CONF_DIR=/etc/hadoop/conf
       - "BACKEND=${BACKEND:-rabbitmq}"
       - CACHED_RESULTS=${CACHED_RESULTS:-false}
       - QUERY_CACHE=${QUERY_CACHE:-cache}
@@ -492,7 +812,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
-      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+      - ${HADOOP_CONF_SOURCE:-./stack}:/etc/hadoop/conf:ro
     networks:
       - demo
     healthcheck:
@@ -524,13 +844,14 @@ services:
     environment:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
-      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - YARN_HOST=${DW_YARN_HOST}
+      - HADOOP_CONF_DIR=/etc/hadoop/conf
     ports:
       - "50005:5005"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
-      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+      - ${HADOOP_CONF_SOURCE:-./stack}:/etc/hadoop/conf:ro
     networks:
       - demo
     healthcheck:
@@ -563,7 +884,7 @@ services:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - BACKEND=${BACKEND:-rabbitmq}
-      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - HADOOP_CONF_DIR=/etc/hadoop/conf
       - QUERY_CACHE=${QUERY_CACHE:-cache}
       - USE_DEDICATED_INSTANCE=${USE_DEDICATED_INSTANCE:-false}
     # This mapping is required to enable the metrics service to communicate
@@ -579,7 +900,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool1:/logs
-      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+      - ${HADOOP_CONF_SOURCE:-./stack}:/etc/hadoop/conf:ro
     networks:
       - demo
     healthcheck:
@@ -612,7 +933,7 @@ services:
       - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
       - HADOOP_HOST=${DW_HADOOP_HOST}
       - BACKEND=${BACKEND:-rabbitmq}
-      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
+      - HADOOP_CONF_DIR=/etc/hadoop/conf
       - QUERY_CACHE=${QUERY_CACHE:-cache}
       - USE_DEDICATED_INSTANCE=${USE_DEDICATED_INSTANCE:-false}
     # This mapping is required to enable the metrics service to communicate
@@ -627,7 +948,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool2:/logs
-      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
+      - ${HADOOP_CONF_SOURCE:-./stack}:/etc/hadoop/conf:ro
     networks:
       - demo
     healthcheck:

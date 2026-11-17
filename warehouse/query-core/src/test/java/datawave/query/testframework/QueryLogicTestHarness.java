@@ -1,5 +1,11 @@
 package datawave.query.testframework;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -15,7 +21,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import datawave.core.query.configuration.CheckpointableQueryConfiguration;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -118,14 +123,14 @@ public class QueryLogicTestHarness {
                 try {
                     logic = (BaseQueryLogic<Map.Entry<Key,Value>>) factory.getQueryLogic(logic.getLogicName());
                 } catch (CloneNotSupportedException | QueryException e) {
-                    Assert.fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
+                    fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
                 }
                 // now reset the logic given the checkpoint
                 try {
                     ((CheckpointableQueryLogic) logic).setupQuery(client, config, cp);
                 } catch (Exception e) {
                     log.error("Failed to setup query given last checkpoint", e);
-                    Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());
+                    fail("Failed to setup query given last checkpoint: " + e.getMessage());
                 }
                 Iterator<Map.Entry<Key,Value>> iter = logic.iterator();
                 if (iter.hasNext()) {
@@ -157,9 +162,9 @@ public class QueryLogicTestHarness {
             }
         }
 
-        Assert.assertEquals("results do not match expected", expected.size(), actualResults.size());
-        Assert.assertTrue("expected and actual values do not match", expected.containsAll(actualResults));
-        Assert.assertTrue("expected and actual values do not match", actualResults.containsAll(expected));
+        assertEquals("results do not match expected", expected.size(), actualResults.size());
+        assertTrue("expected and actual values do not match", expected.containsAll(actualResults));
+        assertTrue("expected and actual values do not match", actualResults.containsAll(expected));
     }
 
     /**
@@ -198,7 +203,7 @@ public class QueryLogicTestHarness {
                         }
                     }
                 }
-                Assert.assertEquals(AttributeFactory.getKeepers(types), types);
+                assertEquals(AttributeFactory.getKeepers(types), types);
             } else {
                 count++;
             }
@@ -214,8 +219,8 @@ public class QueryLogicTestHarness {
         log.debug("result(" + extractedResult + ") key(" + entry.getKey() + ") document(" + document + ")");
 
         // verify expected results
-        Assert.assertNotNull("extracted result", extractedResult);
-        Assert.assertFalse("duplicate result(" + extractedResult + ") key(" + entry.getKey() + ")", actualResults.contains(extractedResult));
+        assertNotNull("extracted result", extractedResult);
+        assertFalse("duplicate result(" + extractedResult + ") key(" + entry.getKey() + ")", actualResults.contains(extractedResult));
 
         // perform any custom assert checks on document
         for (final DocumentChecker check : checkers) {

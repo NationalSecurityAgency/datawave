@@ -1,6 +1,6 @@
 package datawave.test.index;
 
-import static datawave.util.TableName.SHARD_INDEX;
+import static datawave.table.constants.TableName.SHARD_INDEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 

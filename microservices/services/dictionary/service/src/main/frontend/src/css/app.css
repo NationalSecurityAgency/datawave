@@ -56,6 +56,56 @@
   text-align: center;
 }
 
+/* This allows text overflow and wrapping (for long descriptions) */
+.q-table th,
+.q-table td {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+}
+
+/* Styles for the resizable column handle and the hovering effect */
+.resize-handle {
+  cursor: col-resize;
+  width: 6px;
+  height: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
+  background-color: rgba(0, 188, 212, 0.3);
+  z-index: 10;
+}
+
+.resize-handle:hover {
+  background-color: rgba(0, 188, 212, 0.5);
+}
+
+/* Styles for the description column to allow wrapping and proper display of long text */
+.description-nowrap-cell {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.description-nowrap-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.description-wrap-cell {
+  white-space: normal;
+  vertical-align: top;
+}
+
+.description-wrap-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: block;
+  line-height: 1.3;
+}
+
 ::-webkit-scrollbar {
     height: 12px;
     width: 14px;
@@ -84,6 +134,7 @@
 /* Sets a fixed height for the table container */
 .datawave-dictionary-sticky-sass {
   height: 310px;
+  overflow-y: auto;
 }
 
 /* Applies a blur effect to the first row's headers for a frosted look */

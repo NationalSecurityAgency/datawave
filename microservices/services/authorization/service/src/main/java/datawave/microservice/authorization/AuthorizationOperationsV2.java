@@ -1,10 +1,8 @@
 package datawave.microservice.authorization;
 
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
@@ -12,11 +10,11 @@ import org.springframework.stereotype.Service;
 import datawave.microservice.authorization.config.AuthorizationsListSupplier;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.authorization.user.DatawaveUserDetailsFactory;
-import datawave.microservice.security.util.DnUtils;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.UserOperations;
+import datawave.security.util.DnProperties;
 
 /**
  * Presents the REST operations for the authorization service. This version returns the updated (V2) DatawaveUser
@@ -25,9 +23,9 @@ import datawave.security.authorization.UserOperations;
 public class AuthorizationOperationsV2 extends AuthorizationOperationsV1 {
 
     public AuthorizationOperationsV2(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, ApplicationContext appCtx,
-                    BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, DnUtils dnUtils,
+                    BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, DnProperties dnProperties,
                     Set<UserOperations> registeredFederatedUserOperations, DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
-        super(tokenHandler, cachedDatawaveUserService, appCtx, busProperties, authorizationsListSupplier, dnUtils, registeredFederatedUserOperations,
+        super(tokenHandler, cachedDatawaveUserService, appCtx, busProperties, authorizationsListSupplier, dnProperties, registeredFederatedUserOperations,
                         datawaveUserDetailsFactory);
     }
 

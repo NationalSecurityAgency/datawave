@@ -3,6 +3,7 @@ package datawave.query.lucene.visitors;
 import static datawave.query.lucene.visitors.InvalidIncludeExcludeArgsVisitor.REASON.NO_ARGS_AFTER_BOOLEAN;
 import static datawave.query.lucene.visitors.InvalidIncludeExcludeArgsVisitor.REASON.UNEVEN_ARGS;
 import static datawave.query.lucene.visitors.InvalidIncludeExcludeArgsVisitor.REASON.UNEVEN_ARGS_AFTER_BOOLEAN;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +12,6 @@ import org.apache.lucene.queryparser.flexible.core.QueryNodeParseException;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.parser.SyntaxParser;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -240,6 +240,6 @@ public class InvalidIncludeExcludeArgsVisitorTest {
     private void assertResult() throws QueryNodeParseException {
         QueryNode queryNode = parser.parse(query, "");
         List<InvalidIncludeExcludeArgsVisitor.InvalidFunction> actual = InvalidIncludeExcludeArgsVisitor.check(queryNode);
-        Assertions.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 }

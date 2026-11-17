@@ -75,8 +75,8 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
 
     public boolean hasTop() {
         boolean hasTop = (returnValue != null);
-        if (log.isDebugEnabled()) {
-            log.debug("hasTop: " + hasTop);
+        if (log.isTraceEnabled()) {
+            log.trace("hasTop: " + hasTop);
         }
         return hasTop;
     }
@@ -90,8 +90,8 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
     }
 
     public void next() throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("next called");
+        if (log.isTraceEnabled()) {
+            log.trace("next called");
         }
 
         returnKey = null;
@@ -108,8 +108,8 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
     }
 
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("seek called: " + range);
+        if (log.isTraceEnabled()) {
+            log.trace("seek called: " + range);
         }
 
         this.iterator.seek(range, columnFamilies, inclusive);
@@ -123,8 +123,8 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
      *             for issues with read/write
      */
     protected void findTop() throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("findTop called");
+        if (log.isTraceEnabled()) {
+            log.trace("findTop called");
         }
 
         // if we already have something cached, then simply return
@@ -201,6 +201,7 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
         private String date = null;
         private Map<String,MutableLong> summary = new HashMap<>();
         private Map<String,Set<ColumnVisibility>> columnVisibilitiesMap = Maps.newHashMap();
+        protected MarkingFunctions<?> markingFunctions;
 
         public TermInfoSummary(String fieldValue, String fieldName, String date) {
             this.fieldValue = fieldValue;
@@ -255,8 +256,11 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
                     // Calculate the ColumnVisibility for this key from the combiner.
                     Set<ColumnVisibility> columnVisibilities = this.columnVisibilitiesMap.get(datatype);
 
+                    if (null == markingFunctions) {
+                        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+                    }
                     // Note that the access controls found in the combined ColumnVisibility will be pulled out appropriately here
-                    ColumnVisibility cv = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
+                    ColumnVisibility cv = markingFunctions.combineVisibilities(columnVisibilities);
 
                     // Create a new Key compatible with the shardIndex key format
                     Key k = new Key(this.fieldValue, this.fieldName, this.date + '\0' + datatype, new String(cv.getExpression()));

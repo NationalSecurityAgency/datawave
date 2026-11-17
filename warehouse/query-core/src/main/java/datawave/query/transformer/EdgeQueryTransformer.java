@@ -2,7 +2,6 @@ package datawave.query.transformer;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.Key;
@@ -18,6 +17,7 @@ import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue;
 import datawave.edge.util.EdgeValueHelper;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.result.edge.EdgeBase;
@@ -26,7 +26,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,Value>,EdgeBase> implements CacheableLogic {
     private Logger log = Logger.getLogger(EdgeQueryTransformer.class);
 
-    public EdgeQueryTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
+    public EdgeQueryTransformer(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
         super(settings, markingFunctions, responseObjectFactory, fields);
     }
 
@@ -36,11 +36,11 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
         EdgeKey edgeKey = EdgeKey.decode(entry.getKey());
         Value value = entry.getValue();
 
-        EdgeBase edge = (EdgeBase) this.responseObjectFactory.getEdge();
+        EdgeBase edge = this.responseObjectFactory.getEdge();
 
         boolean statsEdge = edgeKey.isStatsKey();
         try {
-            Map<String,String> markings = markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(edgeKey.getColvis()), auths);
+            Markings<?> markings = markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(edgeKey.getColvis()), auths);
             edge.setMarkings(markings);
             edge.setEdgeType(edgeKey.getType());
             edge.setEdgeRelationship(edgeKey.getRelationship());

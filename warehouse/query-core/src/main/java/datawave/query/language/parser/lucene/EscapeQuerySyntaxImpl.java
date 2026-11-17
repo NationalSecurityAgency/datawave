@@ -1,6 +1,4 @@
-package datawave.query.language.parser.lucene;
-
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,6 +14,8 @@ package datawave.query.language.parser.lucene;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package datawave.query.language.parser.lucene;
+
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;

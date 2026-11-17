@@ -175,6 +175,63 @@ public class DocIdIteratorVisitorTest extends FieldIndexDataTestUtil {
         assertResultSize(10);
     }
 
+    /**
+     * Any range that fails to expand should gain a value exceeded marker.
+     * <p>
+     * However, non-indexed fields will not be marked. Additionally, range expansion could be disabled in the query planner and the user could submit a Jexl
+     * query with a correctly formed bounded range.
+     */
+    @Test
+    public void testNonIndexedBoundedRangeAndAnchorTerm() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && ((_Bounded_ = true) && (NON_INDEXED >= 'a' && NON_INDEXED <= 'z'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    @Test
+    public void testNonIndexedValueExceededBoundedRangeAndAnchorTerm() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && ((_Value_ = true) && ((_Bounded_ = true) && (NON_INDEXED >= 'a' && NON_INDEXED <= 'z')))");
+        drive();
+        assertResultSize(10);
+    }
+
+    @Test
+    public void testNonIndexedRegexAndAnchorTerm() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && NON_INDEXED =~ 'a.*'");
+        drive();
+        assertResultSize(10);
+    }
+
+    /**
+     * Technically this should never happen, but a user could submit a query like this
+     */
+    @Test
+    public void testNonIndexedExceededValueRegexAndAnchorTerm() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && ((_Value_ = true) && (NON_INDEXED =~ 'a.*'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    @Test
+    public void testNonIndexedEvaluationOnlyRegexAndAnchorTerm() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && ((_Eval_ = true) && (NON_INDEXED =~ 'a.*'))");
+        drive();
+        assertResultSize(10);
+    }
+
+    @Test
+    public void testNonIndexedListMarkerAndAnchorTerm() {
+        writeData("FIELD_A", "value-a", 10);
+        withQuery("FIELD_A == 'value-a' && ((_List_ = true) && (((id = 'uuid') && (field = 'NON_INDEXED') && (params = '{\"values\":[\"value-a\"]}'))))");
+        drive();
+        assertResultSize(10);
+    }
+
     public void withQuery(String query) {
         this.query = query;
     }

@@ -1,10 +1,10 @@
 package datawave.core.iterators;
 
 import static datawave.core.iterators.IvaratorRunnable.Status;
-import static datawave.core.iterators.IvaratorRunnable.TotalResults;
 import static datawave.core.iterators.IvaratorRunnable.Status.COMPLETED;
 import static datawave.core.iterators.IvaratorRunnable.Status.CREATED;
 import static datawave.core.iterators.IvaratorRunnable.Status.SUSPENDED;
+import static datawave.core.iterators.IvaratorRunnable.TotalResults;
 
 import java.io.IOException;
 import java.net.InetAddress;

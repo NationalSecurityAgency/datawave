@@ -2,18 +2,14 @@ package datawave.microservice.authorization;
 
 import static org.springframework.web.accept.ContentNegotiationStrategy.MEDIA_TYPE_ALL_LIST;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.event.AuthorizationEvictionEvent;
 import org.springframework.cloud.bus.event.AuthorizationEvictionEvent.Type;
@@ -28,7 +24,6 @@ import datawave.microservice.authorization.config.AuthorizationsListSupplier;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.authorization.user.DatawaveUserDetailsFactory;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
-import datawave.microservice.security.util.DnUtils;
 import datawave.security.DnList;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
@@ -37,6 +32,8 @@ import datawave.security.authorization.DatawaveUserV1;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
+import datawave.security.util.DnProperties;
+import datawave.security.util.DnUtils;
 import datawave.user.AuthorizationsListBase;
 import datawave.webservice.result.GenericResponse;
 
@@ -55,21 +52,21 @@ public class AuthorizationOperationsV1 {
 
     protected final AuthorizationsListSupplier authorizationsListSupplier;
 
-    protected final DnUtils dnUtils;
+    protected final DnProperties dnProperties;
 
     protected final Set<UserOperations> registeredFederatedUserOperations;
 
     protected final DatawaveUserDetailsFactory datawaveUserDetailsFactory;
 
     public AuthorizationOperationsV1(JWTTokenHandler tokenHandler, CachedDatawaveUserService cachedDatawaveUserService, ApplicationContext appCtx,
-                    BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, DnUtils dnUtils,
+                    BusProperties busProperties, AuthorizationsListSupplier authorizationsListSupplier, DnProperties dnProperties,
                     Set<UserOperations> registeredFederatedUserOperations, DatawaveUserDetailsFactory datawaveUserDetailsFactory) {
         this.tokenHandler = tokenHandler;
         this.cachedDatawaveUserService = cachedDatawaveUserService;
         this.appCtx = appCtx;
         this.busProperties = busProperties;
         this.authorizationsListSupplier = authorizationsListSupplier;
-        this.dnUtils = dnUtils;
+        this.dnProperties = dnProperties;
         this.registeredFederatedUserOperations = registeredFederatedUserOperations;
         this.datawaveUserDetailsFactory = datawaveUserDetailsFactory;
     }
@@ -93,7 +90,7 @@ public class AuthorizationOperationsV1 {
         final AuthorizationsListBase<?> list = authorizationsListSupplier.get();
 
         // Find out who/what called this method
-        String name = dnUtils.getShortName(currentUser.getPrimaryUser().getName());
+        String name = DnUtils.getShortName(currentUser.getPrimaryUser().getName());
 
         if (federate) {
             for (UserOperations federatedUserOperations : registeredFederatedUserOperations) {

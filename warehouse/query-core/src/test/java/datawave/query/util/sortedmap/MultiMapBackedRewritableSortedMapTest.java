@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public abstract class MultiMapBackedRewritableSortedMapTest<K,V> extends MultiMapBackedSortedMapTest<K,V> {
 

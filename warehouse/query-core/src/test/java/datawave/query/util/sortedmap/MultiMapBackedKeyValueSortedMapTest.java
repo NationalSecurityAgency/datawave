@@ -1,6 +1,6 @@
 package datawave.query.util.sortedmap;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -36,7 +36,7 @@ public class MultiMapBackedKeyValueSortedMapTest extends MultiMapBackedRewritabl
 
     @Override
     public Value createValue(byte[] values) {
-        return new Value(values);
+        return new Value(values, true);
     }
 
     @Override

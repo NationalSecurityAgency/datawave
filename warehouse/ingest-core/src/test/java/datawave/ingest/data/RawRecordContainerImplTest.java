@@ -1,9 +1,9 @@
 package datawave.ingest.data;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,8 +15,8 @@ import java.util.Date;
 import java.util.UUID;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.hash.UID;
 import datawave.ingest.config.IngestConfigurationFactory;
@@ -45,7 +45,7 @@ public class RawRecordContainerImplTest {
 
     private String csv = "20150101121500,field2,field3";
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));
@@ -398,7 +398,7 @@ public class RawRecordContainerImplTest {
             if (getVisibility() == null && getSecurityMarkings() == null) {
                 if (markingsHelper != null) {
                     setSecurityMarkings(markingsHelper.getDefaultMarkings());
-                } else {}
+                }
             }
 
             if (getSecurityMarkings() == null) {

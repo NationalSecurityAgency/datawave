@@ -4,7 +4,7 @@ import static datawave.query.jexl.JexlASTHelper.parseJexlQuery;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.test.JexlNodeAssert;
 

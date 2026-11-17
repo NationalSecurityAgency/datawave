@@ -1,11 +1,15 @@
 package datawave.mr.bulk;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -23,11 +27,10 @@ import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.powermock.reflect.Whitebox;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.mr.bulk.split.FileRangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
@@ -35,12 +38,12 @@ import datawave.security.iterator.ConfigurableVisibilityFilter;
 
 public class RecordIteratorTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static Path folder;
 
-    @Before
-    public void setup() throws Exception {
-        File tempDir = temporaryFolder.newFolder();
+    @BeforeEach
+    public void beforeEach() throws Exception {
+        File tempDir = folder.toFile();
         System.setProperty("hadoop.home.dir", tempDir.getCanonicalPath());
     }
 
@@ -85,43 +88,56 @@ public class RecordIteratorTest {
         VisibilityFilter vf;
         ConfigurableVisibilityFilter cvf;
         TreeSet<String> actualAuths;
-        SortedKeyValueIterator internalIter = Whitebox.getInternalState(recordIterator, SortedKeyValueIterator.class);
+        SortedKeyValueIterator internalIter = (SortedKeyValueIterator) ReflectionTestUtils.getField(recordIterator, "globalIter");
 
         // Top of the stack is a ConfigurableVisibilityFilter (which creates a VisibilityFilter as its source) with auths C1,C2,C3
-        assertEquals(ConfigurableVisibilityFilter.class, internalIter.getClass());
+        assertInstanceOf(ConfigurableVisibilityFilter.class, internalIter);
         cvf = (ConfigurableVisibilityFilter) internalIter;
-        source = Whitebox.getInternalState(cvf, "source");
-        assertEquals(VisibilityFilter.class, source.getClass());
+
+        source = ReflectionTestUtils.getField(cvf, "source");
+
+        assertInstanceOf(VisibilityFilter.class, source);
         vf = (VisibilityFilter) source;
-        actualAuths = new TreeSet<>(Arrays.asList(Whitebox.getInternalState(vf, Authorizations.class).toString().split(",")));
+
+        actualAuths = getAuthorizationsFromIterator(vf);
         assertEquals(new TreeSet<>(Arrays.asList("C1", "C2", "C3")), actualAuths);
-        source = Whitebox.getInternalState(vf, "source");
+        source = ReflectionTestUtils.getField(vf, "source");
 
         // Next on the stack is a ConfigurableVisibilityFilter (which creates a VisibilityFilter as its source) with auths B1,B2,B3
-        assertEquals(ConfigurableVisibilityFilter.class, source.getClass());
+        assertInstanceOf(ConfigurableVisibilityFilter.class, source);
         cvf = (ConfigurableVisibilityFilter) source;
-        source = Whitebox.getInternalState(cvf, "source");
-        assertEquals(VisibilityFilter.class, source.getClass());
+
+        source = ReflectionTestUtils.getField(cvf, "source");
+        assertInstanceOf(VisibilityFilter.class, source);
         vf = (VisibilityFilter) source;
-        actualAuths = new TreeSet<>(Arrays.asList(Whitebox.getInternalState(vf, Authorizations.class).toString().split(",")));
+
+        actualAuths = getAuthorizationsFromIterator(vf);
         assertEquals(new TreeSet<>(Arrays.asList("B1", "B2", "B3")), actualAuths);
-        source = Whitebox.getInternalState(vf, "source");
+
+        source = ReflectionTestUtils.getField(vf, "source");
 
         // The next table iterator should be the standard VisibilityFilter which will have auths A1,A2,A3
-        assertEquals(VisibilityFilter.class, source.getClass());
+        assertInstanceOf(VisibilityFilter.class, source);
         vf = (VisibilityFilter) source;
-        actualAuths = new TreeSet<>(Arrays.asList(Whitebox.getInternalState(vf, Authorizations.class).toString().split(",")));
+
+        actualAuths = getAuthorizationsFromIterator(vf);
         assertEquals(new TreeSet<>(Arrays.asList("A1", "A2", "A3")), actualAuths);
-        source = Whitebox.getInternalState(vf, "source");
+
+        source = ReflectionTestUtils.getField(vf, "source");
 
         // The next table iterator should be a DeletingIterator
-        assertEquals(DeletingIterator.class, source.getClass());
+        assertInstanceOf(DeletingIterator.class, source);
         DeletingIterator di = (DeletingIterator) source;
-        source = Whitebox.getInternalState(di, "source");
+        source = ReflectionTestUtils.getField(di, "source");
 
         // And finally, at the bottom of the stack is a MultiIterator (which has no source field)
-        assertEquals(MultiIterator.class, source.getClass());
+        assertInstanceOf(MultiIterator.class, source);
+    }
 
+    private TreeSet<String> getAuthorizationsFromIterator(VisibilityFilter filter) {
+        Authorizations authorizations = (Authorizations) ReflectionTestUtils.getField(filter, "authorizations");
+        assertNotNull(authorizations);
+        return new TreeSet<>(List.of(authorizations.toString().split(",")));
     }
 
     @Test
@@ -245,7 +261,7 @@ public class RecordIteratorTest {
             long start = System.currentTimeMillis();
             float nf = iterator.getProgress();
             time += (System.currentTimeMillis() - start);
-            assertTrue(String.valueOf(f) + " -> " + lastKey + " vs " + String.valueOf(nf) + " -> " + key, nf >= f);
+            assertTrue(nf >= f, f + " -> " + lastKey + " vs " + nf + " -> " + key);
             f = nf;
             lastKey = key;
             iterator.next();

@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -117,20 +118,9 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
     }
 
     @Override
-    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (!range.isStartKeyInclusive()) {
-            // need to make the start key inclusive because filters operate slightly differently
-            Range seekRange = new Range(range.getStartKey(), true, range.getEndKey(), range.isEndKeyInclusive());
-            super.seek(seekRange, columnFamilies, inclusive);
-        } else {
-            super.seek(range, columnFamilies, inclusive);
-        }
-    }
-
-    @Override
     public FilterResult filter(Key k, Value v) {
-        if (log.isDebugEnabled()) {
-            log.debug("tk: {}", k.toStringNoTime());
+        if (log.isTraceEnabled()) {
+            log.trace("tk: {}", k.toStringNoTime());
         }
 
         if (TimeoutExceptionIterator.exceededTimedValue(Pair.of(k, v))) {
@@ -154,7 +144,7 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
 
             if (!matcher.matches()) {
                 // advance to next row
-                log.debug("pattern does not match, advance to next row");
+                log.trace("pattern does not match, advance to next row");
                 return new FilterResult(false, AdvanceResult.NEXT_ROW);
             }
             previousMatch = parser.getValue();
@@ -163,33 +153,43 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
         int result = parser.getField().compareTo(field);
         if (result < 0) {
             // advance to field
-            log.debug("field {} sorts before target {}, advance to {}", parser.getField(), field, field);
+            if (log.isTraceEnabled()) {
+                log.trace("field {} sorts before target {}, advance to {}", parser.getField(), field, field);
+            }
             hint = HINT_TYPE.FIELD;
             return new FilterResult(false, AdvanceResult.USE_HINT);
         } else if (result > 0) {
             // advance to next row
-            log.debug("field {} sorts after target {}, advance to next row", parser.getField(), field);
+            if (log.isTraceEnabled()) {
+                log.trace("field {} sorts after target {}, advance to next row", parser.getField(), field);
+            }
             return new FilterResult(true, AdvanceResult.NEXT_ROW);
         }
 
         String date = parser.getShard();
         if (date.compareTo(startDate) < 0) {
             // advance to start date
-            log.debug("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
+            if (log.isTraceEnabled()) {
+                log.trace("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
+            }
             hint = HINT_TYPE.DATE;
             return new FilterResult(false, AdvanceResult.USE_HINT);
         } else if (date.compareTo(endDate) > 0) {
             // advance to next row
-            log.debug("date {} sorts after end date {}, advance to next row", date, endDate);
+            if (log.isTraceEnabled()) {
+                log.trace("date {} sorts after end date {}, advance to next row", date, endDate);
+            }
             return new FilterResult(false, AdvanceResult.NEXT_ROW);
         }
 
         if (datatypes != null && !datatypes.contains(parser.getDatatype())) {
-            log.debug("datatype {} does not match, advance to next key", parser.getDatatype());
+            if (log.isTraceEnabled()) {
+                log.trace("datatype {} does not match, advance to next key", parser.getDatatype());
+            }
             return new FilterResult(false, AdvanceResult.NEXT);
         }
 
-        log.debug("key accepted, advancing to next row");
+        log.trace("key accepted, advancing to next row");
         return new FilterResult(true, AdvanceResult.NEXT_ROW);
     }
 
@@ -229,5 +229,40 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
                 options.containsKey(FIELD) &&
                 options.containsKey(PATTERN);
         //  @formatter:on
+    }
+
+    /**
+     * Resumes a torn down scan past the row it already reported a value for.
+     * <p>
+     * A rebuilt stack is re-seeked at {@code Range(lastReturnedKey, exclusive)}, which lands inside the row the previous stack skipped when it accepted that
+     * key. Ranges from {@code ShardIndexQueryTableStaticMethods#getRegexRange} are exclusive too, but their start key is a bare row with no column family, so
+     * only a complete index key marks a resume.
+     */
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        if (!range.isStartKeyInclusive() && isCompleteIndexKey(range.getStartKey())) {
+            Key skip = range.getStartKey().followingKey(PartialKey.ROW);
+            // a null end key means the scan is unbounded, as happens for a pattern with wildcards on both sides
+            Key endKey = range.getEndKey();
+            if (endKey != null && skip.compareTo(endKey) > 0) {
+                // handles the case where appending a null byte would cause the start key to be greater than the end key
+                super.seek(new Range(endKey, true, endKey, range.isEndKeyInclusive()), columnFamilies, inclusive);
+            } else {
+                super.seek(new Range(skip, true, endKey, range.isEndKeyInclusive()), columnFamilies, inclusive);
+            }
+        } else {
+            super.seek(range, columnFamilies, inclusive);
+        }
+    }
+
+    /**
+     * A complete shard index key carries a column family, meaning it identifies a specific field rather than a bare row boundary.
+     *
+     * @param key
+     *            the start key of a seek range
+     * @return true if the key could be one this iterator previously returned
+     */
+    private static boolean isCompleteIndexKey(Key key) {
+        return key != null && key.getColumnFamily().getLength() > 0;
     }
 }

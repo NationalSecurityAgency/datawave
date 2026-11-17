@@ -66,6 +66,7 @@ public class ResultCountingIterator extends WrappingIterator {
 
     private String threadName = null;
     protected Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
+    protected MarkingFunctions<?> markingFunctions;
 
     public ResultCountingIterator() {
         threadName = Thread.currentThread().getName();
@@ -206,16 +207,18 @@ public class ResultCountingIterator extends WrappingIterator {
 
         sw.start();
 
-        ColumnVisibility cv = null;
-
+        if (null == markingFunctions) {
+            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+        }
+        ColumnVisibility columnVisibility;
         try {
-            cv = MarkingFunctions.Factory.createMarkingFunctions().combine(columnVisibilities);
+            columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
         } catch (MarkingFunctions.Exception e) {
             log.error("Could not create combined columnVisibility for the count", e);
             return null;
         }
 
-        ResultCountTuple result = new ResultCountTuple(this.count, cv);
+        ResultCountTuple result = new ResultCountTuple(this.count, columnVisibility);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Output kryoOutput = new Output(baos);
         kryo.writeObject(kryoOutput, result);

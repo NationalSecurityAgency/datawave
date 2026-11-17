@@ -25,7 +25,7 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
     protected final ResponseObjectFactory responseObjectFactory;
 
-    public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, MarkingFunctions markingFunctions,
+    public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));

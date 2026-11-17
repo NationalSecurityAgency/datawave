@@ -1,22 +1,22 @@
 package datawave.ingest.mapreduce.job;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ConstraintCheckerTest {
 
     private ConstraintChecker constraintChecker;
 
-    private byte[] emptyViz = new ColumnVisibility().getExpression();
-    private byte[] nonemptyViz = new ColumnVisibility("A&B").getExpression();
+    private final byte[] emptyViz = new ColumnVisibility().getExpression();
+    private final byte[] nonemptyViz = new ColumnVisibility("A&B").getExpression();
 
-    @Before
+    @BeforeEach
     public void setup() {
         Configuration conf = new Configuration();
         conf.set(ConstraintChecker.INITIALIZERS, NonemptyVisibilityConstraint.Initializer.class.getName());
@@ -25,9 +25,9 @@ public class ConstraintCheckerTest {
         constraintChecker = ConstraintChecker.create(conf);
     }
 
-    @Test(expected = ConstraintChecker.ConstraintViolationException.class)
+    @Test
     public void shouldFailOnViolatedConstraint() {
-        constraintChecker.check(new Text("eventTable"), emptyViz);
+        assertThrows(ConstraintChecker.ConstraintViolationException.class, () -> constraintChecker.check(new Text("eventTable"), emptyViz));
     }
 
     @Test
@@ -52,6 +52,6 @@ public class ConstraintCheckerTest {
     @Test
     public void shouldNotBeConfiguredIfNoInitializers() {
         constraintChecker = ConstraintChecker.create(new Configuration());
-        assertThat(constraintChecker.isConfigured(), is(false));
+        assertFalse(constraintChecker.isConfigured());
     }
 }

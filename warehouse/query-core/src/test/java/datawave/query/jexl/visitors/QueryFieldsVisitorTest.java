@@ -1,14 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -20,7 +20,7 @@ public class QueryFieldsVisitorTest {
 
     private static final MockMetadataHelper helper = new MockMetadataHelper();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         helper.addNormalizers("FOO", Collections.singleton(new LcNoDiacriticsType()));
         helper.addNormalizers("FOO2", Collections.singleton(new LcNoDiacriticsType()));

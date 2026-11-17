@@ -1,0 +1,74 @@
+################################################################
+# Grouped TOKENIZED-LUCENE phrase tests for tokenized fields in nested JSON
+
+# These tests validate the TOKENIZED-LUCENE parser path for grouped
+# term-frequency evaluation using the tvmaze quickstart sample data.
+
+# In The Big Bang Theory sample document, "Jim Parsons" and
+# "Johnny Galecki" are separate EMBEDDED_CAST_PERSON_NAME values under
+# different CAST elements. A grouped TF-aware tokenized phrase query should:
+#   1. match EMBEDDED_CAST_PERSON_NAME_TOKEN:"jim parsons"
+#   2. reject EMBEDDED_CAST_PERSON_NAME_TOKEN:"jim galecki"
+
+################################################################
+# Positive phrase query: both terms come from the same grouped value
+
+setCurlData query=$( urlencode "GENRES:comedy AND EMBEDDED_CAST_PERSON_NAME_TOKEN:\"jim parsons\"" ) \
+        queryName=EventQueryTokenizedLuceneGroupedContentPhrasePositive \
+        begin=19700101 \
+        end=20990101 \
+        pagesize=1 \
+        auths=BAR,FOO,PRIVATE \
+        columnVisibility=PRIVATE \
+        query.syntax=TOKENIZED-LUCENE
+
+configureTest \
+        CreateTokenizedLuceneGroupedContentPhrasePositive \
+        "Creates a TOKENIZED-LUCENE grouped phrase query that should match Jim Parsons within one cast entry" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest --set-query-id
+
+configureTest \
+        TokenizedLuceneGroupedContentPhrasePositivePage1 \
+        "Gets the first page of results for the grouped TOKENIZED-LUCENE positive phrase test in JSON format" \
+        "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
+        application/json \
+        200
+
+runTest
+
+configureCloseQueryTest ${DW_QUERY_ID}
+
+runTest
+
+################################################################
+# Negative phrase query: terms exist in the same base field but in
+# different grouped contexts, so this should not match
+
+setCurlData query=$( urlencode "GENRES:comedy AND EMBEDDED_CAST_PERSON_NAME_TOKEN:\"jim galecki\"" ) \
+        queryName=EventQueryTokenizedLuceneGroupedContentPhraseNegative \
+        begin=19700101 \
+        end=20990101 \
+        pagesize=1 \
+        auths=BAR,FOO,PRIVATE \
+        columnVisibility=PRIVATE \
+        query.syntax=TOKENIZED-LUCENE
+
+configureTest \
+        CreateTokenizedLuceneGroupedContentPhraseNegative \
+        "Creates a TOKENIZED-LUCENE grouped phrase query that should not match across separate cast entries" \
+        "--header 'Content-Type: application/x-www-form-urlencoded' ${DW_CURL_DATA} -X POST ${URI_ROOT}/Query/EventQuery/create" \
+        "application/xml;charset=UTF-8" \
+        200
+
+runTest --set-query-id
+
+configureTest \
+        TokenizedLuceneGroupedContentPhraseNegative204 \
+        "Returns 204 because Jim and Galecki occur in separate grouped cast contexts" \
+        "--header 'Accept: application/json' -X GET ${URI_ROOT}/Query/${DW_QUERY_ID}/next" \
+        "" \
+        204

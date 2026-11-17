@@ -16,6 +16,10 @@ import org.apache.hadoop.fs.Path;
  *
  */
 public class SortedSetTempFileHandler implements FileSortedSet.SortedSetFileHandler {
+    // Configuration re-parses the Hadoop XML resources every time one is constructed, which is far too expensive to repeat for each
+    // persisted file. Nothing here mutates it, so a single shared instance serves every handler.
+    private static final Configuration CONF = new Configuration();
+
     private final FileSystem fs;
     private final File file;
     private final Path path;
@@ -24,8 +28,7 @@ public class SortedSetTempFileHandler implements FileSortedSet.SortedSetFileHand
         this.file = File.createTempFile("SortedSet", ".bin");
         this.file.deleteOnExit();
         this.path = new Path(file.toURI());
-        Configuration conf = new Configuration();
-        this.fs = path.getFileSystem(conf);
+        this.fs = path.getFileSystem(CONF);
     }
 
     public File getFile() {

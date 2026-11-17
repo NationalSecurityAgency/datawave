@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
@@ -167,89 +166,6 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
                 log.error("Unable to apply " + parser + " to " + id, e);
                 event.addError(RawDataErrorNames.FIELD_EXTRACTION_ERROR);
             }
-        }
-    }
-
-    public void inheritFromRootPayload(RawRecordContainer event, Map<String,Collection<Object>> metadata) {
-        // TODO: No-op here, but need to refactor the following in upstream
-        // if (metadata == null)
-        // return;
-        //
-        // IBaseDataObject payload = (IBaseDataObject) event.getAuxData();
-        // if (payload != null) {
-        // for (String field : helper.getInheritedPayloadFields()) {
-        // if (metadata.containsKey(field) && (!payload.hasParameter(field))) {
-        // payload.putParameter(field, metadata.get(field));
-        // }
-        // }
-        // }
-    }
-
-    public void addMetadataFromParms(RawRecordContainer event, Map<String,Collection<Object>> metadata, String id) {
-
-        for (Map.Entry<String,Collection<Object>> entry : metadata.entrySet()) {
-            CharSequence key = entry.getKey();
-            for (Object value : entry.getValue()) {
-                if (value == null)
-                    continue;
-
-                if (helper.getUuids().contains(key)) {
-                    event.getAltIds().add(String.valueOf(value));
-                }
-                if (this.helper.getSecurityMarkingFieldDomainMap().containsKey(key)) {
-                    addSecurityMetadataFromParms(key, value, event);
-                }
-            }
-        }
-
-        Multimap<String,String> newMetadata = HashMultimap.create();
-        Multimap<String,MetadataIdParser> fieldParsers = helper.getMetadataFieldParsers();
-        for (String field : fieldParsers.keySet()) {
-            if (metadata.containsKey(field) && metadata.get(field) != null) {
-                for (MetadataIdParser parser : fieldParsers.get(field)) {
-                    for (Object v : metadata.get(field)) {
-                        if (v == null)
-                            continue;
-                        try {
-                            parser.addMetadata(event, newMetadata, v.toString());
-                        } catch (Exception e) {
-                            log.error("Unable to apply " + parser + " to " + field, e);
-                            event.addError(RawDataErrorNames.FIELD_EXTRACTION_ERROR);
-                        }
-                    }
-                }
-            }
-        }
-
-        // If the ID is a UUID (i.e., contains no date), try to get
-        // event metadata from the parameters
-        if ((id != null) && (id.length() >= UUID_LENGTH) && id.matches(UUID_PATTERN)) {
-            fieldParsers = helper.getMetadataFieldUuidParsers();
-            for (String field : fieldParsers.keySet()) {
-                if (metadata.containsKey(field) && metadata.get(field) != null) {
-                    for (MetadataIdParser parser : fieldParsers.get(field)) {
-                        for (Object v : metadata.get(field)) {
-                            if (v == null)
-                                continue;
-                            try {
-                                parser.addMetadata(event, newMetadata, v.toString());
-                            } catch (Exception e) {
-                                log.error("Unable to apply " + parser + " to " + field, e);
-                                event.addError(RawDataErrorNames.FIELD_EXTRACTION_ERROR);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    protected void addSecurityMetadataFromParms(CharSequence key, Object value, RawRecordContainer event) {
-        // If fieldName is a security marking field (as configured by EVENT_SECURITY_MARKING_FIELD_NAMES),
-        // then put the marking value into this.securityMarkings, where 'key' maps to the domain for the marking
-        // (as configured by EVENT_SECURITY_MARKING_FIELD_DOMAINS)
-        if (!StringUtils.isEmpty(key.toString()) && !StringUtils.isEmpty(value.toString())) {
-            event.addSecurityMarking(this.helper.getSecurityMarkingFieldDomainMap().get(key.toString()), value.toString());
         }
     }
 

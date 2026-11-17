@@ -1,5 +1,8 @@
 package datawave.query.testframework;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -10,7 +13,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.NumberNormalizer;
@@ -80,7 +82,7 @@ public abstract class BaseRawData implements RawData {
     public void processFields(final String datatype, final String[] fields) {
         // add each header event
         final List<String> hdrs = getHeaders();
-        Assert.assertTrue("The number of fields must be equal or greater than the number of headers", fields.length >= hdrs.size());
+        assertTrue("The number of fields must be equal or greater than the number of headers", fields.length >= hdrs.size());
 
         for (int n = 0; n < hdrs.size(); n++) {
             String header = hdrs.get(n);
@@ -130,7 +132,7 @@ public abstract class BaseRawData implements RawData {
                 String value = fields[i];
             }
         } else if (fields.length != hdrs.size()) {
-            Assert.fail("The number of fields did not equal the number of headers and hasExtraFields() returned false indicating that there were no extra fields expected");
+            fail("The number of fields did not equal the number of headers and hasExtraFields() returned false indicating that there were no extra fields expected");
         }
     }
 
@@ -262,7 +264,7 @@ public abstract class BaseRawData implements RawData {
 
     @Override
     public Normalizer<?> getNormalizer(String field) {
-        Assert.assertTrue(containsField(field));
+        assertTrue(containsField(field));
         return this.metaDataMap.get(field.toLowerCase()).normalizer;
     }
 

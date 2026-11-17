@@ -1,11 +1,10 @@
 package datawave.ingest.data.config;
 
-import java.util.Map;
-
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import datawave.data.type.Type;
+import datawave.marking.Markings;
 
 /**
  * Base container class implementation of the NormalizedContentInterface. This class is utilized to retain the original and transformed content and labels for a
@@ -22,7 +21,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
     protected String _indexedFieldValue = null;
 
     /** The security markings for the field value pair. */
-    protected Map<String,String> _markings = null;
+    protected Markings<?> _markings = null;
 
     /** The field processing error if any. */
     protected Throwable error = null;
@@ -40,7 +39,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         _indexedFieldValue = value;
     }
 
-    public BaseNormalizedContent(String field, String value, Map<String,String> markings) {
+    public BaseNormalizedContent(String field, String value, Markings<?> markings) {
         this(field, value);
         _markings = markings;
     }
@@ -117,12 +116,12 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
     }
 
     @Override
-    public Map<String,String> getMarkings() {
+    public Markings<?> getMarkings() {
         return _markings;
     }
 
     @Override
-    public void setMarkings(Map<String,String> markings) {
+    public void setMarkings(Markings<?> markings) {
         hashCode = null;
         this._markings = markings;
     }

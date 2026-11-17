@@ -22,7 +22,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import datawave.core.query.remote.RemoteQueryService;
 import datawave.microservice.query.federation.config.FederatedQueryProperties;
 import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NoResultsQueryException;

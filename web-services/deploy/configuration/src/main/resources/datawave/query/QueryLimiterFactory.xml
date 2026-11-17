@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+
+    <!-- This file contains the required bean configurations for concurrent query limit enforcement. -->
+
+    <!--
+    Sample configuration for query logic groups.
+
+        - groupName: The unique name for the group.
+        - queryLimit: The default maximum number of concurrent active queries that a user based off matching query
+         logics across all systems that count towards the user's limit. This can be overridden per user or per system.
+        - queryLogicPattern: A regex pattern matching against query logics. '*' is supported.
+    -->
+    <!--
+    <bean id="TLDLogicGroup" class="datawave.webservice.query.limit.QueryLogicGroupLimitConfiguration">
+        <property name="groupName" value="TLD_QUERIES"/>
+        <property name="queryLimit" value="50"/>
+        <property name="queryLogicPattern" value="TLD.*"/>
+    </bean>
+
+    <bean id="EventLogicGroup" class="datawave.webservice.query.limit.QueryLogicGroupLimitConfiguration">
+        <property name="groupName" value="EVENT_QUERIES"/>
+        <property name="queryLimit" value="25"/>
+        <property name="queryLogicPattern" value="EVENT.*"/>
+    </bean>
+    -->
+
+
+    <!--
+    Sample configuration for an individual user.
+
+        - userDn: The DN of the user
+        - queryLimit: The maximum number of concurrent active queries that this user may have actively running across
+            all systems that count towards the user's limit.
+        - queryLogicGroupLimits: A map of custom limits this user has for query logic groups, where the keys of the map
+            are regex patterns matching against group names, and the values are the maximum number of queries based off
+            any matching query logics that the user may have concurrently active across all systems that count towards
+            the user's limit.
+
+            !!NOTE!! The default limits for any query logic groups that do not match an overridden group limit will
+            still apply. For example, the default limit of 25 for the EVENT_QUERIES group still applies to the user
+            below.
+    -->
+    <!--
+    <bean id="TestUserLimits" class="datawave.webservice.query.limit.UserLimitConfiguration">
+        <property name="userDn" value="cn=test a. user, ou=example developers, o=example corp, c=us, system"/>
+        <property name="queryLimit" value="250"/>
+        <property name="queryLogicGroupLimits">
+            <map>
+                <entry key="TLD_QUERIES.*" value="10"/>
+            </map>
+        </property>
+    </bean>
+    -->
+
+
+    <!--
+    Sample configuration for systems.
+
+        - systemPattern: A regex pattern matching the canonical names of systems (typically k8 pod names).
+        - queryLimit: The maximum number of active queries allowed to be concurrently running on the system. A value
+            less than zero will indicate that there is no limit for the system. When there is no limit for the system,
+            the total queries for the system will not be aggregated when checking query limits, resulting in a faster
+            check.
+        - countsAgainstUserLimit: Whether queries on the system count towards a user's active query limit. The default
+            is true. If false, any queries on this system will not count towards a user's limit, but will still count
+            towards the overall system limit and any overridden query logic group limits established in this
+            configuration.
+        - queryLogicGroupLimits: A map of custom limits the system has for query logic groups, where the keys of the map
+            are regex patterns matching against group names, and the values are the maximum number of queries based off
+            any matching query logics that the system may have concurrently active.
+
+            !!NOTE!! Unlike for users, the limit for any non-overridden query logic groups will NOT apply to the system.
+            For example, the default limit of 25 for the EVENT_QUERIES group will be ignored for the system below, and
+            only apply on a per-user level.
+    -->
+    <!--
+    <bean id="GreekSystems" class="datawave.webservice.query.limit.SystemLimitConfiguration">
+        <property name="systemPattern" value="athena|zeus|ares"/>
+        <property name="queryLimit" value="1000"/>
+        <property name="countsAgainstUserLimit" value="false">
+        <property name="queryLogicGroupLimits">
+            <map>
+                <entry key="TLD.*" value="200"/>
+            </map>
+        </property>
+    </bean>
+    -->
+
+
+    <!-- Sample configuration for the query limit configuration.
+
+        - defaultSystemQueryLimit: The default number of active concurrent queries that may be running on a system. A
+            value less than zero will indicate that by default, there is no max limit for queries on systems. When
+            there is no limit for the system, the total queries for the system will not be aggregated when checking
+            query limits, resulting in a faster check.
+        - defaultUserQueryLimit: The default maximum number of concurrent active queries a user may have across all
+            systems that count towards the user's query limit.
+        - internalCacheMaxSize: The default maximum size to enforce for internal caching purposes. This value should
+            be large enough to cover the maximum number of distinct query logics that may be seen. Defaults to 200.
+        - queryLogicGroupConfigs: The query logic group configurations to use.
+        - systemConfigs: The per-system configurations to use.
+        - userConfigs: The user configurations to use.
+    -->
+    <!--
+    <bean id="queryLimitConfiguration" class="datawave.webservice.query.limit.QueryLimitConfiguration">
+        <property name="defaultSystemQueryLimit" value="5000"/>
+        <property name="defaultUserQueryLimit" value="100"/>
+        <property name="internalCacheMaxSize" value="200"/>
+        <property name="queryLogicGroupConfigs">
+            <list>
+                <ref bean="TLDLogicGroup"/>
+                <ref bean="EventLogicGroup"/>
+            </list>
+        </property>
+        <property name="userConfigs">
+            <list>
+                <ref bean="TestUserLimits"/>
+            </list>
+        </property>
+        <property name="systemConfigs">
+            <list>
+                <ref bean="GreekSystems"/>
+            </list>
+        </property>
+    </bean>
+    -->
+
+    <!-- Configuration for the QueryLimitConfiguration. -->
+    <bean id="queryLimitConfiguration" class="datawave.webservice.query.limit.QueryLimitConfiguration">
+        <property name="defaultSystemQueryLimit" value="5000"/>
+        <property name="defaultUserQueryLimit" value="100"/>
+    </bean>
+
+    <!-- Configuration for the QueryHeartbeatCache.
+        - cleanupInterval: The interval for which the cache will periodically check and evict heartbeats that were
+            stopped due to an error and not via the QueryHeartbeat.stop() method.
+        - cleanupUnit: The cleanup time unit. This must resolve to a value of java.util.concurrent.TimeUnit.
+    -->
+    <bean id="queryHeartbeatCache" class="datawave.webservice.query.limit.QueryHeartbeatCache" init-method="setup" destroy-method="shutdown">
+        <property name="cleanupInterval" value="10"/>
+        <property name="cleanupUnit" value="MINUTES"/>
+    </bean>
+
+    <!-- Configuration for the QueryLimiter. -->
+    <bean id="queryLimiter" class="datawave.webservice.query.limit.QueryLimiter" init-method="setup" destroy-method="shutdown">
+        <property name="zookeeperConfig" value="${zookeeper.hosts}"/>
+        <property name="configuration" ref="queryLimitConfiguration"/>
+        <property name="heartbeatCache" ref="queryHeartbeatCache"/>
+    </bean>
+</beans>

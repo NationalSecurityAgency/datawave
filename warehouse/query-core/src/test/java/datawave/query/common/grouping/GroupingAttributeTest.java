@@ -1,9 +1,11 @@
 package datawave.query.common.grouping;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 import java.math.BigDecimal;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import datawave.data.type.LcNoDiacriticsListType;
@@ -17,7 +19,7 @@ class GroupingAttributeTest {
         GroupingAttribute<BigDecimal> attr1 = new GroupingAttribute<>(new NumberType("123"), new Key("FOO.1"), true);
         GroupingAttribute<BigDecimal> attr2 = new GroupingAttribute<>(new NumberType("123"), new Key("FOO.1"), true);
 
-        Assertions.assertEquals(attr1, attr2);
+        assertEquals(attr1, attr2);
     }
 
     @Test
@@ -25,7 +27,7 @@ class GroupingAttributeTest {
         GroupingAttribute<BigDecimal> attr1 = new GroupingAttribute<>(new NumberType("123"), new Key("FOO.1"), true);
         GroupingAttribute<BigDecimal> attr2 = new GroupingAttribute<>(new NumberType("456"), new Key("FOO.1"), true);
 
-        Assertions.assertNotEquals(attr1, attr2);
+        assertNotEquals(attr1, attr2);
     }
 
     @Test
@@ -33,7 +35,7 @@ class GroupingAttributeTest {
         GroupingAttribute<BigDecimal> attr1 = new GroupingAttribute<>(new NumberType("123"), new Key("FOO.1"), true);
         GroupingAttribute<BigDecimal> attr2 = new GroupingAttribute<>(new NumberType("123"), new Key("BAR.1"), true);
 
-        Assertions.assertNotEquals(attr1, attr2);
+        assertNotEquals(attr1, attr2);
     }
 
     @Test
@@ -41,7 +43,6 @@ class GroupingAttributeTest {
         GroupingAttribute<BigDecimal> attr1 = new GroupingAttribute<>(new NumberType("123"), new Key("FOO.1"), true);
         GroupingAttribute<BigDecimal> attr2 = new GroupingAttribute<>(new LcNoDiacriticsListType("123"), new Key("BAR.1"), true);
 
-        Assertions.assertEquals(attr1.hashCode(), attr2.hashCode());
-
+        assertEquals(attr1.hashCode(), attr2.hashCode());
     }
 }

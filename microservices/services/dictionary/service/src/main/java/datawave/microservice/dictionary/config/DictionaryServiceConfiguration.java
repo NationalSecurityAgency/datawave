@@ -46,14 +46,14 @@ public class DictionaryServiceConfiguration {
     @Bean
     @Scope("prototype")
     @ConditionalOnMissingBean
-    public MetadataDescriptionsHelper<DefaultDescription> metadataHelperWithDescriptions(MarkingFunctions markingFunctions,
+    public MetadataDescriptionsHelper<DefaultDescription> metadataHelperWithDescriptions(MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory) {
         return new MetadataDescriptionsHelper<>(markingFunctions, responseObjectFactory);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public DataDictionary datawaveDataDictionary(MarkingFunctions markingFunctions,
+    public DataDictionary datawaveDataDictionary(MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory,
                     MetadataHelperFactory metadataHelperFactory, MetadataDescriptionsHelperFactory<DefaultDescription> metadataDescriptionsHelperFactory) {
         return new DataDictionaryImpl(markingFunctions, responseObjectFactory, metadataHelperFactory, metadataDescriptionsHelperFactory);

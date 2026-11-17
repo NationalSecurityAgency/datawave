@@ -4,8 +4,8 @@ import datawave.marking.MarkingFunctions;
 
 public interface HasMarkingFunctions {
 
-    void setMarkingFunctions(MarkingFunctions markingFunctions);
+    void setMarkingFunctions(MarkingFunctions<?> markingFunctions);
 
-    MarkingFunctions getMarkingFunctions();
+    MarkingFunctions<?> getMarkingFunctions();
 
 }

@@ -1,14 +1,12 @@
 package datawave.webservice.dictionary.edge;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
-import com.google.common.collect.Maps;
-
+import datawave.marking.Markings;
 import datawave.webservice.query.result.event.HasMarkings;
 import io.protostuff.Message;
 
@@ -16,19 +14,13 @@ import io.protostuff.Message;
 @XmlSeeAlso(DefaultMetadata.class)
 public abstract class MetadataBase<T> implements HasMarkings, Message<T> {
 
-    protected transient Map<String,String> markings;
+    protected transient Markings<?> markings;
 
-    public Map<String,String> getMarkings() {
-        assureMarkings();
+    public Markings<?> getMarkings() {
         return markings;
     }
 
-    protected void assureMarkings() {
-        if (this.markings == null)
-            this.markings = Maps.newHashMap();
-    }
-
-    public void setMarkings(Map<String,String> markings) {
+    public void setMarkings(Markings<?> markings) {
         this.markings = markings;
     }
 

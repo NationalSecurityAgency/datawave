@@ -1,5 +1,11 @@
 package datawave.ingest.mapreduce.job.statsd;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -24,8 +30,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.security.Credentials;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Multimap;
 
@@ -64,16 +69,16 @@ public class StatsDEnabledClassesTest {
         StatsDHelper helper = new StatsDHelper();
         helper.setup(conf);
 
-        Assert.assertNotNull(helper.getClient());
+        assertNotNull(helper.getClient());
 
         TaskAttemptContext returnedContext = helper.getContext(context);
-        Assert.assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDTaskAttemptContext", returnedContext.getClass().getName());
+        assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDTaskAttemptContext", returnedContext.getClass().getName());
 
         Counter testCounter = helper.getCounter(context, TestCounters.COUNTER1);
-        Assert.assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
+        assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
 
         testCounter = helper.getCounter(context, "CounterGroup1", "Counter1");
-        Assert.assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
+        assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
 
         // now lets use our test helper which uses a wrapped client so we can see the messages on the other side
         helper = new TestStatsDHelper();
@@ -84,11 +89,11 @@ public class StatsDEnabledClassesTest {
         helper.getCounter(context, "CounterGroup2", "Counter2").increment(11);
         helper.getCounter(context, "CounterGroup3", "Counter2").increment(12);
 
-        Assert.assertEquals(new ArrayList(Arrays.asList("count(TestGroup_COUNTER1,10)", "time(MyGroup3_MyCounter2,12)")), client.messages);
+        assertEquals(new ArrayList(Arrays.asList("count(TestGroup_COUNTER1,10)", "time(MyGroup3_MyCounter2,12)")), client.messages);
         client.messages.clear();
 
         helper.close();
-        Assert.assertTrue(client.stopped);
+        assertTrue(client.stopped);
     }
 
     @Test
@@ -112,20 +117,20 @@ public class StatsDEnabledClassesTest {
 
         mapper.setup(context);
 
-        Assert.assertNotNull(mapper.getHelper());
+        assertNotNull(mapper.getHelper());
 
         TaskAttemptContext returnedContext = mapper.getContext(context);
-        Assert.assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDTaskAttemptContext", returnedContext.getClass().getName());
+        assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDTaskAttemptContext", returnedContext.getClass().getName());
 
         Counter testCounter = mapper.getCounter(context, TestCounters.COUNTER1);
-        Assert.assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
+        assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
 
         testCounter = mapper.getCounter(context, "CounterGroup1", "Counter1");
-        Assert.assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
+        assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
 
-        Assert.assertFalse(((CounterStatsDClientTest.TestCounterStatsDClient) (mapper.getHelper()).getClient()).stopped);
+        assertFalse(((CounterStatsDClientTest.TestCounterStatsDClient) (mapper.getHelper()).getClient()).stopped);
         mapper.cleanup(context);
-        Assert.assertNull(mapper.getHelper().getClient());
+        assertNull(mapper.getHelper().getClient());
     }
 
     @Test
@@ -150,17 +155,17 @@ public class StatsDEnabledClassesTest {
         handler.setup(context);
 
         TaskAttemptContext returnedContext = handler.getContext(context);
-        Assert.assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDTaskAttemptContext", returnedContext.getClass().getName());
+        assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDTaskAttemptContext", returnedContext.getClass().getName());
 
         Counter testCounter = handler.getCounter(context, TestCounters.COUNTER1);
-        Assert.assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
+        assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
 
         testCounter = handler.getCounter(context, "CounterGroup1", "Counter1");
-        Assert.assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
+        assertEquals(CounterStatsDClient.class.getName() + '$' + "StatsDCounter", testCounter.getClass().getName());
 
-        Assert.assertFalse(handler.getTestClient().stopped);
+        assertFalse(handler.getTestClient().stopped);
         handler.close(context);
-        Assert.assertNull(handler.getTestClient());
+        assertNull(handler.getTestClient());
     }
 
     public static class TestStatsDHelper extends StatsDHelper {

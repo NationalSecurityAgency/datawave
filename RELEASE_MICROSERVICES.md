@@ -40,3 +40,66 @@ Before starting a release, ensure that:
 - Ensure that secrets for container registry credentials (`USER_NAME`, `ACCESS_TOKEN`) are correctly set in the repository's secrets.
 - Review the `.github/workflows/microservice-release.yml` file if custom configurations are needed for specific microservices.
 
+## Cascade Releases
+
+For releases that need to roll up through every project that depends on a given
+microservice (for example, releasing `audit-api` and then re-releasing every
+starter and service that consumes `audit-api`), use the **Cascade Release
+Microservices** workflow defined in `.github/workflows/microservice-cascade-release.yml`.
+
+### What it does
+
+1. **Plan** – Maven’s reactor (`mvn -pl :<startArtifact> -amd`) is used to
+   enumerate the starting project plus every transitive dependent **in build
+   order**. The dependency graph is computed from the live POMs every run, so
+   it cannot drift. The ordered list is printed as JSON in the job log.
+2. **Release** – For each project in the planned order, the workflow calls
+   `microservice-release.yml` (the existing single-project release workflow)
+   with `bumpDownstream: true`. After each Maven `release:prepare release:perform`,
+   the release workflow runs:
+   ```
+   mvn versions:update-parent versions:update-properties \
+       -DallowSnapshots=false \
+       -Dincludes=gov.nsa.datawave.microservice:<releasedArtifactId>
+   ```
+   from `microservices/`, which rewrites the version reference in every
+   downstream POM that consumes the released artifact (whether via a
+   `${version.datawave.X}` property or a `<parent>` block). The change is
+   committed with the message `auto-update: bump <artifactId> to <version>`
+   and pushed before the next project in the cascade is released.
+3. **Compose validation** – After all releases complete, the workflow calls
+   `.github/workflows/compose-tests.yml` (`allow-snapshots: false`). If the
+   compose stack does not come up cleanly or the ingest/web tests fail, the
+   entire cascade workflow is marked as failed.
+
+### Inputs
+
+- **startingProject** – path of the project to start from (same dropdown
+  values as the single-project workflow, restricted to actual microservice
+  modules).
+- **finalRelease** – same semantics as the single-project workflow.
+- **modifier** – same semantics as the single-project workflow (ignored when
+  `finalRelease=true`).
+- **dryRun** – **defaults to `true`**. With `dryRun=true` the workflow only
+  computes and prints the cascade plan; it does **not** release, bump, push,
+  or run compose. Always do a dry-run first to review the order, then re-run
+  with `dryRun=false` to actually perform the cascade.
+
+### Recovering from partial failures
+
+There is no automatic rollback. If a release inside the cascade fails:
+
+1. Investigate the failed project’s logs and resolve the root cause.
+2. Re-trigger **Cascade Release Microservices** with the **failed project** as
+   the new `startingProject`. The plan job will re-enumerate the remaining
+   downstream cone, and the cascade resumes from there. Already-released
+   projects upstream of the failure are not re-released because they are no
+   longer in the dependent set of the failed project.
+
+### Compose validation failures
+
+If the cascade releases all projects successfully but the final compose gate
+fails, the released artifacts have already been published. Investigate using
+the `compose-tests` job logs, fix the underlying issue with a follow-up
+commit/release, and re-run compose-tests until it passes.
+

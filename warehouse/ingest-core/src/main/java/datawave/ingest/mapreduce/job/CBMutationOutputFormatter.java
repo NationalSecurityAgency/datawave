@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Properties;
 
 import org.apache.accumulo.core.client.Accumulo;
@@ -8,7 +9,6 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
 import org.apache.accumulo.hadoop.mapreduce.OutputFormatBuilder;
-import org.apache.accumulo.hadoopImpl.mapreduce.lib.OutputConfigurator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -27,16 +27,30 @@ public class CBMutationOutputFormatter extends AccumuloOutputFormat {
         return new CBRecordWriter(super.getRecordWriter(attempt), attempt);
     }
 
+    // Key used by AccumuloOutputFormat to store client properties in Hadoop Configuration
+    private static final String CLIENT_PROPS_KEY = "AccumuloOutputFormat.ClientOpts.ClientProps";
+
     public static Properties getClientProperties(Configuration conf) {
-        // Get any AccumuloClient property customizations (e.g., batch writer config overrides, etc)
-        Properties clientProps = OutputConfigurator.getClientProperties(AccumuloOutputFormat.class, conf);
+        Properties clientProps = new Properties();
+
+        // Load pre-configured client properties (e.g., batch writer settings)
+        String propString = conf.get(CLIENT_PROPS_KEY, "");
+        if (!propString.isEmpty()) {
+            try {
+                clientProps.load(new StringReader(propString));
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to load client properties from configuration", e);
+            }
+        }
+
         //@formatter:off
-        // Convert DW's connection conf keys into Accumulo-compatible keys as required
+        // Overlay DataWave connection properties
         clientProps.putAll(Accumulo.newClientProperties()
                 .to(AccumuloHelper.getInstanceName(conf), AccumuloHelper.getZooKeepers(conf))
                 .as(AccumuloHelper.getUsername(conf), new PasswordToken(new String(AccumuloHelper.getPassword(conf))))
                 .build());
         //@formatter:on
+
         return clientProps;
     }
 

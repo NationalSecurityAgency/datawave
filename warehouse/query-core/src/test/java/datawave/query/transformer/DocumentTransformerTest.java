@@ -1,7 +1,9 @@
 package datawave.query.transformer;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -9,251 +11,136 @@ import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
+import datawave.marking.MarkingFunctionsFactory;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.Constants;
-import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.function.serializer.KryoDocumentSerializer;
+import datawave.table.constants.TableName;
+import datawave.webservice.query.result.event.DefaultEvent;
+import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.result.event.SimpleEvent;
-import datawave.webservice.query.result.event.SimpleField;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({DocumentTransformer.class, DocumentSerialization.class})
-public class DocumentTransformerTest { // extends EasyMockSupport {
+public class DocumentTransformerTest {
+
+    // variables used to build the transformer
+    private final Query query = new QueryImpl();
+    private final MarkingFunctions<?> markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
+    private final ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
+    private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
+
+    // used to create the document, attributes
+    private final Key documentKey = new Key("row", "datatype\0uid");
+    private Document document;
     private DocumentTransformer transformer;
 
-    @Mock
-    private BaseQueryLogic mockLogic;
+    // used to transform the document attributes
+    private final Map<String,List<String>> primaryToSecondaryFieldMap = new HashMap<>();
 
-    @Mock
-    private Query mockQuery;
+    @BeforeEach
+    public void beforeEach() {
+        query.setQueryAuthorizations("A,B,C");
+        document = new Document();
+        // load the document with a default value
+        givenDocumentFieldValue("field1", "5");
 
-    @Mock
-    private MarkingFunctions mockMarkingFunctions;
-
-    @Mock
-    private ResponseObjectFactory mockResponseFactory;
-
-    @Mock
-    private KryoDocumentDeserializer mockDeserializer;
-
-    // @Mock
-    // private Numeric mockNumeric;
-
-    // @Mock
-    // private Document mockDocument;
-
-    @Before
-    public void setup() {
-
+        String tableName = TableName.SHARD;
+        transformer = new DocumentTransformer(tableName, query, markingFunctions, responseObjectFactory, true);
     }
 
-    private void basicExpects(Document d, Key key, Map.Entry<Key,Value> entry) throws MarkingFunctions.Exception {
-        // AbstractMap.SimpleEntry<Key, Document> documentEntry = new AbstractMap.SimpleEntry<>(key, mockDocument);
-        d.put("field1", new Numeric("5", key, true));
-        AbstractMap.SimpleEntry<Key,Document> documentEntry = new AbstractMap.SimpleEntry<>(key, d);
+    @AfterEach
+    public void afterEach() {
+        primaryToSecondaryFieldMap.clear();
+        document = null;
+    }
 
-        // Map<String,Attribute<?extends Comparable<?>>> dictionary = new HashMap<>();
-        // dictionary.put("field1", mockNumeric);
+    private void givenDocumentFieldValue(String field, String value) {
+        assertNotNull(document);
+        document.put(field, new Numeric(value, documentKey, true));
+    }
 
-        SimpleField simpleField = new SimpleField();
-        SimpleEvent simpleEvent = new SimpleEvent();
+    private void givenFieldMapping(String field, List<String> mappings) {
+        primaryToSecondaryFieldMap.put(field, mappings);
+    }
 
-        PowerMock.mockStatic(DocumentSerialization.class);
-        EasyMock.expect(DocumentSerialization.getDocumentDeserializer(mockQuery)).andReturn(mockDeserializer);
-
-        EasyMock.expect(mockLogic.getTableName()).andReturn("table1");
-        EasyMock.expect(mockQuery.getQueryAuthorizations()).andReturn("A,B,C");
-        EasyMock.expect(mockQuery.findParameter("log.timing.details")).andReturn(new QueryImpl.Parameter("", ""));
-        EasyMock.expect(mockDeserializer.apply(entry)).andReturn(documentEntry);
-        // EasyMock.expect(mockDocument.getDictionary()).andReturn(Collections.EMPTY_MAP);
-        // mockDocument.debugDocumentSize(key);
-        EasyMock.expect(mockMarkingFunctions.translateFromColumnVisibility(key.getColumnVisibilityParsed())).andReturn(Collections.emptyMap());
-        // EasyMock.expect(mockDocument.getDictionary()).andReturn(dictionary);
-        // EasyMock.expect(mockNumeric.getData()).andReturn("5");
-        EasyMock.expect(mockResponseFactory.getField()).andReturn(simpleField);
-        EasyMock.expect(mockResponseFactory.getEvent()).andReturn(simpleEvent);
-        // EasyMock.expect(mockDocument.sizeInBytes()).andReturn(1l);
+    private Map.Entry<Key,Value> createEntry() {
+        Map.Entry<Key,Document> entry = new SimpleEntry<>(documentKey, document);
+        return serializer.apply(entry);
     }
 
     @Test
-    public void transform_noPrimaryToSecondaryMapSetTest() throws MarkingFunctions.Exception {
-        Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
-        Value value = new Value();
-        AbstractMap.SimpleEntry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
-        Document d = new Document();
-        basicExpects(d, key, entry);
+    public void testNoPrimaryToSecondaryMap() {
+        DefaultEvent event = (DefaultEvent) transformer.transform(createEntry());
 
-        PowerMock.replayAll();
-
-        transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
-        SimpleEvent event = (SimpleEvent) transformer.transform(entry);
-
-        PowerMock.verifyAll();
-
-        Assert.assertNotNull(event);
-        Assert.assertEquals(1, event.getFields().size());
-        Assert.assertEquals("field1", event.getFields().get(0).getName());
-        Assert.assertEquals("5", event.getFields().get(0).getValueString());
+        List<DefaultField> fields = event.getFields();
+        assertFieldValue(fields, "field1", "5");
     }
 
     @Test
-    public void transform_primaryEmptySecondarySetTest() throws MarkingFunctions.Exception {
-        Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
-        Value value = new Value();
-        AbstractMap.SimpleEntry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
+    public void testPrimaryToSecondaryMapWithEmptySecondaryMap() {
+        givenFieldMapping("field2", Collections.emptyList());
+        transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
 
-        Map<String,List<String>> fieldMap = new HashMap<>();
-        List<String> fieldList = Collections.emptyList();
-        fieldMap.put("field2", fieldList);
-        Document d = new Document();
-        basicExpects(d, key, entry);
+        DefaultEvent event = (DefaultEvent) transformer.transform(createEntry());
 
-        PowerMock.replayAll();
-
-        transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
-        transformer.setPrimaryToSecondaryFieldMap(fieldMap);
-        SimpleEvent event = (SimpleEvent) transformer.transform(entry);
-
-        PowerMock.verifyAll();
-
-        Assert.assertNotNull(event);
-        Assert.assertEquals(1, event.getFields().size());
-        Assert.assertEquals("field1", event.getFields().get(0).getName());
-        Assert.assertEquals("5", event.getFields().get(0).getValueString());
+        List<DefaultField> fields = event.getFields();
+        assertFieldValue(fields, "field1", "5");
     }
 
     @Test
-    public void transform_primaryNoMatchSetTest() throws MarkingFunctions.Exception {
-        Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
-        Value value = new Value();
-        AbstractMap.SimpleEntry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
+    public void testPrimaryToSecondaryFieldMapDoesNotMatch() {
+        givenFieldMapping("field2", List.of("field3"));
+        transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
 
-        Map<String,List<String>> fieldMap = new HashMap<>();
-        List<String> fieldList = new ArrayList<>();
-        fieldList.add("field3");
-        fieldMap.put("field2", fieldList);
+        DefaultEvent event = (DefaultEvent) transformer.transform(createEntry());
 
-        Document d = new Document();
-        basicExpects(d, key, entry);
-
-        PowerMock.replayAll();
-
-        transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
-        transformer.setPrimaryToSecondaryFieldMap(fieldMap);
-        SimpleEvent event = (SimpleEvent) transformer.transform(entry);
-
-        PowerMock.verifyAll();
-
-        Assert.assertNotNull(event);
-        Assert.assertEquals(1, event.getFields().size());
-        Assert.assertEquals("field1", event.getFields().get(0).getName());
-        Assert.assertEquals("5", event.getFields().get(0).getValueString());
+        List<DefaultField> fields = event.getFields();
+        assertFieldValue(fields, "field1", "5");
     }
 
     @Test
-    public void transform_primaryMatchSetTest() throws MarkingFunctions.Exception {
-        Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
-        Value value = new Value();
-        AbstractMap.SimpleEntry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
+    public void testPrimaryToSecondaryFieldMapMatches() {
+        givenFieldMapping("field2", List.of("field1"));
+        transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
 
-        Map<String,List<String>> fieldMap = new HashMap<>();
-        List<String> fieldList = new ArrayList<>();
-        fieldList.add("field1");
-        fieldMap.put("field2", fieldList);
+        DefaultEvent event = (DefaultEvent) transformer.transform(createEntry());
 
-        Document d = new Document();
-        basicExpects(d, key, entry);
-
-        EasyMock.expect(mockResponseFactory.getField()).andReturn(new SimpleField());
-
-        PowerMock.replayAll();
-
-        transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
-        transformer.setPrimaryToSecondaryFieldMap(fieldMap);
-        SimpleEvent event = (SimpleEvent) transformer.transform(entry);
-
-        PowerMock.verifyAll();
-
-        Assert.assertNotNull(event);
-        Assert.assertEquals(2, event.getFields().size());
-
-        List<String> foundFields = new ArrayList<>(2);
-        for (SimpleField field : event.getFields()) {
-            foundFields.add(field.getName());
-            Assert.assertEquals("5", field.getValueString());
-        }
-
-        List<String> expectedFields = new ArrayList<>();
-        expectedFields.add("field1");
-        expectedFields.add("field2");
-
-        Assert.assertTrue(foundFields.containsAll(expectedFields));
-        Assert.assertTrue(expectedFields.containsAll(foundFields));
+        List<DefaultField> fields = event.getFields();
+        assertFieldValue(fields, "field2", "5");
+        assertFieldValue(fields, "field1", "5");
     }
 
     @Test
-    public void transform_primaryMatchOrderSetTest() throws MarkingFunctions.Exception {
-        Key key = new Key("shard", "dataType" + Constants.NULL + "uid");
-        Value value = new Value();
-        AbstractMap.SimpleEntry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
+    public void testPrimaryToSecondaryFieldMapMatchesOrderSet() {
+        givenDocumentFieldValue("field3", "6");
+        givenFieldMapping("field2", List.of("field3", "field1"));
 
-        Map<String,List<String>> fieldMap = new HashMap<>();
-        List<String> fieldList = new ArrayList<>();
-        fieldList.add("field3");
-        fieldList.add("field1");
+        transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
 
-        fieldMap.put("field2", fieldList);
+        DefaultEvent event = (DefaultEvent) transformer.transform(createEntry());
 
-        Document d = new Document();
-        d.put("field3", new Numeric("6", key, true));
-        basicExpects(d, key, entry);
+        List<DefaultField> fields = event.getFields();
+        assertFieldValue(fields, "field2", "6");
+        assertFieldValue(fields, "field3", "6");
+        assertFieldValue(fields, "field1", "5");
+    }
 
-        EasyMock.expect(mockResponseFactory.getField()).andReturn(new SimpleField());
-        EasyMock.expect(mockResponseFactory.getField()).andReturn(new SimpleField());
+    private void assertFieldValue(List<DefaultField> fields, String expectedField, String expectedValue) {
 
-        PowerMock.replayAll();
-
-        transformer = new DocumentTransformer(mockLogic, mockQuery, mockMarkingFunctions, mockResponseFactory, true);
-        transformer.setPrimaryToSecondaryFieldMap(fieldMap);
-        SimpleEvent event = (SimpleEvent) transformer.transform(entry);
-
-        PowerMock.verifyAll();
-
-        Assert.assertNotNull(event);
-        Assert.assertEquals(3, event.getFields().size());
-
-        List<String> foundFields = new ArrayList<>(3);
-        for (SimpleField field : event.getFields()) {
-            foundFields.add(field.getName());
-            if (field.getName().equals("field1")) {
-                Assert.assertEquals("5", field.getValueString());
-            } else {
-                Assert.assertEquals("6", field.getValueString());
+        boolean success = false;
+        for (DefaultField field : fields) {
+            if (expectedField.equals(field.getName()) && expectedValue.equals(field.getValueString())) {
+                success = true;
+                break;
             }
         }
-
-        List<String> expectedFields = new ArrayList<>();
-        expectedFields.add("field1");
-        expectedFields.add("field2");
-        expectedFields.add("field3");
-
-        Assert.assertTrue(foundFields.containsAll(expectedFields));
-        Assert.assertTrue(expectedFields.containsAll(foundFields));
+        assertTrue(success);
     }
 }

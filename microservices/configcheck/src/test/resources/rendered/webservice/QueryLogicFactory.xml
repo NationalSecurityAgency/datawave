@@ -250,12 +250,6 @@
         <property name="filterOptions" ref="BaseEventQueryFilterOptions" />
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Retrieve sharded events/documents, leveraging the global index tables as needed" />
-        <!-- Determines how many events in the global index lookup will be
-        aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="40000" />
-        <!-- Determines how many shards in the global index lookup will be
-        aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="20" />
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="2000" />
         <!-- The max number of terms AFTER all expansions -->
@@ -320,7 +314,6 @@
         <property name="statsdPort" value="8125" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="evaluationOnlyFields" value="" />
-        <property name="lazySetMechanismEnabled" value="false" />
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
@@ -618,12 +611,6 @@
         <property name="useEnrichers" value="false" />
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Fast boolean query over indexed fields, only returning fields queried on" />
-        <!-- Determines how many events in the global index lookup will be
-        aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="40000" />
-        <!-- Determines how many shards in the global index lookup will be
-        aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="20" />
         <!-- The max number of terms BEFORE all expansions -->
         <property name="initialMaxTermThreshold" value="2000" />
         <!-- The max number of terms AFTER all expansions -->

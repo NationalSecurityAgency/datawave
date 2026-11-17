@@ -1,6 +1,7 @@
 package datawave.query.jexl.util;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Collections;
 import java.util.Set;
@@ -8,7 +9,6 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -127,7 +127,7 @@ class LuceneQueryGeneratorTest {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(parsed);
             assertTrue(validator.isValid(script));
         } catch (Exception e) {
-            Assertions.fail("Failed to validate query: " + query);
+            fail("Failed to validate query: " + query);
             throw new RuntimeException(e);
         }
     }

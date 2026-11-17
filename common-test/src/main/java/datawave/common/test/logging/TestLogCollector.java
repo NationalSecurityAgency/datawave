@@ -25,7 +25,10 @@ import org.junit.rules.ExternalResource;
  * <p>
  * This class replaces our legacy CommonTestAppender, which implemented a pattern of usage that is broken and no longer valid in log4j 2x
  * </p>
+ *
+ * @deprecated Use {@link TestLogCollectorJUnit5} for JUnit 5 tests.
  */
+@Deprecated
 public class TestLogCollector extends ExternalResource {
 
     private List<String> messages = Collections.synchronizedList(new ArrayList<>());

@@ -3,7 +3,8 @@ package datawave.util.ssdeep;
 import static java.util.stream.Collectors.toSet;
 
 import static datawave.util.ssdeep.SSDeepHashTest.GOOD_HASHES;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,8 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Multimap;
 
@@ -60,7 +60,7 @@ public class NGramGeneratorTest {
             if (!unexpected.isEmpty()) {
                 failMessage.append("Observed unexpected elements for hash: ").append(ssdh).append(" unexpected: ").append(unexpected).append(". ");
             }
-            Assert.assertTrue(failMessage.toString(), expected.isEmpty() && unexpected.isEmpty());
+            assertTrue(expected.isEmpty() && unexpected.isEmpty(), failMessage.toString());
         }
     }
 

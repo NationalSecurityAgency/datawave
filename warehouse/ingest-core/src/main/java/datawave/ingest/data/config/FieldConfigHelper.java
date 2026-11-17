@@ -1,6 +1,8 @@
 package datawave.ingest.data.config;
 
 public interface FieldConfigHelper {
+    String describeSource();
+
     boolean isStoredField(String fieldName);
 
     boolean isIndexedField(String fieldName);

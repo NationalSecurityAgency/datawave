@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="io.jsonwebtoken.jjwt-api" xmlns="urn:jboss:module:1.9">
+    <resources>
+        <resource-root path="jjwt-api-${version.jjwt}.jar"/>
+    </resources>
+</module>

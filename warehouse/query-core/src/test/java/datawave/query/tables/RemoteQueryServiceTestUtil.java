@@ -23,10 +23,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.core.MediaType;
@@ -59,10 +59,10 @@ import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
+import datawave.security.util.DnProperties;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.remote.RemoteServiceUtil;
-import datawave.webservice.common.remote.TestJSSESecurityDomain;
+import datawave.webservice.common.remote.TestSSLStores;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
@@ -103,7 +103,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
         super.initialize();
 
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
-        System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
+        System.setProperty(DnProperties.SUBJECT_DN_PATTERN_PROPERTY, ".*ou=server.*");
         KeyPairGenerator generater = null;
         try {
             generater = KeyPairGenerator.getInstance("RSA");
@@ -154,7 +154,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
             DefaultEventQueryResponse response = new DefaultEventQueryResponse();
             if (nextCount < totalNext) {
                 DefaultEvent event = new DefaultEvent();
-                event.setFields(Collections.singletonList(new DefaultField("FOO" + nextCount, "FOO|BAR", new HashMap(), -1L, "FOOBAR" + nextCount)));
+                event.setFields(Collections.singletonList(new DefaultField("FOO" + nextCount, "FOO|BAR", -1L, "FOOBAR" + nextCount)));
                 response.setEvents(Collections.singletonList(event));
                 response.setReturnedEvents(1L);
             } else {
@@ -199,7 +199,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
         remote.setExecutorService(null);
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
         remote.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        remote.setJsseSecurityDomain(new TestJSSESecurityDomain(alias, privateKey, keyPass, chain));
+        remote.setSslStores(new TestSSLStores(alias, privateKey, keyPass, chain));
 
         return remote;
     }
@@ -239,6 +239,7 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
 
         private boolean planTest = false;
         private String plan;
+        private CountDownLatch exceptionLatch;
 
         public QueryRunnable(QueryLogic logic) {
             this(logic, null);
@@ -293,8 +294,11 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
                     assertEquals(expectedCount, events.size());
                 }
             } catch (Exception e) {
-                caught.set(true);
                 exception = e;
+                caught.set(true);
+                if (exceptionLatch != null) {
+                    exceptionLatch.countDown();
+                }
                 return;
             }
 
@@ -314,6 +318,10 @@ public class RemoteQueryServiceTestUtil extends RemoteServiceUtil {
 
         public Exception getException() {
             return exception;
+        }
+
+        public void setExceptionLatch(CountDownLatch latch) {
+            this.exceptionLatch = latch;
         }
 
         public void setPlanTest(boolean planTest) {

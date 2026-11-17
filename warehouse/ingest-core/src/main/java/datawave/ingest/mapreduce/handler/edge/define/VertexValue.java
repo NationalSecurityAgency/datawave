@@ -1,8 +1,7 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
-import java.util.Map;
-
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.marking.Markings;
 
 /**
  * Combines a VertexDefinition with value obtained from a {@link datawave.ingest.data.config.NormalizedContentInterface}.
@@ -23,7 +22,7 @@ public class VertexValue {
     private String indexedRealmLabel = null;
     private String eventRealmLabel = null;
     private String sourceIndex = null;
-    private Map<String,String> markings = null;
+    private Markings<?> markings = null;
     private String maskedValue = null;
     private boolean hasMaskedValue = false;
     private String relationshipType = null;
@@ -50,7 +49,7 @@ public class VertexValue {
         }
     }
 
-    public Map<String,String> getMarkings() {
+    public Markings<?> getMarkings() {
         return this.markings;
     }
 

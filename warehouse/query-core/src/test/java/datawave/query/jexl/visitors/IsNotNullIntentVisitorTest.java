@@ -1,9 +1,10 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
@@ -47,7 +48,7 @@ public class IsNotNullIntentVisitorTest {
         try {
             validator.isValid(actual);
         } catch (InvalidQueryTreeException e) {
-            Assert.fail("IsNotNullIntentVisitor produced an invalid query tree: " + e.getMessage());
+            fail("IsNotNullIntentVisitor produced an invalid query tree: " + e.getMessage());
         }
     }
 }

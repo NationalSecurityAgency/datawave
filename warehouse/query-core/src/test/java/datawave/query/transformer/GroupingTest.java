@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -44,6 +45,7 @@ import com.google.common.collect.Lists;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.marking.Markings;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
@@ -57,7 +59,7 @@ import datawave.query.util.TestIndexTableNames;
 import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 import datawave.query.util.VisibilityWiseGuysNoGroupingIngestWithModel;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.DefaultEventQueryResponse;
@@ -267,6 +269,10 @@ public class GroupingTest extends AbstractQueryTest {
         givenParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE, option);
     }
 
+    private void givenOneDocPerGroup(boolean value) {
+        getLogic().setOneDocPerGroup(value);
+    }
+
     @Override
     protected void extraAssertions() {
         // no-op
@@ -292,6 +298,7 @@ public class GroupingTest extends AbstractQueryTest {
         this.logic.setFullTableScanEnabled(true);
         this.logic.setMaxEvaluationPipelines(1);
         this.logic.setQueryExecutionForPageTimeout(300000000000000L);
+        this.logic.setOneDocPerGroup(false);
 
         givenDate("20091231", "20150101");
 
@@ -537,6 +544,15 @@ public class GroupingTest extends AbstractQueryTest {
         // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE").withCount(3));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
     }
 
     /**
@@ -552,6 +568,15 @@ public class GroupingTest extends AbstractQueryTest {
 
         expectGroup(Group.of("MALE").withCount(10));
         expectGroup(Group.of("FEMALE").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE").withCount(3));
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -581,13 +606,15 @@ public class GroupingTest extends AbstractQueryTest {
         for (QueryResult result : queryResults) {
             // noinspection rawtypes
             for (EventBase event : result.response.getEvents()) {
-                String eventCV = event.getMarkings().get(COLVIS_MARKING).toString();
+                String eventCV = Optional.ofNullable(event.getMarkings()).map(Markings::getMarkings).map(Object::toString).orElse(null);
                 assertThat(eventCV).describedAs("Assert event cv for teardown: %s, interrupt: %s", result.teardown, result.interrupt).isEqualTo(REDUCED_COLVIS);
                 // noinspection unchecked
                 for (FieldBase<?> field : (List<FieldBase<?>>) event.getFields()) {
-                    String fieldCV = field.getMarkings().get(COLVIS_MARKING);
-                    assertThat(fieldCV).describedAs("Assert null field cv for field: %s, teardown: %s, interrupt: %s", field.getName(), result.teardown,
-                                    result.interrupt).isNull();
+                    Markings<?> fieldMarkings = field.getMarkings();
+                    assertThat(fieldMarkings == null || fieldMarkings.isEmpty())
+                                    .describedAs("Assert empty field markings for field: %s, teardown: %s, interrupt: %s", field.getName(), result.teardown,
+                                                    result.interrupt)
+                                    .isTrue();
                 }
             }
         }
@@ -606,6 +633,14 @@ public class GroupingTest extends AbstractQueryTest {
         expectGroup(Group.of("1").withCount(3));
         expectGroup(Group.of("2").withCount(3));
         expectGroup(Group.of("3").withCount(1));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -631,6 +666,17 @@ public class GroupingTest extends AbstractQueryTest {
         // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE", "1").withCount(3));
+        expectGroup(Group.of("MALE", "2").withCount(3));
+        expectGroup(Group.of("MALE", "3").withCount(1));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
     }
 
     /**
@@ -651,6 +697,15 @@ public class GroupingTest extends AbstractQueryTest {
         expectGroup(Group.of("MALE", "20").withCount(2));
         expectGroup(Group.of("MALE", "24").withCount(1));
         expectGroup(Group.of("MALE", "22").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE", "22").withCount(1));
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -687,6 +742,34 @@ public class GroupingTest extends AbstractQueryTest {
         // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("22").withCount(1));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+    }
+
+    @Test
+    public void testGroupByWithFieldAsTerm() throws Exception {
+        givenNonModelData();
+        givenLuceneParserForLogic();
+        givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "false");
+        givenQuery("AGE:22 AND #ISNOTNULL(GENDER) AND #GROUPBY(AGE)");
+        expectPlan("AGE == '+bE2.2' && !(GENDER == null)");
+
+        // we receive all AGEs for each event where at least one AGE is 22
+        expectGroup(Group.of("22").withCount(2));
+        expectGroup(Group.of("18").withCount(1));
+        expectGroup(Group.of("20").withCount(1));
+        expectGroup(Group.of("24").withCount(1));
+        expectGroup(Group.of("40").withCount(1));
+        collectQueryResults();
+        assertGroups();
+        queryResults.clear();
     }
 
     /**
@@ -709,6 +792,15 @@ public class GroupingTest extends AbstractQueryTest {
         expectGroup(Group.of("MALE", "20").withCount(2));
         expectGroup(Group.of("MALE", "24").withCount(1));
         expectGroup(Group.of("MALE", "22").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE", "22").withCount(1));
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -737,6 +829,14 @@ public class GroupingTest extends AbstractQueryTest {
         // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
     }
 
     @Test
@@ -760,6 +860,16 @@ public class GroupingTest extends AbstractQueryTest {
         // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE").withCount(3)
+                        .withAggregate(Aggregate.of("AGE").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
     }
 
     @Test
@@ -772,6 +882,16 @@ public class GroupingTest extends AbstractQueryTest {
                         .withAggregate(Aggregate.of("AGE").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
         expectGroup(Group.of("FEMALE").withCount(2)
                         .withAggregate(Aggregate.of("AGE").withCount("2").withMax("18").withMin("18").withSum("36").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE").withCount(3)
+                        .withAggregate(Aggregate.of("AGE").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -794,6 +914,16 @@ public class GroupingTest extends AbstractQueryTest {
         // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE").withCount(3)
+                        .withAggregate(Aggregate.of("AGE").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
     }
 
     @Test
@@ -812,6 +942,16 @@ public class GroupingTest extends AbstractQueryTest {
         expectGroup(Group.of("MALE", "20").withCount(2));
         expectGroup(Group.of("MALE", "24").withCount(1));
         expectGroup(Group.of("MALE", "22").withCount(2));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+        assertResponseEventsAreIdenticalForAllTestResults();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE", "22").withCount(1));
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -840,6 +980,15 @@ public class GroupingTest extends AbstractQueryTest {
         // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("22").withCount(1));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
     }
 
     @Test
@@ -855,6 +1004,15 @@ public class GroupingTest extends AbstractQueryTest {
 
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE").withCount(3));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
     }
 
     @Test
@@ -868,6 +1026,15 @@ public class GroupingTest extends AbstractQueryTest {
         expectGroup(Group.of("MALE").withCount(10));
         expectGroup(Group.of("FEMALE").withCount(2));
 
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE").withCount(3));
+
+        // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
     }
@@ -888,6 +1055,15 @@ public class GroupingTest extends AbstractQueryTest {
         expectGroup(Group.of("MALE", "24").withCount(1));
         expectGroup(Group.of("MALE", "22").withCount(2));
 
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE", "22").withCount(1));
+
+        // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
     }
@@ -912,6 +1088,15 @@ public class GroupingTest extends AbstractQueryTest {
 
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE", "22").withCount(1));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
     }
 
     @Test
@@ -932,6 +1117,16 @@ public class GroupingTest extends AbstractQueryTest {
                         .withAggregate(Aggregate.of("AG").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
         expectGroup(Group.of("FEMALE").withCount(2)
                         .withAggregate(Aggregate.of("AG").withCount("2").withMax("18").withMin("18").withSum("36").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE").withCount(3)
+                        .withAggregate(Aggregate.of("AG").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -962,6 +1157,14 @@ public class GroupingTest extends AbstractQueryTest {
                         .withAggregate(Aggregate.of("BIRTHDAY").withCount("0"))
                         .withAggregate(Aggregate.of("GENDER").withMin("MALE").withMax("MALE").withCount("4")));
         // @formatter:on
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+
         // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
@@ -1011,6 +1214,16 @@ public class GroupingTest extends AbstractQueryTest {
         // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("MALE").withCount(3)
+                        .withAggregate(Aggregate.of("AG").withCount("10").withMax("40").withMin("16").withSum("268").withAverage("26.8")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
     }
 
     /**
@@ -1029,6 +1242,14 @@ public class GroupingTest extends AbstractQueryTest {
         expectGroup(Group.of("MALE").withCount(2).withAggregate(Aggregate.of("AG").withCount("2").withMax("40").withMin("24").withSum("64").withAverage("32")));
         expectGroup(Group.of("FEMALE").withCount(1)
                         .withAggregate(Aggregate.of("AG").withCount("1").withMax("18").withMin("18").withSum("18").withAverage("18")));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -1054,6 +1275,15 @@ public class GroupingTest extends AbstractQueryTest {
         // Run the test queries and collect their results.
         collectQueryResults();
         assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("1910-00-00T00:00:00.000", "MALE").withCount(1));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
     }
 
     /**
@@ -1070,6 +1300,15 @@ public class GroupingTest extends AbstractQueryTest {
         expectGroup(Group.of("1925-00-00T00:00:00.000", "FEMALE").withCount(1));
         expectGroup(Group.of("1925-00-00T00:00:00.000", "MALE").withCount(1));
         expectGroup(Group.of("1910-00-00T00:00:00.000", "MALE").withCount(3));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("1910-00-00T00:00:00.000", "MALE").withCount(1));
 
         // Run the test queries and collect their results.
         collectQueryResults();
@@ -1091,6 +1330,15 @@ public class GroupingTest extends AbstractQueryTest {
         expectGroup(Group.of("1925-00-00T00:00:00.000", "FEMALE").withCount(1));
         expectGroup(Group.of("1925-00-00T00:00:00.000", "MALE").withCount(1));
         expectGroup(Group.of("1910-00-00T00:00:00.000", "MALE").withCount(3));
+
+        // Run the test queries and collect their results.
+        collectQueryResults();
+        assertGroups();
+
+        // now try with one doc per group
+        queryResults.clear();
+        givenOneDocPerGroup(true);
+        expectGroup(Group.of("1910-00-00T00:00:00.000", "MALE").withCount(1));
 
         // Run the test queries and collect their results.
         collectQueryResults();

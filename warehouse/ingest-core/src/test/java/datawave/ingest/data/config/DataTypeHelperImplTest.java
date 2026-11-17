@@ -1,13 +1,15 @@
 package datawave.ingest.data.config;
 
-import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.data.TypeRegistry;
 import datawave.policy.IngestPolicyEnforcer;
@@ -16,42 +18,42 @@ public class DataTypeHelperImplTest {
 
     private Configuration conf;
 
-    @Before
+    @BeforeEach
     public void setup() {
         conf = new Configuration();
         conf.set("all" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testInvalidConfig() {
         DataTypeHelperImpl helper = new DataTypeHelperImpl();
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
-        helper.setup(conf);
+        assertThrows(IllegalArgumentException.class, () -> helper.setup(conf));
     }
 
     @Test
-    public void testValidConfig() throws Exception {
+    public void testValidConfig() {
         InputStream configStream = getClass().getResourceAsStream("/fake-datatype-config.xml");
-        Assert.assertNotNull(configStream);
+        assertNotNull(configStream);
         conf.addResource(configStream);
-        Assert.assertThat(conf.get("data.name"), is("fake"));
+        assertEquals("fake", conf.get("data.name"));
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
         DataTypeHelperImpl helper = new DataTypeHelperImpl();
         helper.setup(conf);
 
-        Assert.assertTrue(helper.fieldsToDowncase.contains("md5"));
-        Assert.assertTrue(helper.fieldsToDowncase.contains("sha1"));
-        Assert.assertTrue(helper.fieldsToDowncase.contains("sha256"));
+        assertTrue(helper.fieldsToDowncase.contains("md5"));
+        assertTrue(helper.fieldsToDowncase.contains("sha1"));
+        assertTrue(helper.fieldsToDowncase.contains("sha256"));
 
-        Assert.assertEquals("abcde", helper.clean("MD5", "ABCDE"));
+        assertEquals("abcde", helper.clean("MD5", "ABCDE"));
     }
 
     @Test
-    public void testDowncaseFields() throws Exception {
+    public void testDowncaseFields() {
         InputStream configStream = getClass().getResourceAsStream("/fake-datatype-config.xml");
-        Assert.assertNotNull(configStream);
+        assertNotNull(configStream);
         conf.addResource(configStream);
         conf.set("fake" + DataTypeHelper.Properties.DOWNCASE_FIELDS, "one,two,three,FOUR");
         TypeRegistry.reset();
@@ -59,11 +61,11 @@ public class DataTypeHelperImplTest {
         DataTypeHelperImpl helper = new DataTypeHelperImpl();
         helper.setup(conf);
 
-        Assert.assertTrue(helper.fieldsToDowncase.contains("one"));
-        Assert.assertTrue(helper.fieldsToDowncase.contains("two"));
-        Assert.assertTrue(helper.fieldsToDowncase.contains("three"));
+        assertTrue(helper.fieldsToDowncase.contains("one"));
+        assertTrue(helper.fieldsToDowncase.contains("two"));
+        assertTrue(helper.fieldsToDowncase.contains("three"));
 
-        Assert.assertEquals("abcde", helper.clean("THREE", "ABCDE"));
-        Assert.assertEquals("abcde", helper.clean("FOUR", "ABCDE"));
+        assertEquals("abcde", helper.clean("THREE", "ABCDE"));
+        assertEquals("abcde", helper.clean("FOUR", "ABCDE"));
     }
 }

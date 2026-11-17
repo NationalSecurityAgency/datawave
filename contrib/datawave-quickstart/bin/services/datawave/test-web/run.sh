@@ -165,9 +165,10 @@ function configure() {
 
     # Misc....
 
-    datawaveWebIsInstalled || ( fatal "DataWave Web must be installed and running" && exit 1 )
-
-    datawaveWebIsRunning || ( fatal "DataWave Web must be running" && exit 1 )
+    if [[ "${DW_DATAWAVE_WEB_REMOTE:-false}" != "true" ]]; then
+        datawaveWebIsInstalled || ( fatal "DataWave Web must be installed and running" && exit 1 )
+        datawaveWebIsRunning || ( fatal "DataWave Web must be running" && exit 1 )
+    fi
 
     CURL="$( which curl )" && [ -z "${CURL}" ] && fatal "Curl executable not found!" && exit 1
 

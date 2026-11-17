@@ -1,11 +1,12 @@
 package datawave.core.iterators;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.List;
 
@@ -15,11 +16,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.query.Constants;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
@@ -27,15 +27,15 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 
 public class DatawaveFieldIndexIteratorJexlTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    File temporaryFolder;
 
     FileSystem fs;
     List<IvaratorCacheDir> cacheDirs;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
-        File cacheDir = temporaryFolder.newFolder();
+        File cacheDir = Files.createTempDirectory(temporaryFolder.toPath(), "cache-").toFile();
         IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(cacheDir.toURI().toString());
         fs = FileSystem.get(cacheDir.toURI(), new Configuration());
         File queryDirFile = new File(cacheDir, "query");
@@ -45,7 +45,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
         cacheDirs = Collections.singletonList(new IvaratorCacheDir(config, fs, queryDir));
     }
 
-    @After
+    @AfterEach
     public void cleanup() throws IOException {
         fs.close();
     }

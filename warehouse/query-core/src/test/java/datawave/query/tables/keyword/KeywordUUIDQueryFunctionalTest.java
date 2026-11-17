@@ -5,13 +5,12 @@ import static datawave.query.tables.keyword.KeywordUUIDChainStrategy.CATEGORY_PA
 import static datawave.query.tables.keyword.TagCloudTestUtil.CAPONE_UUID;
 import static datawave.query.tables.keyword.TagCloudTestUtil.CORLEONE_UUID;
 import static datawave.query.tables.keyword.TagCloudTestUtil.SOPRANO_UUID;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -19,53 +18,54 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.UUID;
-
-import javax.inject.Inject;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.helpers.PrintUtility;
 import datawave.microservice.query.QueryImpl;
-import datawave.query.ExcerptTest;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.tables.ResponseQueryDriver;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.keyword.DefaultTagCloud;
 import datawave.webservice.result.keyword.DefaultTagCloudResponse;
 import datawave.webservice.result.keyword.TagCloudBase;
 
-@RunWith(Arquillian.class)
+@ExtendWith(SpringExtension.class)
+@ComponentScan(basePackages = "datawave.query")
+// @formatter:off
+@ContextConfiguration(locations = {
+        "classpath:datawave/query/QueryLogicFactory.xml",
+        "classpath:beanRefContext.xml",
+        "classpath:MarkingFunctionsContext.xml",
+        "classpath:MetadataHelperContext.xml",
+        "classpath:CacheContext.xml"})
+// @formatter:on
 public class KeywordUUIDQueryFunctionalTest {
-    protected static AccumuloClient connector = null;
 
     private static final Logger log = Logger.getLogger(KeywordUUIDQueryFunctionalTest.class);
+
+    protected static AccumuloClient connector;
+
     protected Authorizations auths = new Authorizations("ALL");
     protected Set<Authorizations> authSet = Set.of(auths);
 
-    @Inject
-    @SpringBean(name = "KeywordUUIDQuery")
+    @Autowired
+    @Qualifier("KeywordUUIDQuery")
     protected KeywordChainedUUIDQueryLogic logic;
 
     private String query;
@@ -75,38 +75,15 @@ public class KeywordUUIDQueryFunctionalTest {
     private ResponseQueryDriver<Map.Entry<Key,Value>> queryDriver;
     private final TagCloudTestUtil tagCloudTestUtil = new TagCloudTestUtil();
 
-    @Deployment
-    public static JavaArchive createDeployment() throws Exception {
-
-        return ShrinkWrap.create(JavaArchive.class)
-                        .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .addAsManifestResource(new StringAsset(
-                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
-                                        "beans.xml");
-    }
-
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
-        QueryTestTableHelper qtth = new QueryTestTableHelper(ExcerptTest.DocumentRangeTest.class.toString(), log);
+        QueryTestTableHelper qtth = new QueryTestTableHelper(KeywordUUIDQueryFunctionalTest.class.toString(), log);
         connector = qtth.client;
-
-        Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
-
         WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
-        Authorizations auths = new Authorizations("ALL");
-        PrintUtility.printTable(connector, auths, TableName.SHARD);
-        PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
 
-    @Before
-    public void setup() throws ParseException {
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        log.setLevel(Level.TRACE);
-
+    @BeforeEach
+    public void setup() {
         queryDriver = new ResponseQueryDriver<>(logic);
         expectedResults = new ArrayList<>();
         extraParameters = new HashMap<>();
@@ -203,7 +180,7 @@ public class KeywordUUIDQueryFunctionalTest {
         assertEquals(expectedResults.size(), tagCloudResponse.getTagClouds().size());
         for (TagCloudBase result : tagCloudResponse.getTagClouds()) {
             DefaultTagCloud tagCloud = (DefaultTagCloud) result;
-            assertTrue("tagCloud " + result.getMetadata() + " not expected.", expectedResults.contains(tagCloud));
+            assertTrue(expectedResults.contains(tagCloud), "tagCloud " + result.getMetadata() + " not expected.");
         }
     }
 

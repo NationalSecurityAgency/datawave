@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
-import datawave.next.stats.DocumentIteratorStats;
+import datawave.next.stats.DocIterStats;
 import datawave.query.data.parsers.FieldIndexKey;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
@@ -60,7 +60,7 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
 
     protected boolean seenSeek = false;
     protected final FieldIndexKey parser = new FieldIndexKey();
-    protected final DocumentIteratorStats stats = new DocumentIteratorStats();
+    protected final DocIterStats stats = new DocIterStats();
 
     /**
      * Minimal constructor requires the source, row, and JexlNode
@@ -277,8 +277,11 @@ public abstract class BaseDocIdIterator implements Iterator<Key> {
      *
      * @return the iterator stats
      */
-    public DocumentIteratorStats getStats() {
+    public DocIterStats getStats() {
         return stats;
     }
 
+    public String getField() {
+        return field;
+    }
 }

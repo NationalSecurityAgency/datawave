@@ -111,7 +111,7 @@ public class FileRuleCacheValue {
 
     @VisibleForTesting
     Collection<FilterRule> loadFilterRules(IteratorEnvironment iterEnv) throws IOException {
-        AgeOffRuleLoader ruleLoader = new AgeOffRuleLoader(new FileLoaderDependencyProvider(fs, filePath, iterEnv));
+        AgeOffRuleLoader ruleLoader = new AgeOffRuleLoader(new FileLoaderDependencyProvider(fs, filePath), iterEnv);
         Collection<FilterRule> rulesBase;
         try (InputStream in = fs.open(filePath)) {
             rulesBase = ruleLoader.load(in);

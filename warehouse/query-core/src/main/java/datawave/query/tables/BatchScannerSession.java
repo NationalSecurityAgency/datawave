@@ -17,6 +17,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.accumulo.core.client.ScannerBase;
@@ -717,10 +718,18 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     @Override
     public void close() {
         stopAsync();
+        // loop to prevent a possible deadlock in com.google.common.util.concurrent.Monitor
+        // due to a lost signal when the receiving thread was in an interrupted state
         try {
-            awaitTerminated();
-        } catch (Exception e) {
+            while (!state().equals(State.TERMINATED)) {
+                try {
+                    awaitTerminated(250, TimeUnit.MILLISECONDS);
+                } catch (TimeoutException e) {
 
+                }
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
         }
         service.shutdownNow();
     }

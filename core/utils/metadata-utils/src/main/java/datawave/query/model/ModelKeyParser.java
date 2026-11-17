@@ -1,6 +1,7 @@
 package datawave.query.model;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +20,7 @@ import com.google.common.base.Joiner;
 // @formatter:off
 /**
  * This class can be used to parse keys belonging to a model.
- *
+ * <p>
  * Definitions:
  *   MODEL_NAME: the name of the model (e.g. "DATAWAVE")
  *   MODEL_FIELD: the model field name
@@ -29,7 +30,7 @@ import com.google.common.base.Joiner;
  *   ATTR_VALUES: a comma delimited list of 0 or more
  *   ATTR_VALUE ATTRIBUTE: either ATTR_NAME or ATTR_NAME=ATTR_VALUE
  *   ATTRIBUTES: a comma delimited list of 0 or more ATTRIBUTE
- *
+ * <p>
  * Keys can have the following forms (row cf:cq value):
  *   MODEL_FIELD MODEL_NAME:DB_FIELD\x00"forward" ATTRIBUTES
  *   DB_FIELD MODEL_NAME:MODEL_FIELD\x00"reverse" ATTRIBUTES
@@ -39,7 +40,7 @@ import com.google.common.base.Joiner;
  *   MODEL_FIELD MODEL_NAME:ATTRIBUTE
  *   MODEL_FIELD MODEL_NAME:ATTR_NAME ATTR_VALUES
  *   MODEL_FIELD MODEL_NAME:"attrs" ATTRIBUTES
- *
+ * <p>
  * deprecated but parsable format:
  *   MODEL_FIELD MODEL_NAME:DB_FIELD\x00"index_only\x00"forward" ATTRIBUTES
  */
@@ -56,7 +57,10 @@ public class ModelKeyParser {
 
     public static final String MODEL = "model";
 
-    private static Logger log = Logger.getLogger(ModelKeyParser.class);
+    private static final Logger log = Logger.getLogger(ModelKeyParser.class);
+
+    // non-final for injection via reflection for unit tests
+    private static Clock clock = Clock.systemUTC();
 
     public static FieldMapping parseKey(Key key) {
         return parseKey(key, NULL_VALUE);
@@ -123,6 +127,9 @@ public class ModelKeyParser {
     }
 
     public static Key createKey(FieldMapping mapping, String modelName) {
+        if (null == mapping.getColumnVisibility()) {
+            throw new RuntimeException("ColumnVisibility was null, unable to create Accumulo mutation");
+        }
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
 
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
@@ -133,7 +140,7 @@ public class ModelKeyParser {
                             modelName + dataType, // ColFam
                             outName + NULL_BYTE + mapping.getDirection().getValue(), // ColQual
                             cv, // Visibility
-                            System.currentTimeMillis() // Timestamp
+                            clock.millis() // Timestamp
             );
         } else {
             String fieldName = mapping.getModelFieldName() == null ? ModelKeyParser.MODEL : mapping.getModelFieldName();
@@ -142,7 +149,7 @@ public class ModelKeyParser {
                             modelName + dataType, // ColFam
                             attr, // ColQ
                             cv, // Visibility
-                            System.currentTimeMillis() // Timestamp
+                            clock.millis() // Timestamp
             );
         }
     }
@@ -181,6 +188,9 @@ public class ModelKeyParser {
     }
 
     public static Mutation createMutation(FieldMapping mapping, String modelName) {
+        if (null == mapping.getColumnVisibility()) {
+            throw new RuntimeException("ColumnVisibility was null, unable to create Accumulo mutation");
+        }
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         Mutation m;
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
@@ -189,22 +199,24 @@ public class ModelKeyParser {
             if (Direction.REVERSE.equals(mapping.getDirection())) {
                 // Reverse mappings should not have indexOnly designators. If they do, scrub it off.
                 m = new Mutation(mapping.getFieldName());
-                m.put(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(),
-                                NULL_VALUE);
+                m.put(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, clock.millis(), NULL_VALUE);
             } else {
                 m = new Mutation(mapping.getModelFieldName());
-                m.put(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(), NULL_VALUE);
+                m.put(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, clock.millis(), NULL_VALUE);
             }
         } else {
             String fieldName = mapping.getModelFieldName() == null ? ModelKeyParser.MODEL : mapping.getModelFieldName();
             String[] attr = getAttrCqValue(mapping.getAttributes());
             m = new Mutation(fieldName);
-            m.put(modelName + dataType, attr[0], cv, System.currentTimeMillis(), new Value(attr[1]));
+            m.put(modelName + dataType, attr[0], cv, clock.millis(), new Value(attr[1]));
         }
         return m;
     }
 
     public static Mutation createDeleteMutation(FieldMapping mapping, String modelName) {
+        if (null == mapping.getColumnVisibility()) {
+            throw new RuntimeException("ColumnVisibility was null, unable to create Accumulo mutation");
+        }
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         Mutation m;
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
@@ -212,24 +224,24 @@ public class ModelKeyParser {
         if (mapping.isFieldMapping()) {
             if (Direction.REVERSE.equals(mapping.getDirection())) {
                 m = new Mutation(mapping.getFieldName());
-                m.putDelete(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
+                m.putDelete(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, clock.millis());
             } else {
                 m = new Mutation(mapping.getModelFieldName());
-                m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
+                m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, clock.millis());
                 m.putDelete(modelName + dataType, mapping.getFieldName() + NULL_BYTE + INDEX_ONLY + NULL_BYTE + mapping.getDirection().getValue(), cv,
-                                System.currentTimeMillis());
+                                clock.millis());
             }
         } else {
             String fieldName = mapping.getModelFieldName() == null ? ModelKeyParser.MODEL : mapping.getModelFieldName();
             m = new Mutation(fieldName);
-            m.putDelete(modelName + dataType, ATTRIBUTES, cv, System.currentTimeMillis());
+            m.putDelete(modelName + dataType, ATTRIBUTES, cv, clock.millis());
             if (mapping.getAttributes().isEmpty()) {
-                m.putDelete(modelName + dataType, "", cv, System.currentTimeMillis());
+                m.putDelete(modelName + dataType, "", cv, clock.millis());
             } else {
                 for (String attr : mapping.getAttributes()) {
-                    m.putDelete(modelName + dataType, attr, cv, System.currentTimeMillis());
+                    m.putDelete(modelName + dataType, attr, cv, clock.millis());
                     if (attr.indexOf('=') >= 0) {
-                        m.putDelete(modelName + dataType, attr.substring(0, attr.indexOf('=')), cv, System.currentTimeMillis());
+                        m.putDelete(modelName + dataType, attr.substring(0, attr.indexOf('=')), cv, clock.millis());
                     }
                 }
             }
