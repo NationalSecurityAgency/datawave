@@ -9,7 +9,12 @@ import org.apache.accumulo.core.data.Value;
  * A {@link TableWriter} implementation for a date index table.
  */
 public class DateIndexTableWriter extends TableWriter {
-
+    
+    @Override
+    protected String formatTimestamp(long timestamp) {
+        return PrintUtility.formatCompositeTimestamp(timestamp);
+    }
+    
     @Override
     protected String formatValue(Key key, Value value) {
         if (value == null || value.getSize() < 1) {
@@ -23,4 +28,5 @@ public class DateIndexTableWriter extends TableWriter {
             return UNDECODED_VALUE;
         }
     }
+    
 }
