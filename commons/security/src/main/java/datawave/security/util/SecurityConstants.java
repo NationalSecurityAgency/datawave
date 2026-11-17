@@ -21,6 +21,11 @@ public final class SecurityConstants {
     public static final String PROXIED_ENTITIES_HEADER = "X-ProxiedEntitiesChain";
 
     /**
+     * The response header used to indicate the accepted proxied entities chain.
+     */
+    public static final String PROXIED_ENTITIES_ACCEPTED_HEADER = "X-ProxiedEntitiesAccepted";
+
+    /**
      * The header used to store proxied issuers.
      */
     public static final String PROXIED_ISSUERS_HEADER = "X-ProxiedIssuersChain";

@@ -1,9 +1,10 @@
 package datawave.query.jexl.functions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,9 +23,9 @@ import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.TreeMultimap;
 
@@ -53,7 +54,7 @@ public class ContentFunctionsTest {
     private static final String EVENT_ID = "shard\u0000dt\u0000uid";
     private final String eventId = EVENT_ID;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         Map<String,Object> functions = new HashMap<>(ArithmeticJexlEngines.functions());
         functions.put("f", QueryFunctions.class);
@@ -63,7 +64,7 @@ public class ContentFunctionsTest {
                         new JexlBuilder().debug(false).namespaces(functions).arithmetic(new DefaultArithmetic()).permissions(JexlPermissions.UNRESTRICTED));
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         this.context = new MapContext();
         this.termOffSetMap = new TermOffsetMap();
@@ -162,8 +163,8 @@ public class ContentFunctionsTest {
         Collection<PhraseOffset> phraseOffsets = termOffSetMap.getPhraseIndexes(field);
         boolean found = phraseOffsets.stream()
                         .anyMatch(pair -> pair.getEventId().equals(eventId) && pair.getStartOffset() == startOffset && pair.getEndOffset() == endOffset);
-        assertTrue("Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId " + eventId.replace('\u0000', '/'),
-                        found);
+        assertTrue(found, "Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId "
+                        + eventId.replace('\u0000', '/'));
     }
 
     private void assertNoPhraseOffsetsFor(String field) {
@@ -171,7 +172,7 @@ public class ContentFunctionsTest {
     }
 
     private void assertPhraseOffsetsEmpty() {
-        assertTrue("Expected empty phrase offset map", termOffSetMap.getPhraseIndexes() == null || termOffSetMap.getPhraseIndexes().isEmpty());
+        assertTrue(termOffSetMap.getPhraseIndexes() == null || termOffSetMap.getPhraseIndexes().isEmpty(), "Expected empty phrase offset map");
     }
 
     @Test
@@ -373,12 +374,10 @@ public class ContentFunctionsTest {
     /**
      * Ensure that we have a failure
      */
-    @Test(expected = JexlException.class)
+    @Test
     public void testQuotedEvaluation_1_fail() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "1", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog's'", "'cat'");
-        JexlExpression expr = engine.createExpression(query);
-
-        fail("Query should have failed to parse");
+        assertThrows(JexlException.class, () -> engine.createExpression(query));
     }
 
     @Test
@@ -1647,16 +1646,16 @@ public class ContentFunctionsTest {
         testJexlFunctionArgumentDescriptors(query, expected);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJexlFunctionArgumentDescriptor7() throws ParseException {
         String query = "content:" + phraseFunction + "('termOffsetMap', 'hello', 'world')";
-        testJexlFunctionArgumentDescriptors(query, "");
+        assertThrows(IllegalArgumentException.class, () -> testJexlFunctionArgumentDescriptors(query, ""));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJexlFunctionArgumentDescriptor8() throws ParseException {
         String query = "content:within(3, 'hello', 'world')";
-        testJexlFunctionArgumentDescriptors(query, "");
+        assertThrows(IllegalArgumentException.class, () -> testJexlFunctionArgumentDescriptors(query, ""));
     }
 
     @Test
@@ -1692,7 +1691,7 @@ public class ContentFunctionsTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         JexlNode child = script.jjtGetChild(0);
-        assertEquals("First child of ASTJexlScript is not an AStFunctionNode", ASTFunctionNode.class, child.getClass());
+        assertEquals(ASTFunctionNode.class, child.getClass(), "First child of ASTJexlScript is not an AStFunctionNode");
 
         ASTFunctionNode function = (ASTFunctionNode) child;
 
@@ -1702,8 +1701,8 @@ public class ContentFunctionsTest {
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
         JexlNode scriptChild = expectedScript.jjtGetChild(0);
 
-        assertTrue("Expected " + JexlStringBuildingVisitor.buildQuery(scriptChild) + " but was " + JexlStringBuildingVisitor.buildQuery(indexQuery),
-                        JexlASTHelper.equals(scriptChild, indexQuery));
+        assertTrue(JexlASTHelper.equals(scriptChild, indexQuery),
+                        "Expected " + JexlStringBuildingVisitor.buildQuery(scriptChild) + " but was " + JexlStringBuildingVisitor.buildQuery(indexQuery));
     }
 
     @Test

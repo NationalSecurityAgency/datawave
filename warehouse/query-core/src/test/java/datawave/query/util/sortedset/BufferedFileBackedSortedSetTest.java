@@ -1,9 +1,9 @@
 package datawave.query.util.sortedset;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,10 +18,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Predicate;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class BufferedFileBackedSortedSetTest {
 
@@ -30,7 +29,7 @@ public class BufferedFileBackedSortedSetTest {
     private int[] sortedOrder = null;
     private BufferedFileBackedSortedSet<byte[]> set = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         byte[] template = new byte[] {5, 2, 78, 4, 8, 3, 54, 23, 6, 21, 7, 16};
         int[] sortedTemplate = new int[] {1, 5, 3, 0, 8, 10, 4, 11, 9, 7, 6, 2};
@@ -70,7 +69,7 @@ public class BufferedFileBackedSortedSetTest {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         // Delete each sorted set file and its checksum.
         for (SortedSetTempFileHandler fileHandler : tempFileHandlers) {
@@ -89,7 +88,7 @@ public class BufferedFileBackedSortedSetTest {
 
     private void tryDelete(File file) {
         if (file.exists()) {
-            Assert.assertTrue("Failed to delete file " + file, file.delete());
+            assertTrue(file.delete(), "Failed to delete file " + file);
         }
     }
 

@@ -1,13 +1,18 @@
 package datawave.webservice.query;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.text.ParseException;
 import java.util.Date;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -43,7 +48,7 @@ public class QueryParametersTest {
 
     private static final Logger log = Logger.getLogger(QueryParametersTest.class);
 
-    @Before
+    @BeforeEach
     public void beforeTests() {
         beginDate = new Date(accumuloDate);
         endDate = new Date(nifiDate);
@@ -82,29 +87,29 @@ public class QueryParametersTest {
     public void testAllTheParams() {
 
         // Validate that query was built correctly
-        Assert.assertEquals(auths, qp.getAuths());
-        Assert.assertEquals(beginDate, qp.getBeginDate());
-        Assert.assertEquals(endDate, qp.getEndDate());
-        Assert.assertEquals(expDate, qp.getExpirationDate());
-        Assert.assertEquals(logicName, qp.getLogicName());
-        Assert.assertEquals(pagesize, qp.getPagesize());
-        Assert.assertEquals(persistenceMode, qp.getPersistenceMode());
-        Assert.assertEquals(query, qp.getQuery());
-        Assert.assertEquals(queryName, qp.getQueryName());
-        Assert.assertEquals(requestHeaders, qp.getRequestHeaders());
-        Assert.assertEquals(trace, qp.isTrace());
+        assertEquals(auths, qp.getAuths());
+        assertEquals(beginDate, qp.getBeginDate());
+        assertEquals(endDate, qp.getEndDate());
+        assertEquals(expDate, qp.getExpirationDate());
+        assertEquals(logicName, qp.getLogicName());
+        assertEquals(pagesize, qp.getPagesize());
+        assertEquals(persistenceMode, qp.getPersistenceMode());
+        assertEquals(query, qp.getQuery());
+        assertEquals(queryName, qp.getQueryName());
+        assertEquals(requestHeaders, qp.getRequestHeaders());
+        assertEquals(trace, qp.isTrace());
 
         // Store results of hashCode() method, pre-clear
         int hashCode = qp.hashCode();
 
         // Test and validate the QueryParamters.equals(QueryParameters params) method
         QueryParameters carbonCopy = buildQueryParameters();
-        Assert.assertTrue(qp.equals(carbonCopy));
+        assertTrue(qp.equals(carbonCopy));
 
         // Test and validate date formatting, parsing
         try {
-            Assert.assertEquals(formatDateCheck, DefaultQueryParameters.formatDate(beginDate));
-            Assert.assertEquals(parseDateCheck, DefaultQueryParameters.parseStartDate(DefaultQueryParameters.formatDate(beginDate)));
+            assertEquals(formatDateCheck, DefaultQueryParameters.formatDate(beginDate));
+            assertEquals(parseDateCheck, DefaultQueryParameters.parseStartDate(DefaultQueryParameters.formatDate(beginDate)));
         } catch (ParseException e) {
             log.error(e);
         }
@@ -134,9 +139,9 @@ public class QueryParametersTest {
 
         MultiValueMap<String,String> unknownParams = new LinkedMultiValueMap<>();
         unknownParams.putAll(qp.getUnknownParameters(params));
-        Assert.assertEquals("params", unknownParams.getFirst(QueryParameters.QUERY_PARAMS));
-        Assert.assertEquals("value", unknownParams.getFirst("key"));
-        Assert.assertEquals(2, unknownParams.size());
+        assertEquals("params", unknownParams.getFirst(QueryParameters.QUERY_PARAMS));
+        assertEquals("value", unknownParams.getFirst("key"));
+        assertEquals(2, unknownParams.size());
 
         // Test the QueryParameters.validate() method
         qp.validate(params);
@@ -147,17 +152,17 @@ public class QueryParametersTest {
         Date end = new Date();
         long delta = end.getTime() - start.getTime();
 
-        Assert.assertNull(qp.getAuths());
-        Assert.assertNull(qp.getBeginDate());
-        Assert.assertNull(qp.getEndDate());
-        Assert.assertTrue(qp.getExpirationDate().getTime() - DateUtils.addDays(start, 1).getTime() <= delta);
-        Assert.assertNull(qp.getLogicName());
-        Assert.assertEquals(10, qp.getPagesize());
-        Assert.assertEquals(QueryPersistence.TRANSIENT, qp.getPersistenceMode());
-        Assert.assertNull(qp.getQuery());
-        Assert.assertNull(qp.getQueryName());
-        Assert.assertNull(qp.getRequestHeaders());
-        Assert.assertFalse(qp.isTrace());
+        assertNull(qp.getAuths());
+        assertNull(qp.getBeginDate());
+        assertNull(qp.getEndDate());
+        assertTrue(qp.getExpirationDate().getTime() - DateUtils.addDays(start, 1).getTime() <= delta);
+        assertNull(qp.getLogicName());
+        assertEquals(10, qp.getPagesize());
+        assertEquals(QueryPersistence.TRANSIENT, qp.getPersistenceMode());
+        assertNull(qp.getQuery());
+        assertNull(qp.getQueryName());
+        assertNull(qp.getRequestHeaders());
+        assertFalse(qp.isTrace());
 
         // Reset a few variables so hashCode() doesn't blow up, then
         // store results of hashCode() method, post-clear
@@ -168,6 +173,6 @@ public class QueryParametersTest {
         qp.setExpirationDate(expDate);
 
         int hashCodePostClear = qp.hashCode();
-        Assert.assertNotEquals(hashCode, hashCodePostClear);
+        assertNotEquals(hashCode, hashCodePostClear);
     }
 }

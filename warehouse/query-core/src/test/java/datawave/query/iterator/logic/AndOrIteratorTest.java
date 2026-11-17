@@ -1,11 +1,15 @@
 package datawave.query.iterator.logic;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
@@ -30,14 +34,14 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(childOr.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertTrue(childOr.isContextRequired());
 
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertEquals("a", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("c", iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
     // X AND (Y OR !Z)
@@ -58,14 +62,14 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(childOr.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertTrue(childOr.isContextRequired());
 
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertEquals("b", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("c", iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
     // X AND (!Y AND !Z)
@@ -86,16 +90,16 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(child.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertTrue(child.isContextRequired());
 
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertEquals("d", iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
     // X OR !Y
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testDeferredOrMissingContext() {
         Set<NestedIterator<String>> includes = new HashSet<>();
         Set<NestedIterator<String>> excludes = new HashSet<>();
@@ -104,11 +108,11 @@ public class AndOrIteratorTest {
         excludes.add(getItr(Lists.newArrayList("a"), false));
 
         NestedIterator iterator = new OrIterator(includes, excludes);
-        iterator.initialize();
+        assertThrows(IllegalStateException.class, iterator::initialize);
     }
 
     // !X OR !Y
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testDeferredOr() {
         Set<NestedIterator<String>> includes = new HashSet<>();
         Set<NestedIterator<String>> excludes = new HashSet<>();
@@ -117,11 +121,11 @@ public class AndOrIteratorTest {
         excludes.add(getItr(Lists.newArrayList("a"), false));
 
         NestedIterator iterator = new OrIterator(includes, excludes);
-        iterator.initialize();
+        assertThrows(IllegalStateException.class, iterator::initialize);
     }
 
     // !X AND !Y
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testDeferredAnd() {
         Set<NestedIterator<String>> includes = new HashSet<>();
         Set<NestedIterator<String>> excludes = new HashSet<>();
@@ -130,7 +134,7 @@ public class AndOrIteratorTest {
         excludes.add(getItr(Lists.newArrayList("a"), false));
 
         NestedIterator iterator = new AndIterator(includes, excludes);
-        iterator.initialize();
+        assertThrows(IllegalStateException.class, iterator::initialize);
     }
 
     // X AND !Y AND (!Z OR !A)
@@ -154,16 +158,16 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
 
-        Assert.assertTrue(child.isContextRequired());
-        Assert.assertFalse(iterator.isContextRequired());
+        assertTrue(child.isContextRequired());
+        assertFalse(iterator.isContextRequired());
 
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertEquals("b", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("c", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("d", iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
     // X AND (Y OR !Y)
@@ -184,18 +188,18 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(child.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertTrue(child.isContextRequired());
 
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertEquals("a", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("b", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("c", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("d", iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
     // X AND (Y AND !Y)
@@ -216,10 +220,10 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertFalse(child.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertFalse(child.isContextRequired());
 
-        Assert.assertFalse(iterator.hasNext());
+        assertFalse(iterator.hasNext());
     }
 
     // X OR (Y AND Z)
@@ -240,20 +244,20 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new OrIterator(includes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertFalse(child.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertFalse(child.isContextRequired());
 
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("f", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertEquals("a", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("b", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("c", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("d", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("f", iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
     // X OR (Y AND !Z)
@@ -274,16 +278,16 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new OrIterator(includes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertFalse(child.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertFalse(child.isContextRequired());
 
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("a", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertEquals("a", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("c", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("d", iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
     // X AND ((!Y OR Z) OR W)
@@ -310,17 +314,17 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(child2.isContextRequired());
-        Assert.assertTrue(child1.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertTrue(child2.isContextRequired());
+        assertTrue(child1.isContextRequired());
 
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("b", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("d", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertEquals("b", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("c", iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("d", iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
     // X AND (Y OR !Z)
@@ -341,12 +345,12 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(childOr.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertTrue(childOr.isContextRequired());
 
-        Assert.assertTrue(iterator.hasNext());
-        Assert.assertEquals("c", iterator.next());
-        Assert.assertFalse(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        assertEquals("c", iterator.next());
+        assertFalse(iterator.hasNext());
     }
 
     // X AND (Y OR !Z)
@@ -367,10 +371,10 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new AndIterator(includes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(childOr.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertTrue(childOr.isContextRequired());
 
-        Assert.assertFalse(iterator.hasNext());
+        assertFalse(iterator.hasNext());
     }
 
     // X AND !(Y OR !Z)
@@ -392,10 +396,10 @@ public class AndOrIteratorTest {
         NestedIterator iterator = new AndIterator(includes, excludes);
         iterator.initialize();
 
-        Assert.assertFalse(iterator.isContextRequired());
-        Assert.assertTrue(childOr.isContextRequired());
+        assertFalse(iterator.isContextRequired());
+        assertTrue(childOr.isContextRequired());
 
-        Assert.assertFalse(iterator.hasNext());
+        assertFalse(iterator.hasNext());
     }
 
     private NegationFilterTest.Itr<String> getItr(List<String> source, boolean contextRequired) {

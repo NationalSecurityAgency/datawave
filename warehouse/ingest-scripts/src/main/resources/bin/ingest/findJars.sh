@@ -1,20 +1,22 @@
 #!/bin/bash
 
+FIND_JARS_BIN_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+FIND_JARS_INSTALL_DIR=$(cd -- "$FIND_JARS_BIN_DIR/../.." && pwd)
 
 findJar (){
-  ls -1 ../../lib/$1-[0-9]*.jar | sort | tail -1
+  ls -1 "$FIND_JARS_INSTALL_DIR"/lib/$1-[0-9]*.jar | sort | tail -1
 }
 findFirstJar (){
-  ls -1 ../../lib/$1-[0-9]*.jar | sort | head -1
+  ls -1 "$FIND_JARS_INSTALL_DIR"/lib/$1-[0-9]*.jar | sort | head -1
 }
 findAllJars (){
-  ls -1 ../../lib/$1-[0-9]*.jar | sort | paste -sd ':' -
+  ls -1 "$FIND_JARS_INSTALL_DIR"/lib/$1-[0-9]*.jar | sort | paste -sd ':' -
 }
 findWebserviceJar (){
-  ls -1 ../../lib/$1[-0-9.]*jar | sort | head -1
+  ls -1 "$FIND_JARS_INSTALL_DIR"/lib/$1[-0-9.]*jar | sort | head -1
 }
 findProvenanceJar (){
-  ls -1 ../../lib/$1-[0-9.]*.*.jar |  grep -v with-dependencies | sort | tail -1
+  ls -1 "$FIND_JARS_INSTALL_DIR"/lib/$1-[0-9.]*.*.jar | grep -v with-dependencies | sort | tail -1
 }
 findAccumuloJar (){
   ls -1 $WAREHOUSE_ACCUMULO_LIB/$1-[0-9]*.jar | sort | tail -1
@@ -25,7 +27,7 @@ findZookeeperJar(){
   echo $result
 }
 
-CONF_DIR=../../config
+CONF_DIR="$FIND_JARS_INSTALL_DIR/config"
 DATAWAVE_INDEX_STATS_JAR=$(findJar datawave-index-stats)
 DATAWAVE_INGEST_CSV_JAR=$(findJar datawave-ingest-csv)
 DATAWAVE_INGEST_JSON_JAR=$(findJar datawave-ingest-json)

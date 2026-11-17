@@ -41,6 +41,8 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.nodes.ExceededOr;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.predicate.PeekingPredicate;
 
 /**
@@ -124,6 +126,10 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
 
         public void addFieldValue(String value) {
             fieldValues.add(value);
+        }
+
+        public void addFieldValues(List<String> values) {
+            fieldValues.addAll(values);
         }
 
         public void setNullValueFlag() {
@@ -416,11 +422,30 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        LiteralRange range = JexlASTHelper.findRange().getRange(node);
-        if (range != null) {
-            simpleRangeFilter(range);
+        QueryPropertyMarker.Instance marker = QueryPropertyMarker.findInstance(node);
+
+        // List ivarator does not have field and params in the same node
+        if (marker.isType(QueryPropertyMarker.MarkerType.EXCEEDED_OR)) {
+            String fieldName = ExceededOr.decodeField(node);
+            List<String> params = ExceededOr.decodeParamsList(node);
+            ExpressionFilter f = filterMap.get(fieldName);
+
+            if (f == null) {
+                filterMap.put(fieldName, f = createExpressionFilter(fieldName));
+            }
+
+            if (params != null) {
+                f.addFieldValues(params);
+            }
+
+            return data;
         } else {
-            super.visit(node, data);
+            LiteralRange range = JexlASTHelper.findRange().getRange(node);
+            if (range != null) {
+                simpleRangeFilter(range);
+            } else {
+                super.visit(node, data);
+            }
         }
 
         return null;

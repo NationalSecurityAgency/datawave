@@ -19,13 +19,15 @@ import static datawave.query.iterator.QueryOptions.START_TIME;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCIES_REQUIRED;
 import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
 import static datawave.query.iterator.QueryOptions.UNIQUE_FIELDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -47,12 +49,11 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.util.ConfigurationImpl;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -79,8 +80,8 @@ import datawave.query.util.TypeMetadata;
  */
 public class QueryIteratorIT extends EasyMockSupport {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public Path temporaryFolder;
 
     protected TestLookupTask lookupTask;
     protected SortedListKeyValueIterator baseIterator;
@@ -115,11 +116,11 @@ public class QueryIteratorIT extends EasyMockSupport {
         return QueryIterator.class;
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         lookupTask = new TestLookupTask(getIteratorClass());
         options = new HashMap<>();
-        tempPath = temporaryFolder.newFolder().toPath();
+        tempPath = Files.createTempDirectory(temporaryFolder, "query-");
 
         // global options
 
@@ -178,7 +179,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         filter = createMock(EventDataQueryFilter.class);
     }
 
-    @After
+    @AfterEach
     public void cleanUp() {
         tempPath.toFile().deleteOnExit();
     }
@@ -439,7 +440,7 @@ public class QueryIteratorIT extends EasyMockSupport {
      * @throws IOException
      *             if something goes wrong
      */
-    @Ignore
+    @Disabled
     @Test
     public void indexOnly_trailingRegex_infiniteRange_secondEvent_test() throws IOException {
         // build an infinite range to make sure the wait window / yielding framework can handle it
@@ -662,7 +663,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         event_test(seekRange, query, false, null, addEvent("123.345.457"), Collections.singletonList(getBaseExpectedEvent("123.345.457")));
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void event_bogusIvaratorCacheDir_test() throws IOException {
         Range seekRange = getShardRange();
         String query = "((_Value_ = true) && (EVENT_FIELD4 =~ '.*d'))";
@@ -670,7 +671,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // setup a bogus ivarator cache dir for the config
         options.put(IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(new IvaratorCacheDirConfig("hddfs://bogusPath")));
 
-        index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList());
+        assertThrows(IOException.class, () -> index_test(seekRange, query, false, Collections.emptyList(), Collections.emptyList()));
     }
 
     @Test
@@ -1626,7 +1627,7 @@ public class QueryIteratorIT extends EasyMockSupport {
             eval(results, evalPair.getKey(), evalPair.getValue());
         }
         // there should be no other hits
-        assertTrue("Should be no more results", results.isEmpty());
+        assertTrue(results.isEmpty(), "Should be no more results");
     }
 
     /**
@@ -1644,7 +1645,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         if (docKeyHit == null) {
             assertTrue(results.isEmpty());
         } else {
-            assertFalse("Expected hit, but got none", results.isEmpty());
+            assertFalse(results.isEmpty(), "Expected hit, but got none");
             Map.Entry<Key,Document> entry = results.remove(0);
             Key next = entry.getKey();
             assertNotNull(next);
@@ -1659,12 +1660,12 @@ public class QueryIteratorIT extends EasyMockSupport {
             int baseSize = d.getDictionary().size() - 1;
             int docSize = isExpectHitTerm() ? baseSize - 1 : baseSize;
 
-            assertEquals("Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + docSize + "\n" + "expected: " + docKeys, docKeys.keySet().size(),
-                            docSize);
+            assertEquals(docKeys.keySet().size(), docSize,
+                            "Unexpected doc size: " + d.getDictionary().size() + "\nGot: " + docSize + "\n" + "expected: " + docKeys);
 
             // validate the hit list
-            assertEquals("HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null),
-                            (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null), isExpectHitTerm());
+            assertEquals((d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null), isExpectHitTerm(),
+                            "HIT_TERM presence expected: " + isExpectHitTerm() + " actual: " + (d.getDictionary().get(JexlEvaluation.HIT_TERM_FIELD) != null));
 
             // verify hits for each specified field
             for (String field : docKeys.keySet()) {
@@ -1672,31 +1673,31 @@ public class QueryIteratorIT extends EasyMockSupport {
                 if (expected.size() == 1) {
                     // verify the only doc
                     Attribute<?> docAttr = d.getDictionary().get(field);
-                    assertNotNull("missing expected field " + field, docAttr);
+                    assertNotNull(docAttr, "missing expected field " + field);
                     if (docAttr instanceof Attributes) {
                         // Special handling of Content attributes, typically when TermFrequencies are looked up.
                         // TFs append Content attributes which results in Attributes coming back instead of a single Attribute
                         Set<?> datas = (Set<?>) docAttr.getData();
                         Set<String> dataStrings = datas.stream().map(Object::toString).collect(Collectors.toSet());
                         boolean stringsMatch = dataStrings.contains(expected.get(0));
-                        assertTrue(field + ": value: " + docAttr.getData() + " did not match expected value: " + expected.get(0), stringsMatch);
+                        assertTrue(stringsMatch, field + ": value: " + docAttr.getData() + " did not match expected value: " + expected.get(0));
                     } else {
                         boolean stringsMatch = docAttr.getData().toString().equals(expected.get(0));
-                        assertTrue(field + ": value: " + docAttr.getData() + " did not match expected value: " + expected.get(0), stringsMatch);
+                        assertTrue(stringsMatch, field + ": value: " + docAttr.getData() + " did not match expected value: " + expected.get(0));
                     }
                 } else {
-                    assertNotNull("null expected field: " + field, d.getDictionary().get(field));
+                    assertNotNull(d.getDictionary().get(field), "null expected field: " + field);
                     // the data should be a set, verify it matches expected
                     Object dictData = d.getDictionary().get(field).getData();
                     assertNotNull(dictData);
-                    assertTrue("Expected " + expected.size() + " values for '" + field + "' found 1, '" + dictData + "'\nexpected: " + expected,
-                                    dictData instanceof Set);
+                    assertTrue(dictData instanceof Set,
+                                    "Expected " + expected.size() + " values for '" + field + "' found 1, '" + dictData + "'\nexpected: " + expected);
                     Set<?> dictSet = (Set<?>) dictData;
-                    assertEquals("Expected " + expected.size() + " values for '" + field + "' found " + dictSet.size() + "\nfound: " + dictSet + "\nexpected: "
-                                    + expected, dictSet.size(), expected.size());
+                    assertEquals(dictSet.size(), expected.size(), "Expected " + expected.size() + " values for '" + field + "' found " + dictSet.size()
+                                    + "\nfound: " + dictSet + "\nexpected: " + expected);
                     for (Attribute<?> attribute : (Iterable<Attribute<?>>) dictSet) {
                         String foundString = attribute.getData().toString();
-                        assertTrue("could not find " + foundString + " in results! Still had " + expected, expected.remove(foundString));
+                        assertTrue(expected.remove(foundString), "could not find " + foundString + " in results! Still had " + expected);
                     }
                     // verify that the expected set is now empty
                     assertEquals(0, expected.size());

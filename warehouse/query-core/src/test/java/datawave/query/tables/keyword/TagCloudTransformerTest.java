@@ -1,15 +1,15 @@
 package datawave.query.tables.keyword;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -94,8 +94,8 @@ public class TagCloudTransformerTest {
             }
         }
 
-        assertTrue("did not ses all expected identifiers", identifierMap.isEmpty());
-        assertTrue("did not see all expected languages", languageMap.isEmpty());
+        assertTrue(identifierMap.isEmpty(), "did not ses all expected identifiers");
+        assertTrue(languageMap.isEmpty(), "did not see all expected languages");
 
     }
 

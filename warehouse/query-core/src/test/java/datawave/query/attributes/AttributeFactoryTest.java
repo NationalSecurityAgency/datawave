@@ -1,11 +1,12 @@
 package datawave.query.attributes;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Collection;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -41,11 +42,11 @@ public class AttributeFactoryTest {
         log.debug(AttributeFactory.getKeepers(four));
         log.debug(AttributeFactory.getKeepers(five));
 
-        Assert.assertEquals(AttributeFactory.getKeepers(one), expectedOne);
-        Assert.assertEquals(AttributeFactory.getKeepers(two), expectedTwo);
-        Assert.assertEquals(AttributeFactory.getKeepers(three), expectedThree);
-        Assert.assertEquals(AttributeFactory.getKeepers(four), expectedFour);
-        Assert.assertEquals(AttributeFactory.getKeepers(five), expectedFive);
+        assertEquals(AttributeFactory.getKeepers(one), expectedOne);
+        assertEquals(AttributeFactory.getKeepers(two), expectedTwo);
+        assertEquals(AttributeFactory.getKeepers(three), expectedThree);
+        assertEquals(AttributeFactory.getKeepers(four), expectedFour);
+        assertEquals(AttributeFactory.getKeepers(five), expectedFive);
     }
 
     @Test
@@ -62,8 +63,8 @@ public class AttributeFactoryTest {
         TypeAttribute<?> redType = (TypeAttribute<?>) red;
         TypeAttribute<?> blueType = (TypeAttribute<?>) blue;
 
-        Assert.assertEquals("red", redType.getType().getNormalizedValue());
-        Assert.assertEquals("blue", blueType.getType().getNormalizedValue());
+        assertEquals("red", redType.getType().getNormalizedValue());
+        assertEquals("blue", blueType.getType().getNormalizedValue());
     }
 
 }

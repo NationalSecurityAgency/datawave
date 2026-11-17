@@ -1,5 +1,7 @@
 package datawave.query.testframework;
 
+import static org.junit.Assert.assertFalse;
+
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-
-import org.junit.Assert;
 
 /**
  * Defines valid dates that are used for shard ids for a specific test. All shard id dates for the test data must be within the range of the earliest and latest
@@ -46,7 +46,7 @@ public class ShardIdValues {
      *            list of valid shard id date entries
      */
     public ShardIdValues(final List<String> shardDate) {
-        Assert.assertFalse("there must be at least one shard id value", shardDate.isEmpty());
+        assertFalse("there must be at least one shard id value", shardDate.isEmpty());
         this.shardIds = new HashMap<>();
         for (String shard : shardDate) {
             Date date = convertShardToDate(shard);

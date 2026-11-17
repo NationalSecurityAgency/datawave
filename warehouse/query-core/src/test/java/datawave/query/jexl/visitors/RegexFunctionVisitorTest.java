@@ -1,15 +1,15 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -22,9 +22,6 @@ import datawave.test.JexlNodeAssert;
 public class RegexFunctionVisitorTest {
 
     private final ASTValidator validator = new ASTValidator();
-
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     // expected base cases -- single fielded
 
@@ -197,10 +194,9 @@ public class RegexFunctionVisitorTest {
 
     @Test
     public void testBadRegex() throws ParseException {
-        exception.expect(DatawaveFatalQueryException.class);
         Set<String> indexOnlyFields = Sets.newHashSet("FIELDA");
         String query = "FOO == 'bar' && filter:includeRegex(FIELDA, '(?#icu)Friendly')";
-        assertVisitorResult(query, query, indexOnlyFields);
+        assertThrows(DatawaveFatalQueryException.class, () -> assertVisitorResult(query, query, indexOnlyFields));
     }
 
     // legacy tests
@@ -229,7 +225,7 @@ public class RegexFunctionVisitorTest {
         try {
             validator.isValid(actual);
         } catch (InvalidQueryTreeException e) {
-            Assert.fail("Invalid query tree detected for script: " + JexlStringBuildingVisitor.buildQueryWithoutParse(actual));
+            fail("Invalid query tree detected for script: " + JexlStringBuildingVisitor.buildQueryWithoutParse(actual));
         }
     }
 }

@@ -7,8 +7,8 @@ import java.util.TimeZone;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -35,7 +35,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
 
     private DateIndexHelper dateIndexHelper;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         config = new ShardQueryConfiguration();
         metadataHelper = new MockMetadataHelper();

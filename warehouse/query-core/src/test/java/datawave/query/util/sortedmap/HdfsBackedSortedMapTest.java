@@ -1,10 +1,11 @@
 package datawave.query.util.sortedmap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,9 +17,8 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FsStatus;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -26,12 +26,12 @@ import datawave.query.util.sortedset.FileSortedSet.PersistOptions;
 
 public class HdfsBackedSortedMapTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public File temporaryFolder;
 
     @Test
     public void persistReloadTest() throws Exception {
-        File tempDir = temporaryFolder.newFolder();
+        File tempDir = Files.createTempDirectory(temporaryFolder.toPath(), "util-").toFile();
 
         File smallDir = new File(tempDir, "small");
         assertTrue(smallDir.mkdirs());
@@ -104,7 +104,7 @@ public class HdfsBackedSortedMapTest {
 
     @Test
     public void persistCompactReloadTest() throws Exception {
-        File tempDir = temporaryFolder.newFolder();
+        File tempDir = Files.createTempDirectory(temporaryFolder.toPath(), "util-").toFile();
 
         File[] dirs = new File[] {new File(tempDir, "first"), new File(tempDir, "second"), new File(tempDir, "third")};
 

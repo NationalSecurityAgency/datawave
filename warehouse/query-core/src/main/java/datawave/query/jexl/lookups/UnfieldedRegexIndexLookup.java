@@ -114,6 +114,10 @@ public class UnfieldedRegexIndexLookup extends BaseRegexIndexLookup {
                         value = reverse(value);
                     }
                     indexLookupMap.put(field, value);
+                    if (indexLookupMap.isKeyThresholdExceeded()) {
+                        // the outcome is already decided; stop scanning instead of consuming the rest of the range
+                        break;
+                    }
                 }
 
             } catch (Exception e) {

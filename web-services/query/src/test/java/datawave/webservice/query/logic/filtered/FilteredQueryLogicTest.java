@@ -1,14 +1,17 @@
 package datawave.webservice.query.logic.filtered;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.accumulo.core.security.Authorizations;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -23,7 +26,7 @@ public class FilteredQueryLogicTest {
     FilteredQueryLogic logic;
     QueryLogic delegate;
 
-    @Before
+    @BeforeEach
     public void setup() {
         delegate = Mockito.mock(QueryLogic.class);
         logic = new FilteredQueryLogic();
@@ -31,7 +34,7 @@ public class FilteredQueryLogicTest {
         logic.setFilter(new QueryLogicFilterByAuth("FOO|BAR"));
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         Mockito.reset();
     }
@@ -44,9 +47,9 @@ public class FilteredQueryLogicTest {
         GenericQueryConfiguration config = logic.initialize(null, settings, auths);
         logic.setupQuery(config);
         Iterator it = logic.iterator();
-        Assert.assertFalse(it.hasNext());
+        assertFalse(it.hasNext());
         String plan = logic.getPlan(null, settings, auths, true, true);
-        Assert.assertEquals("", plan);
+        assertEquals("", plan);
     }
 
     @Test
@@ -63,10 +66,10 @@ public class FilteredQueryLogicTest {
         logic.initialize(null, new QueryImpl(), Collections.singleton(new Authorizations("FOO")));
         logic.setupQuery(config);
         Iterator it = logic.iterator();
-        Assert.assertTrue(it.hasNext());
+        assertTrue(it.hasNext());
         it.next();
-        Assert.assertFalse(it.hasNext());
+        assertFalse(it.hasNext());
         String plan = logic.getPlan(null, settings, auths, true, true);
-        Assert.assertEquals("a plan", plan);
+        assertEquals("a plan", plan);
     }
 }

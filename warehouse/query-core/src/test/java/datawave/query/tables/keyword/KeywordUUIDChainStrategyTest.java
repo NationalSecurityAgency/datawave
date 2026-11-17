@@ -5,10 +5,10 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.newCapture;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,8 +25,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.easymock.Capture;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.NoOpType;
 import datawave.microservice.query.Query;
@@ -52,7 +52,7 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
     private Query settings;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         mockAccumulo = createMock(AccumuloClient.class);
         mockLogic = createMock(KeywordQueryLogic.class);

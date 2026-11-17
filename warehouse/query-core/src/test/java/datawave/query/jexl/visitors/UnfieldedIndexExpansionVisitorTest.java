@@ -1,7 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -23,9 +24,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.Text;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
@@ -58,7 +59,7 @@ public class UnfieldedIndexExpansionVisitorTest {
     private static ShardQueryConfiguration config;
     private static MyMockMetadataHelper metadataHelper;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws Exception {
         conn = new InMemoryAccumuloClient("root", instance);
 
@@ -160,7 +161,7 @@ public class UnfieldedIndexExpansionVisitorTest {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setupTest() {
         config = createConfig();
         metadataHelper = createMetadataHelper();
@@ -293,13 +294,13 @@ public class UnfieldedIndexExpansionVisitorTest {
     }
 
     // regex term fails to expand fields, exception thrown
-    @Test(expected = DatawaveFatalQueryException.class)
+    @Test
     public void testMaxUnfieldedExpansionThreshold() throws Exception {
         ShardQueryConfiguration config = createConfig();
         config.setMaxUnfieldedExpansionThreshold(2);
 
         String query = "_ANYFIELD_ =~ 'dog.*'";
-        test(query, null, config);
+        assertThrows(DatawaveFatalQueryException.class, () -> test(query, null, config));
     }
 
     // regex term expands into fields, but values expansion fails by exceeding a threshold.
@@ -397,23 +398,23 @@ public class UnfieldedIndexExpansionVisitorTest {
     }
 
     // double-ended wildcards cannot be expanded
-    @Test(expected = DoNotPerformOptimizedQueryException.class)
+    @Test
     public void testUnresolvableRegexWithoutFullTableScan() throws Exception {
         ShardQueryConfiguration config = createConfig();
         config.setFullTableScanEnabled(false);
 
         String query = "_ANYFIELD_ =~ '.*?teehee.*'";
-        test(query, query, config);
+        assertThrows(DoNotPerformOptimizedQueryException.class, () -> test(query, query, config));
     }
 
     // double-ended wildcards under a negation cannot be expanded
-    @Test(expected = DoNotPerformOptimizedQueryException.class)
+    @Test
     public void testUnresolvableRegexWithoutFullTableScanAlternateForm() throws Exception {
         ShardQueryConfiguration config = createConfig();
         config.setFullTableScanEnabled(false);
 
         String query = "!(_ANYFIELD_ =~ '.*?teehee.*')";
-        test(query, query, config);
+        assertThrows(DoNotPerformOptimizedQueryException.class, () -> test(query, query, config));
     }
 
     public void test(String query, String expected) throws Exception {
@@ -437,7 +438,7 @@ public class UnfieldedIndexExpansionVisitorTest {
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
         String errMsg = "Expected trees to be equal:\n" + JexlStringBuildingVisitor.buildQueryWithoutParse(expectedScript) + "\n"
                         + JexlStringBuildingVisitor.buildQueryWithoutParse(fixed);
-        assertTrue(errMsg, TreeEqualityVisitor.isEqual(expectedScript, fixed));
+        assertTrue(TreeEqualityVisitor.isEqual(expectedScript, fixed), errMsg);
     }
 
     // utility class created to get around some exception finding composite terms
