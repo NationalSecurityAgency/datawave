@@ -119,8 +119,8 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
 
     @Override
     public FilterResult filter(Key k, Value v) {
-        if (log.isDebugEnabled()) {
-            log.debug("tk: {}", k.toStringNoTime());
+        if (log.isTraceEnabled()) {
+            log.trace("tk: {}", k.toStringNoTime());
         }
 
         if (TimeoutExceptionIterator.exceededTimedValue(Pair.of(k, v))) {
@@ -144,7 +144,7 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
 
             if (!matcher.matches()) {
                 // advance to next row
-                log.debug("pattern does not match, advance to next row");
+                log.trace("pattern does not match, advance to next row");
                 return new FilterResult(false, AdvanceResult.NEXT_ROW);
             }
             previousMatch = parser.getValue();
@@ -153,33 +153,43 @@ public class FieldedRegexExpansionIterator extends SeekingFilter implements Opti
         int result = parser.getField().compareTo(field);
         if (result < 0) {
             // advance to field
-            log.debug("field {} sorts before target {}, advance to {}", parser.getField(), field, field);
+            if (log.isTraceEnabled()) {
+                log.trace("field {} sorts before target {}, advance to {}", parser.getField(), field, field);
+            }
             hint = HINT_TYPE.FIELD;
             return new FilterResult(false, AdvanceResult.USE_HINT);
         } else if (result > 0) {
             // advance to next row
-            log.debug("field {} sorts after target {}, advance to next row", parser.getField(), field);
+            if (log.isTraceEnabled()) {
+                log.trace("field {} sorts after target {}, advance to next row", parser.getField(), field);
+            }
             return new FilterResult(true, AdvanceResult.NEXT_ROW);
         }
 
         String date = parser.getShard();
         if (date.compareTo(startDate) < 0) {
             // advance to start date
-            log.debug("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
+            if (log.isTraceEnabled()) {
+                log.trace("start date {} is before start date {}, advance to date {}", parser.getShard(), startDate, startDate);
+            }
             hint = HINT_TYPE.DATE;
             return new FilterResult(false, AdvanceResult.USE_HINT);
         } else if (date.compareTo(endDate) > 0) {
             // advance to next row
-            log.debug("date {} sorts after end date {}, advance to next row", date, endDate);
+            if (log.isTraceEnabled()) {
+                log.trace("date {} sorts after end date {}, advance to next row", date, endDate);
+            }
             return new FilterResult(false, AdvanceResult.NEXT_ROW);
         }
 
         if (datatypes != null && !datatypes.contains(parser.getDatatype())) {
-            log.debug("datatype {} does not match, advance to next key", parser.getDatatype());
+            if (log.isTraceEnabled()) {
+                log.trace("datatype {} does not match, advance to next key", parser.getDatatype());
+            }
             return new FilterResult(false, AdvanceResult.NEXT);
         }
 
-        log.debug("key accepted, advancing to next row");
+        log.trace("key accepted, advancing to next row");
         return new FilterResult(true, AdvanceResult.NEXT_ROW);
     }
 
