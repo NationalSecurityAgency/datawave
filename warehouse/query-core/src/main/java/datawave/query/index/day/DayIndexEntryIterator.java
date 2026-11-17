@@ -83,13 +83,13 @@ public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> 
             Key top = source.getTopKey();
             parser.parse(top);
 
-            if (log.isDebugEnabled()) {
-                log.debug("next: {}", top.toStringNoTime());
+            if (log.isTraceEnabled()) {
+                log.trace("next: {}", top.toStringNoTime());
             }
 
             if (accepted()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("key accepted {}", top.toStringNoTime());
+                if (log.isTraceEnabled()) {
+                    log.trace("key accepted {}", top.toStringNoTime());
                 }
                 // do the stuff
                 String field = parser.getField();
@@ -99,12 +99,12 @@ public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> 
             } else {
                 Range seekRange = getNextSeekRange();
                 if (seekRange != null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("key rejected, next seek range: {}", seekRange.getStartKey().toStringNoTime());
+                    if (log.isTraceEnabled()) {
+                        log.trace("key rejected, next seek range: {}", seekRange.getStartKey().toStringNoTime());
                     }
                     source.seek(seekRange, columnFamilies, true);
                 } else {
-                    log.debug("key rejected, no seek range available. call next");
+                    log.trace("key rejected, no seek range available. call next");
                     source.next();
                 }
             }
@@ -145,7 +145,7 @@ public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> 
     }
 
     private Range seekToNextField() {
-        log.debug("seek to next field");
+        log.trace("seek to next field");
         String nextField = valuesAndFields.get(parser.getValue()).higher(parser.getField());
 
         if (nextField == null) {
@@ -158,7 +158,7 @@ public class DayIndexEntryIterator implements SortedKeyValueIterator<Key,Value> 
     }
 
     private Range seekToNextValue() {
-        log.debug("seek to next value");
+        log.trace("seek to next value");
 
         // done with all fields for current value, seek to next value
         String nextValue = valuesAndFields.keySet().higher(parser.getValue());

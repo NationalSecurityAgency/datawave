@@ -1,13 +1,14 @@
 package datawave.query.transformer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,11 +16,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Document;
@@ -32,20 +32,20 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
 
     protected ShardQueryLogic logic = new ShardQueryLogic();
 
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    static File temporaryFolder;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         uniqueFields.setMostRecent(true);
 
         // setup the hadoop configuration
         URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
-        assertNotNull("hadoop config cannot be null", hadoopConfig);
+        assertNotNull(hadoopConfig, "hadoop config cannot be null");
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
 
         // setup a directory for cache results
-        File tmpDir = temporaryFolder.newFolder();
+        File tmpDir = Files.createTempDirectory(temporaryFolder.toPath(), "cache-").toFile();
         IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
 
@@ -87,7 +87,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
      */
     @Override
     @Test
-    @Ignore
+    @Disabled
     public void testIntermediateResultsArePaced_afterPageTimerReset() {
         // see testIntermediateResultsArePacedOnMostRecentPath
     }
@@ -99,7 +99,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
      */
     @Override
     @Test
-    @Ignore
+    @Disabled
     public void testRealAndIntermediateResultsResumeAfterPageTimerReset() {
         // see testIntermediateResultsArePacedOnMostRecentPath
     }
@@ -144,21 +144,21 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
         Key expectedKey = inputDocuments.get(0).getMetadata();
         Map.Entry<Key,Document> result = uniqueTransform.apply(entryFor(inputDocuments.get(0)));
 
-        assertNotNull("Expected an intermediate result once the page timeout was exceeded", result);
-        assertTrue("Expected the result to be flagged as an intermediate result", result.getValue().isIntermediateResult());
-        assertEquals("An intermediate result must be an empty document", 0, result.getValue().size());
-        assertTrue("An intermediate result must carry no attributes", result.getValue().getDictionary().isEmpty());
-        assertEquals("An intermediate result must be keyed at the document it stands in for", expectedKey, result.getKey());
+        assertNotNull(result, "Expected an intermediate result once the page timeout was exceeded");
+        assertTrue(result.getValue().isIntermediateResult(), "Expected the result to be flagged as an intermediate result");
+        assertEquals(0, result.getValue().size(), "An intermediate result must be an empty document");
+        assertTrue(result.getValue().getDictionary().isEmpty(), "An intermediate result must carry no attributes");
+        assertEquals(expectedKey, result.getKey(), "An intermediate result must be keyed at the document it stands in for");
 
         // emitting it reset the page timer, so the rest of the window is paced back to null
-        assertNull("Intermediate results must be paced to one per timeout window", uniqueTransform.apply(entryFor(inputDocuments.get(1))));
-        assertNull("Intermediate results must be paced to one per timeout window", uniqueTransform.apply(entryFor(inputDocuments.get(2))));
+        assertNull(uniqueTransform.apply(entryFor(inputDocuments.get(1))), "Intermediate results must be paced to one per timeout window");
+        assertNull(uniqueTransform.apply(entryFor(inputDocuments.get(2))), "Intermediate results must be paced to one per timeout window");
 
         // once the timeout elapses again, a further intermediate result is emitted
         setClockTo(uniqueTransform, PAGE_START.plusMillis((2 * PAGE_TIMEOUT_MS) + 2));
         result = uniqueTransform.apply(entryFor(inputDocuments.get(3)));
-        assertNotNull("Expected a further intermediate result once the timeout elapsed again", result);
-        assertTrue("Expected the result to be flagged as an intermediate result", result.getValue().isIntermediateResult());
+        assertNotNull(result, "Expected a further intermediate result once the timeout elapsed again");
+        assertTrue(result.getValue().isIntermediateResult(), "Expected the result to be flagged as an intermediate result");
 
         // neither the keep-alives nor the pacing may cost the documents accumulated into the backing map
         List<Document> flushed = new ArrayList<>();
@@ -169,7 +169,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
 
         Collections.sort(expectedUniqueDocuments);
         Collections.sort(flushed);
-        assertEquals("Most recent unique documents do not match expected", getIds(expectedUniqueDocuments), getIds(flushed));
+        assertEquals(getIds(expectedUniqueDocuments), getIds(flushed), "Most recent unique documents do not match expected");
     }
 
     /**

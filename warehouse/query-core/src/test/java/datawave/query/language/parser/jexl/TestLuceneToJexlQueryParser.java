@@ -1,17 +1,16 @@
 package datawave.query.language.parser.jexl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessorPipeline;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -27,7 +26,7 @@ public class TestLuceneToJexlQueryParser {
 
     private LuceneToJexlQueryParser parser;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         parser = new LuceneToJexlQueryParser();
         parser.setSkipTokenizeUnfieldedFields(Sets.newHashSet("noToken"));
@@ -36,16 +35,18 @@ public class TestLuceneToJexlQueryParser {
 
     private static final String anyField = Constants.ANY_FIELD;
 
-    @Test(expected = ParseException.class)
+    @Test
     public void testFunctionArgsWithMisMatchedQuotes_case01() throws ParseException {
         // mismatched quotes
-        parseQuery("Field:Selector AND #INCLUDE('AND', 'FIELD1, ' regex')");
+        assertThrows(ParseException.class, () -> parseQuery("Field:Selector AND #INCLUDE('AND', 'FIELD1, ' regex')"));
+
     }
 
-    @Test(expected = ParseException.class)
+    @Test
     public void testFunctionArgsWithMisMatchedQuotes_case02() throws ParseException {
         // mismatched quotes
-        parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\)ex)'");
+        assertThrows(ParseException.class, () -> parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\)ex)'"));
+
     }
 
     @Test
@@ -87,7 +88,7 @@ public class TestLuceneToJexlQueryParser {
 
         try {
             assertEquals("", parseQuery("F:S AND #INCLUDE(FIELD, 'test\\')"));
-            Assert.fail("This test case should have failed with a ParseException");
+            fail("This test case should have failed with a ParseException");
         } catch (ParseException e) {
             // expected
         }
@@ -405,9 +406,8 @@ public class TestLuceneToJexlQueryParser {
         assertEquals("(content:phrase(TOKFIELD, termOffsetMap, 'someone\\\\234someplace.com', 'otherterm') || content:phrase(TOKFIELD, termOffsetMap, 'someone', '234someplace.com', 'otherterm'))",
                         parseQuery("TOKFIELD:\"someone\\\\234someplace.com otherterm\""));
         // FIX THIS, trailing slashes in queries should be acceptable.
-        // Assert.assertEquals("(TOKFIELD == 'someone\\234someplace.com\\' || content:within(TOKFIELD, 2, termOffsetMap, 'someone',
-        // '234someplace.com'))",
-        // parseQuery("TOKFIELD:someone\\\\234someplace.com\\\\"));
+        // assertEquals("(TOKFIELD == 'someone\\234someplace.com\\' || content:within(TOKFIELD, 2, termOffsetMap, 'someone',
+        // '234someplace.com'))", // parseQuery("TOKFIELD:someone\\\\234someplace.com\\\\"));
     }
 
     @Test
@@ -503,20 +503,20 @@ public class TestLuceneToJexlQueryParser {
         try {
             parseQuery(func);
         } catch (Exception e) {
-            Assert.fail("Queries that are just post filters should now be allowed: " + func);
+            fail("Queries that are just post filters should now be allowed: " + func);
         }
         String query = null;
         try {
             query = "fielda:selectora or " + func;
             parseQuery(query);
         } catch (Exception e) {
-            Assert.fail("Queries should now be able to have a query or'ed with a post filter: " + query);
+            fail("Queries should now be able to have a query or'ed with a post filter: " + query);
         }
         try {
             query = "fielda:selectora or (fieldb:selecorb and #isnull(nullfield))";
             parseQuery(query);
         } catch (Exception e) {
-            Assert.fail("Queries should now be able to have a query with a nested post filter: " + query);
+            fail("Queries should now be able to have a query with a nested post filter: " + query);
         }
     }
 
@@ -525,7 +525,7 @@ public class TestLuceneToJexlQueryParser {
         try {
             parseQuery("#isnotnull(nonnullfield)");
         } catch (ParseException ex) {
-            Assert.fail("Should no longer throw ParseException");
+            fail("Should no longer throw ParseException");
         }
     }
 
@@ -624,11 +624,10 @@ public class TestLuceneToJexlQueryParser {
     @Test
     public void testCustomQueryNodeProcessor() throws ParseException {
         String query = "TOKFIELD:\"quick wi-fi fox\"";
-        Assert.assertEquals(
-                        "(content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox') || content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi', 'fi', 'fox'))",
+        assertEquals("(content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox') || content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi', 'fi', 'fox'))",
                         parseQuery(query));
         parser.setQueryNodeProcessorFactory(new TestQueryNodeProcessorFactory());
-        Assert.assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox')", parseQuery(query));
+        assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox')", parseQuery(query));
     }
 
     @Test
@@ -654,7 +653,7 @@ public class TestLuceneToJexlQueryParser {
                 + "TOKFIELD == 'readme.md'"
                 + ")";
         // @formatter:on
-        Assert.assertEquals(expected, parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
+        assertEquals(expected, parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
     }
 
     @Test

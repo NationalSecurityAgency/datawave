@@ -17,8 +17,9 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,8 +58,8 @@ import org.apache.hadoop.shaded.com.google.common.io.Files;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
@@ -94,7 +95,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
     private final ShardReindexMapper mapper = new ShardReindexMapper();
 
-    @Before
+    @BeforeEach
     public void setup() {
         // TODO shift this to ShardedDataGenerator
         // clear and reset the type registry
@@ -909,7 +910,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         verifyAll();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void FI_unknownDataType_test() throws IOException, InterruptedException {
         Key fiKey = new Key("row", FI_START + "FIELDA", "ABC" + '\u0000' + "someUnknownDataType" + '\u0000' + "1.2.3");
 
@@ -919,9 +920,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         replayAll();
 
         mapper.setup(context);
-        mapper.map(fiKey, new Value(), context);
-
-        verifyAll();
+        assertThrows(IllegalStateException.class, () -> mapper.map(fiKey, new Value(), context));
     }
 
     // unlike unknownDataTypeFI_test() this uses the default data type to provide processing capability

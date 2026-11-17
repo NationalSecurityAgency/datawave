@@ -1,8 +1,8 @@
 package datawave.query.ancestor;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.function.AncestorEquality;
 import datawave.query.function.AncestorRangeProvider;

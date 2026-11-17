@@ -28,7 +28,7 @@ import datawave.query.attributes.Document;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
-import datawave.query.testframework.AccumuloSetupJUnit5;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.BooksDataManager;
 import datawave.query.testframework.BooksDataType;
 import datawave.query.testframework.BooksDataType.BooksEntry;
@@ -45,7 +45,7 @@ import datawave.query.testframework.RawDataManager;
 public class BooksQueryTest extends AbstractFunctionalQueryJUnit5 {
 
     @RegisterExtension
-    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
+    public static AccumuloSetupExtension accumuloSetup = AccumuloSetupExtension.create();
 
     private static final Logger log = Logger.getLogger(BooksQueryTest.class);
 
