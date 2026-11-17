@@ -23,7 +23,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.DeletingIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
@@ -32,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.mr.bulk.split.FileRangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.security.iterator.ConfigurableVisibilityFilter;

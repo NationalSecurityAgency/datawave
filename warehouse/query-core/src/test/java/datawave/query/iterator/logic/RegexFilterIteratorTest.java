@@ -9,11 +9,12 @@ import java.util.TreeMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Preconditions;
+
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 
 public class RegexFilterIteratorTest {
 

@@ -13,12 +13,12 @@ import java.util.TreeMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.accumulo.inmemory.util.SortedMapIterator;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
