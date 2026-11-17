@@ -1,7 +1,7 @@
 package datawave.query.cardinality;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -18,7 +18,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.util.Assert;
 
 public class TestCardinalityRecord {
@@ -158,11 +158,11 @@ public class TestCardinalityRecord {
                 Thread.sleep(50);
                 written = CardinalityRecord.readFromDisk(file);
             }
-            assertNotNull("record was never written to disk", written);
+            assertNotNull(written, "record was never written to disk");
 
             // the monitor violation is raised immediately after the stream is closed, so give it a chance to surface
             uncaughtLatch.await(500, TimeUnit.MILLISECONDS);
-            assertNull("writeToDisk failed on the executor thread", uncaught.get());
+            assertNull(uncaught.get(), "writeToDisk failed on the executor thread");
         } finally {
             Thread.setDefaultUncaughtExceptionHandler(previousHandler);
             file.delete();

@@ -4,9 +4,9 @@ import static datawave.query.iterator.logic.KeywordExtractingIterator.DOCUMENT_L
 import static datawave.query.iterator.logic.KeywordExtractingIterator.VIEW_NAMES;
 import static datawave.query.tables.keyword.KeywordQueryLogic.ALL;
 import static datawave.query.tables.keyword.KeywordQueryLogic.PARENT_ONLY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,13 +27,13 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockExtension;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.google.gson.Gson;
 
@@ -43,7 +43,7 @@ import datawave.util.keyword.KeywordExtractor;
 import datawave.util.keyword.KeywordResults;
 import datawave.util.keyword.VisibleContent;
 
-@RunWith(EasyMockRunner.class)
+@ExtendWith(EasyMockExtension.class)
 public class KeywordExtractingIteratorTest extends EasyMockSupport {
 
     private static final Text row = new Text("20220115_1");
@@ -63,7 +63,7 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
     /**
      * Set up our data source before the tests begin.
      */
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws IOException {
         givenData("email", "123.456.789", "CONTENT1", email123456789Content1);
         givenData("email", "987.654.321", "CONTENT1", email987654321Content1);
@@ -93,7 +93,7 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
     /**
      * Clear the iterator options after every test.
      */
-    @After
+    @AfterEach
     public void tearDown() {
         options.clear();
     }

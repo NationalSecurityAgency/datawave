@@ -43,16 +43,17 @@ import org.apache.log4j.Logger;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.container.test.api.RunAsClient;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 
 import datawave.annotation.data.transform.DefaultTimestampTransformer;
@@ -86,7 +87,8 @@ import datawave.webservice.query.runner.AccumuloConnectionRequestBean;
 import datawave.webservice.query.runner.QueryExecutorBean;
 
 @SuppressWarnings({"unused", "unchecked", "SpellCheckingInspection"})
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
+@RunAsClient
 public class AnnotationManagerBeanFunctionalTest {
     protected static AccumuloClient client = null;
 
@@ -159,7 +161,7 @@ public class AnnotationManagerBeanFunctionalTest {
         //@formatter:on
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setupTestData() throws Exception {
 
         QueryTestTableHelper queryTestTableHelper = new QueryTestTableHelper(AnnotationManagerBeanFunctionalTest.class.toString(), log);
@@ -258,7 +260,7 @@ public class AnnotationManagerBeanFunctionalTest {
         return truthmarkAnnotation;
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         log.setLevel(Level.TRACE);
@@ -784,17 +786,19 @@ public class AnnotationManagerBeanFunctionalTest {
         assertContains("bbbbbbbb", errorResponse);
     }
 
-    @Ignore
+    @Test
+    @Disabled("Not implemented")
     public void testAddSegmentInternalId() {
         fail("Not implemented");
     }
 
-    @Ignore
+    @Test
+    @Disabled("Not implemented")
     public void testUpdateSegmentInternalId() {
         fail("Not implemented");
     }
 
-    @AfterClass
+    @AfterAll
     public static void teardown() {
         if (federatedReadExecutor != null) {
             federatedReadExecutor.shutdownNow();

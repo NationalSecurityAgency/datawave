@@ -1,7 +1,8 @@
 package datawave.iterators.filter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,9 +10,8 @@ import java.util.Random;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import datawave.iterators.filter.TokenTtlTrie.Builder.MERGE_MODE;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
@@ -21,7 +21,7 @@ public class TokenTtlTrieTest {
     public static final long MILLIS_IN_DAY = 24 * 60 * 60 * 1000L;
     public static int BENCHMARK_SIZE = 10000;
 
-    @BeforeClass
+    @BeforeAll
     public static void setLogging() {
         log.setLevel(Level.INFO);
     }
@@ -39,37 +39,38 @@ public class TokenTtlTrieTest {
         assertNull(trie.scan("b;ba,banana,bread,apple,pie".getBytes()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void addedTokensMayNotContainDelimiters() {
-        new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo,".getBytes(), 1).build();
+        assertThrows(IllegalArgumentException.class, () -> new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo,".getBytes(), 1).build());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void tokensMustBeUnique() {
-        new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo".getBytes(), 1).addToken("foo".getBytes(), 2).build();
+        assertThrows(IllegalArgumentException.class,
+                        () -> new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo".getBytes(), 1).addToken("foo".getBytes(), 2).build());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void parsedTokensMayNotContainDelimiters() {
-        new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).parse("\"foo,\":10s").build();
+        assertThrows(IllegalArgumentException.class, () -> new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).parse("\"foo,\":10s").build());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testTokensMustBeUniqueAcrossFormats() {
         String input = "foo bar : 2s\n\"bar\"=42s";
-        new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build();
+        assertThrows(IllegalArgumentException.class, () -> new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testColonEqualsFails() {
         String input = "foo bar =: 2s";
-        new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build();
+        assertThrows(IllegalArgumentException.class, () -> new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEqualsColonFails() {
         String input = "foo bar:=2s";
-        new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build();
+        assertThrows(IllegalArgumentException.class, () -> new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build());
     }
 
     @Test
@@ -108,7 +109,7 @@ public class TokenTtlTrieTest {
 
         for (long entry : trieEntries) {
             assertEquals((Long) entry, trie.scan(String.format("%06x00", entry).getBytes()));
-            Assert.assertNull(trie.scan(String.format("%06x00", entry - 1).getBytes()));
+            assertNull(trie.scan(String.format("%06x00", entry - 1).getBytes()));
         }
     }
 
@@ -117,12 +118,12 @@ public class TokenTtlTrieTest {
         TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters(",;".getBytes())
                         .parse("" + "\"foo\":2ms\n" + "\"b\\u0061r\":3d,\n" + "\"b\\x61z\":4m,\n\n").build();
 
-        Assert.assertNull(trie.scan("foobar,barbaz;bazfoo".getBytes()));
+        assertNull(trie.scan("foobar,barbaz;bazfoo".getBytes()));
         assertEquals((Long) 2L, trie.scan("foobar,foo;barfoo".getBytes()));
         assertEquals((Long) 2L, trie.scan("bar;foo".getBytes()));
-        Assert.assertEquals(AgeOffPeriod.getTtlUnitsFactor("d") * 3L, (long) trie.scan("bar,baz,foobar".getBytes()));
+        assertEquals(AgeOffPeriod.getTtlUnitsFactor("d") * 3L, (long) trie.scan("bar,baz,foobar".getBytes()));
         assertEquals((Long) (AgeOffPeriod.getTtlUnitsFactor("m") * 4L), trie.scan("buffer,baz".getBytes()));
-        Assert.assertNull(trie.scan("b;ba,banana,bread,apple,pie".getBytes()));
+        assertNull(trie.scan("b;ba,banana,bread,apple,pie".getBytes()));
     }
 
     @Test

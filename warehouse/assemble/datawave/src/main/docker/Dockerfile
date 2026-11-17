@@ -6,6 +6,9 @@ FROM ghcr.io/nationalsecurityagency/datawave-stack-accumulo:${DATAWAVE_STACK_ACC
 
 USER root
 
+# Ingest loader scripts use lsof to choose and check shutdown ports.
+RUN yum install -y lsof && yum clean all
+
 RUN adduser datawave -g hadoop \
     --home /opt/datawave-ingest && echo -n "cd" >> /opt/datawave-ingest/.bashrc
 

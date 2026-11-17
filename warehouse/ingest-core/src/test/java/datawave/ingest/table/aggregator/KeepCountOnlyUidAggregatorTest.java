@@ -5,15 +5,15 @@ import static java.util.Arrays.asList;
 import static datawave.ingest.table.aggregator.UidTestUtils.countOnlyList;
 import static datawave.ingest.table.aggregator.UidTestUtils.removeUidList;
 import static datawave.ingest.table.aggregator.UidTestUtils.valueToUidList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.protobuf.Uid;
 
@@ -23,7 +23,7 @@ public class KeepCountOnlyUidAggregatorTest {
 
     private final KeepCountOnlyUidAggregator agg = new KeepCountOnlyUidAggregator();
 
-    @Before
+    @BeforeEach
     public void setup() {
         agg.reset();
     }

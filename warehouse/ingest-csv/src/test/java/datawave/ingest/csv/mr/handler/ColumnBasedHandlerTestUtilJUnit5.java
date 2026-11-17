@@ -1,4 +1,9 @@
-package datawave.ingest.json.mr.handler;
+package datawave.ingest.csv.mr.handler;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +22,6 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -26,6 +30,7 @@ import com.google.common.collect.Multimap;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
@@ -39,16 +44,17 @@ import datawave.table.constants.TableName;
 /**
  * Utility Class for common static methods used in ColumnBasedHandler tests
  */
-public class ColumnBasedHandlerTestUtil {
+public class ColumnBasedHandlerTestUtilJUnit5 {
 
     public static final Text shardTableName = new Text(TableName.SHARD);
     public static final Text shardIndexTableName = new Text(TableName.SHARD_INDEX);
     public static final Text shardReverseIndexTableName = new Text(TableName.SHARD_RINDEX);
     public static final Text shardDayIndexTableName = new Text(TableName.SHARD_DAY_INDEX);
-    public static final Text edgeTableName = new Text("edge");
+    public static final Text shardYearIndexTableName = new Text(TableName.SHARD_YEAR_INDEX);
+    public static final Text edgeTableName = new Text(TableName.EDGE);
     public static final String NB = "\u0000";
 
-    private static Logger log = Logger.getLogger(ColumnBasedHandlerTestUtil.class);
+    private static final Logger log = Logger.getLogger(ColumnBasedHandlerTestUtilJUnit5.class);
 
     public static boolean isDocumentKey(Key k) {
         return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT);
@@ -59,8 +65,8 @@ public class ColumnBasedHandlerTestUtil {
     }
 
     public static InputSplit getSplit(String file) throws URISyntaxException {
-        URL data = ColumnBasedHandlerTestUtil.class.getResource(file);
-        Assert.assertNotNull("Did not find test resource", data);
+        URL data = ColumnBasedHandlerTestUtilJUnit5.class.getResource(file);
+        assertNotNull(data, "Did not find test resource");
         File dataFile = new File(data.toURI());
         Path p = new Path(dataFile.toURI().toString());
         return new FileSplit(p, 0, dataFile.length(), null);
@@ -68,7 +74,7 @@ public class ColumnBasedHandlerTestUtil {
 
     public static void processEvent(DataTypeHandler<Text> handler, RawRecordContainer event, Set<Key> expectedShardKeys, Set<Key> expectedShardIndexKeys,
                     Set<Key> expectedShardReverseIndexKeys) {
-        Assert.assertNotNull("Event was null.", event);
+        assertNotNull(event, "Event was null.");
         Multimap<String,NormalizedContentInterface> eventFields = handler.getHelper(event.getDataType()).getEventFields(event);
         VirtualIngest vHelper = (VirtualIngest) handler.getHelper(event.getDataType());
         Multimap<String,NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(eventFields);
@@ -79,6 +85,8 @@ public class ColumnBasedHandlerTestUtil {
         Set<Key> shardKeys = new HashSet<>();
         Set<Key> shardIndexKeys = new HashSet<>();
         Set<Key> shardReverseIndexKeys = new HashSet<>();
+        Set<Key> shardDayIndexKeys = new HashSet<>();
+        Set<Key> shardYearIndexKeys = new HashSet<>();
         Map<Text,Integer> countMap = Maps.newHashMap();
         for (BulkIngestKey k : results.keySet()) {
             Text tableName = k.getTableName();
@@ -103,8 +111,12 @@ public class ColumnBasedHandlerTestUtil {
                 shardIndexKeys.add(bik.getKey());
             } else if (bik.getTableName().equals(shardReverseIndexTableName)) {
                 shardReverseIndexKeys.add(bik.getKey());
+            } else if (bik.getTableName().equals(shardDayIndexTableName)) {
+                shardDayIndexKeys.add(bik.getKey());
+            } else if (bik.getTableName().equals(shardYearIndexTableName)) {
+                shardYearIndexKeys.add(bik.getKey());
             } else {
-                Assert.fail("unknown table: " + bik.getTableName() + " key: " + bik.getKey());
+                fail("unknown table: " + bik.getTableName() + " key: " + bik.getKey());
             }
 
         }
@@ -112,7 +124,7 @@ public class ColumnBasedHandlerTestUtil {
         Set<Key> keys = new HashSet<>();
         Set<String> errors = new TreeSet<>();
 
-        /**
+        /*
          * The following only prints out the missing/extra keys, no test is actually performed until the end. This is done so all errors are known before
          * failing.
          */
@@ -172,24 +184,35 @@ public class ColumnBasedHandlerTestUtil {
         for (String error : errors) {
             log.error(error.trim());
         }
-        Assert.assertTrue("Observed errors:\n" + errors, errors.isEmpty());
+        assertTrue(errors.isEmpty(), "Observed errors:\n" + errors);
     }
 
     public static void processEvent(DataTypeHandler<Text> handler, ExtendedDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler, RawRecordContainer event,
                     int expectedShardKeys, int expectedShardIndexKeys, int expectedShardReverseIndexKeys, int expectedEdgeKeys, boolean printKeysOnlyOnFail) {
 
-        Assert.assertNotNull("Event was null.", event);
+        assertNotNull(event, "Event was null.");
         Multimap<String,NormalizedContentInterface> eventFields = handler.getHelper(event.getDataType()).getEventFields(event);
         VirtualIngest vHelper = (VirtualIngest) handler.getHelper(event.getDataType());
         Multimap<String,NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(eventFields);
         for (Map.Entry<String,NormalizedContentInterface> v : virtualFields.entries()) {
             eventFields.put(v.getKey(), v.getValue());
         }
+        if (vHelper instanceof CompositeIngest) {
+            CompositeIngest compIngest = (CompositeIngest) vHelper;
+            Multimap<String,NormalizedContentInterface> compositeFields = compIngest.getCompositeFields(eventFields);
+            for (String fieldName : compositeFields.keySet()) {
+                // if this is an overloaded event field, we are replacing the existing data
+                if (compIngest.isOverloadedCompositeField(fieldName))
+                    eventFields.removeAll(fieldName);
+                eventFields.putAll(fieldName, compositeFields.get(fieldName));
+            }
+        }
         Multimap<BulkIngestKey,Value> results = handler.processBulk(new Text(), event, eventFields, new MockStatusReporter());
         Set<Key> shardKeys = new HashSet<>();
         Set<Key> shardIndexKeys = new HashSet<>();
         Set<Key> shardReverseIndexKeys = new HashSet<>();
         Set<Key> shardDayIndexKeys = new HashSet<>();
+        Set<Key> shardYearIndexKeys = new HashSet<>();
         Set<Key> edgeKeys = new HashSet<>();
         Map<Text,Integer> countMap = Maps.newHashMap();
 
@@ -218,10 +241,11 @@ public class ColumnBasedHandlerTestUtil {
                 shardReverseIndexKeys.add(bik.getKey());
             } else if (bik.getTableName().equals(shardDayIndexTableName)) {
                 shardDayIndexKeys.add(bik.getKey());
+            } else if (bik.getTableName().equals(shardYearIndexTableName)) {
+                shardYearIndexKeys.add(bik.getKey());
             } else {
-                Assert.fail("unknown table: " + bik.getTableName() + " key: " + bik.getKey());
+                fail("unknown table: " + bik.getTableName() + " key: " + bik.getKey());
             }
-
         }
 
         // Process edges
@@ -282,16 +306,22 @@ public class ColumnBasedHandlerTestUtil {
                     log.info(keyString.trim());
                 }
             }
-            Assert.assertTrue(countMap.get(shardTableName) == expectedShardKeys && countMap.get(shardIndexTableName) == expectedShardIndexKeys
-                            && countMap.get(shardReverseIndexTableName) == expectedShardReverseIndexKeys && countMap.get(edgeTableName) == expectedEdgeKeys);
+            if (expectedShardKeys > 0)
+                assertEquals(expectedShardKeys, (int) countMap.get(shardTableName));
+            if (expectedShardIndexKeys > 0)
+                assertEquals(expectedShardIndexKeys, (int) countMap.get(shardIndexTableName));
+            if (expectedShardReverseIndexKeys > 0)
+                assertEquals(expectedShardReverseIndexKeys, (int) countMap.get(shardReverseIndexTableName));
+            if (expectedEdgeKeys > 0)
+                assertEquals(expectedEdgeKeys, (int) countMap.get(edgeTableName));
         } catch (AssertionError ae) {
             if (printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
                     log.info(keyString.trim());
                 }
             }
-            Assert.fail(String.format("Expected: %s shard, %s index, %s reverse index, and %s edge keys.\nFound: %s, %s, %s, and %s respectively",
-                            expectedShardKeys, expectedShardIndexKeys, expectedShardReverseIndexKeys, expectedEdgeKeys, countMap.get(shardTableName),
+            fail(String.format("Expected: %s shard, %s index, %s reverse index, and %s edge keys.\nFound: %s, %s, %s, and %s respectively", expectedShardKeys,
+                            expectedShardIndexKeys, expectedShardReverseIndexKeys, expectedEdgeKeys, countMap.get(shardTableName),
                             countMap.get(shardIndexTableName), countMap.get(shardReverseIndexTableName), countMap.get(edgeTableName)));
         }
     }

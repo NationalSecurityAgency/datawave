@@ -1,11 +1,13 @@
 package datawave.ingest.metadata;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Collection;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
@@ -41,7 +43,7 @@ public class MetadataWithMostRecentDateTest {
         metadata.createOrUpdate(fieldName, dataTypeName + "2", normalizerClassName, 123);
         metadata.createOrUpdate(fieldName, dataTypeName + "2", normalizerClassName, 124);
 
-        Assert.assertEquals(2, metadata.entries().size());
+        assertEquals(2, metadata.entries().size());
 
         // Need to use a junk class here because we can't make instances of MostRecentEventDateAndKeyComponents as it is
         // not an enclosing class
@@ -54,12 +56,12 @@ public class MetadataWithMostRecentDateTest {
             actual.add(new Tuple(m.getFieldName(), m.getDataType(), m.getNormalizerClassName(), m.getMostRecentDate()));
         }
 
-        Assert.assertTrue(CollectionUtils.isEqualCollection(expected, actual));
+        assertTrue(CollectionUtils.isEqualCollection(expected, actual));
     }
 
     private void assertOneEntryWithExpectedDate(MetadataWithMostRecentDate counters, long expectedDate) {
-        Assert.assertEquals(1, counters.entries().size());
-        Assert.assertEquals(expectedDate, getOnlyEntry(counters).getMostRecentDate());
+        assertEquals(1, counters.entries().size());
+        assertEquals(expectedDate, getOnlyEntry(counters).getMostRecentDate());
     }
 
     private MetadataWithMostRecentDate.Components getOnlyEntry(MetadataWithMostRecentDate counters) {
@@ -71,10 +73,10 @@ public class MetadataWithMostRecentDateTest {
         MetadataWithMostRecentDate counters = new MetadataWithMostRecentDate(COLUMN_FAMILY);
         counters.createOrUpdate(fieldName, dataTypeName, normalizerClassName, date);
         MetadataWithMostRecentDate.Components entry = getOnlyEntry(counters);
-        Assert.assertEquals(fieldName, entry.getFieldName());
-        Assert.assertEquals(dataTypeName, entry.getDataType());
-        Assert.assertEquals(normalizerClassName, entry.getNormalizerClassName());
-        Assert.assertEquals(date, entry.getMostRecentDate());
+        assertEquals(fieldName, entry.getFieldName());
+        assertEquals(dataTypeName, entry.getDataType());
+        assertEquals(normalizerClassName, entry.getNormalizerClassName());
+        assertEquals(date, entry.getMostRecentDate());
     }
 
     /**

@@ -42,6 +42,7 @@
             </activation>
             <modules>
                 <module>service</module>
+                <module>messaging</module>
             </modules>
         </profile>
     </profiles>

@@ -10,6 +10,8 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import datawave.microservice.annotation.config.AnnotationRole;
+import datawave.microservice.annotation.config.ConditionalOnAnnotationRole;
 import datawave.microservice.annotation.util.Metadata;
 import datawave.microservice.annotation.util.exceptions.ResourceNotFoundException;
 import datawave.microservice.annotation.util.lookup.common.Lookup;
@@ -24,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 /** Used to perform lookupUUID request against a remote instance of Datawave */
 @Slf4j
 @Service
+@ConditionalOnAnnotationRole({AnnotationRole.API, AnnotationRole.COMBINED})
 public class LookupService {
 
     private final LookupRequest request;

@@ -1,6 +1,7 @@
 package datawave.ingest.jobcache;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -9,10 +10,10 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingServer;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ActiveSetterTest {
 
@@ -23,7 +24,7 @@ public class ActiveSetterTest {
 
     private ActiveSetter activeSetter;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupAll() throws Exception {
         ZK_SERVER = new TestingServer();
         ZK_SERVER.start();
@@ -32,7 +33,7 @@ public class ActiveSetterTest {
         ZK_CLIENT.start();
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         activeSetter = new ActiveSetter(ZK_CLIENT);
     }
@@ -57,11 +58,11 @@ public class ActiveSetterTest {
         assertZkData(ACTIVE_PATH, activeJobCache2);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void shouldNotAcceptEmptyPath() throws Exception {
         String emptyJobCache = "";
 
-        activeSetter.set(ACTIVE_PATH, emptyJobCache);
+        assertThrows(IllegalArgumentException.class, () -> activeSetter.set(ACTIVE_PATH, emptyJobCache));
     }
 
     private void assertZkData(String path, String expectedValue) throws Exception {
@@ -70,7 +71,7 @@ public class ActiveSetterTest {
         assertEquals(expectedValue, actualValue);
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownAll() throws IOException {
         if (ZK_CLIENT != null) {
             ZK_CLIENT.close();

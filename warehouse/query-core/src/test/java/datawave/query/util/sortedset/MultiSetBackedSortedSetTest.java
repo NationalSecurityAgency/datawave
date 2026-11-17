@@ -1,10 +1,10 @@
 package datawave.query.util.sortedset;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,16 +14,16 @@ import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class MultiSetBackedSortedSetTest {
     private byte[][] data = null;
     private int[] sortedOrder = null;
     private MultiSetBackedSortedSet<byte[]> set = null;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         byte[] template = new byte[] {5, 2, 78, 4, 8, 3, 54, 23, 6, 21, 7, 16};
         int[] sortedTemplate = new int[] {1, 5, 3, 0, 8, 10, 4, 11, 9, 7, 6, 2};
@@ -66,7 +66,7 @@ public class MultiSetBackedSortedSetTest {
     /**
      * throws java.lang.Exception
      */
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         data = null;
         sortedOrder = null;

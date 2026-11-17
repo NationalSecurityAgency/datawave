@@ -338,8 +338,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
-        // todo: make this work someday
-        // expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
 
         runTestQuery(expected);
     }
@@ -350,8 +349,7 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
-        // todo: make this work someday
-        // expected.add(Sets.newHashSet("UID:" + WiseGuysIngest.caponeUID));
+        expected.add(Sets.newHashSet("UID:" + caponeUID));
 
         runTestQuery(expected);
     }
@@ -402,7 +400,6 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + caponeUID));
 
         runTestQuery(expected);
     }
@@ -413,7 +410,6 @@ public class ShardQueryLogicTest extends AbstractQueryTest {
         givenParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT, "true");
 
         Set<Set<String>> expected = new HashSet<>();
-        expected.add(Sets.newHashSet("UID:" + caponeUID));
 
         runTestQuery(expected);
     }
