@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
-import datawave.query.testframework.AccumuloSetupJUnit5;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -27,7 +27,7 @@ import datawave.query.testframework.IpAddressDataType.IpAddrField;
 public class IpAddressQueryTest extends AbstractFunctionalQueryJUnit5 {
 
     @RegisterExtension
-    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
+    public static AccumuloSetupExtension accumuloSetup = AccumuloSetupExtension.create();
 
     private static final Logger log = Logger.getLogger(IpAddressQueryTest.class);
 
