@@ -25,7 +25,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.TimingMetadata;
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
 import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.BaseRawData;
