@@ -92,8 +92,8 @@ public class FirstAndLastSeenIterator implements SortedKeyValueIterator<Key,Valu
 
     @Override
     public void next() throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("next called");
+        if (log.isTraceEnabled()) {
+            log.trace("next called");
         }
         firstSeenKey = keyForFollowingRowColFam;
         keyForFollowingRowColFam = null;
@@ -104,8 +104,8 @@ public class FirstAndLastSeenIterator implements SortedKeyValueIterator<Key,Valu
 
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("seek called: " + range);
+        if (log.isTraceEnabled()) {
+            log.trace("seek called: " + range);
         }
         this.iterator.seek(range, columnFamilies, inclusive);
         next();

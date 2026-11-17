@@ -76,8 +76,8 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
 
     public boolean hasTop() {
         boolean hasTop = (returnValue != null);
-        if (log.isDebugEnabled()) {
-            log.debug("hasTop: " + hasTop);
+        if (log.isTraceEnabled()) {
+            log.trace("hasTop: " + hasTop);
         }
         return hasTop;
     }
@@ -91,8 +91,8 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
     }
 
     public void next() throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("next called");
+        if (log.isTraceEnabled()) {
+            log.trace("next called");
         }
 
         returnKey = null;
@@ -109,8 +109,8 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
     }
 
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("seek called: " + range);
+        if (log.isTraceEnabled()) {
+            log.trace("seek called: " + range);
         }
 
         this.iterator.seek(range, columnFamilies, inclusive);
@@ -124,8 +124,8 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
      *             for issues with read/write
      */
     protected void findTop() throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("findTop called");
+        if (log.isTraceEnabled()) {
+            log.trace("findTop called");
         }
 
         // if we already have something cached, then simply return

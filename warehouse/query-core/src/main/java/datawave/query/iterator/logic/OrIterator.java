@@ -163,8 +163,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             throw new IllegalStateException("evaluationContext must be set prior to calling next");
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": next will return " + next + " ; heads at " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": next will return " + next + " ; heads at " + includeHeads.keySet());
         }
 
         prev = next;
@@ -260,8 +260,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             next = null;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": next returning " + prev + "; cached next is " + next + " ; heads at " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": next returning " + prev + "; cached next is " + next + " ; heads at " + includeHeads.keySet());
         }
 
         return prev;
@@ -295,8 +295,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             throw new IllegalStateException("initialize() was never called");
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": moving to " + minimum);
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": moving to " + minimum);
         }
 
         // test preconditions
@@ -368,8 +368,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * @return a sorted map
      */
     private TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": advancing to " + key + ": " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": advancing to " + key + ": " + includeHeads.keySet());
         }
 
         SortedSet<NestedIterator<T>> includedItrs = includeHeads.removeAll(key);
@@ -393,8 +393,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             throw e;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": advanced to " + key + ": " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": advanced to " + key + ": " + includeHeads.keySet());
         }
 
         return includeHeads;
@@ -411,8 +411,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * @return a tree map
      */
     private TreeMultimap<T,NestedIterator<T>> moveIterators(T key, T to) {
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": moving iterators for " + key + " to " + to + ": " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": moving iterators for " + key + " to " + to + ": " + includeHeads.keySet());
         }
         SortedSet<NestedIterator<T>> includedItrs = includeHeads.removeAll(key);
         try {
@@ -434,8 +434,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             e.setYieldKey(this.waitWindowObserver.createYieldKey((Key) to, true, id + ": to in OrIterator.moveIterators()"));
             throw e;
         }
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": moved iterators for " + key + " to " + to + ": " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": moved iterators for " + key + " to " + to + ": " + includeHeads.keySet());
         }
 
         return includeHeads;

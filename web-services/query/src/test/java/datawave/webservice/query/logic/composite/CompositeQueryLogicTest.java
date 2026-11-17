@@ -413,7 +413,7 @@ public class CompositeQueryLogicTest {
         }
 
         @Override
-        public boolean isLongRunningQuery() {
+        public boolean isIntermediateEmptyPagesEnabled() {
             return true;
         }
     }
@@ -1720,14 +1720,14 @@ public class CompositeQueryLogicTest {
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
 
-        assertFalse(c.isLongRunningQuery());
+        assertFalse(c.isIntermediateEmptyPagesEnabled());
 
         TestQueryLogic2 logic3 = new TestQueryLogic2();
         logics.put("TestQueryLogic3", logic3);
 
         c.setQueryLogics(logics);
 
-        assertTrue(c.isLongRunningQuery());
+        assertTrue(c.isIntermediateEmptyPagesEnabled());
     }
 
     @Test

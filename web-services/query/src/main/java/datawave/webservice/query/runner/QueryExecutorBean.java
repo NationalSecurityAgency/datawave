@@ -674,9 +674,12 @@ public class QueryExecutorBean implements QueryExecutor {
                             new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             rq.setExecutor(executor);
             rq.setActiveCall(true);
-            rq.getMetric().setProxyServers(qd.proxyServers);
-            queryCache.put(q.getId().toString(), rq);
-            rq.setActiveCall(false);
+            try {
+                rq.getMetric().setProxyServers(qd.proxyServers);
+                queryCache.put(q.getId().toString(), rq);
+            } finally {
+                rq.setActiveCall(false);
+            }
             CreateQuerySessionIDFilter.QUERY_ID.set(q.getId().toString());
             return response;
         } catch (DatawaveWebApplicationException e) {
@@ -734,8 +737,8 @@ public class QueryExecutorBean implements QueryExecutor {
             // callers know they have to call next (even though next may not return results).
             response.setHasResults(true);
 
-            // Check if submitting a new query would exceed any configured concurrent query limits.
-            checkForQueryLimits(response, qd.userDn, queryParameters.getFirst(QueryParameters.QUERY_SYSTEM_FROM), queryLogicName);
+            // Check if submitting a new query would exceed any configured concurrent query limits
+            checkForQueryLimits(qd.logic, response, qd.userDn, queryParameters.getFirst(QueryParameters.QUERY_SYSTEM_FROM), queryLogicName);
 
             AuditType auditType = qd.logic.getAuditType(null);
             try {
@@ -786,7 +789,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             // Consider this query to be active when determining query limits.
-            markQueryAsActive(q.getId().toString(), qd.userDn, q.getSystemFrom(), q.getQueryLogicName());
+            markQueryAsActive(qd.logic, q.getId().toString(), qd.userDn, q.getSystemFrom(), q.getQueryLogicName());
 
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, qp.isTrace());
             if (shouldTraceQuery) {
@@ -799,16 +802,19 @@ public class QueryExecutorBean implements QueryExecutor {
                             new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             rq.setExecutor(executor);
             rq.setActiveCall(true);
-            rq.getMetric().setProxyServers(qd.proxyServers);
-            rq.setClient(client);
+            try {
+                rq.getMetric().setProxyServers(qd.proxyServers);
+                rq.setClient(client);
 
-            // Put in the cache by id. Don't put the cache in by name because multiple users may use the same name
-            // and only the last one will be in the cache.
-            queryCache.put(q.getId().toString(), rq);
+                // Put in the cache by id. Don't put the cache in by name because multiple users may use the same name
+                // and only the last one will be in the cache.
+                queryCache.put(q.getId().toString(), rq);
 
-            response.setResult(q.getId().toString());
-            updateMessages(q, response);
-            rq.setActiveCall(false);
+                response.setResult(q.getId().toString());
+                updateMessages(q, response);
+            } finally {
+                rq.setActiveCall(false);
+            }
             CreateQuerySessionIDFilter.QUERY_ID.set(q.getId().toString());
             return response;
         } catch (Throwable t) {
@@ -839,7 +845,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             if (q != null && q.getId() != null) {
-                markQueryAsInactive(q.getId().toString());
+                markQueryAsInactive(qd.logic, q.getId().toString());
             }
 
             try {
@@ -1290,6 +1296,7 @@ public class QueryExecutorBean implements QueryExecutor {
 
         AccumuloClient client = null;
         RunningQuery query = null;
+        boolean resetStarted = false;
         boolean locked = false;
         try {
             ctx.getUserTransaction().begin();
@@ -1302,9 +1309,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR);
             locked = true;
 
-            // Check if submitting a new query would exceed any configured concurrent query limits.
+            // Check if submitting a new query would exceed any configured concurrent query limits
             Query settings = query.getSettings();
-            checkForQueryLimits(response, settings.getUserDN(), settings.getSystemFrom(), settings.getQueryLogicName());
+            checkForQueryLimits(query.getLogic(), response, settings.getUserDN(), settings.getSystemFrom(), settings.getQueryLogicName());
+            resetStarted = true;
 
             // We did not allocate a connection when we looked up the query. If
             // there's a connection when we get here, then we know it can only be
@@ -1313,7 +1321,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // restarting the query, so we should re-audit ().
             if (query.getClient() != null) {
                 query.closeConnection(connectionFactory);
-                markQueryAsInactive(id);
+                markQueryAsInactive(query.getLogic(), id);
             } else {
                 AuditType auditType = query.getLogic().getAuditType(query.getSettings());
                 MultiValueMap<String,String> queryParameters = new LinkedMultiValueMap<>(query.getSettings().toMap());
@@ -1364,7 +1372,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
 
             // Consider this query to be active when determining query limits.
-            markQueryAsActive(id, settings.getUserDN(), settings.getSystemFrom(), settings.getQueryLogicName());
+            markQueryAsActive(query.getLogic(), id, settings.getUserDN(), settings.getSystemFrom(), settings.getQueryLogicName());
 
             query.setClient(client);
             CreateQuerySessionIDFilter.QUERY_ID.set(id);
@@ -1397,7 +1405,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 log.error("Error returning connection on failed reset", e2);
             }
 
-            markQueryAsInactive(id);
+            if (resetStarted) {
+                markQueryAsInactive(query.getLogic(), id);
+            }
 
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_RESET_ERROR, e);
             response.addException(qe.getBottomQueryException());
@@ -1502,11 +1512,11 @@ public class QueryExecutorBean implements QueryExecutor {
 
         query.getMetric().setProxyServers(proxyServers);
 
-        testForUncaughtException(query.getSettings(), resultsPage);
+        testForUncaughtException(query.getLogic(), query.getSettings(), resultsPage);
 
         // If the query is finished, stop counting it towards query limits.
-        if (resultsPage.getStatus() == ResultsPage.Status.COMPLETE || resultsPage.getStatus() == ResultsPage.Status.NONE) {
-            markQueryAsInactive(queryId);
+        if (query.isFinished() || resultsPage.getStatus() == ResultsPage.Status.NONE) {
+            markQueryAsInactive(query.getLogic(), queryId);
         }
 
         // This should NOT be an exception - revisit. Unfortunately, the jboss interceptor looks for a
@@ -2190,23 +2200,25 @@ public class QueryExecutorBean implements QueryExecutor {
 
                 // Set the active call and get next
                 query.setActiveCall(true);
-                response = _next(query, id, proxyServers);
+                try {
+                    response = _next(query, id, proxyServers);
 
-                // Conditionally swap the standard response with content
-                if (checkForContentLookup) {
-                    final Query settings = query.getSettings();
-                    final Parameter contentLookupParam = settings.findParameter(LookupUUIDUtil.PARAM_CONTENT_LOOKUP);
-                    if ((null != contentLookupParam) && Boolean.parseBoolean(contentLookupParam.getParameterValue())) {
-                        contentLookupSettings = settings;
+                    // Conditionally swap the standard response with content
+                    if (checkForContentLookup) {
+                        final Query settings = query.getSettings();
+                        final Parameter contentLookupParam = settings.findParameter(LookupUUIDUtil.PARAM_CONTENT_LOOKUP);
+                        if ((null != contentLookupParam) && Boolean.parseBoolean(contentLookupParam.getParameterValue())) {
+                            contentLookupSettings = settings;
+                        }
                     }
-                }
 
-                // Unset the active call and return
-                query.setActiveCall(false);
+                } finally {
+                    // Unset the active call and return
+                    query.setActiveCall(false);
+                }
             }
         } catch (NoResultsException e) {
             if (query != null) {
-                query.setActiveCall(false);
                 if (query.getLogic().getCollectQueryMetrics()) {
                     try {
                         // do not set the error message here - zero results is not an error that should be added to metrics
@@ -2227,7 +2239,6 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (DatawaveWebApplicationException e) {
             log.error("Failed Query", e);
             if (query != null) {
-                query.setActiveCall(false);
                 if (query.getLogic().getCollectQueryMetrics()) {
                     query.getMetric().setError(e);
                     try {
@@ -2252,7 +2263,6 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (Exception e) {
             log.error("Query Failed", e);
             if (query != null) {
-                query.setActiveCall(false);
                 if (query.getLogic().getCollectQueryMetrics()) {
                     query.getMetric().setError(e);
                     try {
@@ -2391,7 +2401,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     log.error("Exception occurred while closing query logic; may be innocuous if scanners were running.", e);
                 }
 
-                markQueryAsInactive(id);
+                markQueryAsInactive(logic, id);
                 connectionFactory.returnClient(tuple.getRight());
                 response.addMessage(id + " closed before create completed.");
             }
@@ -2459,7 +2469,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     connectionFactory.returnClient(tuple.getRight());
                     response.addMessage(id + " closed before create completed.");
                 } finally {
-                    markQueryAsInactive(id);
+                    markQueryAsInactive(logic, id);
                 }
             }
 
@@ -2489,7 +2499,7 @@ public class QueryExecutorBean implements QueryExecutor {
             log.error("Failed to close connection for " + queryId, e);
         }
 
-        markQueryAsInactive(queryId);
+        markQueryAsInactive(query.getLogic(), queryId);
 
         queryCache.remove(queryId);
 
@@ -2562,7 +2572,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     connectionFactory.returnClient(tuple.getRight());
                     response.addMessage(id + " closed before create completed due to cancel.");
                 } finally {
-                    markQueryAsInactive(id);
+                    markQueryAsInactive(logic, id);
                 }
             }
 
@@ -2626,7 +2636,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     log.error("Exception occurred while canceling query logic; may be innocuous if scanners were running.", e);
                 }
 
-                markQueryAsInactive(id);
+                markQueryAsInactive(logic, id);
                 connectionFactory.returnClient(tuple.getRight());
                 response.addMessage(id + " closed before create completed due to cancel.");
             }
@@ -4006,7 +4016,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
     }
 
-    private void testForUncaughtException(Query settings, ResultsPage resultList) throws QueryException {
+    private void testForUncaughtException(QueryLogic logic, Query settings, ResultsPage resultList) throws QueryException {
         QueryUncaughtExceptionHandler handler = settings.getUncaughtExceptionHandler();
         if (handler != null) {
             ImmutablePair<Throwable,Thread> uncaughtException = handler.getUncaughtException();
@@ -4021,7 +4031,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
 
                 // If an exception occurred, do not consider the query active anymore when limiting queries.
-                markQueryAsInactive(settings.getId().toString());
+                markQueryAsInactive(logic, settings.getId().toString());
 
                 if (uncaughtException.getLeft() instanceof QueryException) {
                     throw ((QueryException) uncaughtException.getLeft());
@@ -4045,20 +4055,22 @@ public class QueryExecutorBean implements QueryExecutor {
      * @throws QueryException
      *             if an error occurs
      */
-    private void checkForQueryLimits(BaseResponse response, String userDn, String systemFrom, String queryLogicName) throws QueryException {
-        try {
-            // Check if submitting a new query would exceed any configured concurrent query limits.
-            QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(userDn, systemFrom, queryLogicName);
-            if (limiterResponse.metLimit()) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
+    private void checkForQueryLimits(QueryLogic logic, BaseResponse response, String userDn, String systemFrom, String queryLogicName) throws QueryException {
+        if (logic.isQueryLimiterEnabled()) {
+            try {
+                // Check if submitting a new query would exceed any configured concurrent query limits.
+                QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(userDn, systemFrom, queryLogicName);
+                if (limiterResponse.metLimit()) {
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED, limiterResponse.getMessage());
+                    response.addException(qe);
+                    throw new BadRequestException(qe, response);
+                }
+            } catch (Exception e) {
+                log.error("Error checking concurrent query limits", e);
+                QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
                 response.addException(qe);
-                throw new BadRequestException(qe, response);
+                throw qe;
             }
-        } catch (Exception e) {
-            log.error("Error checking concurrent query limits", e);
-            QueryException qe = new QueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_ERROR, e);
-            response.addException(qe);
-            throw qe;
         }
     }
 
@@ -4073,12 +4085,14 @@ public class QueryExecutorBean implements QueryExecutor {
      *            the query logic
      * @throws Exception
      */
-    private void markQueryAsActive(String queryId, String userDn, String system, String queryLogicName) throws Exception {
-        try {
-            queryLimiter.countQueryTowardsLimits(queryId, userDn, system, queryLogicName);
-        } catch (Exception e) {
-            log.error("Failed to mark query " + queryId + " as active", e);
-            throw e;
+    private void markQueryAsActive(QueryLogic logic, String queryId, String userDn, String system, String queryLogicName) throws Exception {
+        if (logic.isQueryLimiterEnabled()) {
+            try {
+                queryLimiter.countQueryTowardsLimits(queryId, userDn, system, queryLogicName);
+            } catch (Exception e) {
+                log.error("Failed to mark query " + queryId + " as active", e);
+                throw e;
+            }
         }
     }
 
@@ -4087,11 +4101,13 @@ public class QueryExecutorBean implements QueryExecutor {
      *
      * @param queryId
      */
-    private void markQueryAsInactive(String queryId) {
-        try {
-            queryLimiter.stopCountingQueryTowardsLimits(queryId);
-        } catch (Exception e) {
-            log.error("Error occurred when marking query " + queryId + " as inactive");
+    private void markQueryAsInactive(QueryLogic logic, String queryId) {
+        if (logic.isQueryLimiterEnabled()) {
+            try {
+                queryLimiter.stopCountingQueryTowardsLimits(queryId);
+            } catch (Exception e) {
+                log.error("Error occurred when marking query " + queryId + " as inactive");
+            }
         }
     }
 }
