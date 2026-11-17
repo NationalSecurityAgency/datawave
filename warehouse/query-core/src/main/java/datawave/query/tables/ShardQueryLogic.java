@@ -753,7 +753,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
     }
 
-    public boolean isLongRunningQuery() {
+    public boolean isIntermediateEmptyPagesEnabled() {
         return getConfig().getGroupFields().hasGroupByFields() || !getUniqueFields().isEmpty();
     }
 
@@ -1768,7 +1768,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (config == null) {
             config = ShardQueryConfiguration.create();
         }
-
         return config;
     }
 
@@ -3653,5 +3652,23 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setMultDocPerGroup(boolean value) {
         getConfig().getGroupFields().setOneDocPerGroup(!value);
+    }
+
+    public void setQueryLimiterEnabled(boolean value) {
+        getConfig().setQueryLimiterEnabled(value);
+    }
+
+    @Override
+    public boolean isQueryLimiterEnabled() {
+        return getConfig().isQueryLimiterEnabled();
+    }
+
+    public void setUseSynchronousRunningQuery(boolean synchronous) {
+        getConfig().setUseSynchronousRunningQuery(synchronous);
+    }
+
+    @Override
+    public boolean isUseSynchronousRunningQuery() {
+        return getConfig().isUseSynchronousRunningQuery();
     }
 }
