@@ -23,6 +23,7 @@ import datawave.ingest.table.aggregator.TruncatedIndexConversionIterator;
  *
  * Can be used in a map reduce job or in conjunction with the {@link TruncatedIndexConversionIterator}.
  */
+@Deprecated(forRemoval = true, since = "7.40.0")
 public class TruncatedIndexKeyParser extends AbstractIndexKeyParser {
 
     @Override

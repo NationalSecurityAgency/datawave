@@ -1,5 +1,6 @@
 package datawave.next;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
-import datawave.next.stats.DocumentIteratorStats;
+import datawave.next.stats.DocIterStats;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
@@ -70,7 +71,9 @@ public class DocIdIteratorVisitor extends BaseVisitor {
     private long resultInterval = 500;
     private boolean allowPartialIntersections = false;
 
-    private final DocumentIteratorStats stats = new DocumentIteratorStats();
+    private final DocIterStats stats = new DocIterStats();
+
+    private final Clock clock = Clock.systemUTC();
 
     /**
      *
@@ -411,7 +414,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
 
         // if scan results exist then this scan is allowed to timeout
         boolean checkForTimeout = data instanceof ScanResult;
-        long scanStart = System.currentTimeMillis();
+        long scanStart = clock.millis();
         long elapsedScanTime;
 
         int count = 0;
@@ -422,7 +425,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             count++;
             result.addKey(iterator.next());
             if (checkForTimeout && count % resultInterval == 0) {
-                elapsedScanTime = System.currentTimeMillis() - scanStart;
+                elapsedScanTime = clock.millis() - scanStart;
                 if (elapsedScanTime >= maxScanTimeMillis) {
                     result.setTimeout(true);
                     log.warn("term: [{}] founds {} hits before hitting timeout threshold: {}", iterator.getNode(), result.getResults().size(),
@@ -432,7 +435,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
             }
         }
 
-        elapsedScanTime = System.currentTimeMillis() - scanStart;
+        elapsedScanTime = clock.millis() - scanStart;
         stats.merge(iterator.getStats());
 
         if (log.isDebugEnabled()) {
@@ -480,7 +483,7 @@ public class DocIdIteratorVisitor extends BaseVisitor {
         return null;
     }
 
-    public DocumentIteratorStats getStats() {
+    public DocIterStats getStats() {
         return stats;
     }
 

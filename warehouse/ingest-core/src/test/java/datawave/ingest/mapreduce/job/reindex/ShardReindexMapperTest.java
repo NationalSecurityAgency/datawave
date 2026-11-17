@@ -17,8 +17,9 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.getCurrentArguments;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,11 +41,13 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.file.rfile.RFile;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -55,8 +58,8 @@ import org.apache.hadoop.shaded.com.google.common.io.Files;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
@@ -87,11 +90,12 @@ public class ShardReindexMapperTest extends EasyMockSupport {
     private Mapper.Context context;
 
     private AccumuloClient mockClient;
+    private SecurityOperations mockSecOps;
     private Scanner mockScanner;
 
-    private ShardReindexMapper mapper = new ShardReindexMapper();
+    private final ShardReindexMapper mapper = new ShardReindexMapper();
 
-    @Before
+    @BeforeEach
     public void setup() {
         // TODO shift this to ShardedDataGenerator
         // clear and reset the type registry
@@ -119,6 +123,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         mockContextWriter = createMock(ContextWriter.class);
         context = createMock(Mapper.Context.class);
         mockClient = createMock(AccumuloClient.class);
+        mockSecOps = createMock(SecurityOperations.class);
         mockScanner = createMock(Scanner.class);
     }
 
@@ -905,7 +910,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         verifyAll();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void FI_unknownDataType_test() throws IOException, InterruptedException {
         Key fiKey = new Key("row", FI_START + "FIELDA", "ABC" + '\u0000' + "someUnknownDataType" + '\u0000' + "1.2.3");
 
@@ -915,9 +920,7 @@ public class ShardReindexMapperTest extends EasyMockSupport {
         replayAll();
 
         mapper.setup(context);
-        mapper.map(fiKey, new Value(), context);
-
-        verifyAll();
+        assertThrows(IllegalStateException.class, () -> mapper.map(fiKey, new Value(), context));
     }
 
     // unlike unknownDataTypeFI_test() this uses the default data type to provide processing capability
@@ -1194,7 +1197,10 @@ public class ShardReindexMapperTest extends EasyMockSupport {
 
     private void expectScanner(String tableName, Range r, Iterator<Map.Entry<Key,Value>> result)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException {
-        expect(mockClient.createScanner(tableName)).andReturn(mockScanner);
+        expect(mockClient.whoami()).andReturn("testUser");
+        expect(mockClient.securityOperations()).andReturn(mockSecOps);
+        expect(mockSecOps.getUserAuthorizations("testUser")).andReturn(new Authorizations());
+        expect(mockClient.createScanner(eq(tableName), isA(Authorizations.class))).andReturn(mockScanner);
         mockScanner.setRange(eq(r));
         expect(mockScanner.iterator()).andReturn(result);
         mockScanner.close();

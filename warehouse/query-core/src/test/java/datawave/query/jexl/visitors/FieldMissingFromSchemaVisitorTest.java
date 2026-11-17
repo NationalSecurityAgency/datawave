@@ -2,15 +2,15 @@ package datawave.query.jexl.visitors;
 
 import static datawave.query.Constants.ANY_FIELD;
 import static datawave.query.Constants.NO_FIELD;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -25,7 +25,7 @@ public class FieldMissingFromSchemaVisitorTest {
     private Set<String> specialFields = Sets.newHashSet(ANY_FIELD, NO_FIELD);
     private MockMetadataHelper helper;
 
-    @Before
+    @BeforeEach
     public void before() {
         helper = new MockMetadataHelper();
     }

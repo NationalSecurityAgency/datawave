@@ -23,7 +23,7 @@ import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 /**
- * <h1>Overview</h1> This is a query logic implementation that can handle delegating to a remote edge query logic (i.e. one that returns an extension of
+ * <h2>Overview</h2> This is a query logic implementation that can handle delegating to a remote edge query logic (i.e. one that returns an extension of
  * EdgeQueryResponseBase).
  */
 public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> implements RemoteQueryLogic<EdgeBase> {
@@ -58,7 +58,7 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
     }
 
     @Override
-    public QueryLogicTransformer<EdgeBase,EdgeBase> createTransformer(Query settings, MarkingFunctions markingFunctions,
+    public QueryLogicTransformer<EdgeBase,EdgeBase> createTransformer(Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         return new EdgeBaseTransformer(settings, markingFunctions, responseObjectFactory, edgeFields);
     }
@@ -134,7 +134,7 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
 
     private class EdgeBaseTransformer extends EdgeQueryTransformerSupport<EdgeBase,EdgeBase> {
 
-        public EdgeBaseTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
+        public EdgeBaseTransformer(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
             super(settings, markingFunctions, responseObjectFactory, fields);
         }
 

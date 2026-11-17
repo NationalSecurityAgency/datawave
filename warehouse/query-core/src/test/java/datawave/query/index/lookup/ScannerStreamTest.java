@@ -1,8 +1,8 @@
 package datawave.query.index.lookup;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -10,7 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;

@@ -2,11 +2,11 @@ package datawave.query.index.lookup;
 
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
-import static datawave.util.TableName.SHARD_INDEX;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static datawave.table.constants.TableName.SHARD_INDEX;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -22,9 +22,9 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -42,7 +42,6 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.planner.QueryPlan;
-import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
 
 /**
@@ -73,7 +72,7 @@ public class RangeStreamTestX {
     private static AccumuloClient client;
     private ShardQueryConfiguration config;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupAccumulo() throws Exception {
         client = new InMemoryAccumuloClient("", new InMemoryInstance());
         client.tableOperations().create(SHARD_INDEX);
@@ -420,7 +419,7 @@ public class RangeStreamTestX {
         return new Value(list.toByteArray());
     }
 
-    @Before
+    @BeforeEach
     public void setupTest() {
         config = new ShardQueryConfiguration();
         config.setClient(client);
@@ -3525,8 +3524,8 @@ public class RangeStreamTestX {
 
     private void runTest(String query, List<Range> expectedRanges, List<String> expectedQueries) throws Exception {
 
-        assertEquals("Expected ranges and queries do not match, ranges: " + expectedRanges.size() + " queries: " + expectedQueries.size(),
-                        expectedRanges.size(), expectedQueries.size());
+        assertEquals(expectedRanges.size(), expectedQueries.size(),
+                        "Expected ranges and queries do not match, ranges: " + expectedRanges.size() + " queries: " + expectedQueries.size());
 
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
@@ -3553,13 +3552,12 @@ public class RangeStreamTestX {
         helper.setIndexedFields(dataTypes.keySet());
 
         // Run a standard limited-scanner range stream.
-        ScannerFactory scannerFactory = new ScannerFactory(config);
-        RangeStream rangeStream = new RangeStream(config, scannerFactory, helper);
+        RangeStream rangeStream = new RangeStream(config, helper);
         rangeStream.setLimitScanners(true);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
 
         // Run a default range stream.
-        rangeStream = new RangeStream(config, scannerFactory, helper);
+        rangeStream = new RangeStream(config, helper);
         rangeStream.setLimitScanners(false);
         runTest(rangeStream, script, expectedRanges, expectedQueries);
 
@@ -3582,8 +3580,8 @@ public class RangeStreamTestX {
             Range planRange = rangeIter.next();
             Range expectedRange = shardIter.next();
 
-            assertEquals("Query produced unexpected range: " + planRange.toString(), expectedRange, planRange);
-            assertFalse("Query plan had more than one range!", rangeIter.hasNext());
+            assertEquals(expectedRange, planRange, "Query produced unexpected range: " + planRange.toString());
+            assertFalse(rangeIter.hasNext(), "Query plan had more than one range!");
 
             // Assert proper query string for this range.
 
@@ -3597,8 +3595,8 @@ public class RangeStreamTestX {
             expectedScript = JexlASTHelper.parseJexlQuery(expectedString);
             planScript = JexlASTHelper.parseJexlQuery(plannedString);
 
-            assertTrue("Queries did not match for counter: " + counter + " on shard: " + planRange.toString() + "\nExpected: " + expectedString + "\nActual  : "
-                            + plannedString, TreeEqualityVisitor.isEqual(expectedScript, planScript));
+            assertTrue(TreeEqualityVisitor.isEqual(expectedScript, planScript), "Queries did not match for counter: " + counter + " on shard: "
+                            + planRange.toString() + "\nExpected: " + expectedString + "\nActual  : " + plannedString);
             counter++;
         }
 
@@ -3640,8 +3638,7 @@ public class RangeStreamTestX {
             helper.setIndexedFields(dataTypes.keySet());
 
             // Run a standard limited-scanner range stream.
-            ScannerFactory scannerFactory = new ScannerFactory(config);
-            try (RangeStream rangeStream = new RangeStream(config, scannerFactory, helper)) {
+            try (RangeStream rangeStream = new RangeStream(config, helper)) {
                 rangeStream.setLimitScanners(true);
 
                 Iterator<QueryPlan> plans = rangeStream.streamPlans(script).iterator();

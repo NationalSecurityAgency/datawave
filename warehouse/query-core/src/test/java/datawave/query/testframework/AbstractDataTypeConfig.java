@@ -1,6 +1,7 @@
 package datawave.query.testframework;
 
 import static datawave.query.testframework.FileType.CSV;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +23,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
@@ -145,7 +145,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
 
         // RawDataManager manager = mgr;
         URL url = this.getClass().getClassLoader().getResource(ingestFile);
-        Assert.assertNotNull("unable to resolve ingest file(" + ingestFile + ")", url);
+        assertNotNull("unable to resolve ingest file(" + ingestFile + ")", url);
         // if this url is not a file (e.g. nested in a jar), then make it a file
         if (url.getProtocol().startsWith("jar")) {
             InputStream in = this.getClass().getClassLoader().getResourceAsStream(ingestFile);

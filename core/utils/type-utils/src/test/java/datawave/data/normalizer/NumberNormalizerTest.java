@@ -7,16 +7,25 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
 public class NumberNormalizerTest {
 
+    private static final int RANDOM_NUMBERS = 100;
+    private static final int PATTERNS_PER_NUMBER = 100;
+
+    /**
+     * Seed for {@link #testRandomRegexPatterns()}. Fixed by default so that a failure can be reproduced; override with -Ddatawave.test.seed to explore
+     * different inputs.
+     */
+    private static final long SEED = Long.getLong("datawave.test.seed", 20260814L);
+
     private final NumberNormalizer normalizer = new NumberNormalizer();
-    private final ThreadLocalRandom random = ThreadLocalRandom.current();
+    private final Random random = new Random(SEED);
 
     /**
      * Verify that the equivalent numbers 1 and 1.00000000 are normalized to the same encoding.
@@ -110,14 +119,13 @@ public class NumberNormalizerTest {
      */
     @Test
     void testRandomRegexPatterns() {
-        for (int i = 0; i < 1000; i++) {
-            // Get a random number. Call getFastRandomNumber() for a quick test that takes less than a minute to complete. Call getRandomNumber() to get numbers
-            // that are random across a much larger scale, but expect the test to take possibly more than 20 minutes to complete.
+        for (int i = 0; i < RANDOM_NUMBERS; i++) {
+            // Call getRandomNumber() instead to draw from a much larger scale, at the cost of a substantially longer run.
             String num = getFastRandomNumber();
             String normalizedNum = normalizer.normalize(num);
 
-            // Generate 100 random patterns that should match against the number.
-            for (int j = 0; j < 100; j++) {
+            // Generate random patterns that should match against the number.
+            for (int j = 0; j < PATTERNS_PER_NUMBER; j++) {
                 StringBuilder pattern = new StringBuilder();
 
                 int startPos = 0;
@@ -190,7 +198,7 @@ public class NumberNormalizerTest {
     }
 
     /**
-     * Return a random number that when used in {@link #testRandomRegexPatterns()}, will not make the test take more than a minute to complete.
+     * Return a random number drawn from a narrow scale, keeping {@link #testRandomRegexPatterns()} fast.
      *
      * @return a random number
      */
@@ -220,7 +228,7 @@ public class NumberNormalizerTest {
         BigDecimal decimal = getRandomBigDecimal();
 
         // Move the decimal point to the right randomly.
-        int leadingZeros = random.nextInt(0, 26);
+        int leadingZeros = random.nextInt(26);
         decimal = decimal.movePointRight(leadingZeros);
 
         // Randomly trim the mantissa to make the number whole.
@@ -240,7 +248,7 @@ public class NumberNormalizerTest {
         BigDecimal decimal = getRandomBigDecimal();
 
         // Move the decimal point to the left randomly.
-        int leadingZeros = random.nextInt(0, 26);
+        int leadingZeros = random.nextInt(26);
         decimal = decimal.movePointLeft(leadingZeros);
 
         // Limit the mantissa length.

@@ -55,7 +55,7 @@ public class AnnotationBinarySerializationTest {
         //@formatter:off
         assertArrayEquals(baselineBytes, currentBytes, "If this test fails it means that the protobuf binary" +
                 " serialization process has changed. The output in " + SERIALIZED_ANNOTATION_VERSIONS_DIR +
-                " annotation_current.bin should be added as a new test input in " + SERIALIZED_ANNOTATION_VERSIONS_DIR +
+                "annotation_current.bin should be added as a new test input in " + SERIALIZED_ANNOTATION_VERSIONS_DIR +
                 " so that testProtobufDeserializationBaselineBinary will attempt to decode it in future versions. This" +
                 " ensures backward compatibility of the deserialization process. " + SERIALIZED_ANNOTATION_README);
         //@formatter:on

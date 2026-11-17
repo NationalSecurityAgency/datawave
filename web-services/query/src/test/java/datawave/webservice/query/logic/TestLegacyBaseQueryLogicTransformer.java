@@ -1,19 +1,17 @@
 package datawave.webservice.query.logic;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
@@ -21,7 +19,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 
-@RunWith(PowerMockRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class TestLegacyBaseQueryLogicTransformer {
 
     @Mock
@@ -31,7 +29,7 @@ public class TestLegacyBaseQueryLogicTransformer {
     ResultsPage resultsPage;
 
     @Test
-    public void testConstructor_NullVisibilityInterpreter() throws Exception {
+    public void testConstructor_NullVisibilityInterpreter() {
         // Run the test
         Exception result1 = null;
         try {
@@ -41,53 +39,49 @@ public class TestLegacyBaseQueryLogicTransformer {
         }
 
         // Verify results
-        assertNotNull("Expected an exception to be thrown due to null param", result1);
+        assertNotNull(result1, "Expected an exception to be thrown due to null param");
     }
 
     @Test
-    public void testCreateResponse_ResultsPagePartial() throws Exception {
+    public void testCreateResponse_ResultsPagePartial() {
         // Set expectations
-        expect(this.resultsPage.getResults()).andReturn(Arrays.asList(new Object()));
-        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.PARTIAL);
+        when(this.resultsPage.getResults()).thenReturn(List.of(new Object()));
+        when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.PARTIAL);
         this.response.addMessage(isA(String.class));
         this.response.setPartialResults(true);
 
         // Run the test
-        PowerMock.replayAll();
         TestTransformer subject = new TestTransformer(new MarkingFunctions.Default(), this.response);
         BaseQueryResponse result1 = subject.createResponse(this.resultsPage);
-        PowerMock.verifyAll();
 
         // Verify results
-        assertSame("BaseQueryResponse should not be null", result1, this.response);
+        assertEquals(result1, this.response, "BaseQueryResponse should not be null");
     }
 
     @Test
-    public void testCreateResponse_ResultsPageComplete() throws Exception {
+    public void testCreateResponse_ResultsPageComplete() {
         // Set expectations
-        expect(this.resultsPage.getResults()).andReturn(Arrays.asList(new Object()));
-        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.COMPLETE);
+        when(this.resultsPage.getResults()).thenReturn(List.of(new Object()));
+        when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.COMPLETE);
 
         // Run the test
-        PowerMock.replayAll();
         TestTransformer subject = new TestTransformer(new MarkingFunctions.Default(), this.response);
         BaseQueryResponse result1 = subject.createResponse(this.resultsPage);
-        PowerMock.verifyAll();
 
         // Verify results
-        assertSame("BaseQueryResponse should not be null", result1, this.response);
+        assertEquals(result1, this.response, "BaseQueryResponse should not be null");
     }
 
-    private class TestTransformer extends BaseQueryLogicTransformer<Map.Entry<?,?>,EventBase> {
+    private static class TestTransformer extends BaseQueryLogicTransformer<Map.Entry<?,?>,EventBase<?,?>> {
         BaseQueryResponse response;
 
-        public TestTransformer(MarkingFunctions markingFunctions, BaseQueryResponse response) {
+        public TestTransformer(MarkingFunctions<?> markingFunctions, BaseQueryResponse response) {
             super(markingFunctions);
             this.response = response;
         }
 
         @Override
-        public EventBase transform(Map.Entry<?,?> arg0) {
+        public EventBase<?,?> transform(Map.Entry<?,?> arg0) {
             return null;
         }
 

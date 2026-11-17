@@ -1,6 +1,8 @@
 package datawave.query.postprocessing.tf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -136,6 +138,91 @@ class TermOffsetPopulatorTest {
         } else {
             assertEquals(value, attr.getData());
         }
+    }
+
+    @Test
+    void testGroupedFieldContentExpansion() {
+        // Test that grouped fields like BODY.A1B2C3 are properly recognized as content expansion fields
+        // when BODY is in the content expansion field set
+        Multimap<String,String> fieldValues = HashMultimap.create();
+        fieldValues.putAll("BODY.A1B2C3", Arrays.asList("red", "sedan"));
+
+        TermFrequencyConfig config = new TermFrequencyConfig();
+        // Set BODY as the content expansion field
+        config.setContentExpansionFields(Collections.singleton("BODY"));
+        config.setEvaluationFilter(null);
+        config.setSource(createGroupedFieldSource());
+
+        TermOffsetPopulator populator = new TermOffsetPopulator(fieldValues, config);
+
+        Key groupedDocKey = new Key("20240101_0", "datatype\0uid3");
+        Map<String,Object> map = populator.getContextMap(groupedDocKey, Collections.singleton(groupedDocKey), null);
+        Document document = populator.document();
+
+        // The document should contain entries (we found 2 based on the test output)
+        assertTrue(document.size() > 0, "Document should contain entries for the grouped field");
+
+        // Verify the map contains the term offset map with the grouped field values
+        assertMapFieldValue(map, "BODY.A1B2C3", "red");
+        assertMapFieldValue(map, "BODY.A1B2C3", "sedan");
+
+        // Verify that the zones are marked as content expansion fields - THIS IS THE KEY FIX
+        assertTrue(map.containsKey("termOffsetMap"));
+        TermOffsetMap termOffsetMap = (TermOffsetMap) map.get("termOffsetMap");
+        TermFrequencyList redList = termOffsetMap.getTermFrequencyList("red");
+        assertNotNull(redList, "TermFrequencyList for 'red' should exist");
+
+        // The zone should be marked as a content expansion field (isContentExpansionField should be true)
+        // This verifies the bug fix: BODY.A1B2C3 should match against BODY in contentExpansionFields
+        boolean hasContentExpansionZone = false;
+        for (TermFrequencyList.Zone zone : redList.zones()) {
+            if (zone.getZone().equals("BODY.A1B2C3") && zone.isContentExpansionField()) {
+                hasContentExpansionZone = true;
+                break;
+            }
+        }
+        assertTrue(hasContentExpansionZone,
+                        "Grouped field BODY.A1B2C3 should be recognized as a content expansion field when BODY is in the content expansion field set");
+
+        // Also verify for "sedan"
+        TermFrequencyList sedanList = termOffsetMap.getTermFrequencyList("sedan");
+        assertNotNull(sedanList, "TermFrequencyList for 'sedan' should exist");
+        boolean sedanHasContentExpansionZone = false;
+        for (TermFrequencyList.Zone zone : sedanList.zones()) {
+            if (zone.getZone().equals("BODY.A1B2C3") && zone.isContentExpansionField()) {
+                sedanHasContentExpansionZone = true;
+                break;
+            }
+        }
+        assertTrue(sedanHasContentExpansionZone, "Grouped field BODY.A1B2C3 should be recognized as a content expansion field for sedan too");
+    }
+
+    @Test
+    void testIsContentExpansionFieldMethod() {
+        // Test exact match
+        assertTrue(TermOffsetPopulator.isContentExpansionField("BODY", Collections.singleton("BODY")));
+
+        // Test grouped field match
+        assertTrue(TermOffsetPopulator.isContentExpansionField("BODY.A1B2C3", Collections.singleton("BODY")));
+        assertTrue(TermOffsetPopulator.isContentExpansionField("BODY.XYZ", Collections.singleton("BODY")));
+
+        // Test no match
+        assertFalse(TermOffsetPopulator.isContentExpansionField("TITLE", Collections.singleton("BODY")));
+        assertFalse(TermOffsetPopulator.isContentExpansionField("BODYX", Collections.singleton("BODY")));
+
+        // Test null/empty content expansion fields (should return true for all fields)
+        assertTrue(TermOffsetPopulator.isContentExpansionField("ANYTHING", null));
+        assertTrue(TermOffsetPopulator.isContentExpansionField("ANYTHING", Collections.emptySet()));
+    }
+
+    private SortedKeyValueIterator<Key,Value> createGroupedFieldSource() {
+        TreeMap<Key,Value> data = new TreeMap<>();
+        // document 3 for phrase "a bright red sedan" with grouped field BODY.A1B2C3
+        data.put(new Key("20240101_0", "tf", "datatype\0uid3\0a\0BODY.A1B2C3"), createTermWeight(0));
+        data.put(new Key("20240101_0", "tf", "datatype\0uid3\0bright\0BODY.A1B2C3"), createTermWeight(1));
+        data.put(new Key("20240101_0", "tf", "datatype\0uid3\0red\0BODY.A1B2C3"), createTermWeight(2));
+        data.put(new Key("20240101_0", "tf", "datatype\0uid3\0sedan\0BODY.A1B2C3"), createTermWeight(3));
+        return new SortedMapIterator(data);
     }
 
 }

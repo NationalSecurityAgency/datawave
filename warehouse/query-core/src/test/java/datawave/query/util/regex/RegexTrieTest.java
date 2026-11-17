@@ -1,10 +1,12 @@
 package datawave.query.util.regex;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RegexTrieTest {
     @Test
@@ -13,10 +15,10 @@ public class RegexTrieTest {
         String[] other = new String[] {"AA", "B", "BBB", "BCB", "ABC", "ABCD", "ABCDE", "ABCDEFF", "C"};
         RegexTrie trie = new RegexTrie(Arrays.asList(strings));
         for (String string : strings) {
-            Assert.assertTrue(trie.contains(string));
+            assertTrue(trie.contains(string));
         }
         for (String string : other) {
-            Assert.assertFalse(trie.contains(string));
+            assertFalse(trie.contains(string));
         }
     }
 
@@ -27,10 +29,10 @@ public class RegexTrieTest {
         String regex = new RegexTrie(Arrays.asList(strings)).toRegex();
         Pattern pattern = Pattern.compile(regex);
         for (String string : strings) {
-            Assert.assertTrue(pattern.matcher(string).matches());
+            assertTrue(pattern.matcher(string).matches());
         }
         for (String string : other) {
-            Assert.assertFalse(pattern.matcher(string).matches());
+            assertFalse(pattern.matcher(string).matches());
         }
     }
 }

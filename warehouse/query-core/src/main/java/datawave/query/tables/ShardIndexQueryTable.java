@@ -78,7 +78,7 @@ import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.webservice.query.exception.QueryException;
 
 /**

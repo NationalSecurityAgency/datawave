@@ -1,6 +1,6 @@
 package datawave.webservice.common.audit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,25 +13,27 @@ import java.util.UUID;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.reflect.Whitebox;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class AuditBeanTest {
 
-    private AuditBean auditBean;
-    private TestAuditor auditor;
+    private final AuditBean auditBean = new AuditBean();
+    private final TestAuditor auditService = new TestAuditor();
 
-    private Map<String,List<String>> params = new HashMap<>();
+    private final Map<String,List<String>> params = new HashMap<>();
 
-    @Before
+    @BeforeEach
     public void setup() {
-        auditBean = new AuditBean();
-        auditor = new TestAuditor();
+        ReflectionTestUtils.setField(auditBean, "auditService", auditService);
+        ReflectionTestUtils.setField(auditBean, "auditParameterBuilder", new DefaultAuditParameterBuilder());
 
-        Whitebox.setInternalState(auditBean, AuditParameterBuilder.class, new DefaultAuditParameterBuilder());
-        Whitebox.setInternalState(auditBean, AuditService.class, auditor);
+        reloadParams();
+    }
 
+    private void reloadParams() {
+        params.clear();
         params.put(AuditParameters.USER_DN, Collections.singletonList("someUser"));
         params.put(AuditParameters.QUERY_STRING, Collections.singletonList("someQuery"));
         params.put(AuditParameters.QUERY_SELECTORS, Arrays.asList("sel1", "sel2"));
@@ -39,7 +41,6 @@ public class AuditBeanTest {
         params.put(AuditParameters.QUERY_AUDIT_TYPE, Collections.singletonList(Auditor.AuditType.ACTIVE.name()));
         params.put(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ, Collections.singletonList("ALL"));
         params.put(AuditParameters.QUERY_DATE, Collections.singletonList(Long.toString(new Date().getTime())));
-
     }
 
     @Test
@@ -52,7 +53,7 @@ public class AuditBeanTest {
         expected.validate(mvMapParams);
 
         AuditParameters actual = new AuditParameters();
-        actual.validate(AuditParameters.parseMessage(auditor.params));
+        actual.validate(AuditParameters.parseMessage(auditService.params));
 
         assertEquals(expected.getUserDn(), actual.getUserDn());
         assertEquals(expected.getQuery(), actual.getQuery());
@@ -71,7 +72,7 @@ public class AuditBeanTest {
         auditBean.auditRest(paramsMap);
 
         AuditParameters actual = new AuditParameters();
-        actual.validate(AuditParameters.parseMessage(auditor.params));
+        actual.validate(AuditParameters.parseMessage(auditService.params));
 
         assertEquals(auditParams.getUserDn(), actual.getUserDn());
         assertEquals(auditParams.getQuery(), actual.getQuery());

@@ -1,10 +1,10 @@
 package datawave.query.index.lookup;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -20,7 +20,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -259,13 +259,12 @@ public class IndexMatchTest {
         assertEquals("uid", other.uid);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testWriteReadIndexMatchWithNullUid() throws IOException {
         IndexMatch match = new IndexMatch(null);
 
         // Cannot write a null uid.
-        IndexMatch other = writeRead(match);
-        fail("IndexMatch should have thrown an exception trying to write a null uid.");
+        assertThrows(NullPointerException.class, () -> writeRead(match));
     }
 
     /**

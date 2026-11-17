@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<configuration>
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+    <property>
+        <name>mapreduce.application.classpath</name>
+        <value>/stack,/usr/lib/hadoop/lib/*,/usr/lib/hadoop/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*</value>
+    </property>
+    <property>
+        <name>mapreduce.jobhistory.address</name>
+        <value>yarn-rm:10020</value>
+    </property>
+    <property>
+        <name>mapreduce.jobhistory.webapp.address</name>
+        <value>yarn-rm:19888</value>
+    </property>
+    <property>
+        <name>yarn.app.mapreduce.am.env</name>
+        <value>HADOOP_MAPRED_HOME=/usr/local/hadoop-mapreduce</value>
+    </property>
+    <property>
+        <name>mapreduce.map.env</name>
+        <value>HADOOP_MAPRED_HOME=/usr/local/hadoop-mapreduce</value>
+    </property>
+    <property>
+        <name>mapreduce.reduce.env</name>
+        <value>HADOOP_MAPRED_HOME=/usr/local/hadoop-mapreduce</value>
+    </property>
+</configuration>

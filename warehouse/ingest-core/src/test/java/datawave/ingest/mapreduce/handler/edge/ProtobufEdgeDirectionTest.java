@@ -2,6 +2,8 @@ package datawave.ingest.mapreduce.handler.edge;
 
 import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_VERSION_CACHE_DIR;
 import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_VERSION_DIST_CACHE_DIR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -16,9 +18,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -56,7 +57,7 @@ public class ProtobufEdgeDirectionTest {
 
     private ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler;
 
-    @Before
+    @BeforeEach
     public void setup() {
         TypeRegistry.reset();
         conf = new Configuration();
@@ -124,35 +125,35 @@ public class ProtobufEdgeDirectionTest {
 
         // check edge dictionary
         // forward direction
-        Assert.assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
+        assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
             return key.getColumnFamily().toString().equals("edge") && key.getRow().toString().equals("MY_EDGE_TYPE/FROM-TO");
         }).count());
 
         // reverse direction
-        Assert.assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
+        assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
             return key.getColumnFamily().toString().equals("edge") && key.getRow().toString().equals("MY_EDGE_TYPE/TO-FROM");
         }).count());
 
         // check edge key results
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
         // check forward direction keys
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese").get(0))[0]);
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby").get(0))[0]);
 
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;guppy").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;salmon").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;guppy").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;salmon").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;guppy").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;salmon").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;guppy").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;salmon").get(0))[0]);
 
         // check reverse direction keys
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy").get(0))[0]);
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon").get(0))[0]);
 
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;tabby").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon%00;siamese").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon%00;tabby").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;tabby").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon%00;siamese").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon%00;tabby").get(0))[0]);
     }
 
     /**
@@ -172,31 +173,31 @@ public class ProtobufEdgeDirectionTest {
         RawRecordContainer myEvent = getEvent(typeUni);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, expectedKeys.size(), true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
         // check edge dictionary
         // forward direction
-        Assert.assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
+        assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
             return key.getColumnFamily().toString().equals("edge") && key.getRow().toString().equals("MY_EDGE_TYPE/FROM-TO");
         }).count());
 
         // NO reverse direction
-        Assert.assertEquals(0, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
+        assertEquals(0, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
             return key.getColumnFamily().toString().equals("edge") && key.getRow().toString().equals("MY_EDGE_TYPE/TO-FROM");
         }).count());
 
         // check forward direction keys
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese").get(0))[0]);
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby").get(0))[0]);
 
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;guppy").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;salmon").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;guppy").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;salmon").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;guppy").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;salmon").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;guppy").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;salmon").get(0))[0]);
 
         // NO reverse direction keys
         for (String reverseKey : new String[] {"guppy", "salmon", "guppy%00;siamese", "guppy%00;tabby", "salmon%00;siamese", "salmon%00;tabby"}) {
-            Assert.assertFalse(EdgeHandlerTestUtil.edgeKeyResults.containsKey(reverseKey));
+            assertFalse(EdgeHandlerTestUtil.edgeKeyResults.containsKey(reverseKey));
         }
     }
 
@@ -232,40 +233,40 @@ public class ProtobufEdgeDirectionTest {
 
         // check edge dictionary
         // forward direction
-        Assert.assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
+        assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
             return key.getColumnFamily().toString().equals("edge") && key.getRow().toString().equals("MY_EDGE_TYPE/FROM-TO");
         }).count());
 
         // reverse direction
-        Assert.assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
+        assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
             return key.getColumnFamily().toString().equals("edge") && key.getRow().toString().equals("MY_EDGE_TYPE/TO-FROM");
         }).count());
 
         // jexl condition
-        Assert.assertEquals(2, EdgeHandlerTestUtil.metaData.values().stream().filter(Objects::nonNull).filter(value -> {
+        assertEquals(2, EdgeHandlerTestUtil.metaData.values().stream().filter(Objects::nonNull).filter(value -> {
             return value.toString().contains(jexlConditon);
         }).count());
 
         // check edge key results
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
         // check forward direction keys
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese").get(0))[0]);
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby").get(0))[0]);
 
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;guppy").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;salmon").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;guppy").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;salmon").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;guppy").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;salmon").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;guppy").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;salmon").get(0))[0]);
 
         // check reverse direction keys
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy").get(0))[0]);
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon").get(0))[0]);
 
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;tabby").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon%00;siamese").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon%00;tabby").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;tabby").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon%00;siamese").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/TO-FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("salmon%00;tabby").get(0))[0]);
     }
 
     /**
@@ -285,41 +286,41 @@ public class ProtobufEdgeDirectionTest {
         RawRecordContainer myEvent = getEvent(typeUniJexl);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, expectedKeys.size(), true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+        assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
         // check edge dictionary
         // forward direction
-        Assert.assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
+        assertEquals(1, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
             return key.getColumnFamily().toString().equals("edge") && key.getRow().toString().equals("MY_EDGE_TYPE/FROM-TO");
         }).count());
 
         // NO reverse direction
-        Assert.assertEquals(0, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
+        assertEquals(0, EdgeHandlerTestUtil.metaData.keySet().stream().filter(Objects::nonNull).filter(key -> {
             return key.getColumnFamily().toString().equals("edge") && key.getRow().toString().equals("MY_EDGE_TYPE/TO-FROM");
         }).count());
         // jexl condition
-        Assert.assertEquals(1, EdgeHandlerTestUtil.metaData.values().stream().filter(Objects::nonNull).filter(value -> {
+        assertEquals(1, EdgeHandlerTestUtil.metaData.values().stream().filter(Objects::nonNull).filter(value -> {
             return value.toString().contains(jexlConditon);
         }).count());
 
         // check forward direction keys
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese").get(0))[0]);
-        Assert.assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese").get(0))[0]);
+        assertEquals("STATS/ACTIVITY/MY_EDGE_TYPE/FROM", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby").get(0))[0]);
 
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;guppy").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;salmon").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;guppy").get(0))[0]);
-        Assert.assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;salmon").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;guppy").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("siamese%00;salmon").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;guppy").get(0))[0]);
+        assertEquals("MY_EDGE_TYPE/FROM-TO", Objects.requireNonNull(EdgeHandlerTestUtil.edgeKeyResults.get("tabby%00;salmon").get(0))[0]);
 
         // NO reverse direction keys
         for (String reverseKey : new String[] {"guppy", "salmon", "guppy%00;siamese", "guppy%00;tabby", "salmon%00;siamese", "salmon%00;tabby"}) {
-            Assert.assertFalse(EdgeHandlerTestUtil.edgeKeyResults.containsKey(reverseKey));
+            assertFalse(EdgeHandlerTestUtil.edgeKeyResults.containsKey(reverseKey));
         }
     }
 
     private RawRecordContainer getEvent(Type type) {
         RawRecordContainerImpl myEvent = new RawRecordContainerImpl();
-        myEvent.addSecurityMarking("columnVisibility", "PRIVATE");
+        myEvent.setVisibility("PRIVATE");
         myEvent.setDataType(type);
         myEvent.setId(UID.builder().newId());
         myEvent.setAltIds(Collections.singleton("0016dd72-0000-827d-dd4d-001b2163ba09"));

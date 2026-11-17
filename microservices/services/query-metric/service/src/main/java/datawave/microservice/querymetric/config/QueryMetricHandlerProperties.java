@@ -58,7 +58,6 @@ public class QueryMetricHandlerProperties {
     protected String dateField = "CREATE_DATE";
     protected String dateFormat = "yyyyMMdd HHmmss.S";
     protected int fieldLengthThreshold = 4049;
-    protected boolean enableBloomFilter = false;
     @Positive
     protected int recordWriterMaxMemory = 10000000;
     // TabletServerBatchWriter uses latency / 4 to get a Timer period
@@ -181,7 +180,6 @@ public class QueryMetricHandlerProperties {
         p.put("metadata.table.name", metadataTableName);
         p.put("metadata.term.frequency.enabled", Boolean.toString(metadataTableFrequencyEnabled));
         p.put("shard.table.locality.groups", "termfrequency:tf");
-        p.put("shard.table.index.bloom.enable", Boolean.toString(enableBloomFilter));
         p.put("data.name", "querymetrics");
         p.put("querymetrics.ingest.fatal.errors", StringUtils.join(fatalErrors, ','));
         p.put("querymetrics.ingest.helper.class", ContentQueryMetricsIngestHelper.class.getCanonicalName());
@@ -417,14 +415,6 @@ public class QueryMetricHandlerProperties {
 
     public void setAdditionalNumericFields(List<String> additionalNumericFields) {
         this.additionalNumericFields = additionalNumericFields;
-    }
-
-    public boolean isEnableBloomFilter() {
-        return enableBloomFilter;
-    }
-
-    public void setEnableBloomFilter(boolean enableBloomFilter) {
-        this.enableBloomFilter = enableBloomFilter;
     }
 
     public int getRecordWriterMaxMemory() {

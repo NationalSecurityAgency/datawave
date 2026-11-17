@@ -39,6 +39,7 @@ public class GroupFields implements Serializable {
     private static final String MIN = "MIN";
     private static final String MAX = "MAX";
     private static final String MODEL_MAP = "REVERSE_MODEL_MAP";
+    private static final String MULT_DOC_PER_GROUP = "MULT_DOC_PER_GROUP";
 
     private TreeMultimap<String,TemporalGranularity> groupByFieldMap = TreeMultimap.create();
     private Set<String> sumFields = new HashSet<>();
@@ -47,6 +48,7 @@ public class GroupFields implements Serializable {
     private Set<String> minFields = new HashSet<>();
     private Set<String> maxFields = new HashSet<>();
     private Map<String,String> reverseModelMap = new HashMap<>();
+    private boolean oneDocPerGroup = true;
 
     /**
      * Returns a new {@link GroupFields} parsed the given string. The string is expected to have the format returned by {@link GroupFields#toString()}, but may
@@ -81,10 +83,17 @@ public class GroupFields implements Serializable {
                 // Each element starts NAME().
                 for (String element : elements) {
                     int leftParen = element.indexOf(Constants.LEFT_PAREN);
-                    int rightParen = element.length() - 1;
-                    String name = element.substring(0, leftParen);
-                    String elementContents = element.substring(leftParen + 1, rightParen);
+                    String name = element;
+                    String elementContents = null;
+                    if (leftParen != -1) {
+                        int rightParen = element.length() - 1;
+                        name = element.substring(0, leftParen);
+                        elementContents = element.substring(leftParen + 1, rightParen);
+                    }
                     switch (name) {
+                        case MULT_DOC_PER_GROUP:
+                            groupFields.setOneDocPerGroup(false);
+                            break;
                         case GROUP:
                             groupFields.groupByFieldMap = parseGroupByFields(elementContents);
                             break;
@@ -241,6 +250,7 @@ public class GroupFields implements Serializable {
         copy.minFields = other.minFields == null ? null : Sets.newHashSet(other.minFields);
         copy.maxFields = other.maxFields == null ? null : Sets.newHashSet(other.maxFields);
         copy.reverseModelMap = other.reverseModelMap == null ? null : Maps.newHashMap(other.reverseModelMap);
+        copy.oneDocPerGroup = other.oneDocPerGroup;
         return copy;
     }
 
@@ -555,6 +565,14 @@ public class GroupFields implements Serializable {
                         .withMaxFields(maxFields);
     }
 
+    public boolean isOneDocPerGroup() {
+        return oneDocPerGroup;
+    }
+
+    public void setOneDocPerGroup(boolean oneDocPerGroup) {
+        this.oneDocPerGroup = oneDocPerGroup;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -567,12 +585,12 @@ public class GroupFields implements Serializable {
         return Objects.equals(groupByFieldMap, that.groupByFieldMap) && Objects.equals(sumFields, that.sumFields)
                         && Objects.equals(countFields, that.countFields) && Objects.equals(averageFields, that.averageFields)
                         && Objects.equals(minFields, that.minFields) && Objects.equals(maxFields, that.maxFields)
-                        && Objects.equals(reverseModelMap, that.reverseModelMap);
+                        && Objects.equals(reverseModelMap, that.reverseModelMap) && Objects.equals(oneDocPerGroup, that.oneDocPerGroup);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(groupByFieldMap, sumFields, countFields, averageFields, minFields, maxFields, reverseModelMap);
+        return Objects.hash(groupByFieldMap, sumFields, countFields, averageFields, minFields, maxFields, reverseModelMap, oneDocPerGroup);
     }
 
     /**
@@ -593,6 +611,12 @@ public class GroupFields implements Serializable {
         writeFormattedSet(sb, MIN, this.minFields);
         writeFormattedSet(sb, MAX, this.maxFields);
         writeFormattedModelMap(sb);
+        if (!isOneDocPerGroup()) {
+            if (sb.length() > 0) {
+                sb.append(Constants.PIPE);
+            }
+            sb.append(MULT_DOC_PER_GROUP);
+        }
         return sb.toString();
     }
 

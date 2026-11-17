@@ -1,0 +1,14 @@
+# Application annotation + profile api. Keep shared destinations and tables in annotation.yml.
+annotation:
+  deployment:
+    overlays:
+      api: true
+  annotation-ack-enabled: true
+  writers:
+    file:
+      # File fallback is disabled: the API reports success only after RabbitMQ
+      # confirms acceptance. If publication fails after retries, the write fails.
+      # To enable file fallback, give each API instance storage that survives
+      # restarts and a procedure for reading those files and submitting the
+      # saved updates for persistence.
+      enabled: false

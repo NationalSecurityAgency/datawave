@@ -25,8 +25,8 @@ import datawave.query.function.Equality;
 import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.tld.TLD;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
+import datawave.table.util.TLD;
 
 /**
  * Custom IndexBuildingVisitor that will expand (simulate) fi indexes into the entire branch of the document

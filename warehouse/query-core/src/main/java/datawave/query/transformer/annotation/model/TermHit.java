@@ -4,20 +4,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class TermHit {
     @JsonProperty
-    private String termLabel;
+    private String label;
 
     @JsonProperty
     private float confidence;
 
     @JsonProperty
-    private TimeRange timeRange = new TimeRange();
+    private boolean oneBest;
 
-    public String getTermLabel() {
-        return termLabel;
+    public String getLabel() {
+        return label;
     }
 
-    public void setTermLabel(String termLabel) {
-        this.termLabel = termLabel;
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     public float getConfidence() {
@@ -28,7 +28,11 @@ public class TermHit {
         this.confidence = confidence;
     }
 
-    public TimeRange getTimeRange() {
-        return timeRange;
+    public boolean isOneBest() {
+        return oneBest;
+    }
+
+    public void setOneBest(boolean oneBest) {
+        this.oneBest = oneBest;
     }
 }

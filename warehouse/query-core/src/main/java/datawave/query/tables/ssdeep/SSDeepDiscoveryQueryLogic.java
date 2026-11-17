@@ -209,7 +209,7 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
         discoveryDelegate.setResponseObjectFactory(responseObjectFactory);
     }
 
-    public void setMarkingFunctions(MarkingFunctions markingFunctions) {
+    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
         discoveryDelegate.setMarkingFunctions(markingFunctions);
     }
 

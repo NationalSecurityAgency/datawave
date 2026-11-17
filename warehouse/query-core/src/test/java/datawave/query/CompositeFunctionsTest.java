@@ -680,7 +680,7 @@ public class CompositeFunctionsTest extends AbstractQueryTest {
     public void testMultiFieldInclude() throws Exception {
         eventQueryLogic.setParser(new LuceneToJexlQueryParser());
         givenQuery("UUID:SOPRANO AND #INCLUDE(LOCATION || POSIZIONE || NAME, 'newjersey')");
-        expectPlan("(UUID == 'soprano' && ((_Delayed_ = true) && (NAME =~ 'newjersey'))) || (LOCATION == 'newjersey' && UUID == 'soprano') || (UUID == 'soprano' && POSIZIONE =~ 'newjersey')");
+        expectPlan("UUID == 'soprano' && (LOCATION == 'newjersey' || NAME =~ 'newjersey' || POSIZIONE =~ 'newjersey')");
         expectUUIDs(Set.of("SOPRANO"));
         planAndExecuteQuery();
     }

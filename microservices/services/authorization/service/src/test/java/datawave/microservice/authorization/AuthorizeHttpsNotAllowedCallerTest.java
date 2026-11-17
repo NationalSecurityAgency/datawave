@@ -66,8 +66,16 @@ public class AuthorizeHttpsNotAllowedCallerTest {
     public void testAuthorizeMethodSecurityWithNotAllowedCaller() throws Exception {
         // X509 certificate used for identity
         // fails AllowedCallersFilter because configured certificate is not in allowedCallers list
-        testUtils.testAuthorizeMethodFailure(null, "/authorization/v1/authorize", false, false);
-        testUtils.testAuthorizeMethodFailure(null, "/authorization/v2/authorize", false, false);
+        testUtils.testNotAllowedMethodFailure(null, "/authorization/v1/authorize", false, false);
+        testUtils.testNotAllowedMethodFailure(null, "/authorization/v2/authorize", false, false);
+    }
+
+    @Test
+    public void testAllowedCallWithNotAllowedCaller() throws Exception {
+        // X509 certificate used for identity
+        // passes AllowedCallersFilter because request paths bypass the allowedCallers list
+        testUtils.testAllowedMethodSuccess(null, "/authorization/v1/listEffectiveAuthorizations", false, false);
+        testUtils.testAllowedMethodSuccess(null, "/authorization/v2/listEffectiveAuthorizations", false, false);
     }
 
     @ImportAutoConfiguration({RefreshAutoConfiguration.class})

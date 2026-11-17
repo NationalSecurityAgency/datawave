@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
+import datawave.marking.Markings;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
@@ -33,7 +34,7 @@ public class EventQueryDataDecorator {
                 // multiple value source fields for the substitution value not supported -- use the first one
                 Iterator<FieldBase> collectionSourceItr = collectionSourceOfData.iterator();
                 FieldBase sourceOfData = collectionSourceItr.next();
-                Map<String,String> markings = sourceOfData.getMarkings();
+                Markings<?> markings = sourceOfData.getMarkings();
 
                 String id = sourceOfData.getValueString();
                 String newValue = entry.getValue().replace("@field_value@", id);
@@ -61,7 +62,7 @@ public class EventQueryDataDecorator {
         }
     }
 
-    private FieldBase makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
+    private FieldBase makeField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
         FieldBase field = this.responseObjectFactory.getField();
         field.setName(name);
         field.setMarkings(markings);

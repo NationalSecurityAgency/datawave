@@ -406,7 +406,6 @@
         <property name="statsdPort" value="8125" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="evaluationOnlyFields" value="${evaluation.only.fields}" />
-        <property name="lazySetMechanismEnabled" value="false" />
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
@@ -532,6 +531,7 @@
     <!-- Query Logic that returns document content -->
     <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryLogic">
         <property name="tableName" value="${shard.table.name}" />
+        <property name="maxIds" value="${content.query.max.ids}" />
         <property name="maxResults" value="-1" />
         <property name="maxWork" value="-1" />
         <property name="auditType" value="NONE" />

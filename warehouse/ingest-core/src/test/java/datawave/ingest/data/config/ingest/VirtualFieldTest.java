@@ -1,10 +1,10 @@
 package datawave.ingest.data.config.ingest;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -17,7 +17,7 @@ public class VirtualFieldTest {
 
     protected Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
 
-    @Before
+    @BeforeEach
     public void setup() {
         eventFields.put("GROUPED_1", new NormalizedFieldAndValue("GROUPED_1", "value1", "group1", "subgroup1"));
         eventFields.put("GROUPED_1", new NormalizedFieldAndValue("GROUPED_1", "value2", "group2", "subgroup1"));

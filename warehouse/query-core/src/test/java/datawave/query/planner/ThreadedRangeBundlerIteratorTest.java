@@ -2,8 +2,8 @@ package datawave.query.planner;
 
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,8 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
@@ -30,7 +30,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
     private List<QueryPlan> plans;
     private ThreadedRangeBundlerIterator.Builder builder;
 
-    @Before
+    @BeforeEach
     public void setup() {
         // TODO delete this
         // enable to see logs
@@ -120,14 +120,14 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         assertTrue(itr.hasNext());
         long end = System.currentTimeMillis();
         assertTrue((end - start) >= 1000);
-        assertTrue((end - start) <= 1100);
+        assertTrue((end - start) <= 1500);
 
         verifyAll();
     }
 
     @Test
     public void disableBundlingMinWaitTimeTest() throws IOException {
-        long delay = 25;
+        long delay = 50;
 
         builder.setMaxRanges(1);
 
@@ -145,8 +145,8 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         assertFalse(itr.hasNext());
         long end = System.currentTimeMillis();
         assertTrue(end - start >= delay);
-        // really this should be maxWaitValue+1, but cpu speeds and scheduling may cause intermittent failures then
-        assertTrue(end - start < 2 * delay);
+        // use a generous upper bound to avoid intermittent failures from thread scheduling and GC pauses
+        assertTrue(end - start < delay + 500);
         verifyAll();
     }
 

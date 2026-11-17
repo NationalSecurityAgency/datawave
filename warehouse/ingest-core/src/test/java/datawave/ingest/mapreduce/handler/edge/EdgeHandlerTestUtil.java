@@ -1,5 +1,9 @@
 package datawave.ingest.mapreduce.handler.edge;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
@@ -11,7 +15,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -28,7 +31,8 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
-import datawave.util.TableName;
+import datawave.table.constants.ColumnFamilyConstants;
+import datawave.table.constants.TableName;
 
 public class EdgeHandlerTestUtil {
 
@@ -43,7 +47,7 @@ public class EdgeHandlerTestUtil {
     private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
 
     public static boolean isDocumentKey(Key k) {
-        return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);
+        return isShardKey(k) && k.getColumnFamily().toString().equals(ColumnFamilyConstants.FULL_CONTENT);
     }
 
     public static boolean isShardKey(Key k) {
@@ -53,7 +57,7 @@ public class EdgeHandlerTestUtil {
     public static void processEvent(Multimap<String,NormalizedContentInterface> eventFields, ExtendedDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler,
                     RawRecordContainer event, int expectedEdgeKeys, boolean printKeysOnlyOnFail, boolean edgeDeleteMode) {
 
-        Assert.assertNotNull("Event was null.", event);
+        assertNotNull(event, "Event was null.");
         Set<Key> edgeKeys = new HashSet<>();
         Map<Text,Integer> countMap = Maps.newHashMap();
 
@@ -110,7 +114,7 @@ public class EdgeHandlerTestUtil {
                     log.info(keyString.trim());
                 }
             }
-            Assert.assertEquals((int) countMap.get(edgeTableName), expectedEdgeKeys);
+            assertEquals((int) countMap.get(edgeTableName), expectedEdgeKeys);
         } catch (AssertionError ae) {
             if (printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
@@ -118,7 +122,7 @@ public class EdgeHandlerTestUtil {
                 }
             }
             final Text shardTableName = new Text(TableName.SHARD);
-            Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
+            fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
         }
     }
 

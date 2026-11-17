@@ -15,7 +15,8 @@ import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
 
 public class TermFrequencyKeyValueFactory {
 
-    public static TermFrequencyKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions markingFunctions) throws MarkingFunctions.Exception {
+    public static TermFrequencyKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions<?> markingFunctions)
+                    throws MarkingFunctions.Exception {
         if (null == key) {
             throw new IllegalArgumentException("Cannot pass null key to TermFrequencyKeyValueFactory");
         }
@@ -54,7 +55,7 @@ public class TermFrequencyKeyValueFactory {
         return t;
     }
 
-    protected static void parseColumnVisibility(TermFrequencyKeyValue tfkv, Key key, Authorizations auths, MarkingFunctions markingFunctions)
+    protected static void parseColumnVisibility(TermFrequencyKeyValue tfkv, Key key, Authorizations auths, MarkingFunctions<?> markingFunctions)
                     throws MarkingFunctions.Exception {
         tfkv.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(key.getColumnVisibilityParsed(), auths));
     }

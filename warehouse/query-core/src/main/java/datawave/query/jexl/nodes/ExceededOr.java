@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
@@ -106,7 +107,7 @@ public class ExceededOr {
      *            the source node
      * @return The field associated with this ExceededOrThresholdMarker
      */
-    private String decodeField(JexlNode source) {
+    public static String decodeField(JexlNode source) {
         Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
         Object paramsObj = parameters.get(EXCEEDED_OR_FIELD);
         if (paramsObj != null) {
@@ -130,6 +131,27 @@ public class ExceededOr {
         if (paramsObj != null) {
             try {
                 return objectMapper.readValue(String.valueOf(paramsObj), ExceededOrParams.class);
+            } catch (JsonProcessingException e) {
+                log.error("Unable to read exceeded or params from node", e);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get the parameters for this marker node as a list of strings
+     *
+     * @param source
+     *            the source
+     * @return The params as a list of strings
+     */
+    public static List<String> decodeParamsList(JexlNode source) {
+        Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
+        Object paramsObj = parameters.get(EXCEEDED_OR_PARAMS);
+        if (paramsObj != null) {
+            try {
+                Map<String,List<String>> jsonMap = objectMapper.readValue(String.valueOf(paramsObj), new TypeReference<>() {});
+                return jsonMap.get("values");
             } catch (JsonProcessingException e) {
                 log.error("Unable to read exceeded or params from node", e);
             }

@@ -1,8 +1,8 @@
 package datawave.query.index.lookup;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -17,7 +17,7 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -295,7 +295,7 @@ public class IndexInfoTest {
 
         IndexInfo merged = right.union(left);
         assertEquals(0, merged.uids().size());
-        assertEquals("Count should be 53 but is " + merged.count(), 53, merged.count());
+        assertEquals(53, merged.count(), "Count should be 53 but is " + merged.count());
         String expectedQuery = "((_Delayed_ = true) && (FIELD == 'VALUE'))";
         String actualQuery = JexlStringBuildingVisitor.buildQuery(merged.getNode());
         assertEquals(expectedQuery, actualQuery);

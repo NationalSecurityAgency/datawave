@@ -1,6 +1,7 @@
 package datawave.next.scanner;
 
 import java.io.Serializable;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,7 +27,10 @@ public class DocumentScannerConfig implements Serializable {
     private static final long serialVersionUID = 404271911443485394L;
 
     private AccumuloClient client;
-    private Authorizations authorizations;
+
+    // the full set of authorizations for the calling entity chain. Every set must be applied, so this must not be
+    // collapsed to a single Authorizations -- see ScannerHelper#createScanner and AuthorizationsMinimizer#minimize
+    private Set<Authorizations> authorizations;
     private transient BlockingQueue<KeyWithContext> candidateQueue;
     private transient BlockingQueue<Result> results;
     private transient ContextThreadFactory searchThreadFactory;
@@ -100,11 +104,11 @@ public class DocumentScannerConfig implements Serializable {
         this.client = client;
     }
 
-    public Authorizations getAuthorizations() {
+    public Set<Authorizations> getAuthorizations() {
         return authorizations;
     }
 
-    public void setAuthorizations(Authorizations authorizations) {
+    public void setAuthorizations(Set<Authorizations> authorizations) {
         this.authorizations = authorizations;
     }
 

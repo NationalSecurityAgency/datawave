@@ -18,8 +18,8 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.tld.TLD;
 import datawave.query.util.Tuple2;
+import datawave.table.util.TLD;
 
 /**
  * Aggregates FI keys reducing matching keys. The FIELD/VALUE are not compared. In a real utilization the expectation is that there will be keys with different

@@ -7,6 +7,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import com.google.common.base.Predicate;
 
 import datawave.query.iterator.EventDataScanNestedIterator;
+import datawave.table.util.TLD;
 
 /**
  */

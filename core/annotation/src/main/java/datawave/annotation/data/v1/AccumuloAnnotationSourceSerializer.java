@@ -76,6 +76,11 @@ public class AccumuloAnnotationSourceSerializer implements AnnotationSerializer<
             throw new AnnotationWriteException("Annotation source is not valid: " + validationState.getErrors());
         }
 
+        Validator.ValidationState<AnnotationSource> idValidationState = AnnotationValidators.checkAnnotationSourceIds(annotationSource);
+        if (!idValidationState.isValid()) {
+            throw new AnnotationWriteException("Annotation source identifiers are not valid: " + idValidationState.getErrors());
+        }
+
         final List<Map.Entry<Key,Value>> serializedResults = new ArrayList<>();
 
         Value value = new Value(annotationSource.toByteArray());

@@ -1,11 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 
@@ -37,7 +37,7 @@ public class PrintingVisitorTest {
 
     private ASTJexlScript script;
 
-    @Before
+    @BeforeEach
     public void before() throws ParseException {
         this.script = JexlASTHelper.parseJexlQuery(QUERY_TEXT);
     }
@@ -111,6 +111,6 @@ public class PrintingVisitorTest {
 
     private void assertNumberOfLines(int expectedNumberOfLines, String result) {
         String[] lines = result.split("\n", -1);
-        assertEquals(result, expectedNumberOfLines, lines.length);
+        assertEquals(expectedNumberOfLines, lines.length, result);
     }
 }

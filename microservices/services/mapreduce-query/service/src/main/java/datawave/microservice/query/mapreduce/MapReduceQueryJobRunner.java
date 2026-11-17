@@ -36,7 +36,7 @@ import datawave.microservice.query.mapreduce.remote.MapReduceQueryRequest;
 import datawave.microservice.query.mapreduce.remote.MapReduceQueryRequestHandler;
 import datawave.microservice.query.mapreduce.status.MapReduceQueryCache;
 import datawave.microservice.query.mapreduce.status.MapReduceQueryStatus;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -113,7 +113,7 @@ public class MapReduceQueryJobRunner implements MapReduceQueryRequestHandler {
             StringBuilder name = new StringBuilder()
                     .append(mapReduceQueryStatus.getJobName())
                     .append("_sid_")
-                    .append(ProxiedEntityUtils.getShortName(mapReduceQueryStatus.getCurrentUser().getPrimaryUser().getName()))
+                    .append(DnUtils.getShortName(mapReduceQueryStatus.getCurrentUser().getPrimaryUser().getName()))
                     .append("_id_")
                     .append(mapReduceQueryStatus.getId());
             // @formatter:on

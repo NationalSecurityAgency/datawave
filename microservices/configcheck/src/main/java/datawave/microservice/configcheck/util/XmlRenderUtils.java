@@ -2,7 +2,6 @@ package datawave.microservice.configcheck.util;
 
 import static datawave.microservice.configcheck.util.FileUtils.getFilePath;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;

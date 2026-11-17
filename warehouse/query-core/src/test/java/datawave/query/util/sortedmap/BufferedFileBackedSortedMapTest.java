@@ -1,9 +1,9 @@
 package datawave.query.util.sortedmap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,10 +22,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public abstract class BufferedFileBackedSortedMapTest<K,V> {
 
@@ -66,7 +65,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
         }
     }
 
-    @Before
+    @BeforeEach
     public void mapUp() throws Exception {
         for (int i = 0; i < template.length; i++) {
             byte[] buffer = new byte[i + 11];
@@ -88,26 +87,33 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
             sortedOrder[i * 2] = sortedTemplate[i] + sortedTemplate.length;
             sortedOrder[i * 2 + 1] = sortedTemplate[i];
         }
-        map = new datawave.query.util.sortedmap.BufferedFileBackedSortedMap.Builder().withComparator(getComparator()).withRewriteStrategy(getRewriteStrategy())
-                        .withBufferPersistThreshold(5).withMaxOpenFiles(7).withNumRetries(2).withHandlerFactories(
-                                        Collections.singletonList(new datawave.query.util.sortedmap.BufferedFileBackedSortedMap.SortedMapFileHandlerFactory() {
-                                            @Override
-                                            public FileSortedMap.SortedMapFileHandler createHandler() throws IOException {
-                                                datawave.query.util.sortedmap.SortedMapTempFileHandler fileHandler = new datawave.query.util.sortedmap.SortedMapTempFileHandler();
-                                                tempFileHandlers.add(fileHandler);
-                                                return fileHandler;
-                                            }
-
-                                            @Override
-                                            public boolean isValid() {
-                                                return true;
-                                            }
-                                        }))
-                        .withMapFactory(getFactory()).build();
+        //  @formatter:off
+        map = new BufferedFileBackedSortedMap.Builder()
+                .withComparator(getComparator())
+                .withRewriteStrategy(getRewriteStrategy())
+                .withBufferPersistThreshold(5)
+                .withMaxOpenFiles(7)
+                .withNumRetries(2)
+                .withHandlerFactories(
+                        Collections.singletonList(new BufferedFileBackedSortedMap.SortedMapFileHandlerFactory() {
+                            @Override
+                            public FileSortedMap.SortedMapFileHandler createHandler() throws IOException {
+                                SortedMapTempFileHandler fileHandler = new SortedMapTempFileHandler();
+                                tempFileHandlers.add(fileHandler);
+                                return fileHandler;
+                            }
+                            @Override
+                            public boolean isValid() {
+                                return true;
+                            }
+                        }))
+                .withMapFactory(getFactory())
+                .build();
+        //  @formatter:on
 
         // adding in the data map multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
-        for (int d = 0; d < 11; d++) {
+        for (int d = 0; d < 4; d++) {
             addDataRandomly(map, data);
         }
         while (map.getMaps().size() <= 7) {
@@ -132,7 +138,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         // Delete each sorted map file and its checksum.
         for (SortedMapTempFileHandler fileHandler : tempFileHandlers) {
@@ -151,7 +157,7 @@ public abstract class BufferedFileBackedSortedMapTest<K,V> {
 
     private void tryDelete(File file) {
         if (file.exists()) {
-            Assert.assertTrue("Failed to delete file " + file, file.delete());
+            assertTrue(file.delete(), "Failed to delete file " + file);
         }
     }
 

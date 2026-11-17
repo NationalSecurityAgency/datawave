@@ -8,7 +8,7 @@ import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReduc
 import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS;
 import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.VERBOSE_COUNTERS;
 import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.VERBOSE_PARTITIONING_COUNTERS;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,9 +33,9 @@ import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.counters.GenericCounter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 
@@ -93,7 +93,7 @@ public class BulkIngestKeyAggregatingReducerTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         expected = ArrayListMultimap.create();
         output = ArrayListMultimap.create();
@@ -153,7 +153,7 @@ public class BulkIngestKeyAggregatingReducerTest {
         reducer = new BulkIngestKeyAggregatingReducer<>();
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         if (tcuConstruction != null) {
             tcuConstruction.close();

@@ -2,11 +2,11 @@ package datawave.query.iterator.logic;
 
 import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -24,8 +24,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.Constants;
@@ -51,7 +51,7 @@ public class TermFrequencyIndexIteratorTest {
     private Set<String> fieldsToKeep;
     private EventDataQueryFilter filter;
 
-    @Before
+    @BeforeEach
     public void setup() throws ParseException {
         List<Map.Entry<Key,Value>> baseSource = new ArrayList<>();
         baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456", "FOO", "bar"), new Value()));
@@ -145,7 +145,7 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(iterator.hasTop());
         Document d = iterator.document();
         assertTrue(d != null);
-        assertTrue(d.getDictionary().size() + "", d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().size() == 2, d.getDictionary().size() + "");
         assertTrue(d.getDictionary().get("FOO") != null);
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
@@ -164,7 +164,7 @@ public class TermFrequencyIndexIteratorTest {
         assertTrue(iterator.hasTop());
         Document d = iterator.document();
         assertTrue(d != null);
-        assertTrue(d.getDictionary().size() + "", d.getDictionary().size() == 2);
+        assertTrue(d.getDictionary().size() == 2, d.getDictionary().size() + "");
         assertTrue(d.getDictionary().get("FOO") != null);
         assertTrue(d.getDictionary().get("RECORD_ID") != null);
         assertTrue(d.getDictionary().get("FOO").getData() != null);
@@ -405,8 +405,8 @@ public class TermFrequencyIndexIteratorTest {
 
         assertTrue(iter.hasNext());
         Key k = iter.next();
-        assertEquals("received " + k.toStringNoTime(), "datatype\u00001", k.getColumnFamily().toString());
-        assertFalse("Iterator should only return one entry but it had more", iter.hasNext());
+        assertEquals("datatype\u00001", k.getColumnFamily().toString(), "received " + k.toStringNoTime());
+        assertFalse(iter.hasNext(), "Iterator should only return one entry but it had more");
     }
 
     @Test
@@ -423,7 +423,7 @@ public class TermFrequencyIndexIteratorTest {
         assertFalse(iter.hasNext());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testInvalidStartKey() {
         SortedListKeyValueIterator source = getIterator();
 
@@ -432,12 +432,10 @@ public class TermFrequencyIndexIteratorTest {
 
         TermFrequencyIndexIterator tfIter = new TermFrequencyIndexIterator(start, end, source, TimeFilter.alwaysTrue());
         IndexIteratorBridge iter = new IndexIteratorBridge(tfIter, JexlNodeFactory.buildEQNode("FIELD", "value"), "FIELD");
-        iter.seek(new Range(), Collections.emptyList(), false);
-
-        fail("Should have thrown an exception on seek");
+        assertThrows(RuntimeException.class, () -> iter.seek(new Range(), Collections.emptyList(), false));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testInvalidEndKey() {
         SortedListKeyValueIterator source = getIterator();
 
@@ -446,9 +444,7 @@ public class TermFrequencyIndexIteratorTest {
 
         TermFrequencyIndexIterator tfIter = new TermFrequencyIndexIterator(start, end, source, TimeFilter.alwaysTrue());
         IndexIteratorBridge iter = new IndexIteratorBridge(tfIter, JexlNodeFactory.buildEQNode("FIELD", "value"), "FIELD");
-        iter.seek(new Range(), Collections.emptyList(), false);
-
-        fail("Should have thrown an exception on seek");
+        assertThrows(RuntimeException.class, () -> iter.seek(new Range(), Collections.emptyList(), false));
     }
 
     /**

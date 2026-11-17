@@ -58,7 +58,7 @@ import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.oauth.OAuthTokenResponse;
 import datawave.security.authorization.oauth.OAuthUserInfo;
-import datawave.security.util.ProxiedEntityUtils;
+import datawave.security.util.DnUtils;
 
 public class OAuthOperationsV2TestCommon {
 
@@ -144,7 +144,7 @@ public class OAuthOperationsV2TestCommon {
         // Call the user endpoint with the access_token to get the primary user
         ResponseEntity<OAuthUserInfo> userResponse = user(access_token, JWTTokenHandler.PRINCIPALS_CLAIM);
         OAuthUserInfo oAuthUserInfo = userResponse.getBody();
-        assertEquals(ProxiedEntityUtils.getCommonName(dwUser.getDn().subjectDN()), oAuthUserInfo.getName());
+        assertEquals(DnUtils.getCommonName(dwUser.getDn().subjectDN()), oAuthUserInfo.getName());
         assertEquals(dwUser.getLogin(), oAuthUserInfo.getLogin());
         assertEquals(dwUser.getEmail(), oAuthUserInfo.getEmail());
         assertEquals(dwUser.getDn(), oAuthUserInfo.getDn());

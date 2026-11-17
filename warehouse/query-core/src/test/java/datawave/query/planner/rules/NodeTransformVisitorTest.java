@@ -2,8 +2,8 @@ package datawave.query.planner.rules;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,8 +15,8 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -58,7 +58,7 @@ public class NodeTransformVisitorTest {
         }
     };
 
-    @Before
+    @BeforeEach
     public void beforeTest() {
         regexPushdownRule.setRegexPatterns(Arrays.asList(".\\.\\*", "\\.\\*.", "\\.\\*<[^<>]+>"));
     }
@@ -101,7 +101,7 @@ public class NodeTransformVisitorTest {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
         }
-        assertTrue(comparison.getReason(), comparison.isEqual());
+        assertTrue(comparison.isEqual(), comparison.getReason());
     }
 
     private void assertLineage(JexlNode node) {

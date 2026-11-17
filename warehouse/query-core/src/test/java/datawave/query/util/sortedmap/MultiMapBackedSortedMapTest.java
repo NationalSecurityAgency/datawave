@@ -1,9 +1,9 @@
 package datawave.query.util.sortedmap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.lang.reflect.Array;
@@ -20,10 +20,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public abstract class MultiMapBackedSortedMapTest<K,V> {
 
@@ -63,7 +62,7 @@ public abstract class MultiMapBackedSortedMapTest<K,V> {
         }
     }
 
-    @Before
+    @BeforeEach
     public void mapUp() throws Exception {
         for (int i = 0; i < template.length; i++) {
             byte[] buffer = new byte[i + 11];
@@ -104,7 +103,17 @@ public abstract class MultiMapBackedSortedMapTest<K,V> {
     public void putRandomly(List<Map> maps, K key, V value) {
         Random random = new Random();
         int mapIndex = random.nextInt(maps.size());
-        maps.get(mapIndex).put(key, value);
+        // Mirror FileSortedMap#put's rewrite-aware contract here: a raw, unconditional Map.put() lets whichever randomly-routed write for a given
+        // key happens to land last in a given backing map silently clobber a prior, larger value with no rewrite check at all. Since a key can be
+        // routed into the same backing map on more than one call, that clobbering can - rarely - leave every backing map holding a smaller value
+        // than the one under test, which no amount of correct cross-map merge logic can then recover. Applying the rewrite strategy per-map, exactly
+        // as FileSortedMap#put does, keeps the map data self-consistent regardless of insertion order.
+        Map<K,V> targetMap = maps.get(mapIndex);
+        V previous = (V) targetMap.get(key);
+        FileSortedMap.RewriteStrategy<K,V> rewriteStrategy = getRewriteStrategy();
+        if ((previous == null) || (rewriteStrategy == null) || (rewriteStrategy.rewrite(key, previous, value))) {
+            targetMap.put(key, value);
+        }
     }
 
     public void addDataRandomly(List<Map> maps, Map.Entry<K,V>[] data) {
@@ -124,7 +133,7 @@ public abstract class MultiMapBackedSortedMapTest<K,V> {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         // Delete each sorted map file and its checksum.
         for (SortedMapTempFileHandler fileHandler : tempFileHandlers) {
@@ -143,7 +152,7 @@ public abstract class MultiMapBackedSortedMapTest<K,V> {
 
     private void tryDelete(File file) {
         if (file.exists()) {
-            Assert.assertTrue("Failed to delete file " + file, file.delete());
+            assertTrue(file.delete(), "Failed to delete file " + file);
         }
     }
 

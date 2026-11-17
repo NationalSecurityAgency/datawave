@@ -1,11 +1,14 @@
 package datawave.ingest.mapreduce.job.reindex;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -17,10 +20,9 @@ import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
@@ -31,30 +33,30 @@ public class SpillingSortedContextWriterTest {
     private Configuration conf;
     private SpillingSortedContextWriter spillingSortedContextWriter;
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    Path folder;
 
-    @Before
+    @BeforeEach
     public void setup() {
         conf = new Configuration();
         spillingSortedContextWriter = new SpillingSortedContextWriter();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setup_noWorkDir_Test() throws IOException, InterruptedException {
-        spillingSortedContextWriter.setup(conf, false);
+        assertThrows(IllegalStateException.class, () -> spillingSortedContextWriter.setup(conf, false));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setup_workDirNotADirTest() throws IOException, InterruptedException {
-        File workDir = folder.newFile("workDir");
+        File workDir = Files.createFile(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
-        spillingSortedContextWriter.setup(conf, false);
+        assertThrows(IllegalStateException.class, () -> spillingSortedContextWriter.setup(conf, false));
     }
 
     @Test
     public void setupTest() throws IOException, InterruptedException {
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
         spillingSortedContextWriter.setup(conf, false);
     }
@@ -69,7 +71,7 @@ public class SpillingSortedContextWriterTest {
     @Test
     public void write_singleNoWriteTest() throws IOException, InterruptedException {
         StandaloneTaskAttemptContext context = new StandaloneTaskAttemptContext(conf, new StandaloneStatusReporter());
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
         spillingSortedContextWriter.setup(conf, false);
 
@@ -83,7 +85,7 @@ public class SpillingSortedContextWriterTest {
     @Test
     public void write_singleWriteTest() throws IOException, InterruptedException {
         StandaloneTaskAttemptContext context = new StandaloneTaskAttemptContext(conf, new StandaloneStatusReporter());
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
         spillingSortedContextWriter.setup(conf, false);
 
@@ -111,7 +113,7 @@ public class SpillingSortedContextWriterTest {
     @Test
     public void cleanup_flushTest() throws IOException, InterruptedException {
         TaskInputOutputContext mockContext = EasyMock.createMock(TaskInputOutputContext.class);
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
 
         EasyMock.expect(mockContext.getTaskAttemptID()).andReturn(new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 1), 1)).anyTimes();
@@ -134,7 +136,7 @@ public class SpillingSortedContextWriterTest {
     @Test
     public void cleanup_duplicateKeySquashedTest() throws IOException, InterruptedException {
         TaskInputOutputContext mockContext = EasyMock.createMock(TaskInputOutputContext.class);
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
 
         EasyMock.expect(mockContext.getTaskAttemptID()).andReturn(new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 1), 1)).anyTimes();
@@ -158,7 +160,7 @@ public class SpillingSortedContextWriterTest {
     @Test
     public void cleanup_mergeOfKeysTest() throws IOException, InterruptedException {
         TaskInputOutputContext mockContext = EasyMock.createMock(TaskInputOutputContext.class);
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
 
         EasyMock.expect(mockContext.getTaskAttemptID()).andReturn(new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 1), 1)).anyTimes();
@@ -193,7 +195,7 @@ public class SpillingSortedContextWriterTest {
     @Test
     public void cleanup_emptyTest() throws IOException, InterruptedException {
         StandaloneTaskAttemptContext context = new StandaloneTaskAttemptContext(conf, new StandaloneStatusReporter());
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
         spillingSortedContextWriter.setup(conf, false);
 

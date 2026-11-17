@@ -3,6 +3,7 @@ package datawave.next;
 import java.io.ByteArrayOutputStream;
 import java.util.Iterator;
 
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.slf4j.Logger;
@@ -54,8 +55,14 @@ public class CountScanner extends DocumentScanner {
     public Result next() {
         if (!completed) {
             completed = true;
-            Value value = serializeCount(config.getStats().getTotalResultsReturned(), sum.getKey().getColumnVisibilityParsed());
-            return new Result<>(sum.getKey(), value);
+
+            // a query that matched nothing still reports a count, but there is no result to take a key or a column
+            // visibility from
+            Key key = sum == null ? new Key() : sum.getKey();
+            ColumnVisibility visibility = sum == null ? new ColumnVisibility() : sum.getKey().getColumnVisibilityParsed();
+
+            Value value = serializeCount(config.getStats().getTotalResultsReturned(), visibility);
+            return new Result<>(key, value);
         }
 
         return null;

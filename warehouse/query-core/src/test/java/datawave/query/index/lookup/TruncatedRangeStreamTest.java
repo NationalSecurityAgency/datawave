@@ -34,9 +34,8 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.QueryPlan;
-import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
 /**
@@ -212,9 +211,7 @@ public class TruncatedRangeStreamTest {
     }
 
     private void scan() {
-        ScannerFactory scannerFactory = new ScannerFactory(client);
-        try (var stream = new TruncatedRangeStream(config, scannerFactory, helper); var planIter = stream.streamPlans(parse(query))) {
-
+        try (var stream = new TruncatedRangeStream(config, helper); var planIter = stream.streamPlans(parse(query))) {
             for (QueryPlan plan : planIter) {
                 Collection<Range> ranges = plan.getRanges();
                 assertEquals(1, ranges.size());

@@ -63,7 +63,14 @@ public class DocumentRetrievalStats implements Serializable {
         return format(slowestTime) + " ms for record id: " + slowestContext;
     }
 
-    private String format(double ns) {
-        return StatUtil.formatNanos((long) ns);
+    /**
+     * Cast the double to a long to eliminate rounding, then take the string value
+     *
+     * @param ms
+     *            the data in milliseconds
+     * @return formatted millis
+     */
+    private String format(double ms) {
+        return String.valueOf((long) ms);
     }
 }

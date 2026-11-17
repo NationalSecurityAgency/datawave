@@ -24,8 +24,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -125,6 +123,7 @@ import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.transformer.FieldRenameTransform;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.QueryValidationResultTransformer;
+import datawave.query.transformer.RemoveHitTermGroupingContextTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.transformer.annotation.AllHitsFactory;
 import datawave.query.transformer.annotation.AnnotationHitsTransformer;
@@ -143,7 +142,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.QueryValidationResponse;
 
 /**
- * <h1>Overview</h1> QueryTable implementation that works with the JEXL grammar. This QueryTable uses the DATAWAVE metadata, global index, and sharded event
+ * <h2>Overview</h2> QueryTable implementation that works with the JEXL grammar. This QueryTable uses the DATAWAVE metadata, global index, and sharded event
  * table to return results based on the query. The runServerQuery method is the main method that is called from the web service, and it contains the logic used
  * to run the queries against ACCUMULO. Example queries:
  *
@@ -170,10 +169,10 @@ import datawave.webservice.result.QueryValidationResponse;
  * Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction with other supported operators.
  * A sample function has been created, called between, and is bound to the 'f' namespace. An example using this function is : "f:between(LATITUDE,60.0, 70.0)"
  *
- * <h1>Constraints on Query Structure</h1> Queries that are sent to this class need to be formatted such that there is a space on either side of the operator.
+ * <h2>Constraints on Query Structure</h2> Queries that are sent to this class need to be formatted such that there is a space on either side of the operator.
  * We are rewriting the query in some cases and the current implementation is expecting a space on either side of the operator.
  *
- * <h1>Notes on Optimization</h1> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
+ * <h2>Notes on Optimization</h2> Queries that meet any of the following criteria will perform a full scan of the events in the sharded event table:
  *
  * <pre>
  *  1. An 'or' conjunction exists in the query but not all of the terms are indexed.
@@ -181,11 +180,11 @@ import datawave.webservice.result.QueryValidationResponse;
  *  3. An unsupported operator exists in the query
  * </pre>
  *
- * <h1>Notes on Features</h1>
+ * <h2>Notes on Features</h2>
  *
  * <pre>
  *  1. If there is no type specified for a field in the metadata table, then it defaults to using the NoOpType. The default
- *     can be overriden by calling setDefaultType()
+ *     can be overridden by calling setDefaultType()
  *  2. We support fields that are indexed, but not in the event. An example of this is for text documents, where the text is tokenized
  *     and indexed, but the tokens are not stored with the event.
  *  3. We support fields that have term frequency records in the shard table containing lists of offsets.  This would be for tokens
@@ -286,31 +285,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
         }
-    }
-
-    public static BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        final BatchScanner bs = scannerFactory.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
-                        config.getQuery());
-
-        if (log.isTraceEnabled()) {
-            log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd);
-        }
-
-        bs.setRanges(qd.getRanges());
-
-        for (IteratorSetting cfg : qd.getSettings()) {
-            bs.addScanIterator(cfg);
-        }
-
-        if (config.getTableConsistencyLevels().containsKey(config.getTableName())) {
-            bs.setConsistencyLevel(config.getTableConsistencyLevels().get(config.getTableName()));
-        }
-
-        if (config.getTableHints().containsKey(config.getTableName())) {
-            bs.setExecutionHints(config.getTableHints().get(config.getTableName()));
-        }
-
-        return bs;
     }
 
     @Override
@@ -507,7 +481,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             // Modify the projectFields and disallowlistFields only for this stage, then return to the original values.
             // Not advisable to create a copy of the config object due to the embedded timers.
             Set<String> originalDisallowlistedFields = new HashSet<>(config.getDisallowlistedFields());
-            Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
+            Set<String> originalProjectFields = config.getProjectFields();
 
             // either projectFields or disallowlistedFields can be used, but not both
             // this will be caught when loadQueryParameters is called
@@ -746,7 +720,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             return this.transformerInstance;
         }
 
-        MarkingFunctions markingFunctions = this.getMarkingFunctions();
+        MarkingFunctions<?> markingFunctions = this.getMarkingFunctions();
         ResponseObjectFactory responseObjectFactory = this.getResponseObjectFactory();
 
         boolean reducedInSettings = false;
@@ -774,7 +748,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return this.transformerInstance;
     }
 
-    protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
+    protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
         return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
     }
@@ -834,20 +808,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
             AllHitsQueryConfig allHitsQueryConfig = getAllHitsQueryConfig();
             if (allHitsQueryConfig != null && allHitsQueryConfig.isEnabled()) {
-                // since this may be called multiple times always rebuild
-                // @formatter:off
-                ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
-                        getConfig(),
-                        getConfig().getOriginalJexlQuery(),
-                        allHitsQueryConfig.getQueryTermExtractor(),
-                        allHitsQueryConfig.getTermNormalizer(),
-                        getAnnotationDataAccess(),
-                        getAnnotationHitsFactory(),
-                        allHitsQueryConfig.getMaxContextLength(),
-                        allHitsQueryConfig.getValidAnnotationTypes(),
-                        allHitsQueryConfig.getTargetField(),
-                        allHitsQueryConfig.getAnnotationEnrichmentFieldMap()));
-                // @formatter:on
+                // follow the same initialize()/updateConfig() lifecycle contract as the other config-based
+                // transforms below (UniqueTransform, GroupingTransform, FieldRenameTransform): construct once,
+                // then call the cheap updateConfig() on subsequent pages so any legitimately-changed query
+                // parameters are picked up without re-running the constructor's heavier one-time setup work
+                // (query term extractor/normalizer wiring, annotation data access, etc.) or losing local state
+                // (e.g. forcedGroupingNotation, forcedReturnFields) that must persist across pages.
+                DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(AnnotationHitsTransformer.class);
+                if (alreadyExists != null) {
+                    ((AnnotationHitsTransformer) alreadyExists).updateConfig(getSettings());
+                } else {
+                    // @formatter:off
+                    ((DocumentTransformer) this.transformerInstance).addTransform(new AnnotationHitsTransformer(
+                            getConfig(),
+                            getConfig().getOriginalJexlQuery(),
+                            allHitsQueryConfig.getQueryTermExtractor(),
+                            allHitsQueryConfig.getTermNormalizer(),
+                            getAnnotationDataAccess(),
+                            getAnnotationHitsFactory(),
+                            allHitsQueryConfig.getMaxContextLength(),
+                            allHitsQueryConfig.getValidAnnotationTypes(),
+                            allHitsQueryConfig.getTargetField(),
+                            allHitsQueryConfig.getAnnotationEnrichmentFieldMap()));
+                    // @formatter:on
+                }
             }
 
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
@@ -897,6 +881,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 }
             }
 
+            // added last so that every other transform still sees the hit term grouping context
+            if (getConfig().isStripHitTermGroupingContext()
+                            && ((DocumentTransformer) this.transformerInstance).containsTransform(RemoveHitTermGroupingContextTransform.class) == null) {
+                ((DocumentTransformer) this.transformerInstance).addTransform(new RemoveHitTermGroupingContextTransform());
+            }
         }
         if (getQueryModel() != null) {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
@@ -1125,7 +1114,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // Update the config and the projection fields.
                 this.setGroupByFields(groupByFields);
                 config.setGroupFields(groupByFields);
-                config.setProjectFields(groupByFields.getProjectionFields());
+                config.addProjectFields(groupByFields.getProjectionFields());
             }
         }
 
@@ -1145,6 +1134,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 // preserve the most recent flag
                 uniqueFields.setMostRecent(config.getUniqueFields().isMostRecent());
                 config.setUniqueFields(uniqueFields);
+                config.addProjectFields(uniqueFields.getFields());
             }
         }
 
@@ -1180,11 +1170,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             config.setHitList(hitListBool);
         }
 
+        // Get the STRIP_HIT_TERM_GROUPING_CONTEXT parameter if given
+        String stripHitTermGroupingContextString = settings.findParameter(QueryParameters.STRIP_HIT_TERM_GROUPING_CONTEXT).getParameterValue().trim();
+        if (StringUtils.isNotBlank(stripHitTermGroupingContextString)) {
+            config.setStripHitTermGroupingContext(Boolean.parseBoolean(stripHitTermGroupingContextString));
+        }
+
         // Get the BYPASS_ACCUMULO parameter if given
         String bypassAccumuloString = settings.findParameter(BYPASS_ACCUMULO).getParameterValue().trim();
         if (StringUtils.isNotBlank(bypassAccumuloString)) {
             Boolean bypassAccumuloBool = Boolean.parseBoolean(bypassAccumuloString);
             config.setBypassAccumulo(bypassAccumuloBool);
+        }
+
+        String dsEnabled = settings.findParameter(QueryParameters.DS_ENABLED).getParameterValue().trim();
+        if (StringUtils.isNotBlank(dsEnabled)) {
+            config.setUseDocumentScheduler(Boolean.parseBoolean(dsEnabled));
         }
 
         // Get the DATE_INDEX_TIME_TRAVEL parameter if given
@@ -1450,7 +1451,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             }
         }
 
-        return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+        return new PushdownScheduler(config, this.metadataHelperFactory);
     }
 
     protected VisitorFunction getVisitorFunction(MetadataHelper metadataHelper) {
@@ -1715,7 +1716,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         logQuery(config.getQueryTree(), "Query after flattening");
 
         // Apply the query model.
-        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getAllFields(config.getDatatypeFilter()),
+        config.setQueryTree(ShardQueryUtils.applyQueryModel(config.getQueryTree(), config, metadataHelper.getModelExpansionFields(config.getDatatypeFilter()),
                         this.queryModel));
 
         logQuery(config.getQueryTree(), "Query after applying query model");
@@ -2096,24 +2097,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setHitList(hitList);
     }
 
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getEventPerDayThreshold() {
-        return getConfig().getEventPerDayThreshold();
+    public boolean isStripHitTermGroupingContext() {
+        return getConfig().isStripHitTermGroupingContext();
     }
 
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setEventPerDayThreshold(int eventPerDayThreshold) {
-        getConfig().setEventPerDayThreshold(eventPerDayThreshold);
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public int getShardsPerDayThreshold() {
-        return getConfig().getShardsPerDayThreshold();
-    }
-
-    @Deprecated(since = "7.1.0", forRemoval = true)
-    public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
-        getConfig().setShardsPerDayThreshold(shardsPerDayThreshold);
+    public void setStripHitTermGroupingContext(boolean stripHitTermGroupingContext) {
+        getConfig().setStripHitTermGroupingContext(stripHitTermGroupingContext);
     }
 
     public int getInitialMaxTermThreshold() {
@@ -2799,6 +2788,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         optionalParams.add(QueryOptions.POSTPROCESSING_CLASSES);
         optionalParams.add(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS);
         optionalParams.add(QueryOptions.HIT_LIST);
+        optionalParams.add(QueryParameters.STRIP_HIT_TERM_GROUPING_CONTEXT);
         optionalParams.add(QueryOptions.DATE_INDEX_TIME_TRAVEL);
         optionalParams.add(QueryParameters.LIMIT_FIELDS);
         optionalParams.add(QueryParameters.MATCHING_FIELD_SETS);
@@ -2954,6 +2944,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setReduceTypeMetadataPerShard(reduceTypeMetadataPerShard);
     }
 
+    public boolean isKryoTypeMetadata() {
+        return getConfig().isKryoTypeMetadata();
+    }
+
+    public void setKryoTypeMetadata(boolean kryoTypeMetadata) {
+        getConfig().setKryoTypeMetadata(kryoTypeMetadata);
+    }
+
     public long getMaxIndexScanTimeMillis() {
         return getConfig().getMaxIndexScanTimeMillis();
     }
@@ -2970,10 +2968,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setMaxAnyFieldScanTimeMillis(maxAnyFieldScanTimeMillis);
     }
 
+    @Deprecated
     public boolean isUseNewIndexLookups() {
         return getConfig().isUseNewIndexLookups();
     }
 
+    @Deprecated
     public void setUseNewIndexLookups(boolean useNewIndexLookups) {
         getConfig().setUseNewIndexLookups(useNewIndexLookups);
     }
@@ -3415,14 +3415,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
     }
 
-    public boolean isLazySetMechanismEnabled() {
-        return getConfig().isLazySetMechanismEnabled();
-    }
-
-    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
-        getConfig().setLazySetMechanismEnabled(lazySetMechanismEnabled);
-    }
-
     public long getVisitorFunctionMaxWeight() {
         return getConfig().getVisitorFunctionMaxWeight();
     }
@@ -3653,5 +3645,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setAllHitsQueryConfig(AllHitsQueryConfig allHitsQueryConfig) {
         getConfig().setAllHitsQueryConfig(allHitsQueryConfig);
+    }
+
+    public void setOneDocPerGroup(boolean value) {
+        getConfig().getGroupFields().setOneDocPerGroup(value);
+    }
+
+    public void setMultDocPerGroup(boolean value) {
+        getConfig().getGroupFields().setOneDocPerGroup(!value);
     }
 }

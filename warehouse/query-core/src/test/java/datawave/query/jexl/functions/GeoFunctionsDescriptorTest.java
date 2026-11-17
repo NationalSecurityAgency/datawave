@@ -1,9 +1,13 @@
 package datawave.query.jexl.functions;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -23,16 +27,14 @@ public class GeoFunctionsDescriptorTest {
         config.setGeoMaxExpansion(1);
         JexlNode queryNode = argDesc.getIndexQuery(config, null, null, null);
         // @formatter:off
-        Assert.assertEquals(
-                "(" +
+        assertEquals("(" +
                         "((_Bounded_ = true) && (FIELD_1 >= '018700..0000000000' && FIELD_1 <= '018900..0000000000')) || " +
                         "((_Bounded_ = true) && (FIELD_1 >= '019000..0000000000' && FIELD_1 <= '020000..0000000000')) || " +
                         "((_Bounded_ = true) && (FIELD_1 >= '110800..0000000000' && FIELD_1 <= '110900..0000000000')) || " +
                         "((_Bounded_ = true) && (FIELD_2 >= '018700..0000000000' && FIELD_2 <= '018900..0000000000')) || " +
                         "((_Bounded_ = true) && (FIELD_2 >= '019000..0000000000' && FIELD_2 <= '020000..0000000000')) || " +
                         "((_Bounded_ = true) && (FIELD_2 >= '110800..0000000000' && FIELD_2 <= '110900..0000000000'))" +
-                        ")",
-                        JexlStringBuildingVisitor.buildQuery(queryNode));
+                        ")", JexlStringBuildingVisitor.buildQuery(queryNode));
         // @formatter:on
     }
 
@@ -43,7 +45,7 @@ public class GeoFunctionsDescriptorTest {
         GeoFunctionsDescriptor.GeoJexlArgumentDescriptor argDesc = (GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) new GeoFunctionsDescriptor()
                         .getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0));
         JexlNode queryNode = argDesc.toGeoWaveFunction(Sets.newHashSet("GEO_FIELD"));
-        Assert.assertEquals("geowave:intersects(GEO_FIELD, 'POLYGON ((16.3 -12.74, 26.16 -12.74, 26.16 -3.31, 16.3 -3.31, 16.3 -12.74))')",
+        assertEquals("geowave:intersects(GEO_FIELD, 'POLYGON ((16.3 -12.74, 26.16 -12.74, 26.16 -3.31, 16.3 -3.31, 16.3 -12.74))')",
                         JexlStringBuildingVisitor.buildQuery(queryNode));
     }
 
@@ -54,7 +56,7 @@ public class GeoFunctionsDescriptorTest {
         GeoFunctionsDescriptor.GeoJexlArgumentDescriptor argDesc = (GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) new GeoFunctionsDescriptor()
                         .getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0));
         JexlNode queryNode = argDesc.toGeoWaveFunction(Sets.newHashSet("LON_FIELD", "LAT_FIELD"));
-        Assert.assertNull(queryNode);
+        assertNull(queryNode);
     }
 
     @Test
@@ -66,13 +68,11 @@ public class GeoFunctionsDescriptorTest {
         config.setGeoMaxExpansion(1);
         JexlNode queryNode = argDesc.getIndexQuery(config, null, null, null);
         // @formatter:off
-        Assert.assertEquals(
-                "(" +
+        assertEquals("(" +
                         "((_Bounded_ = true) && (GEO_FIELD >= '103000..0000000000' && GEO_FIELD <= '104100..0000000000')) || " +
                         "((_Bounded_ = true) && (GEO_FIELD >= '133500..0000000000' && GEO_FIELD <= '133700..0000000000')) || " +
                         "((_Bounded_ = true) && (GEO_FIELD >= '134400..0000000000' && GEO_FIELD <= '134600..0000000000'))" +
-                        ")",
-                        JexlStringBuildingVisitor.buildQuery(queryNode));
+                        ")", JexlStringBuildingVisitor.buildQuery(queryNode));
         // @formatter:on
     }
 
@@ -82,19 +82,18 @@ public class GeoFunctionsDescriptorTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0));
         JexlNode queryNode = argDesc.getIndexQuery(null, null, null, null);
-        Assert.assertEquals(
-                        "((((_Bounded_ = true) && (LON_FIELD >= '170.0' && LON_FIELD <= '180')) && ((_Bounded_ = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))) || (((_Bounded_ = true) && (LON_FIELD >= '-180' && LON_FIELD <= '-170.0')) && ((_Bounded_ = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))))",
+        assertEquals("((((_Bounded_ = true) && (LON_FIELD >= '170.0' && LON_FIELD <= '180')) && ((_Bounded_ = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))) || (((_Bounded_ = true) && (LON_FIELD >= '-180' && LON_FIELD <= '-170.0')) && ((_Bounded_ = true) && (LAT_FIELD >= '40.0' && LAT_FIELD <= '50.0'))))",
                         JexlStringBuildingVisitor.buildQuery(queryNode));
     }
 
     @Test
     public void antiMeridianTest3() throws Exception {
-        Assert.assertTrue(GeoFunctions.within_bounding_box("-175", "0", "170", "-10", "-170", "10"));
-        Assert.assertTrue(GeoFunctions.within_bounding_box("-175", "0", "170", "-10", "-170", "10"));
-        Assert.assertFalse(GeoFunctions.within_bounding_box("-165", "0", "170", "-10", "-170", "10"));
-        Assert.assertFalse(GeoFunctions.within_bounding_box("165", "0", "170", "-10", "-170", "10"));
-        Assert.assertFalse(GeoFunctions.within_bounding_box("1", "6", "-2", "-2", "2", "2"));
-        Assert.assertFalse(GeoFunctions.within_bounding_box("6_1", "-2_-2", "2_2"));
+        assertTrue(GeoFunctions.within_bounding_box("-175", "0", "170", "-10", "-170", "10"));
+        assertTrue(GeoFunctions.within_bounding_box("-175", "0", "170", "-10", "-170", "10"));
+        assertFalse(GeoFunctions.within_bounding_box("-165", "0", "170", "-10", "-170", "10"));
+        assertFalse(GeoFunctions.within_bounding_box("165", "0", "170", "-10", "-170", "10"));
+        assertFalse(GeoFunctions.within_bounding_box("1", "6", "-2", "-2", "2", "2"));
+        assertFalse(GeoFunctions.within_bounding_box("6_1", "-2_-2", "2_2"));
     }
 
     @Test
@@ -104,8 +103,7 @@ public class GeoFunctionsDescriptorTest {
         JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0));
         JexlNode queryNode = argDesc.getIndexQuery(new ShardQueryConfiguration(), null, null, null);
         // @formatter:off
-        Assert.assertEquals(
-                "(" +
+        assertEquals("(" +
                         "((_Bounded_ = true) && (GEO_FIELD >= '112082..7616172234' && GEO_FIELD <= '112082..7700000000')) || " +
                         "((_Bounded_ = true) && (GEO_FIELD >= '112082..7710000000' && GEO_FIELD <= '112082..7800000000')) || " +
                         "((_Bounded_ = true) && (GEO_FIELD >= '112082..7810000000' && GEO_FIELD <= '112082..7900000000')) || " +
@@ -138,8 +136,7 @@ public class GeoFunctionsDescriptorTest {
                         "((_Bounded_ = true) && (GEO_FIELD >= '112093..0200000000' && GEO_FIELD <= '112093..0211000000')) || " +
                         "((_Bounded_ = true) && (GEO_FIELD >= '112093..0220000000' && GEO_FIELD <= '112093..0241000000')) || " +
                         "((_Bounded_ = true) && (GEO_FIELD >= '112093..0250000000' && GEO_FIELD <= '112093..0270456547'))" +
-                        ")",
-                        JexlStringBuildingVisitor.buildQuery(queryNode));
+                        ")", JexlStringBuildingVisitor.buildQuery(queryNode));
         // @formatter:on
     }
 
@@ -150,8 +147,7 @@ public class GeoFunctionsDescriptorTest {
         JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0));
         JexlNode queryNode = argDesc.getIndexQuery(new ShardQueryConfiguration(), null, null, null);
         // @formatter:off
-        Assert.assertEquals(
-                "(" +
+        assertEquals("(" +
                         "((_Bounded_ = true) && (GEO_FIELD >= '112072..8900000000' && GEO_FIELD <= '112072..9000000000')) || " +
                         "((_Bounded_ = true) && (GEO_FIELD >= '112072..9500000000' && GEO_FIELD <= '112073..0000000000')) || " +
                         "((_Bounded_ = true) && (GEO_FIELD >= '112073..8090000000' && GEO_FIELD <= '112073..8100000000')) || " +
@@ -184,8 +180,7 @@ public class GeoFunctionsDescriptorTest {
                         "((_Bounded_ = true) && (GEO_FIELD >= '112093..6000000000' && GEO_FIELD <= '112093..6700000000')) || " +
                         "((_Bounded_ = true) && (GEO_FIELD >= '112093..7000000000' && GEO_FIELD <= '112093..7600000000')) || " +
                         "((_Bounded_ = true) && (GEO_FIELD >= '112093..8000000000' && GEO_FIELD <= '112093..8400000000'))" +
-                        ")",
-                        JexlStringBuildingVisitor.buildQuery(queryNode));
+                        ")", JexlStringBuildingVisitor.buildQuery(queryNode));
         // @formatter:on
     }
 }

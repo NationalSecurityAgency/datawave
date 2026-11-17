@@ -11,6 +11,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -290,9 +291,16 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     }
                     startAsync();
                     try {
-                        // we have just started, so let's start and wait
-                        // until we've completed the start process
-                        awaitRunning();
+                        // we have just started, so let's start and wait until we've completed the start process
+                        // loop to prevent a possible deadlock in com.google.common.util.concurrent.Monitor
+                        // due to a lost signal when the receiving thread was in an interrupted state
+                        while (!state().equals(State.RUNNING)) {
+                            try {
+                                awaitRunning(250, TimeUnit.MILLISECONDS);
+                            } catch (TimeoutException e) {
+
+                            }
+                        }
                     } catch (IllegalStateException e) {
                         // This is thrown if the state is anything other than RUNNING
                         // STOPPING, and TERMINATED are valid as they indicate successful execution
@@ -345,9 +353,11 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                     log.error("Failed to suspend timer", e);
                 }
             }
-            if (uncaughtExceptionHandler.getThrowable() != null) {
-                log.error("Exception discovered on hasNext call", uncaughtExceptionHandler.getThrowable());
-                throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
+
+            if (uncaughtExceptionHandler.hasUncaughtException()) {
+                Throwable throwable = uncaughtExceptionHandler.getUncaughtException().getLeft();
+                log.error("Exception discovered on hasNext call", throwable);
+                throw new RuntimeException(throwable);
             }
         }
 
@@ -387,9 +397,10 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             currentEntry = null;
             return retVal;
         } finally {
-            if (uncaughtExceptionHandler.getThrowable() != null) {
-                log.error("Exception discovered on next call", uncaughtExceptionHandler.getThrowable());
-                throw new RuntimeException(uncaughtExceptionHandler.getThrowable());
+            if (uncaughtExceptionHandler.hasUncaughtException()) {
+                Throwable throwable = uncaughtExceptionHandler.getUncaughtException().getLeft();
+                log.error("Exception discovered on next call", throwable);
+                throw new RuntimeException(throwable);
             }
         }
     }
@@ -571,9 +582,10 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 if (!isRunning() || state().equals(State.TERMINATED) || state().equals(State.FAILED)) {
                     log.info("aborting offer on scanner invariant due to thread no longer running");
                     throw new InterruptedException("aborting offer on scanner invariant due to thread no longer running");
-                } else if (uncaughtExceptionHandler.getThrowable() != null) {
-                    log.warn("aborting offer on scanner invariant due to throwable", uncaughtExceptionHandler.getThrowable());
-                    throw new RuntimeException("aborting offer on scanner invariant due to throwable", uncaughtExceptionHandler.getThrowable());
+                } else if (uncaughtExceptionHandler.hasUncaughtException()) {
+                    Throwable throwable = uncaughtExceptionHandler.getUncaughtException().getLeft();
+                    log.warn("aborting offer on scanner invariant due to throwable", throwable);
+                    throw new RuntimeException("aborting offer on scanner invariant due to throwable", throwable);
                 } else if (forceClose) {
                     log.info("cleaning up scanner due to external close");
                     throw new InterruptedException("cleaning up scanner due to external close");

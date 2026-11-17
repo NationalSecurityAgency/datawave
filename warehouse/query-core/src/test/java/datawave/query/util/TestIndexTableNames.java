@@ -2,7 +2,7 @@ package datawave.query.util;
 
 import java.util.List;
 
-import datawave.util.TableName;
+import datawave.table.constants.TableName;
 
 /**
  * This utility allows unit tests to iterate through all possible global index table formats

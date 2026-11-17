@@ -149,6 +149,39 @@ public interface AnnotationSourceOrBuilder extends
     java.lang.String getConfigurationOrThrow(java.lang.String key);
 
     /**
+     * <pre>
+     * an optional string identifying the platform that produced the annotation.
+     * </pre>
+     *
+     * <code>string platform = 6;</code>
+     *
+     * @return Whether the platform field is set.
+     */
+    boolean hasPlatform();
+
+    /**
+     * <pre>
+     * an optional string identifying the platform that produced the annotation.
+     * </pre>
+     *
+     * <code>string platform = 6;</code>
+     *
+     * @return The platform.
+     */
+    java.lang.String getPlatform();
+
+    /**
+     * <pre>
+     * an optional string identifying the platform that produced the annotation.
+     * </pre>
+     *
+     * <code>string platform = 6;</code>
+     *
+     * @return The bytes for platform.
+     */
+    com.google.protobuf.ByteString getPlatformBytes();
+
+    /**
      * <code>map&lt;string, string&gt; metadata = 50;</code>
      */
     int getMetadataCount();
