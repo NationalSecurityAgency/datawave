@@ -34,6 +34,7 @@ import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.exception.EmptyObjectException;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -43,6 +44,8 @@ import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.transformer.DocumentTransform;
+import datawave.query.transformer.DocumentTransformer;
 import datawave.test.HitTermAssertions;
 
 /**
@@ -60,6 +63,7 @@ import datawave.test.HitTermAssertions;
  * <li>{@link #givenQuery(String)} required</li>
  * <li>{@link #givenParameter(String, String)} optional</li>
  * <li>{@link #givenParameters(Map)} optional</li>
+ * <li>{@link #applyDocumentTransforms()} optional</li>
  * </ul>
  * <p>
  * Final state methods include:
@@ -104,6 +108,9 @@ public abstract class AbstractQueryTest {
     // the test framework is opinionated about asserting the final query plan
     private boolean queryPlanAssertionEnabled = true;
 
+    // the webservice transform chain is not applied to the results by default
+    private boolean documentTransformsEnabled = false;
+
     public abstract ShardQueryLogic getLogic();
 
     /**
@@ -129,6 +136,7 @@ public abstract class AbstractQueryTest {
         hitTermAssertions.resetState();
 
         queryPlanAssertionEnabled = true;
+        documentTransformsEnabled = false;
     }
 
     /**
@@ -138,6 +146,14 @@ public abstract class AbstractQueryTest {
      */
     protected void disableQueryPlanAssertion() {
         queryPlanAssertionEnabled = false;
+    }
+
+    /**
+     * Run the results through the webservice {@link DocumentTransform} chain, which is otherwise skipped. Required by any test that asserts on what that chain
+     * produces, such as a transform that rewrites the hit terms.
+     */
+    protected void applyDocumentTransforms() {
+        documentTransformsEnabled = true;
     }
 
     public void setClientForTest(AccumuloClient client) {
@@ -451,13 +467,45 @@ public abstract class AbstractQueryTest {
     protected void executeQuery(ShardQueryLogic logic) throws Exception {
         try {
             results.clear();
-            for (Map.Entry<Key,Value> entry : logic) {
-                Document d = deserializer.apply(entry).getValue();
-                results.add(d);
+            if (documentTransformsEnabled) {
+                transformQuery(logic);
+            } else {
+                for (Map.Entry<Key,Value> entry : logic) {
+                    Document d = deserializer.apply(entry).getValue();
+                    results.add(d);
+                }
             }
         } finally {
             logic.close();
             log.info("query retrieved {} results", results.size());
+        }
+    }
+
+    /**
+     * Iterate through the query, transforming each result as the webservice would. The chain mutates its own copy of each document, so the results are captured
+     * by a transform appended to the end of the chain.
+     *
+     * @param logic
+     *            the query logic
+     */
+    private void transformQuery(ShardQueryLogic logic) {
+        DocumentTransformer transformer = (DocumentTransformer) logic.getTransformer(logic.getConfig().getQuery());
+        transformer.addTransform(new DocumentTransform.DefaultDocumentTransform() {
+            @Override
+            public Map.Entry<Key,Document> apply(Map.Entry<Key,Document> entry) {
+                if (entry != null) {
+                    results.add(entry.getValue());
+                }
+                return entry;
+            }
+        });
+
+        for (Map.Entry<Key,Value> entry : logic) {
+            try {
+                transformer.transform(entry);
+            } catch (EmptyObjectException e) {
+                // the document carried only metadata, there is nothing to capture
+            }
         }
     }
 

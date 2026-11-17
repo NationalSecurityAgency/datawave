@@ -1,6 +1,13 @@
 package datawave.query.tables;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -34,13 +41,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.hadoop.io.Text;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * This test spins up a mini accumulo to accurately test the effect of underlying Scanner/Batch scanners against the ScannerSession. InMemoryAccumulo makes some
@@ -48,8 +53,8 @@ import org.junit.rules.TemporaryFolder;
  */
 public class ScannerSessionTest {
 
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    @TempDir
+    public static File temporaryFolder;
 
     private static final String PASSWORD = "password";
 
@@ -57,10 +62,10 @@ public class ScannerSessionTest {
     private static AccumuloClient client;
     private static ResourceQueue resourceQueue;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupClass()
                     throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException, InterruptedException {
-        instance = new MiniAccumuloCluster(temporaryFolder.newFolder(), PASSWORD);
+        instance = new MiniAccumuloCluster(Files.createTempDirectory(temporaryFolder.toPath(), "accumulo-").toFile(), PASSWORD);
         instance.start();
 
         client = instance.createAccumuloClient("root", new PasswordToken(PASSWORD));
@@ -68,7 +73,7 @@ public class ScannerSessionTest {
         setupTable();
     }
 
-    @AfterClass
+    @AfterAll
     public static void teardownClass() throws IOException, InterruptedException {
         instance.stop();
     }
@@ -86,7 +91,7 @@ public class ScannerSessionTest {
 
         // clear client cache so its aware the splits have been created
         client.tableOperations().clearLocatorCache("testTable");
-        Assert.assertEquals(splits.size(), client.tableOperations().listSplits("testTable").size());
+        assertEquals(splits.size(), client.tableOperations().listSplits("testTable").size());
 
         // force writing all the data or fail
         try {
@@ -115,7 +120,7 @@ public class ScannerSessionTest {
         bw.close();
     }
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         resourceQueue = new ResourceQueue(100, client);
     }
@@ -158,14 +163,14 @@ public class ScannerSessionTest {
         validate(ss);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testScannerSessionWithRuntimeExceptionResource() throws TableNotFoundException {
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations());
         ScannerSession ss = new ScannerSession("testTable", auths, resourceQueue, 5000000, null);
         ss.setResourceClass(StubbedRuntimeExceptionResource.class);
 
-        validate(ss);
+        assertThrows(RuntimeException.class, () -> validate(ss));
     }
 
     @Test
@@ -205,9 +210,9 @@ public class ScannerSessionTest {
         }
         long endWait = System.currentTimeMillis();
         // didn't end before the close
-        Assert.assertTrue(endWait - startWait >= 5000);
+        assertTrue(endWait - startWait >= 5000);
         // ended before the force kill
-        Assert.assertFalse(forceClose.get());
+        assertFalse(forceClose.get());
     }
 
     private void validate(ScannerSession ss) throws TableNotFoundException {
@@ -244,14 +249,14 @@ public class ScannerSessionTest {
         scanner.close();
 
         // direct batch scanner count should equal count
-        Assert.assertEquals(batchScannerCount, count);
+        assertEquals(batchScannerCount, count);
 
         // 14 total rows covered at 10000 per row (100 CF * 100 CQ per row)
         // 1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 25, 26, 98
-        Assert.assertEquals(140000, count);
-        Assert.assertEquals(14, results.keySet().size());
+        assertEquals(140000, count);
+        assertEquals(14, results.keySet().size());
         for (Integer row : results.keySet()) {
-            Assert.assertEquals(Integer.valueOf(10000), results.get(row));
+            assertEquals(Integer.valueOf(10000), results.get(row));
         }
 
         ss.close();

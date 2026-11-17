@@ -1,7 +1,9 @@
 package datawave.util.ssdeep;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 public class IntegerEncodingTest {
     @Test
@@ -18,59 +20,59 @@ public class IntegerEncodingTest {
             String otherEncodedString = encoding.encode(i);
             int decoded = encoding.decode(encoded, 0);
             int otherDecoded = encoding.decode(otherEncodedString);
-            Assert.assertEquals("encoder/decoder mismatch: input:" + i + " output:" + decoded, i, decoded);
-            Assert.assertEquals("Encoded string is no expected length " + length, length, encodedString.length());
-            Assert.assertEquals("Error with build-in string encoding", otherEncodedString, encodedString);
-            Assert.assertEquals("Error with built-in string methods", decoded, otherDecoded);
+            assertEquals(i, decoded, "encoder/decoder mismatch: input:" + i + " output:" + decoded);
+            assertEquals(length, encodedString.length(), "Encoded string is no expected length " + length);
+            assertEquals(otherEncodedString, encodedString, "Error with build-in string encoding");
+            assertEquals(decoded, otherDecoded, "Error with built-in string methods");
             count++;
         }
-        Assert.assertEquals("Unexpected number of values tested", (int) Math.pow(base, length), count);
+        assertEquals((int) Math.pow(base, length), count, "Unexpected number of values tested");
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void integerEncodingBaseException() {
         int base = 65;
         int length = 2;
-        IntegerEncoding encoding = new IntegerEncoding(base, length);
+        assertThrows(IllegalArgumentException.class, () -> new IntegerEncoding(base, length));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void integerEncodingLengthException() {
         int base = 64;
         int length = 500;
-        IntegerEncoding encoding = new IntegerEncoding(base, length);
+        assertThrows(IllegalArgumentException.class, () -> new IntegerEncoding(base, length));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void integerEncodingBaseUnderflow() {
         int base = -1;
         int length = 2;
-        IntegerEncoding encoding = new IntegerEncoding(base, length);
+        assertThrows(IllegalArgumentException.class, () -> new IntegerEncoding(base, length));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void integerEncodingLengthUnderflow() {
         int base = 2;
         int length = -1;
-        IntegerEncoding encoding = new IntegerEncoding(base, length);
+        assertThrows(IllegalArgumentException.class, () -> new IntegerEncoding(base, length));
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void integerEncodingDecodeBufferUnderflow() {
         int base = 64;
         int length = 3;
         IntegerEncoding encoding = new IntegerEncoding(base, length);
         byte[] b = new byte[2];
-        encoding.encodeToBytes(5, b, 0);
+        assertThrows(IndexOutOfBoundsException.class, () -> encoding.encodeToBytes(5, b, 0));
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void integerEncodingDecodeBufferUnderflowOffset() {
         int base = 64;
         int length = 3;
         IntegerEncoding encoding = new IntegerEncoding(base, length);
         byte[] b = new byte[3];
-        encoding.encodeToBytes(5, b, 1);
+        assertThrows(IndexOutOfBoundsException.class, () -> encoding.encodeToBytes(5, b, 1));
     }
 
     @Test
@@ -80,12 +82,12 @@ public class IntegerEncodingTest {
         IntegerEncoding encoding = new IntegerEncoding(base, length);
         byte[] b = new byte[4];
         encoding.encodeToBytes(5, b, 1);
-        Assert.assertEquals((byte) 0, b[0]);
-        Assert.assertEquals('+', (char) b[1]);
-        Assert.assertEquals('+', (char) b[2]);
-        Assert.assertEquals('3', (char) b[3]);
+        assertEquals((byte) 0, b[0]);
+        assertEquals('+', (char) b[1]);
+        assertEquals('+', (char) b[2]);
+        assertEquals('3', (char) b[3]);
         int result = encoding.decode(b, 1);
-        Assert.assertEquals(5, result);
+        assertEquals(5, result);
     }
 
     @Test
@@ -98,53 +100,53 @@ public class IntegerEncodingTest {
         encoding.encodeToBytes(12, b, 5);
         int resultA = encoding.decode(b, 1);
         int resultB = encoding.decode(b, 5);
-        Assert.assertEquals(5, resultA);
-        Assert.assertEquals(12, resultB);
+        assertEquals(5, resultA);
+        assertEquals(12, resultB);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void integerEncodingValueOverflow() {
         int base = 4;
         int length = 2;
         IntegerEncoding encoding = new IntegerEncoding(base, length);
         byte[] b = new byte[2];
-        encoding.encodeToBytes(17, b, 0);
+        assertThrows(IllegalArgumentException.class, () -> encoding.encodeToBytes(17, b, 0));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void integerEncodingStringDecodeUnderflow() {
         int base = 4;
         int length = 2;
         IntegerEncoding encoding = new IntegerEncoding(base, length);
         String input = "+";
-        encoding.decode(input);
+        assertThrows(IllegalArgumentException.class, () -> encoding.decode(input));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void integerEncodingStringDecodeInvalid() {
         int base = 4;
         int length = 2;
         IntegerEncoding encoding = new IntegerEncoding(base, length);
         String input = "%%";
-        encoding.decode(input);
+        assertThrows(IllegalArgumentException.class, () -> encoding.decode(input));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void integerEncodingStringDecodeOverflow() {
         int base = 4;
         int length = 2;
         IntegerEncoding encoding = new IntegerEncoding(base, length);
         String input = "zz";
-        encoding.decode(input);
+        assertThrows(IllegalArgumentException.class, () -> encoding.decode(input));
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void integerEncodingByteDecodeUnderflow() {
         int base = 4;
         int length = 2;
         IntegerEncoding encoding = new IntegerEncoding(base, length);
         byte[] input = new byte[1];
-        encoding.decode(input, 0);
+        assertThrows(IndexOutOfBoundsException.class, () -> encoding.decode(input, 0));
     }
 
     @Test
@@ -157,7 +159,7 @@ public class IntegerEncodingTest {
             byte[] b = IntegerEncoding.encodeBaseTenDigitBytes(input);
             String s = new String(b);
             String e = String.valueOf(input);
-            Assert.assertEquals("Failed to encode number: " + input, e, s);
+            assertEquals(e, s, "Failed to encode number: " + input);
         }
     }
 }

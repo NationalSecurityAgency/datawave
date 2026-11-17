@@ -12,9 +12,9 @@ import java.util.Set;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.assertj.core.util.Sets;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -45,7 +45,7 @@ public class DocumentGrouperTest {
     private Document document;
     private Groups groups;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         inverseReverseMap.put("GEN", "GENERE");
         inverseReverseMap.put("GEN", "GENDER");
@@ -68,7 +68,7 @@ public class DocumentGrouperTest {
         reverseMap.put("CREATION_DATE", "START");
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         groups = new Groups();
         document = new Document();

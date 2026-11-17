@@ -2,6 +2,9 @@ package datawave.ingest.mapreduce.job.reduce;
 
 import static datawave.ingest.mapreduce.job.TableConfigurationUtil.ITERATOR_CLASS_MARKER;
 import static datawave.ingest.mapreduce.job.TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,9 +20,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import com.google.common.collect.ImmutableSet;
@@ -41,7 +43,7 @@ public class AggregatingReducerTest {
 
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         columnMap = new HashMap();
         optMap = new HashMap();
@@ -74,10 +76,10 @@ public class AggregatingReducerTest {
         setupOptMap();
         columnToClassMapping = new CustomColumnToClassMapping(1, optMap);
 
-        Assert.assertEquals("testCombiner1", this.columnToClassMapping.getObject(new Key("", "fam1", "qual1")).toString());
-        Assert.assertEquals("testCombiner2", this.columnToClassMapping.getObject(new Key("", "fam2", "qual2")).toString());
-        Assert.assertEquals("testCombiner3", this.columnToClassMapping.getObject(new Key("", "fam3")).toString());
-        Assert.assertEquals("testCombiner2", this.columnToClassMapping.getObject(new Key("", "fam2")).toString());
+        assertEquals("testCombiner1", this.columnToClassMapping.getObject(new Key("", "fam1", "qual1")).toString());
+        assertEquals("testCombiner2", this.columnToClassMapping.getObject(new Key("", "fam2", "qual2")).toString());
+        assertEquals("testCombiner3", this.columnToClassMapping.getObject(new Key("", "fam3")).toString());
+        assertEquals("testCombiner2", this.columnToClassMapping.getObject(new Key("", "fam2")).toString());
     }
 
     @Test
@@ -88,16 +90,15 @@ public class AggregatingReducerTest {
         CustomColumnToClassMapping columnToClassMapping2 = new CustomColumnToClassMapping(2, optMap);
         CustomColumnToClassMapping columnToClassMapping3 = new CustomColumnToClassMapping(1, optMap);
 
-        Assert.assertEquals(-1L, (long) columnToClassMapping1.compareTo(columnToClassMapping2));
-        Assert.assertEquals(1L, (long) columnToClassMapping2.compareTo(columnToClassMapping1));
-        Assert.assertEquals(0L, (long) columnToClassMapping1.compareTo(columnToClassMapping3));
+        assertEquals(-1L, (long) columnToClassMapping1.compareTo(columnToClassMapping2));
+        assertEquals(1L, (long) columnToClassMapping2.compareTo(columnToClassMapping1));
+        assertEquals(0L, (long) columnToClassMapping1.compareTo(columnToClassMapping3));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testColumnToClassMappingOptMapInstantiationException() {
         optMap.put("fam4", "testCombiner4");
-        this.columnToClassMapping = new CustomColumnToClassMapping(1, optMap);
-        this.columnToClassMapping.getObject(new Key("", "fam2"));
+        assertThrows(RuntimeException.class, () -> new CustomColumnToClassMapping(1, optMap));
     }
 
     @Test
@@ -107,9 +108,9 @@ public class AggregatingReducerTest {
 
         columnToClassMapping = new CustomColumnToClassMapping(columnMap, 1);
 
-        Assert.assertEquals("testCombiner", this.columnToClassMapping.getObject(new Key("", "fam1", "qual1")).toString());
-        Assert.assertEquals("testCombiner1", this.columnToClassMapping.getObject(new Key("", "fam3")).toString());
-        Assert.assertEquals("testCombiner2", this.columnToClassMapping.getObject(new Key("", "fam2")).toString());
+        assertEquals("testCombiner", this.columnToClassMapping.getObject(new Key("", "fam1", "qual1")).toString());
+        assertEquals("testCombiner1", this.columnToClassMapping.getObject(new Key("", "fam3")).toString());
+        assertEquals("testCombiner2", this.columnToClassMapping.getObject(new Key("", "fam2")).toString());
     }
 
     @Test
@@ -120,17 +121,16 @@ public class AggregatingReducerTest {
         CustomColumnToClassMapping columnToClassMapping2 = new CustomColumnToClassMapping(columnMap, 2);
         CustomColumnToClassMapping columnToClassMapping3 = new CustomColumnToClassMapping(columnMap, 1);
 
-        Assert.assertEquals(-1L, (long) columnToClassMapping1.compareTo(columnToClassMapping2));
-        Assert.assertEquals(1L, (long) columnToClassMapping2.compareTo(columnToClassMapping1));
-        Assert.assertEquals(0L, (long) columnToClassMapping1.compareTo(columnToClassMapping3));
+        assertEquals(-1L, (long) columnToClassMapping1.compareTo(columnToClassMapping2));
+        assertEquals(1L, (long) columnToClassMapping2.compareTo(columnToClassMapping1));
+        assertEquals(0L, (long) columnToClassMapping1.compareTo(columnToClassMapping3));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testColumnToClassMappingColMapInstantiationException() {
         optMap.put("fam4", "testCombiner4");
         columnMap.put("fam3", Maps.immutableEntry(optMap, AggregatingReducerTest.testCombiner1.class.getName()));
-        columnToClassMapping = new CustomColumnToClassMapping(columnMap, 1);
-        columnToClassMapping.getObject(new Key("", "fam2"));
+        assertThrows(IllegalArgumentException.class, () -> new CustomColumnToClassMapping(columnMap, 1));
     }
 
     @Test
@@ -193,7 +193,7 @@ public class AggregatingReducerTest {
         this.assertCombineList(new String[] {"testCombiner3", "testCombiner2"}, aggregatingReducer, new Text("table1"), new Key("", "fam5", "qual3"));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testConfigureCombinersMissingIterClazzSetting() throws Exception {
         Map<Integer,Map<String,String>> table1CombinerMap = new HashMap<>();
         optMap = new HashMap<>();
@@ -208,10 +208,10 @@ public class AggregatingReducerTest {
 
         AggregatingReducerTest.TestAggregatingReducer aggregatingReducer = new AggregatingReducerTest.TestAggregatingReducer();
         aggregatingReducer.tcu = tcu;
-        aggregatingReducer.configureCombiners(conf);
+        assertThrows(RuntimeException.class, () -> aggregatingReducer.configureCombiners(conf));
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testConfigureCombinersInstantiationError() throws Exception {
         Map<Integer,Map<String,String>> table1CombinerMap = new HashMap<>();
         optMap = new HashMap<>();
@@ -224,7 +224,7 @@ public class AggregatingReducerTest {
 
         AggregatingReducerTest.TestAggregatingReducer aggregatingReducer = new AggregatingReducerTest.TestAggregatingReducer();
         aggregatingReducer.tcu = tcu;
-        aggregatingReducer.configureCombiners(conf);
+        assertThrows(RuntimeException.class, () -> aggregatingReducer.configureCombiners(conf));
     }
 
     private void assertCombineList(String[] expected, AggregatingReducerTest.TestAggregatingReducer aggregatingReducer, Text table, Key key) {
@@ -232,7 +232,7 @@ public class AggregatingReducerTest {
         List<String> actual = new ArrayList();
 
         combiners.forEach(combiner -> actual.add(combiner.toString()));
-        Assert.assertArrayEquals(expected, actual.toArray());
+        assertArrayEquals(expected, actual.toArray());
     }
 
     private class TestAggregatingReducer extends AggregatingReducer<String,String,String,String> {}

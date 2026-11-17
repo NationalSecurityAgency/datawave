@@ -3,13 +3,13 @@ package datawave.query.jexl.visitors;
 import static java.util.Collections.emptyList;
 
 import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.Parser;
 import org.apache.commons.jexl3.parser.StringProvider;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.edge.model.DefaultEdgeModelFieldsFactory;
 import datawave.query.tables.edge.EdgeQueryLogic;
@@ -21,7 +21,7 @@ public class EdgeTableRangeBuildingVisitorTest {
 
     private EdgeTableRangeBuildingVisitor visitor;
 
-    @Before
+    @BeforeEach
     public void setup() {
         parser = new Parser(new StringProvider(";"));
 

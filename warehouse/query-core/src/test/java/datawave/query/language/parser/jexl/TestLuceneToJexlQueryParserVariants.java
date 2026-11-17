@@ -1,10 +1,10 @@
 package datawave.query.language.parser.jexl;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.lucene.analysis.CharArraySet;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -18,7 +18,7 @@ import datawave.query.language.tree.ServerHeadNode;
 public class TestLuceneToJexlQueryParserVariants {
     private LuceneToJexlQueryParser parser;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         CharArraySet stopwords = new CharArraySet(1, true);
         stopwords.add("STOP");

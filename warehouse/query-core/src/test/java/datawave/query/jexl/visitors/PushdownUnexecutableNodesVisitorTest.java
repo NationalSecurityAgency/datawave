@@ -1,8 +1,10 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.stream.Stream;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -10,25 +12,22 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MetadataHelper;
 
-@RunWith(Parameterized.class)
 public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
 
-    @Parameterized.Parameters(name = "{0}")
-    public static Collection testCases() {
+    public static Stream<Arguments> testCases() {
         // @formatter:off
-        return Arrays.asList(new Object[][] {
+        return Arrays.stream(new Object[][] {
             // executable against the global index
             // executable against the field index after adding a delay
             {
@@ -204,38 +203,16 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                 ExecutableDeterminationVisitor.STATE.EXECUTABLE,
                 "INDEXED_FIELD == 'a' && (INDEXED_FIELD == 'b' || (!(INDEX_ONLY_FIELD == 'd') && !(EVENT_FIELD == 'c')))",
             },
-        });
+        }).map(Arguments::of);
         // @formatter:on
     }
-
-    // for parameterized set
-    private String baseQuery;
-    private ExecutableDeterminationVisitor.STATE expectedPreGlobalState;
-    private ExecutableDeterminationVisitor.STATE expectedPostGlobalState;
-    private String expectedGlobalIndexPushdown;
-    private ExecutableDeterminationVisitor.STATE expectedPreFieldState;
-    private ExecutableDeterminationVisitor.STATE expectedPostFieldState;
-    private String expectedFieldIndexPushdown;
 
     // internal
     private HashSet<String> indexedFields;
     private HashSet<String> indexOnlyFields;
     private HashSet<String> nonEventFields;
 
-    public PushdownUnexecutableNodesVisitorTest(String testName, String baseQuery, ExecutableDeterminationVisitor.STATE expectedPreGlobalState,
-                    ExecutableDeterminationVisitor.STATE expectedPostGlobalState, String expectedGlobalIndexPushdown,
-                    ExecutableDeterminationVisitor.STATE expectedPreFieldState, ExecutableDeterminationVisitor.STATE expectedPostFieldState,
-                    String expectedFieldIndexPushdown) {
-        this.baseQuery = baseQuery;
-        this.expectedPreGlobalState = expectedPreGlobalState;
-        this.expectedPostGlobalState = expectedPostGlobalState;
-        this.expectedGlobalIndexPushdown = expectedGlobalIndexPushdown;
-        this.expectedPreFieldState = expectedPreFieldState;
-        this.expectedPostFieldState = expectedPostFieldState;
-        this.expectedFieldIndexPushdown = expectedFieldIndexPushdown;
-    }
-
-    @Before
+    @BeforeEach
     public void setup() throws TableNotFoundException {
         config = createMock(ShardQueryConfiguration.class);
         helper = createMock(MetadataHelper.class);
@@ -259,32 +236,40 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
         EasyMock.expect(helper.getNonEventFields(null)).andReturn(nonEventFields).anyTimes();
     }
 
-    @Test
-    public void testGlobalIndex() throws ParseException {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("testCases")
+    public void testGlobalIndex(String testName, String baseQuery, ExecutableDeterminationVisitor.STATE expectedPreGlobalState,
+                    ExecutableDeterminationVisitor.STATE expectedPostGlobalState, String expectedGlobalIndexPushdown,
+                    ExecutableDeterminationVisitor.STATE expectedPreFieldState, ExecutableDeterminationVisitor.STATE expectedPostFieldState,
+                    String expectedFieldIndexPushdown) throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery(baseQuery);
 
         replayAll();
 
         // global index
-        Assert.assertEquals(expectedPreGlobalState, ExecutableDeterminationVisitor.getState(query, config, helper, false));
+        assertEquals(expectedPreGlobalState, ExecutableDeterminationVisitor.getState(query, config, helper, false));
         JexlNode result = PushdownUnexecutableNodesVisitor.pushdownPredicates(query, false, config, indexedFields, indexOnlyFields, nonEventFields, helper);
-        Assert.assertEquals(expectedGlobalIndexPushdown, JexlStringBuildingVisitor.buildQuery(result));
-        Assert.assertEquals(expectedPostGlobalState, ExecutableDeterminationVisitor.getState(result, config, helper, false));
+        assertEquals(expectedGlobalIndexPushdown, JexlStringBuildingVisitor.buildQuery(result));
+        assertEquals(expectedPostGlobalState, ExecutableDeterminationVisitor.getState(result, config, helper, false));
 
         verifyAll();
     }
 
-    @Test
-    public void testFieldIndex() throws ParseException {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("testCases")
+    public void testFieldIndex(String testName, String baseQuery, ExecutableDeterminationVisitor.STATE expectedPreGlobalState,
+                    ExecutableDeterminationVisitor.STATE expectedPostGlobalState, String expectedGlobalIndexPushdown,
+                    ExecutableDeterminationVisitor.STATE expectedPreFieldState, ExecutableDeterminationVisitor.STATE expectedPostFieldState,
+                    String expectedFieldIndexPushdown) throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery(baseQuery);
 
         replayAll();
 
         // field index
-        Assert.assertEquals(expectedPreFieldState, ExecutableDeterminationVisitor.getState(query, config, helper, true));
+        assertEquals(expectedPreFieldState, ExecutableDeterminationVisitor.getState(query, config, helper, true));
         JexlNode result = PushdownUnexecutableNodesVisitor.pushdownPredicates(query, true, config, indexedFields, indexOnlyFields, nonEventFields, helper);
-        Assert.assertEquals(expectedFieldIndexPushdown, JexlStringBuildingVisitor.buildQuery(result));
-        Assert.assertEquals(expectedPostFieldState, ExecutableDeterminationVisitor.getState(result, config, helper, true));
+        assertEquals(expectedFieldIndexPushdown, JexlStringBuildingVisitor.buildQuery(result));
+        assertEquals(expectedPostFieldState, ExecutableDeterminationVisitor.getState(result, config, helper, true));
 
         verifyAll();
     }

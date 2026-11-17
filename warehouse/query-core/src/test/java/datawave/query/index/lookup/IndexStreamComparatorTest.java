@@ -4,9 +4,9 @@ import static datawave.query.index.lookup.IndexStream.StreamContext;
 import static datawave.query.index.lookup.IndexStream.StreamContext.ABSENT;
 import static datawave.query.index.lookup.IndexStream.StreamContext.DELAYED;
 import static datawave.query.index.lookup.IndexStream.StreamContext.PRESENT;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
@@ -112,10 +112,10 @@ public class IndexStreamComparatorTest {
             Iterator<IndexStream> iter = map.get(key).iterator();
 
             for (BaseIndexStream stream : streams) {
-                assertTrue("input streams had next, but intersection did not", iter.hasNext());
+                assertTrue(iter.hasNext(), "input streams had next, but intersection did not");
                 IndexStream is = iter.next();
-                assertEquals("IndexStream class did not match", is.getClass(), stream.getClass());
-                assertEquals("IndexStream context did not match", is.context(), stream.context());
+                assertEquals(is.getClass(), stream.getClass(), "IndexStream class did not match");
+                assertEquals(is.context(), stream.context(), "IndexStream context did not match");
             }
 
             assertFalse(iter.hasNext());

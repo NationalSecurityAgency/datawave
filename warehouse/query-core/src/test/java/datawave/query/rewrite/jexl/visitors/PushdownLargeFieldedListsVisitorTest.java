@@ -1,6 +1,6 @@
 package datawave.query.rewrite.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,8 +13,8 @@ import java.util.Collections;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -28,7 +28,7 @@ import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 public class PushdownLargeFieldedListsVisitorTest {
     protected ShardQueryConfiguration conf = null;
 
-    @Before
+    @BeforeEach
     public void setupConfiguration() {
         conf = new ShardQueryConfiguration();
         conf.setMaxOrExpansionThreshold(3);
@@ -108,7 +108,7 @@ public class PushdownLargeFieldedListsVisitorTest {
     private void testSimple(String query, String expected, ShardQueryConfiguration config) throws Throwable {
         String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(config,
                         TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), null, null));
-        assertEquals("EXPECTED: " + expected + "\nACTUAL: " + rewritten, expected, rewritten);
+        assertEquals(expected, rewritten, "EXPECTED: " + expected + "\nACTUAL: " + rewritten);
     }
 
     private void testSingleId(String query, String left, String right) throws Throwable {

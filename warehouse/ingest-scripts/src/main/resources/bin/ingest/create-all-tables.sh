@@ -43,7 +43,7 @@ done
 export HADOOP_CLASSPATH=$CLASSPATH
 export HADOOP_OPTS="-Dfile.encoding=UTF8 -Duser.timezone=GMT $HADOOP_INGEST_OPTS"
 
-echo "$INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.TableCreator -user $USERNAME -pass $PASSWORD -instance $WAREHOUSE_INSTANCE_NAME -zookeepers $WAREHOUSE_ZOOKEEPERS ${INGEST_CONFIG[@]} $EXTRA_OPTS"
+echo "$INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.TableCreator -user $USERNAME -pass REDACTED -instance $WAREHOUSE_INSTANCE_NAME -zookeepers $WAREHOUSE_ZOOKEEPERS ${INGEST_CONFIG[@]} $EXTRA_OPTS"
 $INGEST_HADOOP_HOME/bin/hadoop jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.TableCreator -user $USERNAME -pass $PASSWORD -instance $WAREHOUSE_INSTANCE_NAME -zookeepers $WAREHOUSE_ZOOKEEPERS ${INGEST_CONFIG[@]} $EXTRA_OPTS
 
 RETURN_CODE=$?

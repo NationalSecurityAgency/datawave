@@ -3,9 +3,9 @@ package datawave.query.tables.ssdeep;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,8 +16,8 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.easymock.Capture;
 import org.easymock.EasyMockSupport;
 import org.glassfish.jersey.internal.guava.Iterators;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.core.query.logic.QueryLogic;
 import datawave.microservice.query.Query;
@@ -32,7 +32,7 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
 
     private Query settings;
 
-    @Before
+    @BeforeEach
     public void setup() {
         mockAccumulo = createMock(AccumuloClient.class);
         mockLogic = createMock(QueryLogic.class);

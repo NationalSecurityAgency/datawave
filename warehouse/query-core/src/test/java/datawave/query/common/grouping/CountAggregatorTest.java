@@ -1,10 +1,10 @@
 package datawave.query.common.grouping;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.attributes.Content;
 
@@ -16,7 +16,7 @@ public class CountAggregatorTest {
     private final Content value = new Content("i am content", new Key(), true);
     private CountAggregator aggregator;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         aggregator = new CountAggregator("FIELD");
     }

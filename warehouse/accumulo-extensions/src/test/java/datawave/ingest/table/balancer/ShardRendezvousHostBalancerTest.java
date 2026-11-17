@@ -1,9 +1,9 @@
 package datawave.ingest.table.balancer;
 
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -39,8 +39,8 @@ import org.apache.accumulo.core.spi.balancer.data.TabletStatistics;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.hadoop.io.Text;
 import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Preconditions;
 
@@ -64,7 +64,7 @@ public class ShardRendezvousHostBalancerTest {
             for (Map.Entry<TabletId,TabletServerId> entry : assignments.entrySet()) {
                 TabletId extentToAssign = entry.getKey();
                 TabletServerId assignedServer = entry.getValue();
-                assertTrue("Assignments list has server instance " + entry.getValue() + " that isn't in our servers list.", tservers.contains(assignedServer));
+                assertTrue(tservers.contains(assignedServer), "Assignments list has server instance " + entry.getValue() + " that isn't in our servers list.");
                 tabletLocs.put(extentToAssign, assignedServer);
             }
         }
@@ -122,7 +122,7 @@ public class ShardRendezvousHostBalancerTest {
     private final Map<TabletId,TabletServerId> aout = new HashMap<>();
     private final List<TabletMigration> migrations = new ArrayList<>();
 
-    @Before
+    @BeforeEach
     public void setup() {
 
         tablets.clear();

@@ -1,12 +1,13 @@
 package datawave.ingest.mapreduce.partition;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.lang.reflect.InvocationTargetException;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 
@@ -24,7 +25,7 @@ public class RowHashingPartitionerTest {
             String shard = "20110101_" + i;
             int expectedReducer = sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, "fluff", "fluff")), null, nRed);
             for (int j = 0; j < 10; ++j) {
-                Assert.assertEquals(expectedReducer, sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, Integer.toHexString(j), "u")), null, nRed));
+                assertEquals(expectedReducer, sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, Integer.toHexString(j), "u")), null, nRed));
             }
         }
     }
@@ -48,7 +49,7 @@ public class RowHashingPartitionerTest {
             String shard = "20110101_" + i;
             int expectedReducer = sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, "tf", "fluff")), null, nRed);
             for (int j = 0; j < 2; ++j) {
-                Assert.assertEquals(expectedReducer, sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, "tf", Integer.toHexString(j))), null, nRed));
+                assertEquals(expectedReducer, sdp.getPartition(new BulkIngestKey(tbl, new Key(shard, "tf", Integer.toHexString(j))), null, nRed));
             }
         }
     }
@@ -84,10 +85,11 @@ public class RowHashingPartitionerTest {
             int expectedReducerCity = partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "CITY", "fluff")), null, nRed);
             int expectedReducerState = partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "STATE", "fluff")), null, nRed);
             for (int j = 0; j < 2; ++j) {
-                Assert.assertEquals(" failed on row " + shard + " column family CITY", expectedReducerCity,
-                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "CITY", Integer.toHexString(j))), null, nRed));
-                Assert.assertEquals(" failed on row " + shard + " column family STATE", expectedReducerState,
-                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "STATE", Integer.toHexString(j))), null, nRed));
+                assertEquals(expectedReducerCity, partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "CITY", Integer.toHexString(j))), null, nRed),
+                                " failed on row " + shard + " column family CITY");
+                assertEquals(expectedReducerState,
+                                partitioner.getPartition(new BulkIngestKey(tbl, new Key(shard, "STATE", Integer.toHexString(j))), null, nRed),
+                                " failed on row " + shard + " column family STATE");
             }
         }
     }

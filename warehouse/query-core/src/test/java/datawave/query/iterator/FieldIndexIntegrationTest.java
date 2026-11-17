@@ -1,8 +1,8 @@
 package datawave.query.iterator;
 
 import static datawave.table.constants.TableName.SHARD;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,8 +23,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
@@ -149,7 +149,7 @@ public class FieldIndexIntegrationTest {
 
     private final AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws Exception {
         client = new InMemoryAccumuloClient("", new InMemoryInstance());
         client.tableOperations().create(SHARD);

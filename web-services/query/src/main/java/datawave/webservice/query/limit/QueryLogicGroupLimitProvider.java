@@ -113,10 +113,12 @@ public class QueryLogicGroupLimitProvider {
     }
 
     /**
-     * Return a set of {@link QueryLogicGroupLimit} that represent a set of overridden group limits.
+     * Return a set of {@link QueryLogicGroupLimit} that represent a set of overridden group limits. The keys of groupOverrides may be regex patterns that are
+     * exact matches, partial matches, or wildcard matches against the configured groups for this provider. The returned group limit set will reflect the 'best'
+     * limit for each group. The best limit is determined first by matcher type (EXACT, then PARTIAL, then ALL), then by lowest query limit.
      *
      * @param groupOverrides
-     *            a map of groups to their overridden limits
+     *            a map of group name regex patterns to overridden limits
      * @param includeNonOverriddenGroups
      *            if true, include any default group limits that were not overridden in the returned set
      * @return the constructed overrides
@@ -181,6 +183,11 @@ public class QueryLogicGroupLimitProvider {
             // Then sort by the query limit from lowest to highest.
             if (comparison == 0) {
                 comparison = Integer.compare(limit, o.limit);
+            }
+
+            // Finally, compare on the equality of the matchers to ensure the underlying group pattern is compared.
+            if (comparison == 0) {
+                comparison = matcher.equals(o.matcher) ? 0 : 1;
             }
 
             return comparison;

@@ -1,11 +1,13 @@
 package datawave.security.authorization.remote;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Test;
-import org.wildfly.common.Assert;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 
@@ -73,10 +75,10 @@ public class ConditionalRemoteUserOperationsTest {
 
         testOperations.invoked = false;
         testObj.listEffectiveAuthorizations(principal);
-        Assert.assertTrue(testOperations.invoked);
+        assertTrue(testOperations.invoked);
         testOperations.invoked = false;
         testObj.flushCachedCredentials(principal);
-        Assert.assertTrue(testOperations.invoked);
+        assertTrue(testOperations.invoked);
         testOperations.invoked = false;
 
         users.add(new DatawaveUser(SubjectIssuerDNPair.of("userdn", "issuerdn"), DatawaveUser.UserType.SERVER, Arrays.asList(new String[] {"auth2", "auth3"}),
@@ -84,9 +86,9 @@ public class ConditionalRemoteUserOperationsTest {
         principal = new DatawavePrincipal(users, System.currentTimeMillis());
 
         testObj.listEffectiveAuthorizations(principal);
-        Assert.assertFalse(testOperations.invoked);
+        assertFalse(testOperations.invoked);
         testObj.flushCachedCredentials(principal);
-        Assert.assertFalse(testOperations.invoked);
+        assertFalse(testOperations.invoked);
     }
 
     public static class MockResponseObjectFactory extends ResponseObjectFactory {

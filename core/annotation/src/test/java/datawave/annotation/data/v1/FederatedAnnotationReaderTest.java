@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -802,11 +803,14 @@ public class FederatedAnnotationReaderTest {
     @Nested
     @DisplayName("Async timeout behavior tests")
     class AsyncTimeoutTests {
+        // Allow a fast DAO to be scheduled even when the build worker is busy.
+        private static final long DAO_TIMEOUT_MILLIS = 1_000;
 
         @Test
         @DisplayName("Should skip slow DAO results that exceed timeout")
         void testSlowDaoTimesOut() {
             ExecutorService executor = Executors.newFixedThreadPool(3);
+            CountDownLatch releaseSlowDao = new CountDownLatch(1);
             try {
                 Map<String,AnnotationReader> localDaos = new HashMap<>();
                 AnnotationReader slowDao = mock(AnnotationReader.class);
@@ -817,7 +821,7 @@ public class FederatedAnnotationReaderTest {
 
                 when(slowDao.getAnnotationSource(analyticHash)).thenAnswer(invocation -> {
                     try {
-                        Thread.sleep(200);
+                        releaseSlowDao.await();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
@@ -828,12 +832,65 @@ public class FederatedAnnotationReaderTest {
                 localDaos.put("slow", slowDao);
                 localDaos.put("fast", fastDao);
 
-                FederatedAnnotationReader timeoutReader = new FederatedAnnotationReader(localDaos, executor, 25);
+                FederatedAnnotationReader timeoutReader = new FederatedAnnotationReader(localDaos, executor, DAO_TIMEOUT_MILLIS);
                 Optional<AnnotationSource> result = timeoutReader.getAnnotationSource(analyticHash);
 
                 assertTrue(result.isPresent());
                 assertEquals(fastSource, result.get());
             } finally {
+                releaseSlowDao.countDown();
+                executor.shutdownNow();
+                try {
+                    executor.awaitTermination(1, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
+        /**
+         * Regression test: previously, a DAO call that was still running when the per-call deadline elapsed was merely abandoned (logged as timed out) but
+         * never actually cancelled/interrupted. With the caller's real executor typically being an unbounded cached thread pool, a DAO implementation that
+         * blocks indefinitely (e.g. a hung backend call) would permanently occupy a pooled thread forever, since it never becomes idle and so is never
+         * reclaimed. Verifies that a blocked DAO call is actually interrupted shortly after the timeout elapses, rather than left to run indefinitely.
+         */
+        @Test
+        @DisplayName("Should interrupt a DAO call that is still blocked when the timeout elapses")
+        void testTimedOutDaoCallIsCancelled() throws InterruptedException {
+            ExecutorService executor = Executors.newFixedThreadPool(2);
+            CountDownLatch interrupted = new CountDownLatch(1);
+            CountDownLatch releaseHungDao = new CountDownLatch(1);
+            try {
+                Map<String,AnnotationReader> localDaos = new HashMap<>();
+                AnnotationReader hungDao = mock(AnnotationReader.class);
+                AnnotationReader fastDao = mock(AnnotationReader.class);
+
+                String analyticHash = "hash-cancel";
+                AnnotationSource fastSource = createTestAnnotationSource("fast-engine", "fast-model");
+
+                when(hungDao.getAnnotationSource(analyticHash)).thenAnswer(invocation -> {
+                    try {
+                        releaseHungDao.await();
+                    } catch (InterruptedException e) {
+                        interrupted.countDown();
+                        Thread.currentThread().interrupt();
+                    }
+                    return Optional.empty();
+                });
+                when(fastDao.getAnnotationSource(analyticHash)).thenReturn(Optional.of(fastSource));
+
+                localDaos.put("hung", hungDao);
+                localDaos.put("fast", fastDao);
+
+                FederatedAnnotationReader timeoutReader = new FederatedAnnotationReader(localDaos, executor, DAO_TIMEOUT_MILLIS);
+                Optional<AnnotationSource> result = timeoutReader.getAnnotationSource(analyticHash);
+
+                assertTrue(result.isPresent());
+                assertEquals(fastSource, result.get());
+                // The blocked DAO must be interrupted before the test releases it.
+                assertTrue(interrupted.await(2, TimeUnit.SECONDS), "expected the timed-out DAO call to be cancelled/interrupted");
+            } finally {
+                releaseHungDao.countDown();
                 executor.shutdownNow();
                 try {
                     executor.awaitTermination(1, TimeUnit.SECONDS);

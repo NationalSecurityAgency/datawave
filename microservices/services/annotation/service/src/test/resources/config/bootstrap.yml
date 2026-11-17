@@ -1,0 +1,27 @@
+spring:
+  cloud:
+    bus:
+      enabled: true
+    consul:
+      enabled: false
+    config:
+      enabled: false
+      discovery:
+        enabled: false
+  main:
+    banner-mode: "OFF"
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: "*"
+      status:
+        order: DOWN, OUT_OF_SERVICE, RABBITMQ_UNHEALTHY, UP, UNKNOWN
+        http-mapping:
+          DOWN: 503
+          OUT_OF_SERVICE: 503
+          RABBITMQ_UNHEALTHY: 503

@@ -1,5 +1,10 @@
 package datawave.ingest.json.config.helper;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.File;
 import java.net.URL;
 import java.util.Date;
@@ -11,9 +16,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Multimap;
 
@@ -29,7 +33,7 @@ public class JsonIngestHelperTest {
 
     protected static byte[] testRecord;
 
-    @BeforeClass
+    @BeforeAll
     public static void createTestRecord() {
         StringBuilder sb = new StringBuilder();
         sb.append("{").append(" \"HEADER_DATE\" : \"2017-01-01T01:00:00Z\", ").append(" \"HEADER_ID\" : \"ID00000000001\", ")
@@ -46,7 +50,7 @@ public class JsonIngestHelperTest {
     @Test
     public void testSetup() throws Exception {
         JsonIngestHelper ingestHelper = init(initConfig(FlattenMode.NORMAL));
-        Assert.assertNotNull(ingestHelper.getEmbeddedHelper());
+        assertNotNull(ingestHelper.getEmbeddedHelper());
     }
 
     @Test
@@ -57,17 +61,17 @@ public class JsonIngestHelperTest {
         event.setTimestamp((new Date()).getTime());
         event.setRawData(testRecord);
         event.generateId(null);
-        Assert.assertNotNull(ingestHelper.getEmbeddedHelper());
+        assertNotNull(ingestHelper.getEmbeddedHelper());
 
         Multimap<String,NormalizedContentInterface> fieldMap = ingestHelper.getEventFields(event);
 
-        Assert.assertEquals(12, fieldMap.keySet().size());
-        Assert.assertEquals(16, fieldMap.values().size());
-        Assert.assertTrue(fieldMap.containsKey("EXTRATEXT_NESTED"));
-        Assert.assertEquals("Extra text 4, nested", fieldMap.get("EXTRATEXT_NESTED").iterator().next().getEventFieldValue());
+        assertEquals(12, fieldMap.keySet().size());
+        assertEquals(16, fieldMap.values().size());
+        assertTrue(fieldMap.containsKey("EXTRATEXT_NESTED"));
+        assertEquals("Extra text 4, nested", fieldMap.get("EXTRATEXT_NESTED").iterator().next().getEventFieldValue());
 
         for (NormalizedContentInterface field : fieldMap.values()) {
-            Assert.assertFalse(((NormalizedFieldAndValue) field).isGrouped());
+            assertFalse(((NormalizedFieldAndValue) field).isGrouped());
         }
     }
 
@@ -79,17 +83,17 @@ public class JsonIngestHelperTest {
         event.setTimestamp((new Date()).getTime());
         event.setRawData(testRecord);
         event.generateId(null);
-        Assert.assertNotNull(ingestHelper.getEmbeddedHelper());
+        assertNotNull(ingestHelper.getEmbeddedHelper());
 
         Multimap<String,NormalizedContentInterface> fieldMap = ingestHelper.getEventFields(event);
 
-        Assert.assertEquals(11, fieldMap.keySet().size());
-        Assert.assertEquals(15, fieldMap.values().size());
-        Assert.assertTrue(fieldMap.containsKey("EXTRA_TEXT"));
-        Assert.assertFalse(fieldMap.containsKey("NESTED") || fieldMap.containsKey("EXTRA_TEXT_3_NESTED"));
+        assertEquals(11, fieldMap.keySet().size());
+        assertEquals(15, fieldMap.values().size());
+        assertTrue(fieldMap.containsKey("EXTRA_TEXT"));
+        assertFalse(fieldMap.containsKey("NESTED") || fieldMap.containsKey("EXTRA_TEXT_3_NESTED"));
 
         for (NormalizedContentInterface field : fieldMap.values()) {
-            Assert.assertFalse(((NormalizedFieldAndValue) field).isGrouped());
+            assertFalse(((NormalizedFieldAndValue) field).isGrouped());
         }
     }
 
@@ -101,21 +105,21 @@ public class JsonIngestHelperTest {
         event.setTimestamp((new Date()).getTime());
         event.setRawData(testRecord);
         event.generateId(null);
-        Assert.assertNotNull(ingestHelper.getEmbeddedHelper());
+        assertNotNull(ingestHelper.getEmbeddedHelper());
 
         Multimap<String,NormalizedContentInterface> fieldMap = ingestHelper.getEventFields(event);
 
-        Assert.assertEquals(12, fieldMap.keySet().size());
-        Assert.assertEquals(16, fieldMap.values().size());
-        Assert.assertTrue(fieldMap.containsKey("NESTED"));
-        Assert.assertFalse(fieldMap.containsKey("HEADER_DATE"));
-        Assert.assertTrue(fieldMap.containsKey("HEADERDATE"));
+        assertEquals(12, fieldMap.keySet().size());
+        assertEquals(16, fieldMap.values().size());
+        assertTrue(fieldMap.containsKey("NESTED"));
+        assertFalse(fieldMap.containsKey("HEADER_DATE"));
+        assertTrue(fieldMap.containsKey("HEADERDATE"));
 
         for (NormalizedContentInterface field : fieldMap.values()) {
             if (((NormalizedFieldAndValue) field).isGrouped()) {
-                Assert.assertEquals("NESTED", field.getIndexedFieldName());
+                assertEquals("NESTED", field.getIndexedFieldName());
             } else {
-                Assert.assertFalse(((NormalizedFieldAndValue) field).isGrouped());
+                assertFalse(((NormalizedFieldAndValue) field).isGrouped());
             }
         }
     }
@@ -134,47 +138,47 @@ public class JsonIngestHelperTest {
         JsonIngestHelper ingestHelper = init(conf);
 
         // Record 1
-        Assert.assertTrue(reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue());
         Multimap<String,NormalizedContentInterface> fieldMap = ingestHelper.getEventFields(reader.getEvent());
 
-        Assert.assertNotNull(reader.getEvent());
-        Assert.assertEquals(23, reader.getCurrentFields().keySet().size());
-        Assert.assertEquals(27, reader.getCurrentFields().values().size());
+        assertNotNull(reader.getEvent());
+        assertEquals(23, reader.getCurrentFields().keySet().size());
+        assertEquals(27, reader.getCurrentFields().values().size());
 
         // Record 2
-        Assert.assertTrue(reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue());
         fieldMap = ingestHelper.getEventFields(reader.getEvent());
 
-        Assert.assertNotNull(reader.getEvent());
-        Assert.assertEquals(27, reader.getCurrentFields().keySet().size());
-        Assert.assertEquals(29, reader.getCurrentFields().values().size());
+        assertNotNull(reader.getEvent());
+        assertEquals(27, reader.getCurrentFields().keySet().size());
+        assertEquals(29, reader.getCurrentFields().values().size());
 
         // Record 3
-        Assert.assertTrue(reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue());
         fieldMap = ingestHelper.getEventFields(reader.getEvent());
 
-        Assert.assertNotNull(reader.getEvent());
-        Assert.assertEquals(9, reader.getCurrentFields().keySet().size());
-        Assert.assertEquals(9, reader.getCurrentFields().values().size());
+        assertNotNull(reader.getEvent());
+        assertEquals(9, reader.getCurrentFields().keySet().size());
+        assertEquals(9, reader.getCurrentFields().values().size());
 
         // Record 4
-        Assert.assertTrue(reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue());
         fieldMap = ingestHelper.getEventFields(reader.getEvent());
 
-        Assert.assertNotNull(reader.getEvent());
-        Assert.assertEquals(10, reader.getCurrentFields().keySet().size());
-        Assert.assertEquals(14, reader.getCurrentFields().values().size());
+        assertNotNull(reader.getEvent());
+        assertEquals(10, reader.getCurrentFields().keySet().size());
+        assertEquals(14, reader.getCurrentFields().values().size());
 
         // Record 5
-        Assert.assertTrue(reader.nextKeyValue());
+        assertTrue(reader.nextKeyValue());
         fieldMap = ingestHelper.getEventFields(reader.getEvent());
 
-        Assert.assertNotNull(reader.getEvent());
-        Assert.assertEquals(10, reader.getCurrentFields().keySet().size());
-        Assert.assertEquals(11, reader.getCurrentFields().values().size());
+        assertNotNull(reader.getEvent());
+        assertEquals(10, reader.getCurrentFields().keySet().size());
+        assertEquals(11, reader.getCurrentFields().values().size());
 
         // EOF
-        Assert.assertFalse(reader.nextKeyValue());
+        assertFalse(reader.nextKeyValue());
 
         reader.close();
     }
@@ -210,7 +214,7 @@ public class JsonIngestHelperTest {
         File dataFile = null;
 
         URL data = JsonIngestHelperTest.class.getResource("/input/my.json");
-        Assert.assertNotNull(data);
+        assertNotNull(data);
 
         conf.set("myjson.data.process.extra.fields", String.valueOf(!parseHeaderOnly));
 

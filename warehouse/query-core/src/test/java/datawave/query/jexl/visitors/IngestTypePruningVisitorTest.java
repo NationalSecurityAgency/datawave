@@ -1,9 +1,9 @@
 package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.visitors.IngestTypeVisitor.IGNORED_TYPE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Collections;
 import java.util.Set;
@@ -11,10 +11,10 @@ import java.util.Set;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
 
@@ -30,7 +30,7 @@ public class IngestTypePruningVisitorTest {
     private static final TypeMetadata typeMetadata = new TypeMetadata();
     private final ASTValidator validator = new ASTValidator();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         typeMetadata.put("A", "ingestType1", LcType.class.getTypeName());
         typeMetadata.put("A", "ingestType2", LcType.class.getTypeName());
@@ -44,7 +44,7 @@ public class IngestTypePruningVisitorTest {
         typeMetadata.put("123", "ingestType1", LcType.class.getTypeName());
     }
 
-    @Before
+    @BeforeEach
     public void beforeEach() {
         validator.enableAll();
     }
@@ -607,7 +607,7 @@ public class IngestTypePruningVisitorTest {
         test(query, query, metadata);
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void testFilterFunctionExcludeExpandedIntoMutuallyExclusiveFields() {
         // there might be an exclude like #EXCLUDE(MODEL_FIELD, '.*.*')
@@ -882,7 +882,7 @@ public class IngestTypePruningVisitorTest {
             // we might be expecting nothing as a result
             if (expected == null) {
                 log.trace("expected null! " + JexlStringBuildingVisitor.buildQuery(pruned));
-                assertEquals("failed for query: " + query, 0, pruned.jjtGetNumChildren());
+                assertEquals(0, pruned.jjtGetNumChildren(), "failed for query: " + query);
                 return null;
             }
 
@@ -936,7 +936,7 @@ public class IngestTypePruningVisitorTest {
             // we might be expecting nothing as a result
             if (expected == null) {
                 log.trace("expected null! " + JexlStringBuildingVisitor.buildQuery(pruned));
-                assertEquals("failed for query: " + query, 0, pruned.jjtGetNumChildren());
+                assertEquals(0, pruned.jjtGetNumChildren(), "failed for query: " + query);
                 return null;
             }
 
@@ -962,6 +962,6 @@ public class IngestTypePruningVisitorTest {
 
     private void verifyEquality(ASTJexlScript script, ASTJexlScript expected) {
         TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expected, script);
-        assertTrue("Jexl tree comparison failed with reason: " + comparison.getReason(), comparison.isEqual());
+        assertTrue(comparison.isEqual(), "Jexl tree comparison failed with reason: " + comparison.getReason());
     }
 }

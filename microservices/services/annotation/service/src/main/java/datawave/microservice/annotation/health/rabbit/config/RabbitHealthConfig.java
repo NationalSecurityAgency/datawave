@@ -1,0 +1,80 @@
+package datawave.microservice.annotation.health.rabbit.config;
+
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import javax.annotation.Resource;
+
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.Trigger;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
+
+import datawave.microservice.annotation.health.HealthChecker;
+import datawave.microservice.annotation.health.rabbit.RabbitHealthChecker;
+
+/**
+ * Configuration for the RabbitMQ Health Checker. This configuration is activated via the 'annotation.health.rabbit.enabled' property.
+ */
+@Configuration
+@EnableScheduling
+@EnableConfigurationProperties(RabbitHealthProperties.class)
+@ConditionalOnProperty(name = "annotation.health.rabbit.enabled", havingValue = "true")
+public class RabbitHealthConfig implements SchedulingConfigurer {
+
+    @Autowired
+    RabbitHealthProperties rabbitHealthProperties;
+
+    @Resource(name = "rabbitConnectionFactory")
+    CachingConnectionFactory rabbitConnectionFactory;
+
+    @Bean
+    public HealthChecker healthChecker() {
+        try {
+            return new RabbitHealthChecker(rabbitHealthProperties, rabbitConnectionFactory);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to create rabbit health checker");
+        }
+    }
+
+    @Bean
+    public Runnable triggerTask() {
+        return () -> {
+            healthChecker().runHealthCheck();
+            healthChecker().recover();
+        };
+    }
+
+    @Bean
+    public Trigger trigger() {
+        return triggerContext -> {
+            Calendar nextExecutionTime = new GregorianCalendar();
+            Date lastActualExecutionTime = triggerContext.lastActualExecutionTime();
+            nextExecutionTime.setTime(lastActualExecutionTime != null ? lastActualExecutionTime : new Date());
+            nextExecutionTime.add(Calendar.MILLISECOND, Math.toIntExact(healthChecker().pollIntervalMillis()));
+            return nextExecutionTime.getTime();
+        };
+    }
+
+    // Named specifically (rather than the generic 'taskExecutor') so this small, dedicated poller pool isn't
+    // mistaken for -- or silently reused as -- the application's general-purpose async/scheduling executor.
+    @Bean(destroyMethod = "shutdown")
+    public Executor rabbitHealthTaskExecutor() {
+        return Executors.newScheduledThreadPool(2);
+    }
+
+    @Override
+    public void configureTasks(ScheduledTaskRegistrar taskRegistrar) {
+        taskRegistrar.setScheduler(rabbitHealthTaskExecutor());
+        taskRegistrar.addTriggerTask(triggerTask(), trigger());
+    }
+}

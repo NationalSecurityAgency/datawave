@@ -3,11 +3,11 @@ package datawave.query.data.parsers;
 import static datawave.query.data.parsers.DatawaveKey.KeyType.EVENT;
 import static datawave.query.data.parsers.DatawaveKey.KeyType.INDEX_EVENT;
 import static datawave.query.data.parsers.DatawaveKey.KeyType.TERM_OFFSETS;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.data.parsers.DatawaveKey.KeyType;
 

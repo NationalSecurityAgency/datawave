@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.io.IOException;
 import java.net.URL;
@@ -82,8 +82,8 @@ public class SortedTabletLocationPartitionerTest {
             String rowStr = Character.toString((char) ("a".codePointAt(0) + i));
             int resultRow = partitioner.getPartition(getBulkIngestKey(rowStr), new Value(), numPartitions);
 
-            assertEquals("These should have matched: resultRow: " + resultRow + " , resultForPrecedingRow: " + resultForPrecedingRow, resultRow,
-                            resultForPrecedingRow);
+            assertEquals(resultRow, resultForPrecedingRow,
+                            "These should have matched: resultRow: " + resultRow + " , resultForPrecedingRow: " + resultForPrecedingRow);
         }
     }
 

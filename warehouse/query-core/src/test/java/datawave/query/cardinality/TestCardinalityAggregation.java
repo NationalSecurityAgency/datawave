@@ -1,5 +1,7 @@
 package datawave.query.cardinality;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,8 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestCardinalityAggregation {
 
@@ -21,7 +22,7 @@ public class TestCardinalityAggregation {
         Map<String,List<String>> valueMap = new HashMap<>();
         List<String> results = cr.assembleValues("FIELD1", valueMap);
 
-        Assert.assertEquals(0, results.size());
+        assertEquals(0, results.size());
     }
 
     @Test
@@ -40,7 +41,7 @@ public class TestCardinalityAggregation {
         List<String> results = cr.assembleValues("FIELD1", valueMap);
 
         int expextedSize = list1.size();
-        Assert.assertEquals(expextedSize, results.size());
+        assertEquals(expextedSize, results.size());
     }
 
     @Test
@@ -65,7 +66,7 @@ public class TestCardinalityAggregation {
         List<String> results = cr.assembleValues("FIELD1|FIELD2", valueMap);
 
         int expextedSize = list1.size() * list2.size();
-        Assert.assertEquals(expextedSize, results.size());
+        assertEquals(expextedSize, results.size());
     }
 
     @Test
@@ -107,6 +108,6 @@ public class TestCardinalityAggregation {
         List<String> results = cr.assembleValues("FIELD1|FIELD2|FIELD3|FIELD4|FIELD5", valueMap);
 
         int expextedSize = list1.size() * list2.size() * list3.size() * list4.size() * list5.size();
-        Assert.assertEquals(expextedSize, results.size());
+        assertEquals(expextedSize, results.size());
     }
 }

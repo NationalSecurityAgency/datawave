@@ -1,9 +1,10 @@
 package datawave.query.language.parser.jexl;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -12,7 +13,7 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -81,10 +82,11 @@ public class JexlNodeSetTest {
         assertEquals(1, array.length);
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testToArray2() {
         JexlNodeSet nodeSet = new JexlNodeSet();
-        nodeSet.toArray(new Object[0]);
+        assertThrows(UnsupportedOperationException.class, () -> nodeSet.toArray(new Object[0]));
+
     }
 
     @Test
