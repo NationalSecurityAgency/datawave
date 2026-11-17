@@ -116,7 +116,7 @@ public class QueryCacheBeanTest {
         when(logic.isLongRunningQuery()).thenReturn(false);
         when(logic.getResultLimit(q)).thenReturn(-1L);
         when(logic.getMaxResults()).thenReturn(-1L);
-        when(logic.getUserOperations()).thenReturn(null);
+        when(logic.getUserOperations(q)).thenReturn(null);
 
         RunningQuery query = new RunningQuery(null, AccumuloConnectionFactory.Priority.HIGH, logic, q, null, null, new QueryMetricFactoryImpl());
         QueryCacheBean bean = new QueryCacheBean();

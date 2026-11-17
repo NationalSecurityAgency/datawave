@@ -247,8 +247,7 @@ public class ExtendedRunningQueryTest {
         when(this.genericConfiguration.getQueryString()).thenReturn(query);
         when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(maxResults);
-        this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
-        when(this.queryLogic.getUserOperations()).thenReturn(null);
+        when(this.queryLogic.getUserOperations(this.query)).thenReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
 
         RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
