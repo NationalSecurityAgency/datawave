@@ -1,10 +1,9 @@
 package datawave.core.common.logging;
 
 /**
- * A log wrapper designed to log buffered messages in chunked parts. Data is appended to the buffer via {@link #write(String)} and {@link #writeln(String)}if
- * the log level is enabled as indicated by {@link #isLogLevelEnabled()}. If the buffer length exceeds the configured maximum characters, the buffer is then
- * flushed to the log and then cleared. If a chunk prefix is configured, the flushed buffer will always be preceded with a line containing the chunk prefix and
- * an indication of the chunk number.
+ * A log wrapper designed to log buffered messages in chunked parts. Data is appended to the buffer via {@link #write(String)} if the log level is enabled as
+ * indicated by {@link #isLogLevelEnabled()}. If the buffer length exceeds the configured maximum characters, the buffer is flushed to the log and then cleared.
+ * If a chunk prefix is configured, the flushed buffer will always be preceded with a line containing the chunk prefix and an indication of the chunk number.
  */
 public abstract class ChunkedLogger {
 
