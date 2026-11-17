@@ -21,7 +21,7 @@ public class EmptyDocumentFilter implements Predicate<Entry<Key,Document>> {
 
     @Override
     public boolean apply(Entry<Key,Document> input) {
-        boolean nonempty = (input.getValue().size() > 0);
+        boolean nonempty = (!input.getValue().isEmpty() || input.getValue().hasTimingMetadata());
 
         if (log.isTraceEnabled())
             log.trace("Testing exclusion" + input.getValue());
