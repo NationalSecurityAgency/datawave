@@ -37,6 +37,47 @@ public final class PrintUtility {
     private static final Logger log = LoggerFactory.getLogger(PrintUtility.class);
 
     /**
+     * Prints the table depending on the table name:
+     * <ul>
+     * <li>{@value TableName#SHARD}: prints the table via {@link #printShardTable(AccumuloClient, Authorizations)}.</li>
+     * <li>{@value TableName#SHARD_INDEX}: prints the table via {@link #printShardIndexTable(AccumuloClient, Authorizations)}.</li>
+     * <li>{@value TableName#SHARD_RINDEX}: prints the table via {@link #printShardRIndexTable(AccumuloClient, Authorizations)}.</li>
+     * <li>{@value TableName#DATE_INDEX}: prints the table via {@link #printDateIndexTable(AccumuloClient, Authorizations)}.</li>
+     * <li>{@value TableName#METADATA}: prints the table via {@link #printMetadataTable(AccumuloClient, Authorizations)}.</li>
+     * </ul>
+     * All other tables will be printed via {@link #printSimpleTable(AccumuloClient, Authorizations, String)}.
+     *
+     * @param client
+     *            the accumulo client
+     * @param authorizations
+     *            the auths to use when scanning over the table
+     * @param tableName
+     *            the table name
+     */
+    public static void printTable(final AccumuloClient client, final Authorizations authorizations, final String tableName) throws TableNotFoundException {
+        switch (tableName) {
+            case TableName.SHARD:
+                printShardTable(client, authorizations);
+                break;
+            case TableName.SHARD_INDEX:
+                printShardIndexTable(client, authorizations);
+                break;
+            case TableName.SHARD_RINDEX:
+                printShardRIndexTable(client, authorizations);
+                break;
+            case TableName.DATE_INDEX:
+                printDateIndexTable(client, authorizations);
+                break;
+            case TableName.METADATA:
+                printMetadataTable(client, authorizations);
+                break;
+            default:
+                printSimpleTable(client, authorizations, tableName);
+
+        }
+    }
+
+    /**
      * Print the table {@value TableName#SHARD} as a shard table.
      *
      * @param client
@@ -57,7 +98,7 @@ public final class PrintUtility {
      * @param client
      *            the accumulo client
      * @param auths
-     *            sthe auths to use when scanning over the table
+     *            the auths to use when scanning over the table
      * @param tableName
      *            the table name
      * @throws TableNotFoundException
