@@ -51,12 +51,8 @@ import datawave.webservice.query.exception.QueryException;
 /**
  * A base test class to encapsulate everything needed to run query tests against an edge query logic.
  * <p>
- * This is the JUnit 5 form of the fixture. It is a copy of the deprecated JUnit 4 {@link BaseEdgeQueryTest} and differs only in the test framework it binds to:
- * one-time fixture setup is a JUnit 5 {@code @BeforeAll} rather than a JUnit 4 {@code @BeforeClass}, and assertions come from
- * {@code org.junit.jupiter.api.Assertions}. JUnit 5 does not honor JUnit 4 lifecycle annotations inherited from a superclass, so a test written against JUnit 5
- * must extend this class rather than {@link BaseEdgeQueryTest}.
- * <p>
- * New edge query tests should extend this class. {@link BaseEdgeQueryTest} remains only for subclasses that have not yet been migrated.
+ * One-time fixture setup uses JUnit 5 {@code @BeforeAll}, and assertions come from {@code org.junit.jupiter.api.Assertions}.
+ * New edge query tests should extend this class.
  */
 public abstract class BaseEdgeQueryTestJUnit5 {
 
