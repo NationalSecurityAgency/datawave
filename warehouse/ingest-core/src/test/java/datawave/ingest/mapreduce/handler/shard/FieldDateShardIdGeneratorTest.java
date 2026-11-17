@@ -1,11 +1,15 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Date;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -59,8 +63,8 @@ class FieldDateShardIdGeneratorTest {
          */
         @Test
         void testAllNullAttributes() {
-            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, this::init);
-            Assertions.assertEquals("Must configure at least one field mapping", exception.getMessage());
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, this::init);
+            assertEquals("Must configure at least one field mapping", exception.getMessage());
         }
 
         /**
@@ -76,9 +80,9 @@ class FieldDateShardIdGeneratorTest {
 
             FieldDateShardIdGenerator generator = init();
 
-            Assertions.assertEquals(mappings, generator.getMappings());
-            Assertions.assertEquals(DateHelper.parse("20240115"), generator.getBegin());
-            Assertions.assertEquals(DateHelper.parseTimeExactToSeconds("20240120235959"), generator.getEnd());
+            assertEquals(mappings, generator.getMappings());
+            assertEquals(DateHelper.parse("20240115"), generator.getBegin());
+            assertEquals(DateHelper.parseTimeExactToSeconds("20240120235959"), generator.getEnd());
         }
 
         /**
@@ -89,8 +93,8 @@ class FieldDateShardIdGeneratorTest {
             this.begin = DateHelper.parse("20240115");
             this.end = DateHelper.parse("19990120");
 
-            IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, this::init);
-            Assertions.assertTrue(exception.getMessage().startsWith("End date must be after begin date"));
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, this::init);
+            assertTrue(exception.getMessage().startsWith("End date must be after begin date"));
         }
     }
 
@@ -151,7 +155,7 @@ class FieldDateShardIdGeneratorTest {
     void testFailsConstructionWithAllNullAttributes() {
         RawRecordContainer record = createRecord("20200101");
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new FieldDateShardIdGenerator(-1, null, null, null));
+        assertThrows(IllegalArgumentException.class, () -> new FieldDateShardIdGenerator(-1, null, null, null));
     }
 
     /**
@@ -165,7 +169,7 @@ class FieldDateShardIdGeneratorTest {
         FieldDateShardIdGenerator.FieldMapping mapping1 = new FieldDateShardIdGenerator.FieldMapping(CSV, "field", "value", 10);
         FieldDateShardIdGenerator generator = new FieldDateShardIdGenerator(100, null, null, Lists.newArrayList(mapping1));
 
-        Assertions.assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
+        assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
     }
 
     /**
@@ -179,7 +183,7 @@ class FieldDateShardIdGeneratorTest {
         FieldDateShardIdGenerator.FieldMapping mapping1 = new FieldDateShardIdGenerator.FieldMapping(CSV, "field", "value", 10);
         FieldDateShardIdGenerator generator = new FieldDateShardIdGenerator(100, DateHelper.parse("20200101"), null, Lists.newArrayList(mapping1));
 
-        Assertions.assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
+        assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
     }
 
     /**
@@ -193,7 +197,7 @@ class FieldDateShardIdGeneratorTest {
         FieldDateShardIdGenerator.FieldMapping mapping1 = new FieldDateShardIdGenerator.FieldMapping(CSV, "field", "value", 10);
         FieldDateShardIdGenerator generator = new FieldDateShardIdGenerator(100, DateHelper.parse("20200101"), null, Lists.newArrayList(mapping1));
 
-        Assertions.assertFalse(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
+        assertFalse(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
     }
 
     /**
@@ -207,7 +211,7 @@ class FieldDateShardIdGeneratorTest {
         FieldDateShardIdGenerator.FieldMapping mapping1 = new FieldDateShardIdGenerator.FieldMapping(CSV, "field", "value", 10);
         FieldDateShardIdGenerator generator = new FieldDateShardIdGenerator(100, null, DateHelper.parse("20240111"), Lists.newArrayList(mapping1));
 
-        Assertions.assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
+        assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
     }
 
     /**
@@ -221,7 +225,7 @@ class FieldDateShardIdGeneratorTest {
         FieldDateShardIdGenerator.FieldMapping mapping1 = new FieldDateShardIdGenerator.FieldMapping(CSV, "field", "value", 10);
         FieldDateShardIdGenerator generator = new FieldDateShardIdGenerator(100, null, DateHelper.parse("20200101"), Lists.newArrayList(mapping1));
 
-        Assertions.assertFalse(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
+        assertFalse(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
     }
 
     /**
@@ -236,7 +240,7 @@ class FieldDateShardIdGeneratorTest {
         FieldDateShardIdGenerator generator = new FieldDateShardIdGenerator(100, DateHelper.parse("20200101"), DateHelper.parse("20240101"),
                         Lists.newArrayList(mapping1));
 
-        Assertions.assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
+        assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
     }
 
     /**
@@ -250,7 +254,7 @@ class FieldDateShardIdGeneratorTest {
         FieldDateShardIdGenerator generator = new FieldDateShardIdGenerator(100, DateHelper.parse("20200101"), DateHelper.parse("20240101"),
                         Lists.newArrayList(mapping1));
 
-        Assertions.assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
+        assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
     }
 
     /**
@@ -264,7 +268,7 @@ class FieldDateShardIdGeneratorTest {
         FieldDateShardIdGenerator generator = new FieldDateShardIdGenerator(100, DateHelper.parse("20200101"), DateHelper.parse("20240101"),
                         Lists.newArrayList(mapping1));
 
-        Assertions.assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
+        assertTrue(generator.isApplicable(record, createMultimap("field:value", "f2:v2")));
     }
 
     /**
@@ -278,7 +282,7 @@ class FieldDateShardIdGeneratorTest {
                         Lists.newArrayList(mapping1));
         String baseShardId = ShardIdFactory.getBaseShardId(record, 100);
         String shardId = generator.getShardId(record, createMultimap("field:value", "f2:v2"), baseShardId, 10);
-        Assertions.assertEquals("20240101_103", shardId);
+        assertEquals("20240101_103", shardId);
     }
 
     /**
@@ -292,7 +296,7 @@ class FieldDateShardIdGeneratorTest {
                         Lists.newArrayList(mapping1));
         String baseShardId = ShardIdFactory.getBaseShardId(record, 100);
         String shardId = generator.getShardId(record, createMultimap("field:value", "f2:v2"), baseShardId, 10);
-        Assertions.assertEquals(baseShardId, shardId);
+        assertEquals(baseShardId, shardId);
     }
 
     private RawRecordContainer createRecord(String dateStr) {
