@@ -15,11 +15,13 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.WritableUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
+import datawave.core.common.logging.Slf4jChunkedLogger;
 import datawave.edge.util.ExtendedHyperLogLogPlus;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
@@ -323,8 +325,36 @@ public final class PrintUtility {
     public static void printTableToDebugLog(final AccumuloClient client, final Authorizations auths, final String tableName, final TableWriter writer)
                     throws TableNotFoundException {
         if (log.isDebugEnabled()) {
-            writer.writeTable(client, auths, tableName, Slf4jOutput.debug(log));
+            writer.writeTable(client, auths, tableName, createDefaultOutput(tableName));
         }
+    }
+
+    /**
+     * Roughly 8kb per log chunk.
+     */
+    private static final int MAX_CHUNK_CHARS = 8192;
+
+    /**
+     * Return an {@link Output} that wraps around a {@link Slf4jChunkedLogger} instance and logs the table at the debug level.
+     *
+     * @param tableName
+     *            the table name
+     * @return the output
+     */
+    private static Output createDefaultOutput(String tableName) {
+        return new Output() {
+            private final Slf4jChunkedLogger logger = new Slf4jChunkedLogger(log, Level.DEBUG, "Table '" + tableName + "' Dump", MAX_CHUNK_CHARS);
+
+            @Override
+            public void write(String line) {
+                logger.write(line);
+            }
+
+            @Override
+            public void flush() {
+                logger.flush();
+            }
+        };
     }
 
     private static final DateTimeFormatter ISO_DATE_TIME_MILLIS = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneId.systemDefault());
