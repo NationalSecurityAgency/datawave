@@ -779,6 +779,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     public void closeConnection(AccumuloConnectionFactory factory) throws Exception {
         this.getMetric().setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
 
+        // terminate the results thread if any
+        terminateResultsThread();
+
         if (iter != null && iter.getTransformer() instanceof WritesResultCardinalities) {
             ((WritesResultCardinalities) iter.getTransformer()).writeResultCardinalities();
         }
