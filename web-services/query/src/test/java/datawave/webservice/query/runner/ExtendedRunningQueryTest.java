@@ -37,7 +37,6 @@ import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
-import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -167,8 +166,7 @@ public class ExtendedRunningQueryTest {
         when(this.genericConfiguration.getQueryString()).thenReturn(query);
         when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(maxResults);
-        this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
-        when(this.queryLogic.getUserOperations()).thenReturn(null);
+        when(this.queryLogic.getUserOperations(this.query)).thenReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
 
         RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
@@ -249,8 +247,7 @@ public class ExtendedRunningQueryTest {
         when(this.genericConfiguration.getQueryString()).thenReturn(query);
         when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(maxResults);
-        this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
-        when(this.queryLogic.getUserOperations()).thenReturn(null);
+        when(this.queryLogic.getUserOperations(this.query)).thenReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
 
         RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
@@ -332,8 +329,7 @@ public class ExtendedRunningQueryTest {
         when(this.queryLogic.getPageByteTrigger()).thenReturn(pageByteTrigger);
         when(this.queryLogic.getMaxWork()).thenReturn(maxWork);
         when(this.queryLogic.getMaxResults()).thenReturn(maxResults);
-        this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
-        when(this.queryLogic.getUserOperations()).thenReturn(null);
+        when(this.queryLogic.getUserOperations(this.query)).thenReturn(null);
         when(this.genericConfiguration.getQueryString()).thenReturn(query);
         this.queryLogic.setPageProcessingStartTime(anyLong());
 
@@ -402,8 +398,7 @@ public class ExtendedRunningQueryTest {
         when(this.queryLogic.getMaxResults()).thenReturn(maxResults);
         when(this.query.getPagesize()).thenReturn(pageSize);
         when(this.queryLogic.getMaxPageSize()).thenReturn(maxPageSize);
-        this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
-        when(this.queryLogic.getUserOperations()).thenReturn(null);
+        when(this.queryLogic.getUserOperations(this.query)).thenReturn(null);
         this.queryLogic.setPageProcessingStartTime(anyLong());
 
         RunningQuery subject = new RunningQuery(this.queryMetrics, this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
@@ -454,8 +449,7 @@ public class ExtendedRunningQueryTest {
         when(this.queryLogic.isLongRunningQuery()).thenReturn(false);
         when(this.queryLogic.getResultLimit(eq(this.query))).thenReturn(maxResults);
         when(this.queryLogic.getMaxResults()).thenReturn(maxResults);
-        this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
-        when(this.queryLogic.getUserOperations()).thenReturn(null);
+        when(this.queryLogic.getUserOperations(this.query)).thenReturn(null);
         this.queryLogic.setupQuery(this.genericConfiguration);
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
 
@@ -540,8 +534,7 @@ public class ExtendedRunningQueryTest {
         when(this.queryLogic.getPageByteTrigger()).thenReturn(pageByteTrigger);
         when(this.queryLogic.getMaxWork()).thenReturn(maxWork);
         when(this.queryLogic.getMaxResults()).thenReturn(maxResults);
-        this.queryLogic.preInitialize(this.query, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Collections.singleton("AUTH_1"))));
-        when(this.queryLogic.getUserOperations()).thenReturn(null);
+        when(this.queryLogic.getUserOperations(this.query)).thenReturn(null);
         when(this.genericConfiguration.getQueryString()).thenReturn(query);
         this.queryLogic.setPageProcessingStartTime(anyLong());
 

@@ -31,8 +31,6 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.google.common.collect.Sets;
-
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -44,7 +42,6 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResponseEnricher;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
-import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -126,8 +123,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
-        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
-        expect(logic.getUserOperations()).andReturn(null);
+        expect(logic.getUserOperations(settings)).andReturn(null);
         replay(logic);
 
         RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
@@ -149,8 +145,7 @@ public class RunningQueryTest {
         expect(logic.isLongRunningQuery()).andReturn(false);
         expect(logic.getResultLimit(settings)).andReturn(-1L);
         expect(logic.getMaxResults()).andReturn(-1L);
-        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
-        expect(logic.getUserOperations()).andReturn(null);
+        expect(logic.getUserOperations(settings)).andReturn(null);
         replay(logic);
 
         RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
@@ -170,8 +165,7 @@ public class RunningQueryTest {
         auths[1] = "C";
 
         expect(logic.getCollectQueryMetrics()).andReturn(false);
-        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("A", "B", "C"))));
-        expect(logic.getUserOperations()).andReturn(null);
+        expect(logic.getUserOperations(settings)).andReturn(null);
         replay(logic);
 
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);

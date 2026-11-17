@@ -2,7 +2,6 @@ package datawave.core.query.logic.composite;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -219,13 +218,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         // determine the valid authorizations for this call to be the user's auths for this logic
         ProxiedUserDetails currentUser = logic.getCurrentUser();
         ProxiedUserDetails queryUser = currentUser;
-        UserOperations userOperations = getUserOperations();
+        UserOperations userOperations = getUserOperations(settings);
         if (userOperations != null) {
             currentUser = userOperations.getRemoteUser(currentUser);
         }
-        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(requestedAuths)));
-        if (logic.getUserOperations() != null) {
-            queryUser = logic.getUserOperations().getRemoteUser(queryUser);
+        UserOperations logicUserOperations = logic.getUserOperations(settings);
+        if (logicUserOperations != null) {
+            queryUser = logicUserOperations.getRemoteUser(queryUser);
         }
 
         // get the valid auths from the query user
@@ -542,20 +541,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     }
 
     @Override
-    public void preInitialize(Query settings, Set<Authorizations> queryAuths) {
-        for (QueryLogic logic : getUninitializedLogics().values()) {
-            logic.preInitialize(settings, queryAuths);
-        }
-    }
-
-    public UserOperations getUserOperations() {
+    public UserOperations getUserOperations(Query settings) {
         // if any of the underlying logics have a non-null user operations, then
         // we need to return an instance that combines auths across the underlying
         // query logics
         boolean includeLocal = false;
         List<UserOperations> userOperations = new ArrayList<>();
         for (QueryLogic<?> logic : getQueryLogics().values()) {
-            UserOperations ops = logic.getUserOperations();
+            UserOperations ops = logic.getUserOperations(settings);
             if (ops == null) {
                 includeLocal = true;
             } else {

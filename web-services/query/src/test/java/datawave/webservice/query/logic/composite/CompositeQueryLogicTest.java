@@ -274,7 +274,7 @@ public class CompositeQueryLogicTest {
         }
 
         @Override
-        public UserOperations getUserOperations() {
+        public UserOperations getUserOperations(Query settings) {
             return userOperations;
         }
 
@@ -495,17 +495,10 @@ public class CompositeQueryLogicTest {
     }
 
     public static class TestFilteredQueryLogic extends FilteredQueryLogic {
-        private boolean filtered;
-
         public TestFilteredQueryLogic(boolean filtered) {
             QueryLogic delegate = new TestQueryLogic();
             setDelegate(delegate);
             this.filtered = filtered;
-        }
-
-        @Override
-        public boolean isFiltered() {
-            return filtered;
         }
     }
 

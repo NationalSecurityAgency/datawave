@@ -333,7 +333,7 @@ public class QueryExecutorBeanTest {
         when(logic.getCollectQueryMetrics()).thenReturn(Boolean.FALSE);
         when(logic.getResultLimit(any())).thenReturn(-1L);
         when(logic.getMaxResults()).thenReturn(-1L);
-        when(logic.getUserOperations()).thenReturn(null);
+        when(logic.getUserOperations(q)).thenReturn(null);
         when(responseObjectFactory.getQueryImpl()).thenReturn(new QueryImpl());
 
         bean.defineQuery(queryLogicName, p);
@@ -685,7 +685,7 @@ public class QueryExecutorBeanTest {
         when(logic.getAuditType(q)).thenReturn(AuditType.NONE);
         when(logic.getConnPoolName()).thenReturn("connPool1");
         when(logic.getMaxResults()).thenReturn(-1L);
-        when(logic.getUserOperations()).thenReturn(null);
+        when(logic.getUserOperations(q)).thenReturn(null);
         when(connectionRequestBean.cancelConnectionRequest(any(), any())).thenReturn(false);
         when(logic.getCollectQueryMetrics()).thenReturn(Boolean.FALSE);
 

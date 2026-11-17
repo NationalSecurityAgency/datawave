@@ -199,8 +199,8 @@ public class RemoteTimeoutInterceptingQueryLogic extends DelegatingQueryLogic im
     }
 
     @Override
-    public UserOperations getUserOperations() {
-        final UserOperations base = super.getUserOperations();
+    public UserOperations getUserOperations(Query settings) {
+        final UserOperations base = super.getUserOperations(settings);
 
         if (base == null) {
             return base;

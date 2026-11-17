@@ -406,7 +406,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     public void testListEffectiveAuthorizations() throws AuthorizationException {
         ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
 
-        assertThrows(RemoteAuthorizationException.class, () -> logic.getUserOperations().listEffectiveAuthorizations(null));
+        assertThrows(RemoteAuthorizationException.class, () -> logic.getUserOperations(null).listEffectiveAuthorizations(null));
     }
 
     @Test
@@ -419,14 +419,14 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(), null, null, -1L);
         DatawavePrincipal datawavePrincipal = new DatawavePrincipal(Collections.singleton(user));
 
-        logic.getUserOperations().listEffectiveAuthorizations(datawavePrincipal);
+        logic.getUserOperations(null).listEffectiveAuthorizations(datawavePrincipal);
     }
 
     @Test
     public void testFlushCachedCredentials() throws AuthorizationException {
         ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
 
-        assertThrows(RemoteAuthorizationException.class, () -> logic.getUserOperations().flushCachedCredentials(null));
+        assertThrows(RemoteAuthorizationException.class, () -> logic.getUserOperations(null).flushCachedCredentials(null));
     }
 
     @Test
@@ -435,7 +435,7 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
 
-        logic.getUserOperations().flushCachedCredentials(null);
+        logic.getUserOperations(null).flushCachedCredentials(null);
     }
 
     @Test

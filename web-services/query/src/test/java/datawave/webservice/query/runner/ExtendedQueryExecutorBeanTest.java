@@ -67,7 +67,6 @@ import org.springframework.util.MultiValueMap;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 import datawave.core.common.audit.PrivateAuditConstants;
 import datawave.core.common.connection.AccumuloConnectionFactory;
@@ -93,7 +92,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.remote.RemoteUserOperationsImpl;
 import datawave.security.user.UserOperationsBean;
-import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
@@ -376,8 +374,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(false);
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_2", "AUTH_1"))));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
         cache.remove(queryId.toString());
         this.queryLogic1.close();
 
@@ -770,8 +767,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
         when(this.queryLogic1.initialize(eq(this.client), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
@@ -932,8 +928,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
         when(this.queryLogic1.initialize(eq(this.client), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
@@ -1083,8 +1078,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.query.getSystemFrom()).thenReturn(systemFrom);
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
         when(this.queryLogic1.initialize(eq(this.client), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
@@ -1265,8 +1259,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.query.getSystemFrom()).thenReturn(systemFrom);
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
         when(this.queryLogic1.initialize(eq(this.client), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
@@ -1775,8 +1768,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
         when(this.queryLogic1.initialize(eq(this.client), eq(this.query), isA(Set.class))).thenReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
         when(this.queryLogic1.getTransformIterator(this.query)).thenReturn(this.transformIterator);
@@ -2125,8 +2117,7 @@ public class ExtendedQueryExecutorBeanTest {
 
         when(this.runningQuery.getLogic()).thenReturn((QueryLogic) this.queryLogic1);
         when(this.queryLogic1.getCollectQueryMetrics()).thenReturn(true);
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
 
         this.metrics.updateMetric(this.queryMetric);
         cache.unlock(queryId.toString());
@@ -3092,8 +3083,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.query.getSystemFrom()).thenReturn(null);
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(null));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
 
         // Run the test
         QueryExecutorBean subject = new QueryExecutorBean();
@@ -3563,8 +3553,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.isLongRunningQuery()).thenReturn(false);
         when(this.queryLogic1.getResultLimit(this.query)).thenReturn(-1L);
         when(this.queryLogic1.getMaxResults()).thenReturn(-1L);
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
         when(this.query.toMap()).thenReturn(map);
         when(this.query.getColumnVisibility()).thenReturn(authorization);
         when(this.query.getBeginDate()).thenReturn(null);
@@ -4139,8 +4128,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.dwUser.getAuths()).thenReturn(Collections.singleton(queryAuthorizations));
         when(this.principal.getProxiedUsers()).thenReturn(Collections.singletonList(dwUser));
         when(this.userOperations.getRemoteUser(this.principal)).thenReturn(this.principal);
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
         when(this.query.getOwner()).thenReturn(userSid);
         when(this.query.getId()).thenReturn(queryId);
         when(this.query.getQuery()).thenReturn(queryName);
@@ -4269,8 +4257,7 @@ public class ExtendedQueryExecutorBeanTest {
         when(this.queryLogic1.getAuditType(this.query)).thenReturn(AuditType.PASSIVE);
         when(this.queryLogic1.getConnectionPriority()).thenReturn(Priority.NORMAL);
         when(this.queryLogic1.getConnPoolName()).thenReturn("connPool1");
-        this.queryLogic1.preInitialize(this.query, WSAuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("AUTH_1"))));
-        when(this.queryLogic1.getUserOperations()).thenReturn(null);
+        when(this.queryLogic1.getUserOperations(this.query)).thenReturn(null);
         when(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).thenReturn(null);
         this.query.populateTrackingMap(null);
         this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);

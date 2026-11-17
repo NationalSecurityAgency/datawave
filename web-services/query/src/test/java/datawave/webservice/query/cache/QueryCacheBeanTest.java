@@ -21,7 +21,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.QueryLogic;
-import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.webservice.query.runner.RunningQuery;
@@ -114,10 +113,10 @@ public class QueryCacheBeanTest {
         q.setDnList(Collections.singletonList("some user"));
 
         when(logic.getCollectQueryMetrics()).thenReturn(false);
+        when(logic.isLongRunningQuery()).thenReturn(false);
         when(logic.getResultLimit(q)).thenReturn(-1L);
         when(logic.getMaxResults()).thenReturn(-1L);
-        logic.preInitialize(q, AuthorizationsUtil.buildAuthorizations(null));
-        when(logic.getUserOperations()).thenReturn(null);
+        when(logic.getUserOperations(q)).thenReturn(null);
 
         RunningQuery query = new RunningQuery(null, AccumuloConnectionFactory.Priority.HIGH, logic, q, null, null, new QueryMetricFactoryImpl());
         QueryCacheBean bean = new QueryCacheBean();
