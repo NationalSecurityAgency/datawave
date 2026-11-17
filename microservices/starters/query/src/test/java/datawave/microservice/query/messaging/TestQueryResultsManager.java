@@ -4,13 +4,12 @@ import static datawave.microservice.query.messaging.TestQueryResultsManager.TEST
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -27,8 +26,8 @@ public class TestQueryResultsManager implements QueryResultsManager {
 
     public static final String TEST = "test";
 
-    private final Map<String,Queue<Result>> queues = Collections.synchronizedMap(new HashMap<>());
-    private final Map<String,String> listenerToQueue = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String,Queue<Result>> queues = new ConcurrentHashMap<>();
+    private final Map<String,String> listenerToQueue = new ConcurrentHashMap<>();
     private final List<QueryResultsListener> listeners = new ArrayList<>();
 
     /**
