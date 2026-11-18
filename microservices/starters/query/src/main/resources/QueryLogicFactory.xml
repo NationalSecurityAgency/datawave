@@ -9,7 +9,8 @@
         http://www.springframework.org/schema/util/spring-util.xsd">
 
     <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
-        <!-- This is injected via MarkingConfig.java -->
+        <!-- This is injected via QueryLogicFactoryConfiguration.java -->
+        <!-- TODO remove-accumulo-utils: remove once query logics no longer take MarkingFunctions -->
         <property name="markingFunctions" ref="markingFunctions" />
         <!-- This is injected via QueryLogicFactoryConfiguration.java -->
         <property name="responseObjectFactory" ref="responseObjectFactory" />

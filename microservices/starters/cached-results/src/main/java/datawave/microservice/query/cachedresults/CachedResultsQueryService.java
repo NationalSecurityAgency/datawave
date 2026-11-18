@@ -103,6 +103,10 @@ public class CachedResultsQueryService {
     private static final String LPAREN = "(";
     private static final String RPAREN = ")";
 
+    // TODO remove-accumulo-utils: CacheableQueryRowReader.createRow still requires MarkingFunctions; remove once it takes visibilities only
+    @SuppressWarnings("rawtypes")
+    private static final MarkingFunctions CACHED_ROW_MARKING_FUNCTIONS = new MarkingFunctions.Default();
+
     private final CachedResultsQueryProperties cachedResultsQueryProperties;
     private final JdbcTemplate cachedResultsJdbcTemplate;
     private final CachedResultsQueryCache cachedResultsQueryCache;
@@ -113,7 +117,6 @@ public class CachedResultsQueryService {
     private final QueryLogicFactory queryLogicFactory;
     private final QueryStorageCache queryStorageCache;
     private final ResponseObjectFactory responseObjectFactory;
-    private final MarkingFunctions markingFunctions;
     // Note: CachedResultsQueryParameters needs to be request scoped
     private final RequestScopeBeanSupplier<CachedResultsQueryParameters> scopedCachedResultsQueryParameters;
     private final String fieldDefinitions;
@@ -124,7 +127,7 @@ public class CachedResultsQueryService {
     public CachedResultsQueryService(CachedResultsQueryProperties cachedResultsQueryProperties, JdbcTemplate cachedResultsJdbcTemplate,
                     CachedResultsQueryCache cachedResultsQueryCache, QueryService queryService, AuditClient auditClient, SecurityMarking securityMarking,
                     QueryLogicFactory queryLogicFactory, QueryStorageCache queryStorageCache, ResponseObjectFactory responseObjectFactory,
-                    MarkingFunctions markingFunctions, CachedResultsQueryParameters cachedResultsQueryParameters) {
+                    CachedResultsQueryParameters cachedResultsQueryParameters) {
         this.cachedResultsQueryProperties = cachedResultsQueryProperties;
         this.cachedResultsJdbcTemplate = cachedResultsJdbcTemplate;
         this.cachedResultsQueryCache = cachedResultsQueryCache;
@@ -134,7 +137,6 @@ public class CachedResultsQueryService {
         this.queryLogicFactory = queryLogicFactory;
         this.queryStorageCache = queryStorageCache;
         this.responseObjectFactory = responseObjectFactory;
-        this.markingFunctions = markingFunctions;
         this.scopedCachedResultsQueryParameters = new RequestScopeBeanSupplier<>(cachedResultsQueryParameters);
         this.fieldDefinitions = IntStream.range(0, cachedResultsQueryProperties.getNumFields()).mapToObj(x -> FIELD + x + " LONGTEXT")
                         .collect(Collectors.joining(", "));
@@ -430,15 +432,7 @@ public class CachedResultsQueryService {
                         ps.setString(6, cacheableQueryRow.getRow());
                         ps.setString(7, cacheableQueryRow.getColFam());
 
-                        String visibility = EMPTY_STRING;
-                        if (cacheableQueryRow.getMarkings() != null) {
-                            AccessExpression ae = cacheableQueryRow.getMarkings().toAccessExpression();
-                            if (ae != null) {
-                                visibility = ae.getExpression();
-                            }
-                        }
-
-                        ps.setString(8, visibility);
+                        ps.setString(8, getRowVisibility(cacheableQueryRow));
 
                         // keep track of the populated columns
                         Set<Integer> populatedColumns = new HashSet<>();
@@ -466,6 +460,7 @@ public class CachedResultsQueryService {
                             }
                         }
 
+                        // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
                         ps.setString(9, cacheableQueryRow.getColumnSecurityMarkingString(cachedResultsQueryStatus.getFieldIndexMap()));
                         ps.setString(10, cacheableQueryRow.getColumnTimestampString(cachedResultsQueryStatus.getFieldIndexMap()));
 
@@ -498,6 +493,26 @@ public class CachedResultsQueryService {
                 }
             }
         }
+    }
+
+    /**
+     * Get the row-level visibility to store for a cached row.
+     *
+     * @param cacheableQueryRow
+     *            the row
+     * @return the row-level visibility, or an empty string if the row has none
+     */
+    @SuppressWarnings("removal")
+    static String getRowVisibility(CacheableQueryRow cacheableQueryRow) {
+        String visibility = cacheableQueryRow.getColumnVisibility();
+        // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn (drop the markings fallback once query logics set the row column visibility)
+        if (visibility == null && cacheableQueryRow.getMarkings() != null) {
+            AccessExpression ae = cacheableQueryRow.getMarkings().toAccessExpression();
+            if (ae != null) {
+                visibility = ae.getExpression();
+            }
+        }
+        return visibility == null ? EMPTY_STRING : visibility;
     }
 
     private void createTable(String tableName) throws DataAccessException {
@@ -1144,8 +1159,9 @@ public class CachedResultsQueryService {
 
                             long resultBytes = 0;
                             while (resultSet.next() && !hitPageByteTrigger.get()) {
+                                // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn (createRow still takes MarkingFunctions)
                                 CacheableQueryRow row = CacheableQueryRowReader.createRow(resultSet, cachedResultsQueryStatus.getFixedFields(),
-                                                responseObjectFactory, markingFunctions);
+                                                responseObjectFactory, CACHED_ROW_MARKING_FUNCTIONS);
                                 rows.add(row);
                                 if (cachedResultsQueryProperties.getPageByteTrigger() != 0) {
                                     resultBytes += ObjectSizeOf.Sizer.getObjectSize(row);

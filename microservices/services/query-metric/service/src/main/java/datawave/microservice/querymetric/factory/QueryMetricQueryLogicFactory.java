@@ -16,17 +16,14 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 @Component
 public class QueryMetricQueryLogicFactory implements FactoryBean<ShardQueryLogic> {
 
-    private MarkingFunctions<?> markingFunctions;
     private ResponseObjectFactory responseObjectFactory;
     private QueryMetricHandlerProperties queryMetricHandlerProperties;
     private DateIndexHelperFactory dateIndexHelperFactory;
     private MetadataHelperFactory metadataHelperFactory;
 
     @Autowired
-    public QueryMetricQueryLogicFactory(MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
-                    DateIndexHelperFactory dateIndexHelperFactory, MetadataHelperFactory metadataHelperFactory,
-                    QueryMetricHandlerProperties queryMetricHandlerProperties) {
-        this.markingFunctions = markingFunctions;
+    public QueryMetricQueryLogicFactory(ResponseObjectFactory responseObjectFactory, DateIndexHelperFactory dateIndexHelperFactory,
+                    MetadataHelperFactory metadataHelperFactory, QueryMetricHandlerProperties queryMetricHandlerProperties) {
         this.responseObjectFactory = responseObjectFactory;
         this.dateIndexHelperFactory = dateIndexHelperFactory;
         this.metadataHelperFactory = metadataHelperFactory;
@@ -37,7 +34,8 @@ public class QueryMetricQueryLogicFactory implements FactoryBean<ShardQueryLogic
     public ShardQueryLogic getObject() throws Exception {
 
         ShardQueryLogic logic = new ShardQueryLogic();
-        logic.setMarkingFunctions(markingFunctions);
+        // TODO remove-accumulo-utils: ShardQueryLogic transformers still require MarkingFunctions; remove once query-core no longer takes them
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setTableName(this.queryMetricHandlerProperties.getShardTableName());
         logic.setIndexTableName(this.queryMetricHandlerProperties.getIndexTableName());
         logic.setReverseIndexTableName(this.queryMetricHandlerProperties.getReverseIndexTableName());

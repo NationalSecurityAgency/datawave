@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.List;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.factory.QueryMetricQueryLogicFactory;
 import datawave.microservice.querymetric.handler.ContentQueryMetricsIngestHelper;
@@ -17,9 +16,9 @@ import datawave.webservice.query.result.event.FieldBase;
 public class AlternateShardTableQueryMetricHandler extends LocalShardTableQueryMetricHandler<AlternateQueryMetric> {
 
     public AlternateShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, AccumuloConnectionFactory connectionFactory,
-                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions<?> markingFunctions,
-                    QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser) {
-        super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser);
+                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, QueryMetricCombiner queryMetricCombiner,
+                    LuceneToJexlQueryParser luceneToJexlQueryParser) {
+        super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, queryMetricCombiner, luceneToJexlQueryParser);
     }
 
     @Override

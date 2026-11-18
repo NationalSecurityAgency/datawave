@@ -12,6 +12,7 @@ import datawave.core.common.cache.AccumuloTableCache;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.connection.AccumuloConnectionFactoryImpl;
 import datawave.core.common.result.ConnectionPoolsProperties;
+import datawave.marking.MarkingFunctions;
 import datawave.microservice.modification.query.RemoteQueryService;
 import datawave.modification.ModificationService;
 import datawave.modification.cache.ModificationCache;
@@ -43,6 +44,21 @@ public class ModificationServiceConfiguration {
     @ConfigurationProperties("datawave.connection.factory")
     public ConnectionPoolsProperties poolProperties() {
         return new ConnectionPoolsProperties();
+    }
+
+    /**
+     * The modification handlers in ModificationServices.xml still take {@link MarkingFunctions} until core/modification stops translating visibilities. This
+     * bean used to be provided by the datawave starter's {@code MarkingConfig}.
+     *
+     * @return the default marking functions
+     * @deprecated the modification handlers only deal in column visibilities; this bean will be removed
+     */
+    // TODO remove-accumulo-utils: remove together with the markingFunctions properties in ModificationServices.xml
+    @Deprecated(forRemoval = true)
+    @Bean
+    @ConditionalOnMissingBean
+    public MarkingFunctions<?> markingFunctions() {
+        return new MarkingFunctions.Default();
     }
 
     @Bean

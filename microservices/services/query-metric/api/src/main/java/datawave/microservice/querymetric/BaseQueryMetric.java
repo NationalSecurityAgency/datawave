@@ -1114,10 +1114,12 @@ public abstract class BaseQueryMetric implements HasMarkings, HasColumnVisibilit
         this.lastUpdated = lastUpdated;
     }
 
+    @Override
     public String getColumnVisibility() {
         return columnVisibility;
     }
 
+    @Override
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
     }
@@ -1167,6 +1169,11 @@ public abstract class BaseQueryMetric implements HasMarkings, HasColumnVisibilit
         this.predictions = predictions;
     }
 
+    /**
+     * @deprecated use {@link #setColumnVisibility(String)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     @Override
     public void setMarkings(Markings<?> markings) {
         if (markings == null || markings.isEmpty()) {
@@ -1177,6 +1184,11 @@ public abstract class BaseQueryMetric implements HasMarkings, HasColumnVisibilit
         }
     }
 
+    /**
+     * @deprecated use {@link #getColumnVisibility()}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     @Override
     public Markings<?> getMarkings() {
         if (this.columnVisibility != null) {

@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +20,7 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Scope;
 
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
+import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.edge.config.EdgeModelProperties;
 import datawave.microservice.query.lookup.LookupProperties;
 import datawave.microservice.query.translateid.TranslateIdProperties;
@@ -37,6 +39,21 @@ public class QueryLogicFactoryConfiguration {
     @ConditionalOnProperty(name = "datawave.defaults.ResponseObjectFactory.enabled", havingValue = "true", matchIfMissing = true)
     public ResponseObjectFactory responseObjectFactory() {
         return new DefaultResponseObjectFactory();
+    }
+
+    /**
+     * Query logics still take {@link MarkingFunctions} (see {@code baseQueryLogic} in QueryLogicFactory.xml) until query-core stops translating visibilities.
+     * This bean used to be provided by the datawave starter's {@code MarkingConfig}.
+     *
+     * @return the default marking functions
+     * @deprecated query logics only deal in column visibilities; this bean will be removed
+     */
+    // TODO remove-accumulo-utils: remove together with the markingFunctions property of baseQueryLogic in QueryLogicFactory.xml
+    @Deprecated(forRemoval = true)
+    @Bean
+    @ConditionalOnMissingBean
+    public MarkingFunctions<?> markingFunctions() {
+        return new MarkingFunctions.Default();
     }
 
     @Bean

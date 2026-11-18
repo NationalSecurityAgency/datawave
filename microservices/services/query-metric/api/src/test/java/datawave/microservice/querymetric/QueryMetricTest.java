@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 
-import datawave.marking.AccessExpressionMarkings;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
@@ -50,7 +49,7 @@ public class QueryMetricTest {
     @BeforeAll
     public static void setup() {
         queryMetric = new QueryMetric();
-        queryMetric.setMarkings(AccessExpressionMarkings.builder().columnVisibility("PUBLIC").build());
+        queryMetric.setColumnVisibility("PUBLIC");
         negativeSelectors = new ArrayList<>();
         negativeSelectors.add("negativeSelector1");
         positiveSelectors = new ArrayList<>();
@@ -99,7 +98,7 @@ public class QueryMetricTest {
         queryMetric.setHost("host");
         queryMetric.setLastUpdated(d);
         queryMetric.setLifecycle(Lifecycle.INITIALIZED);
-        queryMetric.setMarkings(AccessExpressionMarkings.builder().columnVisibility("PUBLIC").build());
+        queryMetric.setColumnVisibility("PUBLIC");
         queryMetric.setNegativeSelectors(negativeSelectors);
         queryMetric.setNumUpdates(0);
         queryMetric.setPageTimes(pageTimes);
@@ -229,7 +228,7 @@ public class QueryMetricTest {
         qm.setHost("host");
         qm.setLastUpdated(d);
         qm.setLifecycle(BaseQueryMetric.Lifecycle.INITIALIZED);
-        qm.setMarkings(AccessExpressionMarkings.builder().columnVisibility("PUBLIC").build());
+        qm.setColumnVisibility("PUBLIC");
         qm.setNegativeSelectors(negativeSelectors);
         qm.setNumUpdates(0);
         qm.setPageTimes(pageTimes);

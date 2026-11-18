@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -62,8 +63,6 @@ import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHand
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -81,6 +80,7 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.util.DnUtils;
 import datawave.security.util.WSAuthorizationsUtil;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
@@ -107,18 +107,16 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
     protected QueryMetricFactory metricFactory;
     protected UIDBuilder<UID> uidBuilder = UID.builder();
     protected QueryMetricCombiner queryMetricCombiner;
-    protected MarkingFunctions<?> markingFunctions;
     // this lock is necessary for when there is an error condition and the accumuloRecordWriter needs to be replaced
     protected ReentrantReadWriteLock accumuloRecordWriterLock = new ReentrantReadWriteLock();
 
     public ShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, AccumuloConnectionFactory connectionFactory,
-                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions<?> markingFunctions,
-                    QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser) {
+                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, QueryMetricCombiner queryMetricCombiner,
+                    LuceneToJexlQueryParser luceneToJexlQueryParser) {
         super(luceneToJexlQueryParser);
         this.queryMetricHandlerProperties = queryMetricHandlerProperties;
         this.logicFactory = logicFactory;
         this.metricFactory = metricFactory;
-        this.markingFunctions = markingFunctions;
         this.connectionFactory = connectionFactory;
         this.queryMetricCombiner = queryMetricCombiner;
 
@@ -363,10 +361,10 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         event.setConf(this.conf);
         event.setDataType(type);
         event.setTimestamp(updatedQueryMetric.getCreateDate().getTime());
-        // get markings from metric, otherwise use the default markings
-        Markings<?> markings = updatedQueryMetric.getMarkings();
-        if (markings != null && !markings.isEmpty()) {
-            event.setVisibility(markings.toColumnVisibility());
+        // get the visibility from the metric, otherwise use the default visibility
+        String metricVisibility = updatedQueryMetric.getColumnVisibility();
+        if (metricVisibility != null && !metricVisibility.isEmpty()) {
+            event.setVisibility(AccessExpressionUtil.toColumnVisibility(AccessExpressionUtil.normalize(metricVisibility)));
         } else {
             event.setVisibility(this.queryMetricHandlerProperties.getDefaultMetricVisibility());
         }
@@ -560,6 +558,24 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
 
     protected abstract void close(String queryId);
 
+    /**
+     * Get the column visibility of a metric event, or null if it has none.
+     *
+     * @param event
+     *            the event
+     * @return the column visibility, or null
+     */
+    @SuppressWarnings("removal")
+    protected static String getColumnVisibility(EventBase event) {
+        String columnVisibility = event.getColumnVisibility();
+        // TODO remove-accumulo-utils: drop the markings fallback once query logics set the event column visibility
+        if (columnVisibility == null && event.getMarkings() != null && !event.getMarkings().isEmpty()) {
+            AccessExpression ae = event.getMarkings().toAccessExpression();
+            columnVisibility = ae == null ? null : ae.getExpression();
+        }
+        return columnVisibility == null || columnVisibility.isEmpty() ? null : columnVisibility;
+    }
+
     public T toMetric(EventBase event) {
         SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
@@ -570,7 +586,7 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
         try {
             T m = (T) metricFactory.createMetric(false);
             List<FieldBase> field = event.getFields();
-            m.setMarkings(event.getMarkings());
+            m.setColumnVisibility(getColumnVisibility(event));
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
 
             boolean createDateSet = false;

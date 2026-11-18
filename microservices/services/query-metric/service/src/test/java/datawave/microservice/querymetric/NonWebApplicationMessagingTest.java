@@ -3,9 +3,7 @@ package datawave.microservice.querymetric;
 import static datawave.microservice.querymetric.QueryMetricTestBase.metricAssertEquals;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +21,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.microservice.querymetric.config.QueryMetricTransportType;
 import datawave.microservice.querymetric.config.TimelyProperties;
 import datawave.microservice.querymetric.function.QueryMetricSupplier;
@@ -48,12 +45,8 @@ public class NonWebApplicationMessagingTest {
     @Autowired
     public List<QueryMetricUpdate> storedMetricUpdates;
 
-    private Map<String,String> metricMarkings;
-
     @BeforeEach
     public void setup() {
-        this.metricMarkings = new HashMap<>();
-        this.metricMarkings.put(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "A&C");
         this.storedMetricUpdates.clear();
     }
 
