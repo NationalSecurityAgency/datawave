@@ -2,6 +2,7 @@ package datawave.webservice.query.result.event;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,10 +14,12 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import datawave.data.type.Type;
+import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.Markings;
 import datawave.webservice.query.util.TypedValue;
 import io.protostuff.Input;
@@ -128,23 +131,28 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
     }
 
     /**
-     * @deprecated markings are no longer carried by fields; use {@link #getColumnVisibility()}. Required by {@code HasMarkings} until it is removed.
+     * @deprecated use {@link #getColumnVisibility()}. Required by {@code HasMarkings} until it is removed.
      */
     // TODO remove-accumulo-utils
     @Override
     @Deprecated(forRemoval = true)
     public Markings<?> getMarkings() {
-        return null;
+        return AccessExpressionMarkings.createMarkings(getColumnVisibility());
     }
 
     /**
-     * @deprecated markings are no longer carried by fields; use {@link #setColumnVisibility(String)}. Required by {@code HasMarkings} until it is removed.
+     * @deprecated use {@link #setColumnVisibility(String)}. Required by {@code HasMarkings} until it is removed.
      */
     // TODO remove-accumulo-utils
     @Override
     @Deprecated(forRemoval = true)
     public void setMarkings(Markings<?> markings) {
-        // markings are no longer stored
+        if (markings == null) {
+            setColumnVisibility((String) null);
+        } else {
+            ColumnVisibility visibility = markings.toColumnVisibility();
+            setColumnVisibility(visibility == null ? null : new String(visibility.getExpression(), StandardCharsets.UTF_8));
+        }
     }
 
     public static Schema<SimpleField> getSchema() {
