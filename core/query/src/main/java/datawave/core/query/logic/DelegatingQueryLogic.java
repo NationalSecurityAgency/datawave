@@ -260,12 +260,16 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
         return delegate.getConnPoolName();
     }
 
+    // TODO remove-accumulo-utils
     @Override
+    @Deprecated(forRemoval = true)
     public MarkingFunctions<?> getMarkingFunctions() {
         return delegate.getMarkingFunctions();
     }
 
+    // TODO remove-accumulo-utils
     @Override
+    @Deprecated(forRemoval = true)
     public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
         delegate.setMarkingFunctions(markingFunctions);
     }

@@ -345,9 +345,27 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
 
     Set<String> getRequiredRoles();
 
-    MarkingFunctions<?> getMarkingFunctions();
+    /**
+     * @return the marking functions configured for this logic, if any
+     * @deprecated query logics no longer use {@link MarkingFunctions}; visibilities are combined with {@code datawave.visibility.VisibilityFunctions} and
+     *             responses carry column visibility strings. Retained only so that existing configuration continues to load.
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    default MarkingFunctions<?> getMarkingFunctions() {
+        return null;
+    }
 
-    void setMarkingFunctions(MarkingFunctions<?> markingFunctions);
+    /**
+     * @param markingFunctions
+     *            ignored by query logics
+     * @deprecated query logics no longer use {@link MarkingFunctions}. Retained only so that existing configuration continues to load.
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    default void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
+        // no-op
+    }
 
     ResponseObjectFactory getResponseObjectFactory();
 

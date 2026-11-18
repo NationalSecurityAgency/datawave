@@ -1,7 +1,5 @@
 package datawave.util.keyword;
 
-import static datawave.marking.AccessExpressionMarkings.ACCESS;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -17,6 +15,8 @@ import java.util.TreeSet;
 import org.apache.accumulo.access.AccessExpression;
 
 import com.google.gson.Gson;
+
+import datawave.visibility.AccessExpressionUtil;
 
 /** A tag cloud - a collection of tags that have a keyword, score, frequency and list of sources from which they originated */
 public class TagCloud {
@@ -57,7 +57,7 @@ public class TagCloud {
         if (visibility == null || visibility.isEmpty()) {
             return null;
         }
-        return ACCESS.newExpression(visibility);
+        return AccessExpressionUtil.toAccessExpression(visibility);
     }
 
     public Collection<TagCloudEntry> getResults() {

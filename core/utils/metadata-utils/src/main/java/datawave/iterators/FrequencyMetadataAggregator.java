@@ -30,9 +30,9 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Splitter;
 
 import datawave.iterator.ReducingIterator;
-import datawave.marking.MarkingFunctions;
 import datawave.query.model.DateFrequencyMap;
 import datawave.util.StringUtils;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  * Aggregates entries in the metadata table for the "f", "i", and "ri" columns. When initially ingested, entries for these columns have a column qualifier with
@@ -54,7 +54,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
 
     private static final Logger log = Logger.getLogger(FrequencyMetadataAggregator.class);
     private static final String NULL_BYTE = "\0";
-    private final MarkingFunctions<?> markingFunctions;
+    private final VisibilityFunctions visibilityFunctions;
 
     private boolean combineVisibilities;
     private String columnsOption;
@@ -82,7 +82,7 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
         cache = new TreeMap<>();
         visibilityToDateFrequencies = new HashMap<>();
         visibilityToMaxTimestamp = new HashMap<>();
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+        visibilityFunctions = VisibilityFunctions.getInstance();
     }
 
     @Override
@@ -585,8 +585,8 @@ public class FrequencyMetadataAggregator extends WrappingIterator implements Opt
     private ColumnVisibility combineAllVisibilities() {
         Set<ColumnVisibility> visibilities = visibilityToDateFrequencies.keySet();
         try {
-            return markingFunctions.combineVisibilities(visibilities);
-        } catch (MarkingFunctions.Exception e) {
+            return visibilityFunctions.combine(visibilities);
+        } catch (RuntimeException e) {
             throw new IllegalArgumentException("Failed to combine visibilities " + visibilities, e);
         }
     }

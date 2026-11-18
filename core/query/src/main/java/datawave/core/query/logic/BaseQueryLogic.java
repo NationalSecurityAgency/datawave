@@ -47,6 +47,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected ProxiedUserDetails serverUser;
 
     protected Set<String> requiredRoles;
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     protected MarkingFunctions<?> markingFunctions;
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
@@ -100,10 +102,22 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         return settings.getQuery();
     }
 
+    /**
+     * @deprecated not used by query logics; retained so existing configuration that sets the {@code markingFunctions} property continues to load.
+     */
+    // TODO remove-accumulo-utils
+    @Override
+    @Deprecated(forRemoval = true)
     public MarkingFunctions<?> getMarkingFunctions() {
         return markingFunctions;
     }
 
+    /**
+     * @deprecated not used by query logics; retained so existing configuration that sets the {@code markingFunctions} property continues to load.
+     */
+    // TODO remove-accumulo-utils
+    @Override
+    @Deprecated(forRemoval = true)
     public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
         this.markingFunctions = markingFunctions;
     }
@@ -234,7 +248,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
             //@formatter:off
             ResponseEnricher enricher = responseEnricherBuilder
                     .withConfig(getConfig())
-                    .withMarkingFunctions(getMarkingFunctions())
                     .withResponseObjectFactory(responseObjectFactory)
                     .withCurrentUser(getCurrentUser())
                     .withServerUser(getServerUser())

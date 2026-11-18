@@ -76,7 +76,6 @@ import datawave.iterators.EdgeMetadataCombiner;
 import datawave.iterators.FrequencyMetadataAggregator;
 import datawave.iterators.MetadataFColumnSeekingFilter;
 import datawave.iterators.filter.EdgeMetadataCQStrippingIterator;
-import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.model.DateFrequencyMap;
 import datawave.query.model.Direction;
@@ -331,7 +330,7 @@ public class MetadataHelper {
      * @throws ExecutionException
      *             if there is a problem scanning accumulo
      */
-    public Metadata getMetadata() throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public Metadata getMetadata() throws TableNotFoundException, ExecutionException {
         return getMetadata(null);
     }
 
@@ -343,10 +342,8 @@ public class MetadataHelper {
      *             if no table exists
      * @throws ExecutionException
      *             if there is a problem scanning accumulo
-     * @throws MarkingFunctions.Exception
-     *             it can't, remove this
      */
-    public Metadata getMetadata(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public Metadata getMetadata(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException {
         return new Metadata(this, ingestTypeFilter);
     }
 
