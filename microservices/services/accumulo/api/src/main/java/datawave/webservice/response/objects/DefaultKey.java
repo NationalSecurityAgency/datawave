@@ -35,7 +35,7 @@ public class DefaultKey extends KeyBase {
         this.row = new TypedValue(row);
         this.colFam = new TypedValue(colFam);
         this.colQual = new TypedValue(colQual);
-        this.columnVisibility = new TypedValue(columnVisibility);
+        setColumnVisibility(columnVisibility);
         this.timestamp = new TypedValue(timestamp);
     }
 
@@ -70,6 +70,9 @@ public class DefaultKey extends KeyBase {
 
     @Override
     public String getColumnVisibility() {
+        if (this.columnVisibility == null) {
+            return null;
+        }
         if (this.columnVisibility.getType().equals(TypedValue.XSD_STRING) && this.columnVisibility.isBase64Encoded()) {
             return new String(Base64.decodeBase64(this.columnVisibility.getValue().toString().getBytes(UTF_8)), UTF_8);
         } else {
@@ -94,7 +97,7 @@ public class DefaultKey extends KeyBase {
     @Override
     public void setMarkings(Markings<?> markings) {
         AccessExpression ae = markings == null ? null : markings.toAccessExpression();
-        setColumnVisibility(ae != null ? ae.getExpression() : "");
+        setColumnVisibility(ae == null ? null : ae.getExpression());
     }
 
     /**
@@ -124,7 +127,7 @@ public class DefaultKey extends KeyBase {
 
     @Override
     public void setColumnVisibility(String colVis) {
-        this.columnVisibility = (colVis == null) ? new TypedValue("") : new TypedValue(colVis);
+        this.columnVisibility = colVis == null ? null : new TypedValue(colVis);
     }
 
     public void setTimestamp(long timestamp) {

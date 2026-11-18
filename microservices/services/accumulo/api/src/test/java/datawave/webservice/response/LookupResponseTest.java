@@ -1,6 +1,7 @@
 package datawave.webservice.response;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -85,5 +86,18 @@ public class LookupResponseTest {
         }
         assertEquals(lookupResponse.getHasResults(), de.getHasResults());
         assertEquals(lookupResponse.getOperationTimeMS(), de.getOperationTimeMS());
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    public void testNullVisibilityStaysNull() {
+        DefaultKey key = new DefaultKey();
+        key.setColumnVisibility(null);
+        assertNull(key.getColumnVisibility());
+        key.setMarkings(null);
+        assertNull(key.getColumnVisibility());
+        key.setColumnVisibility("");
+        assertEquals("", key.getColumnVisibility());
+        assertNull(new DefaultKey("row", "cf", "cq", null, 1L).getColumnVisibility());
     }
 }
