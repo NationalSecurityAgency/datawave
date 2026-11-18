@@ -67,7 +67,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
 
         // copy other variables
         setMaxResults(other.maxResults);
-        setMarkingFunctions(other.getMarkingFunctions());
         setResponseObjectFactory(other.getResponseObjectFactory());
         setLogicName(other.getLogicName());
         setLogicDescription(other.getLogicDescription());
