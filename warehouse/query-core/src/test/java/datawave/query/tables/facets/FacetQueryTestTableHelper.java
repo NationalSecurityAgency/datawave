@@ -29,9 +29,9 @@ public class FacetQueryTestTableHelper extends QueryTestTableHelper {
     @Override
     public void printTables(Authorizations auths) throws TableNotFoundException {
         super.printTables(auths);
-        PrintUtility.printTable(client, auths, FACET_TABLE_NAME);
-        PrintUtility.printTable(client, auths, FACET_METADATA_TABLE_NAME);
-        PrintUtility.printTable(client, auths, FACET_HASH_TABLE_NAME);
+        PrintUtility.printFacetTable(client, auths, FACET_TABLE_NAME);
+        PrintUtility.printSimpleTable(client, auths, FACET_METADATA_TABLE_NAME);
+        PrintUtility.printSimpleTable(client, auths, FACET_HASH_TABLE_NAME);
     }
 
     @Override

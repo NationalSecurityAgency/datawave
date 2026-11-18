@@ -33,7 +33,7 @@
         <!-- Control the rpm release number, for a final release change the rpm.release.number from the timestamp property to the number 1 -->
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
         <rpm.release.number>${timestamp}</rpm.release.number>
-        <surefire.maxMemory>2g</surefire.maxMemory>
+        <surefire.maxMemory>1g</surefire.maxMemory>
         <timestamp>${maven.build.timestamp}</timestamp>
         <version.abdera>1.1.3</version.abdera>
         <version.asm>4.0</version.asm>

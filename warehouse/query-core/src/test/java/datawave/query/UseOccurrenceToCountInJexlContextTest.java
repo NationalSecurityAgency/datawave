@@ -86,9 +86,9 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
 
             MoreTestData.writeItAll(client, MoreTestData.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("A", "B", "C", "D");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+            PrintUtility.printShardTable(client, auths);
+            PrintUtility.printShardIndexTable(client, auths);
+            PrintUtility.printMetadataTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
         }
 
         @BeforeEach
@@ -115,9 +115,9 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
 
             MoreTestData.writeItAll(client, MoreTestData.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("A", "B", "C", "D");
-            PrintUtility.printTable(client, auths, TableName.SHARD);
-            PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
-            PrintUtility.printTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+            PrintUtility.printShardTable(client, auths);
+            PrintUtility.printShardIndexTable(client, auths);
+            PrintUtility.printMetadataTable(client, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
         }
 
         @BeforeEach
