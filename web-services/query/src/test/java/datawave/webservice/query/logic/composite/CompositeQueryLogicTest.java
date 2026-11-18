@@ -38,14 +38,13 @@ import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.cache.ResultsPage.Status;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.AbstractQueryLogicTransformer;
 import datawave.core.query.logic.BaseQueryLogic;
-import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.composite.CompositeLogicException;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.core.query.logic.filtered.FilteredQueryLogic;
-import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
@@ -157,12 +156,16 @@ public class CompositeQueryLogicTest {
             return totalResults;
         }
 
+        // TODO remove-accumulo-utils: required by HasMarkings on EdgeQueryResponseBase; delete with HasMarkings
         @Override
+        @Deprecated(forRemoval = true)
         public void setMarkings(Markings<?> markings) {
             this.markings = markings;
         }
 
+        // TODO remove-accumulo-utils: required by HasMarkings on EdgeQueryResponseBase; delete with HasMarkings
         @Override
+        @Deprecated(forRemoval = true)
         public Markings<?> getMarkings() {
             return this.markings;
         }
@@ -188,11 +191,7 @@ public class CompositeQueryLogicTest {
 
     }
 
-    public static class TestQueryLogicTransformer extends BaseQueryLogicTransformer<Entry<?,?>,TestQueryResponse> {
-
-        public TestQueryLogicTransformer(MarkingFunctions<?> markingFunctions) {
-            super(markingFunctions);
-        }
+    public static class TestQueryLogicTransformer extends AbstractQueryLogicTransformer<Entry<?,?>,TestQueryResponse> {
 
         @Override
         public TestQueryResponse transform(Entry<?,?> input) throws EmptyObjectException {
@@ -228,11 +227,7 @@ public class CompositeQueryLogicTest {
 
     }
 
-    public static class DifferentTestQueryLogicTransformer extends BaseQueryLogicTransformer<Entry<?,?>,TestQueryResponse> {
-
-        public DifferentTestQueryLogicTransformer(MarkingFunctions<?> markingFunctions) {
-            super(markingFunctions);
-        }
+    public static class DifferentTestQueryLogicTransformer extends AbstractQueryLogicTransformer<Entry<?,?>,TestQueryResponse> {
 
         @Override
         public TestQueryResponse transform(Entry<?,?> input) throws EmptyObjectException {
@@ -317,7 +312,7 @@ public class CompositeQueryLogicTest {
 
         @Override
         public QueryLogicTransformer getTransformer(Query settings) {
-            return new TestQueryLogicTransformer(new MarkingFunctions.Default());
+            return new TestQueryLogicTransformer();
         }
 
         @Override
@@ -404,7 +399,7 @@ public class CompositeQueryLogicTest {
 
         @Override
         public QueryLogicTransformer getTransformer(Query settings) {
-            return new TestQueryLogicTransformer(new MarkingFunctions.Default());
+            return new TestQueryLogicTransformer();
         }
 
         @Override
@@ -441,7 +436,7 @@ public class CompositeQueryLogicTest {
 
         @Override
         public QueryLogicTransformer getTransformer(Query settings) {
-            return new DifferentTestQueryLogicTransformer(new MarkingFunctions.Default());
+            return new DifferentTestQueryLogicTransformer();
         }
 
         @Override

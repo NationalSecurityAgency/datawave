@@ -1,7 +1,6 @@
 package datawave.webservice.query.logic;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.when;
 
@@ -29,20 +28,6 @@ public class TestLegacyBaseQueryLogicTransformer {
     ResultsPage resultsPage;
 
     @Test
-    public void testConstructor_NullVisibilityInterpreter() {
-        // Run the test
-        Exception result1 = null;
-        try {
-            new TestTransformer(null, this.response);
-        } catch (IllegalArgumentException e) {
-            result1 = e;
-        }
-
-        // Verify results
-        assertNotNull(result1, "Expected an exception to be thrown due to null param");
-    }
-
-    @Test
     public void testCreateResponse_ResultsPagePartial() {
         // Set expectations
         when(this.resultsPage.getResults()).thenReturn(List.of(new Object()));
@@ -51,7 +36,7 @@ public class TestLegacyBaseQueryLogicTransformer {
         this.response.setPartialResults(true);
 
         // Run the test
-        TestTransformer subject = new TestTransformer(new MarkingFunctions.Default(), this.response);
+        TestTransformer subject = new TestTransformer(this.response);
         BaseQueryResponse result1 = subject.createResponse(this.resultsPage);
 
         // Verify results
@@ -65,7 +50,7 @@ public class TestLegacyBaseQueryLogicTransformer {
         when(this.resultsPage.getStatus()).thenReturn(ResultsPage.Status.COMPLETE);
 
         // Run the test
-        TestTransformer subject = new TestTransformer(new MarkingFunctions.Default(), this.response);
+        TestTransformer subject = new TestTransformer(this.response);
         BaseQueryResponse result1 = subject.createResponse(this.resultsPage);
 
         // Verify results
@@ -75,8 +60,9 @@ public class TestLegacyBaseQueryLogicTransformer {
     private static class TestTransformer extends BaseQueryLogicTransformer<Map.Entry<?,?>,EventBase<?,?>> {
         BaseQueryResponse response;
 
-        public TestTransformer(MarkingFunctions<?> markingFunctions, BaseQueryResponse response) {
-            super(markingFunctions);
+        public TestTransformer(BaseQueryResponse response) {
+            // TODO remove-accumulo-utils: use super() once BaseQueryLogicTransformer no longer takes MarkingFunctions
+            super(new MarkingFunctions.Default());
             this.response = response;
         }
 

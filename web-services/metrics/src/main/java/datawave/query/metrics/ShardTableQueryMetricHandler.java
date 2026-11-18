@@ -75,7 +75,6 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryImpl.Parameter;
@@ -93,6 +92,7 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.WSAuthorizationsUtil;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.EventBase;
@@ -278,13 +278,13 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         event.setConf(this.conf);
         event.setDataType(type);
         event.setTimestamp(storedQueryMetric.getCreateDate().getTime());
-        // get security markings from metric, otherwise default to PUBLIC
-        Markings<?> markings = updatedQueryMetric.getMarkings();
-        if (markings == null || markings.isEmpty()) {
+        // get the column visibility from the metric, otherwise default to PUBLIC
+        String visibility = updatedQueryMetric.getColumnVisibility();
+        if (visibility == null || visibility.isEmpty()) {
             event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
         } else {
             try {
-                event.setVisibility(markings.toColumnVisibility());
+                event.setVisibility(AccessExpressionUtil.toColumnVisibility(AccessExpressionUtil.normalize(visibility)));
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
                 event.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
@@ -561,7 +561,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         try {
             BaseQueryMetric m = metricFactory.createMetric(false);
             List<FieldBase> field = event.getFields();
-            m.setMarkings(event.getMarkings());
+            m.setColumnVisibility(event.getColumnVisibility());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
 
             boolean createDateSet = false;

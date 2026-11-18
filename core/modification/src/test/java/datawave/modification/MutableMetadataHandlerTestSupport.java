@@ -36,7 +36,6 @@ import org.apache.log4j.Logger;
 import datawave.data.hash.HashUID;
 import datawave.data.hash.UID;
 import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.WiseGuysIngest;
@@ -95,7 +94,6 @@ class MutableMetadataHandlerTestSupport {
         handler.setIndexTableName(TableName.SHARD_INDEX);
         handler.setReverseIndexTableName(TableName.SHARD_RINDEX);
         handler.setMetadataTableName(METADATA_TABLE);
-        handler.setMarkingFunctions(new MarkingFunctions.Default());
         handler.setMetadataHelperFactory(new MetadataHelperFactory());
 
         mutableFields.put(DATATYPE, new LinkedHashSet<>(List.of(UUID_FIELD, NAME_FIELD, AGE_FIELD, QUOTE_FIELD)));
@@ -129,6 +127,12 @@ class MutableMetadataHandlerTestSupport {
         markings.put("columnVisibility", columnVisibility);
         request.setFieldMarkings(markings);
         request.setColumnVisibility(null);
+        return request;
+    }
+
+    DefaultModificationRequest newMarkingsRequest(MODE mode, String fieldName, String fieldValue, String columnVisibility) {
+        DefaultModificationRequest request = newMarkingsInsertRequest(fieldName, fieldValue, columnVisibility);
+        request.setMode(mode);
         return request;
     }
 

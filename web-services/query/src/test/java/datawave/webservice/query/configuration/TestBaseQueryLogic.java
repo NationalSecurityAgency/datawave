@@ -42,7 +42,6 @@ public class TestBaseQueryLogic {
     @Test
     public void testConstructor_Copy() {
         // Set expectations
-        when(this.copy.getMarkingFunctions()).thenReturn(null);
         when(this.copy.getResponseObjectFactory()).thenReturn(null);
         when(this.copy.getLogicName()).thenReturn("logicName");
         when(this.copy.getLogicDescription()).thenReturn("logicDescription");

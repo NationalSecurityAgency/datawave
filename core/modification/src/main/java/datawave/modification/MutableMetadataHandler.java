@@ -49,9 +49,7 @@ import datawave.core.iterators.FieldIndexDocumentFilter;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
-import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.modification.configuration.ModificationServiceConfiguration;
@@ -66,6 +64,7 @@ import datawave.security.util.ScannerHelper;
 import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.modification.DefaultModificationRequest;
 import datawave.webservice.modification.EventIdentifier;
 import datawave.webservice.modification.ModificationOperation;
@@ -206,7 +205,6 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     protected String reverseIndexTableName = null;
     protected String metadataTableName = null;
     protected MetadataHelperFactory metadataHelperFactory;
-    protected MarkingFunctions<?> markingFunctions = null;
 
     // a map of event fields to index only/derived fields to enable appropriate deleting of event fields and all derivatives
     protected Multimap<String,String> indexOnlyMap = null;
@@ -249,12 +247,27 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         this.metadataTableName = metadataTableName;
     }
 
+    /**
+     * @return null; marking functions are no longer used
+     * @deprecated marking functions are no longer used; field markings are handled as column visibilities
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public MarkingFunctions<?> getMarkingFunctions() {
-        return markingFunctions;
+        return null;
     }
 
+    /**
+     * Retained so that existing Spring configuration that sets the {@code markingFunctions} property continues to load.
+     *
+     * @param markingFunctions
+     *            ignored
+     * @deprecated marking functions are no longer used; field markings are handled as column visibilities
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
-        this.markingFunctions = markingFunctions;
+        // no-op
     }
 
     public Multimap<String,String> getIndexOnlyMap() {
@@ -313,9 +326,14 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     }
 
     /**
-     * Convert legacy Map&lt;String,String&gt; field markings (from DefaultModificationRequest) to Markings&lt;?&gt;.
+     * Convert legacy Map&lt;String,String&gt; field markings (from DefaultModificationRequest) to a normalized column visibility. The visibility is read from
+     * the {@code columnVisibility} entry.
+     *
+     * @param rawMarkings
+     *            the field markings, may be null
+     * @return the normalized column visibility, or null if no visibility was supplied
      */
-    private Markings<?> convertFieldMarkings(Map<String,String> rawMarkings) {
+    private ColumnVisibility convertFieldMarkings(Map<String,String> rawMarkings) {
         if (rawMarkings == null || rawMarkings.isEmpty()) {
             return null;
         }
@@ -323,11 +341,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         if (vis.isEmpty()) {
             return null;
         }
-        try {
-            return markingFunctions.translateFromColumnVisibility(new ColumnVisibility(vis));
-        } catch (MarkingFunctions.Exception e) {
-            throw new RuntimeException(e);
-        }
+        return AccessExpressionUtil.toColumnVisibility(AccessExpressionUtil.normalize(vis));
     }
 
     public void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
@@ -354,7 +368,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 String eventUid = e.getEventUid();
 
                 String oldFieldValue = null;
-                Markings<?> oldFieldMarkings = null;
+                ColumnVisibility oldFieldMarkings = null;
                 String oldColumnVisibility = null;
                 List<Pair<Key,Value>> currentEntryList = null;
                 int valHistoryCount = 0;
@@ -418,7 +432,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
                 if (MODE.INSERT.equals(mode)) {
                     String fieldValue = mr.getFieldValue();
-                    Markings<?> fieldMarkings = convertFieldMarkings(mr.getFieldMarkings());
+                    ColumnVisibility fieldMarkings = convertFieldMarkings(mr.getFieldMarkings());
                     String columnVisibility = mr.getColumnVisibility();
                     ColumnVisibility colviz = null;
                     if (null != columnVisibility) {
@@ -433,7 +447,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                     delete(writer, client, userAuths, currentEntryList, isIndexOnly, isIndexed, isReverseIndexed, isContent, dataTypes, user, MODE.UPDATE,
                                     origTimestamp + valHistoryCount, purgeIndex, insertHistory);
                     String fieldValue = mr.getFieldValue();
-                    Markings<?> fieldMarkings = convertFieldMarkings(mr.getFieldMarkings());
+                    ColumnVisibility fieldMarkings = convertFieldMarkings(mr.getFieldMarkings());
                     String columnVisibility = mr.getColumnVisibility();
                     ColumnVisibility colviz = null;
                     if (null != columnVisibility) {
@@ -638,8 +652,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *            isIndexOnlyField
      * @param insertHistory
      *            insert history flag
-     * @param markings
-     *            markings
+     * @param fieldMarkings
+     *            the visibility supplied through the legacy field markings, used when {@code viz} is null
      * @param ts
      *            timestamp
      * @param isIndexed
@@ -655,15 +669,15 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * @throws Exception
      *             if there are issues
      */
-    protected void insert(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, Markings<?> markings, ColumnVisibility viz,
+    protected void insert(MultiTableBatchWriter writer, String shardId, String datatype, String eventUid, ColumnVisibility fieldMarkings, ColumnVisibility viz,
                     String fieldName, String fieldValue, boolean isIndexOnlyField, boolean isIndexed, boolean isReverseIndexed, Set<Type<?>> dataTypes,
                     String user, MODE mode, long ts, boolean insertHistory) throws Exception {
 
         if (null == viz) {
-            if (null == markings || markings.isEmpty())
+            if (null == fieldMarkings || fieldMarkings.getExpression().length == 0)
                 throw new IllegalArgumentException("No security information specified. Security markings must be supplied");
 
-            viz = markings.toColumnVisibility();
+            viz = fieldMarkings;
         }
 
         insert(writer, shardId, datatype, eventUid, viz, fieldName, fieldValue, ts, isIndexOnlyField, isIndexed, isReverseIndexed, dataTypes, false,
@@ -827,7 +841,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * @param oldFieldValue
      *            old field value
      * @param oldFieldMarkings
-     *            the old field markings
+     *            the old visibility supplied through the legacy field markings, used when {@code oldColumnVisibility} is null
      * @param oldColumnVisibility
      *            the old column visibility
      * @return the Key,Value pair for the field to be updated/deleted from the event table
@@ -835,7 +849,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *             if there are issues
      */
     protected List<Pair<Key,Value>> getField(AccumuloClient client, Set<Authorizations> userAuths, String shardId, String datatype, String eventUid,
-                    String fieldName, String oldFieldValue, Markings<?> oldFieldMarkings, ColumnVisibility oldColumnVisibility) throws Exception {
+                    String fieldName, String oldFieldValue, ColumnVisibility oldFieldMarkings, ColumnVisibility oldColumnVisibility) throws Exception {
 
         Text family = new Text(datatype);
         TextUtil.textAppend(family, eventUid);
@@ -875,19 +889,16 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                         }
                         continue;
                     }
-                } else {
-                    try {
-                        Markings<?> markings = markingFunctions.translateFromColumnVisibilityForAuths(e.getKey().getColumnVisibilityParsed(), userAuths);
-                        if (null != oldFieldMarkings && !oldFieldMarkings.equals(markings)) {
-                            if (log.isTraceEnabled()) {
-                                log.trace("Skipping key that does not match with markings: {}", e.getKey());
-                            }
-                            continue;
+                } else if (null != oldFieldMarkings) {
+                    // compare the normalized values for equivalence, as above
+                    String oldFieldVis = AccessExpressionUtil.normalize(oldFieldMarkings).getExpression();
+                    String thisVis = AccessExpressionUtil.normalize(thisViz).getExpression();
+                    if (!oldFieldVis.equals(thisVis)) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Skipping key that does not match with markings: {}", e.getKey());
                         }
-                    } catch (MarkingFunctions.Exception ex) {
-                        throw new RuntimeException(ex);
+                        continue;
                     }
-
                 }
                 results.add(Pair.of(e.getKey(), e.getValue()));
             }

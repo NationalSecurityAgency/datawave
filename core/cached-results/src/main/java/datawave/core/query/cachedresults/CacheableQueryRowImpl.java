@@ -1,5 +1,7 @@
 package datawave.core.query.cachedresults;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -9,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,12 +19,18 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Sets;
 
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
+import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.Markings;
+import datawave.visibility.AccessExpressionUtil;
+import datawave.visibility.VisibilityFunctions;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.util.TypedValue;
 
+/**
+ * Default {@link CacheableQueryRow}. Each column carries a column visibility expression; the row-level visibility ({@link #getColumnVisibility()}) is the
+ * combination of all column visibilities using {@link VisibilityFunctions}.
+ */
 public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSizeOf {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheableQueryRowImpl.class);
@@ -33,8 +42,6 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
     private String eventId = null;
     private String row = null;
     private String colFam = null;
-    private Markings<?> markings = null;
-    private Map<String,Markings<?>> columnMarkingsMap = new HashMap<>();
     private Map<String,String> columnColumnVisibilityMap = new HashMap<>();
     private Map<String,String> columnTypeMap = new HashMap<>();
     private Map<String,Long> columnTimestampMap = new HashMap<>();
@@ -43,18 +50,45 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
     private String queryOrigin = null;
     private String resultOrigin = null;
 
-    public void addColumn(String columnName, String columnValueString, Markings<?> markings, String columnVisibility, Long timestamp) {
-        addColumn(columnName, new TypedValue(columnValueString), markings, columnVisibility, timestamp);
+    /**
+     * Add a column value.
+     *
+     * @param columnName
+     *            the column name; spaces are replaced with underscores
+     * @param columnValueString
+     *            the column value
+     * @param columnVisibility
+     *            the column visibility expression of the value; null means no visibility
+     * @param timestamp
+     *            the timestamp of the value
+     */
+    public void addColumn(String columnName, String columnValueString, String columnVisibility, Long timestamp) {
+        addColumn(columnName, new TypedValue(columnValueString), columnVisibility, timestamp);
     }
 
-    public void addColumn(String columnName, TypedValue columnTypedValue, Markings<?> markings, String columnVisibility, Long timestamp) {
+    /**
+     * Add a column value. The value's visibility is combined into the row-level visibility and, if the column already has a different visibility, into the
+     * column's visibility using {@link VisibilityFunctions}.
+     *
+     * @param columnName
+     *            the column name; spaces are replaced with underscores
+     * @param columnTypedValue
+     *            the column value
+     * @param columnVisibility
+     *            the column visibility expression of the value; null means no visibility
+     * @param timestamp
+     *            the timestamp of the value
+     */
+    public void addColumn(String columnName, TypedValue columnTypedValue, String columnVisibility, Long timestamp) {
 
         final String cleanColumnName = columnName.replace(' ', '_');
 
+        final String normalizedVisibility;
         try {
-            this.markings = markingFunctions.combine(this.markings, markings);
-        } catch (MarkingFunctions.Exception e) {
-            LOGGER.error("Invalid markings {} skipping column {} = {}", markings, cleanColumnName, columnTypedValue, e);
+            normalizedVisibility = normalize(columnVisibility);
+            this.columnVisibility = combine(this.columnVisibility, normalizedVisibility);
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("Invalid column visibility {} skipping column {} = {}", columnVisibility, cleanColumnName, columnTypedValue, e);
             return;
         }
 
@@ -71,13 +105,53 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
             typedColumnName += "_" + cleanColumnName;
         }
 
-        manageColumnInsert(datawaveType, cleanColumnName, columnTypedValue, markings, columnVisibility);
+        manageColumnInsert(datawaveType, cleanColumnName, columnTypedValue, normalizedVisibility);
         if (!typedColumnName.isEmpty() && !typedColumnName.startsWith("XS_STRING")) {
-            manageColumnInsert(datawaveType, typedColumnName, columnTypedValue, markings, columnVisibility);
+            manageColumnInsert(datawaveType, typedColumnName, columnTypedValue, normalizedVisibility);
         }
     }
 
-    private void manageColumnInsert(Type<?> datawaveType, String columnName, TypedValue columnTypedValue, Markings<?> markings, String columnVisibility) {
+    /**
+     * @param columnName
+     *            the column name
+     * @param columnStringValue
+     *            the column value
+     * @param markings
+     *            ignored unless {@code columnVisibility} is null or empty, in which case its access expression is used as the column visibility
+     * @param columnVisibility
+     *            the column visibility expression
+     * @param timestamp
+     *            the timestamp
+     * @deprecated use {@link #addColumn(String, String, String, Long)}
+     */
+    // TODO remove-accumulo-utils
+    @Override
+    @Deprecated(forRemoval = true)
+    public void addColumn(String columnName, String columnStringValue, Markings<?> markings, String columnVisibility, Long timestamp) {
+        addColumn(columnName, columnStringValue, toVisibility(markings, columnVisibility), timestamp);
+    }
+
+    /**
+     * @param columnName
+     *            the column name
+     * @param columnValue
+     *            the column value
+     * @param markings
+     *            ignored unless {@code columnVisibility} is null or empty, in which case its access expression is used as the column visibility
+     * @param columnVisibility
+     *            the column visibility expression
+     * @param timestamp
+     *            the timestamp
+     * @deprecated use {@link #addColumn(String, TypedValue, String, Long)}
+     */
+    // TODO remove-accumulo-utils
+    @Override
+    @Deprecated(forRemoval = true)
+    public void addColumn(String columnName, TypedValue columnValue, Markings<?> markings, String columnVisibility, Long timestamp) {
+        addColumn(columnName, columnValue, toVisibility(markings, columnVisibility), timestamp);
+    }
+
+    private void manageColumnInsert(Type<?> datawaveType, String columnName, TypedValue columnTypedValue, String columnVisibility) {
         if (!this.columnValues.containsKey(columnName)) {
 
             Set<String> valuesSet = Sets.newLinkedHashSet();
@@ -92,7 +166,6 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
                 valuesSet.add(columnTypedValue.getValue().toString());
             }
             this.columnValues.put(columnName, valuesSet);
-            this.columnMarkingsMap.put(columnName, markings);
             this.columnColumnVisibilityMap.put(columnName, columnVisibility);
 
         } else {
@@ -106,26 +179,59 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
             } else {
                 columnValues.get(columnName).add(columnTypedValue.getValue().toString());
             }
-            Markings<?> currMarkings = columnMarkingsMap.get(columnName);
+            String currVisibility = columnColumnVisibilityMap.get(columnName);
 
-            if (currMarkings == null) {
-                // existing marking was null so we update with new one
-                columnMarkingsMap.put(columnName, markings);
+            if (currVisibility == null) {
+                // existing visibility was null so we update with new one
                 columnColumnVisibilityMap.put(columnName, columnVisibility);
-            } else if (!currMarkings.equals(markings)) {
-                try {
-                    Markings<?> combinedMarkings = markingFunctions.combine(currMarkings, markings);
-
-                    // use combined marking as new markings
-                    columnMarkingsMap.put(columnName, combinedMarkings);
-                    // new combined marking means that this colVis is greater than old colVis
-                    columnColumnVisibilityMap.put(columnName, columnVisibility);
-                } catch (MarkingFunctions.Exception e) {
-                    throw new IllegalStateException(e.getMessage(), e);
-                }
+            } else if (!currVisibility.equals(columnVisibility)) {
+                // the column now holds values with different visibilities, so it gets the combination of them
+                columnColumnVisibilityMap.put(columnName, combine(currVisibility, columnVisibility));
             }
         }
 
+    }
+
+    /**
+     * Normalize a visibility expression, as the response layer did when it translated visibilities.
+     *
+     * @param visibility
+     *            the visibility expression, may be null
+     * @return the normalized expression; null or empty input is returned unchanged
+     * @throws IllegalArgumentException
+     *             if the expression is invalid
+     */
+    private static String normalize(String visibility) {
+        if (visibility == null || visibility.isEmpty()) {
+            return visibility;
+        }
+        return AccessExpressionUtil.normalize(visibility).getExpression();
+    }
+
+    /**
+     * Combine two visibility expressions using {@link VisibilityFunctions#combine(ColumnVisibility, ColumnVisibility)}, which preserves the absence of a
+     * visibility (null).
+     */
+    private static String combine(String first, String second) {
+        ColumnVisibility combined = VisibilityFunctions.getInstance().combine(toColumnVisibility(first), toColumnVisibility(second));
+        return combined == null ? null : new String(combined.getExpression(), UTF_8);
+    }
+
+    private static ColumnVisibility toColumnVisibility(String visibility) {
+        return visibility == null ? null : new ColumnVisibility(visibility);
+    }
+
+    // TODO remove-accumulo-utils: bridging helpers for the deprecated Markings-based members
+    private static String toVisibility(Markings<?> markings, String columnVisibility) {
+        if ((columnVisibility == null || columnVisibility.isEmpty()) && markings != null && !markings.isEmpty()) {
+            return markings.toAccessExpression().getExpression();
+        }
+        return columnVisibility;
+    }
+
+    // TODO remove-accumulo-utils: bridging helpers for the deprecated Markings-based members
+    private static Markings<?> toMarkings(String visibility) {
+        return AccessExpressionMarkings.createMarkings(visibility);
     }
 
     public String getUser() {
@@ -156,20 +262,28 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
         return colFam;
     }
 
+    /**
+     * @return the row-level visibility as markings
+     * @deprecated use {@link #getColumnVisibility()}
+     */
+    // TODO remove-accumulo-utils
+    @Override
+    @Deprecated(forRemoval = true)
     public Markings<?> getMarkings() {
-        return markings;
+        return toMarkings(getColumnVisibility());
     }
 
+    /**
+     * @param columnName
+     *            the column name
+     * @return the column visibility as markings
+     * @deprecated use {@link #getColumnVisibility(String)}
+     */
+    // TODO remove-accumulo-utils
+    @Override
+    @Deprecated(forRemoval = true)
     public Markings<?> getColumnMarkings(String columnName) {
-        final String cleanColumnName = columnName.replace(' ', '_');
-        Markings<?> markings;
-        if (this.columnMarkingsMap.containsKey(cleanColumnName)) {
-            markings = this.columnMarkingsMap.get(cleanColumnName);
-        } else {
-            markings = this.columnMarkingsMap.get("_DEFAULT_");
-        }
-
-        return markings;
+        return toMarkings(getColumnVisibility(columnName));
     }
 
     public String getColumnTimestampString(Map<String,Integer> columnMap) {
@@ -256,12 +370,32 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
         this.colFam = colFam;
     }
 
+    /**
+     * @param markings
+     *            the row-level markings; their access expression becomes the row-level visibility
+     * @deprecated use {@link #setColumnVisibility(String)}
+     */
+    // TODO remove-accumulo-utils
+    @Override
+    @Deprecated(forRemoval = true)
     public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
+        setColumnVisibility(toVisibility(markings, null));
     }
 
+    /**
+     * @param columnMarkingsMap
+     *            per-column markings; their access expressions replace the per-column visibilities
+     * @deprecated use {@link #setColumnColumnVisibilityMap(Map)}
+     */
+    // TODO remove-accumulo-utils
+    @Override
+    @Deprecated(forRemoval = true)
     public void setColumnMarkingsMap(Map<String,Markings<?>> columnMarkingsMap) {
-        this.columnMarkingsMap = columnMarkingsMap;
+        Map<String,String> visibilities = new HashMap<>();
+        if (columnMarkingsMap != null) {
+            columnMarkingsMap.forEach((column, markings) -> visibilities.put(column, toVisibility(markings, null)));
+        }
+        setColumnColumnVisibilityMap(visibilities);
     }
 
     public void setColumnTimestampMap(Map<String,Long> columnTimestampMap) {
@@ -272,44 +406,35 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
         this.user = user;
     }
 
+    /**
+     * Encode the per-column visibilities for the {@code _column_markings_} column of the cached results table. The most common visibility is written first as
+     * the default ({@code <visibility>\0 0}); every other visibility is appended as {@code \0\0<visibility>\0<comma separated column numbers>}. A column with
+     * no visibility is written as the empty string.
+     *
+     * @param columnMap
+     *            the column name to column number mapping
+     * @return the encoded column visibilities
+     */
     public String getColumnSecurityMarkingString(Map<String,Integer> columnMap) {
 
-        Map<String,String> combinedMap = new HashMap<>();
-
-        for (String field : columnMarkingsMap.keySet()) {
-
-            Markings<?> m = columnMarkingsMap.get(field);
-            String v = columnColumnVisibilityMap.get(field);
-            String mStr = "";
-            if (m != null && !m.isEmpty()) {
-                mStr = m.toAccessExpression().getExpression();
-            }
-            if (v == null) {
-                combinedMap.put(field, mStr);
-            } else {
-                combinedMap.put(field, mStr + ':' + v);
-            }
-
-        }
-
         int largestSetCount = 0;
-        String largestSetMarkingString = "";
-        Map<String,Set<String>> markingToField = new HashMap<>();
-        for (Map.Entry<String,String> entry : combinedMap.entrySet()) {
-            String combinedMarking = entry.getValue();
-            Set<String> fields = markingToField.computeIfAbsent(combinedMarking, k -> new HashSet<>());
+        String largestSetVisibility = "";
+        Map<String,Set<String>> visibilityToField = new HashMap<>();
+        for (Map.Entry<String,String> entry : columnColumnVisibilityMap.entrySet()) {
+            String visibility = entry.getValue() == null ? "" : entry.getValue();
+            Set<String> fields = visibilityToField.computeIfAbsent(visibility, k -> new HashSet<>());
             fields.add(entry.getKey());
             if (fields.size() > largestSetCount) {
                 largestSetCount = fields.size();
-                largestSetMarkingString = combinedMarking;
+                largestSetVisibility = visibility;
             }
         }
 
         StringBuilder sb = new StringBuilder();
-        markingToField.remove(largestSetMarkingString);
-        sb.append(largestSetMarkingString).append("\0").append(0);
+        visibilityToField.remove(largestSetVisibility);
+        sb.append(largestSetVisibility).append("\0").append(0);
 
-        for (Map.Entry<String,Set<String>> entry : markingToField.entrySet()) {
+        for (Map.Entry<String,Set<String>> entry : visibilityToField.entrySet()) {
             sb.append("\0\0");
             sb.append(entry.getKey());
             sb.append("\0");
