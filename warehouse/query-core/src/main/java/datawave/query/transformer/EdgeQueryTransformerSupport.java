@@ -1,6 +1,7 @@
 package datawave.query.transformer;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
@@ -19,8 +21,8 @@ import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.util.EdgeValue;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
+import datawave.visibility.VisibilityFunctions;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
@@ -33,12 +35,21 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
     protected ResponseObjectFactory responseObjectFactory;
     protected EdgeModelFields fields;
 
-    public EdgeQueryTransformerSupport(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
-                    EdgeModelFields fields) {
-        super(markingFunctions);
+    public EdgeQueryTransformerSupport(Query settings, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
+        super();
         this.responseObjectFactory = responseObjectFactory;
         auths = new Authorizations(settings.getQueryAuthorizations().split(","));
         this.fields = fields;
+    }
+
+    /**
+     * @deprecated use {@link #EdgeQueryTransformerSupport(Query, ResponseObjectFactory, EdgeModelFields)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    public EdgeQueryTransformerSupport(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
+                    EdgeModelFields fields) {
+        this(settings, responseObjectFactory, fields);
     }
 
     private static final String ERROR_INCORRECT_BYTE_ARRAY_SIZE = "The bitmask byte array is invalid. The array should have four bytes, but has %d bytes";
@@ -100,17 +111,22 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         try {
             EdgeQueryResponseBase response = responseObjectFactory.getEdgeQueryResponse();
 
-            Set<Markings<?>> uniqueMarkings = new HashSet<>();
+            Set<ColumnVisibility> uniqueVisibilities = new HashSet<>();
             for (Object result : resultList) {
                 EdgeBase edge = (EdgeBase) result;
-                uniqueMarkings.add(edge.getMarkings());
+                if (edge.getColumnVisibility() != null) {
+                    uniqueVisibilities.add(new ColumnVisibility(edge.getColumnVisibility()));
+                }
                 response.addEdge(edge);
             }
 
-            response.setMarkings(markingFunctions.combine(uniqueMarkings));
+            if (!uniqueVisibilities.isEmpty()) {
+                ColumnVisibility combined = VisibilityFunctions.getInstance().combine(uniqueVisibilities);
+                response.setColumnVisibility(new String(combined.getExpression(), StandardCharsets.UTF_8));
+            }
             return response;
         } catch (Exception ex) {
-            throw new RuntimeException("could not handle markings in resultList ", ex);
+            throw new RuntimeException("could not handle visibilities in resultList ", ex);
         }
     }
 
@@ -119,62 +135,72 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         EdgeBase edge = (EdgeBase) o;
 
         CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
-        cqo.setMarkingFunctions(this.markingFunctions);
         cqo.setColFam("");
         cqo.setDataType("");
         cqo.setEventId(generateEventId(edge));
         cqo.setRow("");
 
         if (edge.getSource() != null) {
-            cqo.addColumn(fields.getSourceFieldName(), edge.getSource(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getSourceFieldName(), edge.getSource(), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getSink() != null) {
-            cqo.addColumn(fields.getSinkFieldName(), edge.getSink(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getSinkFieldName(), edge.getSink(), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getEdgeType() != null) {
-            cqo.addColumn(fields.getTypeFieldName(), edge.getEdgeType(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getTypeFieldName(), edge.getEdgeType(), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getEdgeRelationship() != null) {
-            cqo.addColumn(fields.getRelationshipFieldName(), edge.getEdgeRelationship(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getRelationshipFieldName(), edge.getEdgeRelationship(), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getEdgeAttribute1Source() != null) {
-            cqo.addColumn(fields.getAttribute1FieldName(), edge.getEdgeAttribute1Source(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getAttribute1FieldName(), edge.getEdgeAttribute1Source(), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getStatsType() != null) {
-            cqo.addColumn(fields.getStatsEdgeFieldName(), edge.getStatsType(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getStatsEdgeFieldName(), edge.getStatsType(), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getEdgeAttribute2() != null) {
-            cqo.addColumn(fields.getAttribute2FieldName(), edge.getEdgeAttribute2(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getAttribute2FieldName(), edge.getEdgeAttribute2(), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getDate() != null) {
-            cqo.addColumn(fields.getDateFieldName(), edge.getDate(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getDateFieldName(), edge.getDate(), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getCount() != null) {
-            cqo.addColumn(fields.getCountFieldName(), edge.getCount().toString(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getCountFieldName(), edge.getCount().toString(), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getEdgeAttribute3() != null) {
-            cqo.addColumn(fields.getAttribute3FieldName(), edge.getEdgeAttribute3(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getAttribute3FieldName(), edge.getEdgeAttribute3(), null, edge.getColumnVisibility(), 0L);
         }
         List<Long> counts = edge.getCounts();
         if (counts != null && !counts.isEmpty()) {
-            cqo.addColumn(fields.getCountsFieldName(), StringUtils.join(counts, '\0'), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getCountsFieldName(), StringUtils.join(counts, '\0'), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getLoadDate() != null) {
-            cqo.addColumn(fields.getLoadDateFieldName(), edge.getLoadDate(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getLoadDateFieldName(), edge.getLoadDate(), null, edge.getColumnVisibility(), 0L);
         }
         if (edge.getActivityDate() != null) {
-            cqo.addColumn(fields.getActivityDateFieldName(), edge.getActivityDate(), edge.getMarkings(), "", 0l);
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(fields.getActivityDateFieldName(), edge.getActivityDate(), null, edge.getColumnVisibility(), 0L);
         }
         return cqo;
     }
 
     @Override
     public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
-        Markings<?> markings = cacheableQueryRow.getMarkings();
-
         EdgeBase edge = (EdgeBase) responseObjectFactory.getEdge();
 
-        edge.setMarkings(markings);
+        edge.setColumnVisibility(cacheableQueryRow.getColumnVisibility());
 
         Map<String,String> columnValues = cacheableQueryRow.getColumnValues();
 

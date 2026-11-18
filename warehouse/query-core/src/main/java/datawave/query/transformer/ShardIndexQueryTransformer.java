@@ -19,9 +19,9 @@ import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.query.model.QueryModel;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
@@ -40,13 +40,22 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
     private QueryModel myQueryModel = null;
     private ResponseObjectFactory responseObjectFactory;
 
-    public ShardIndexQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, QueryModel qm) {
-        super(markingFunctions);
+    public ShardIndexQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory, QueryModel qm) {
+        super();
         this.responseObjectFactory = responseObjectFactory;
         this.auths = new Authorizations(settings.getQueryAuthorizations().split(","));
         this.logic = logic;
         this.myQueryModel = qm;
+    }
+
+    /**
+     * @deprecated use {@link #ShardIndexQueryTransformer(BaseQueryLogic, Query, ResponseObjectFactory, QueryModel)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    public ShardIndexQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
+                    ResponseObjectFactory responseObjectFactory, QueryModel qm) {
+        this(logic, settings, responseObjectFactory, qm);
     }
 
     @Override
@@ -66,13 +75,11 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
 
         EventBase event = responseObjectFactory.getEvent();
         ColumnVisibility columnVisibility = new ColumnVisibility(entry.getKey().getColumnVisibility());
-        Markings<?> markings;
         try {
-            markings = markingFunctions.translateFromColumnVisibilityForAuths(columnVisibility, this.auths);
-        } catch (MarkingFunctions.Exception e) {
-            throw new RuntimeException("could not make markings from: " + columnVisibility);
+            event.setColumnVisibility(AccessExpressionUtil.normalize(columnVisibility).getExpression());
+        } catch (RuntimeException e) {
+            throw new RuntimeException("could not normalize visibility: " + columnVisibility, e);
         }
-        event.setMarkings(markings);
 
         List<FieldBase> fields = new ArrayList<>();
 
@@ -82,13 +89,13 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         String cq = key.getColumnQualifier().toString();
         String cv = key.getColumnVisibility().toString();
 
-        fields.add(makeField("VALUE", markings, cv, 0L, row));
+        fields.add(makeField("VALUE", cv, 0L, row));
         /**
          * Added query model to alias FIELD
          */
-        fields.add(makeField("FIELD", markings, cv, 0L, myQueryModel.aliasFieldNameReverseModel(cf)));
-        fields.add(makeField("DATE", markings, cv, 0L, cq.substring(0, 8)));
-        fields.add(makeField("DATA TYPE", markings, cv, 0L, cq.substring(9)));
+        fields.add(makeField("FIELD", cv, 0L, myQueryModel.aliasFieldNameReverseModel(cf)));
+        fields.add(makeField("DATE", cv, 0L, cq.substring(0, 8)));
+        fields.add(makeField("DATA TYPE", cv, 0L, cq.substring(9)));
         // Parse the UID.List object from the value
         Uid.List uidList = null;
         long count = 0;
@@ -100,7 +107,7 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         } catch (InvalidProtocolBufferException e) {
             log.error("Failed to parse Uid List", e);
         }
-        fields.add(makeField("RECORD COUNT", markings, cv, 0L, Long.toString(count)));
+        fields.add(makeField("RECORD COUNT", cv, 0L, Long.toString(count)));
         event.setFields(fields);
 
         Metadata metadata = new Metadata();
@@ -113,10 +120,9 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         return event;
     }
 
-    private FieldBase makeField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
+    private FieldBase makeField(String name, String columnVisibility, Long timestamp, Object value) {
         FieldBase field = this.responseObjectFactory.getField();
         field.setName(name);
-        field.setMarkings(markings);
         field.setColumnVisibility(columnVisibility);
         field.setTimestamp(timestamp);
         field.setValue(value);
@@ -143,7 +149,6 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         EventBase event = (EventBase) o;
 
         CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
-        cqo.setMarkingFunctions(this.markingFunctions);
         Metadata metadata = event.getMetadata();
         cqo.setColFam(metadata.getDataType() + ":" + cqo.getEventId());
         cqo.setDataType(metadata.getDataType());
@@ -152,7 +157,8 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
 
         List<FieldBase> fields = event.getFields();
         for (FieldBase f : fields) {
-            cqo.addColumn(f.getName(), f.getTypedValue(), f.getMarkings(), f.getColumnVisibility(), f.getTimestamp());
+            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
+            cqo.addColumn(f.getName(), f.getTypedValue(), null, f.getColumnVisibility(), f.getTimestamp());
         }
 
         // set the size in bytes using the initial event size as an approximation
@@ -166,14 +172,13 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         if (this.variableFieldList == null) {
             this.variableFieldList = cacheableQueryRow.getVariableColumnNames();
         }
-        Markings<?> markings = cacheableQueryRow.getMarkings();
         String dataType = cacheableQueryRow.getDataType();
         String internalId = cacheableQueryRow.getEventId();
         String row = cacheableQueryRow.getRow();
 
         EventBase event = responseObjectFactory.getEvent();
 
-        event.setMarkings(markings);
+        event.setColumnVisibility(cacheableQueryRow.getColumnVisibility());
 
         Metadata metadata = new Metadata();
         metadata.setDataType(dataType);
@@ -189,10 +194,8 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
             String columnValue = entry.getValue();
             String columnVisibility = cacheableQueryRow.getColumnVisibility(columnName);
             Long columnTimestamp = cacheableQueryRow.getColumnTimestamp(columnName);
-            Markings<?> columnMarkings = cacheableQueryRow.getColumnMarkings(columnName);
             FieldBase field = responseObjectFactory.getField();
             field.setName(columnName);
-            field.setMarkings(columnMarkings);
             field.setColumnVisibility(columnVisibility);
             field.setTimestamp(columnTimestamp);
             field.setValue(columnValue);

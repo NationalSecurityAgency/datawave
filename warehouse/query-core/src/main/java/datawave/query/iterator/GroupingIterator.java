@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 
 import com.google.common.collect.Maps;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
@@ -51,8 +50,6 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
     // track the number of documents seen by this iterator
     private long documentCount = 0L;
 
-    private final MarkingFunctions<?> markingFunctions;
-
     private final int groupFieldsBatchSize;
 
     private final YieldCallback<Key> yieldCallback;
@@ -61,10 +58,9 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
 
     Map.Entry<Key,Document> next;
 
-    public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, MarkingFunctions<?> markingFunctions, GroupFields groupFields,
-                    int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
+    public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, GroupFields groupFields, int groupFieldsBatchSize,
+                    YieldCallback<Key> yieldCallback) {
         this.previousIterators = previousIterators;
-        this.markingFunctions = markingFunctions;
         this.groupFields = groupFields;
         this.groupFieldsBatchSize = groupFieldsBatchSize;
         this.yieldCallback = yieldCallback;
@@ -102,8 +98,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
 
         if (!groups.isEmpty()) {
             for (Group group : groups.getGroups()) {
-                documents.add(GroupingUtils.createDocument(group, mostRecentKey, markingFunctions,
-                                GroupingUtils.AverageAggregatorWriteFormat.NUMERATOR_AND_DIVISOR));
+                documents.add(GroupingUtils.createDocument(group, mostRecentKey, GroupingUtils.AverageAggregatorWriteFormat.NUMERATOR_AND_DIVISOR));
             }
             document = flatten(documents);
         }
@@ -204,7 +199,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         }
 
         // Set the flattened document's visibility to the combined access expressions of each document.
-        flattened.setColumnVisibility(GroupingUtils.combineVisibilities(expressions, markingFunctions, false));
+        flattened.setColumnVisibility(GroupingUtils.combineVisibilities(expressions, false));
         log.trace("flattened document: {}", flattened);
         return flattened;
     }

@@ -70,12 +70,12 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new ShardQueryCountTableTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+        return new ShardQueryCountTableTransformer(settings, this.responseObjectFactory);
     }
 
     @Override
     public TransformIterator getTransformIterator(Query settings) {
-        countAggregatingIterator = new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions, getPageWaitTimeMillis());
+        countAggregatingIterator = new CountAggregatingIterator(this.iterator(), getTransformer(settings), getPageWaitTimeMillis());
         return countAggregatingIterator;
     }
 
@@ -93,7 +93,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
 
     @Override
     public ResultPostprocessor getResultPostprocessor(GenericQueryConfiguration config) {
-        return new CountResultPostprocessor(markingFunctions);
+        return new CountResultPostprocessor();
     }
 
     @Override

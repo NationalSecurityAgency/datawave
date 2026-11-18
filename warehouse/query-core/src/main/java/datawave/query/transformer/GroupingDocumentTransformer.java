@@ -10,7 +10,6 @@ import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultiset;
@@ -22,9 +21,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
 import datawave.core.query.logic.BaseQueryLogic;
-import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -41,22 +38,52 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
     private List<String> groupFieldsList;
     private Map<String,FieldBase<?>> fieldMap = Maps.newHashMap();
 
+    public GroupingDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory,
+                    Collection<String> groupFieldsSet) {
+        super(logic, settings, responseObjectFactory);
+        createGroupFieldsList(groupFieldsSet);
+    }
+
+    public GroupingDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory,
+                    Collection<String> groupFieldsSet, Boolean reducedResponse) {
+        super(logic, settings, responseObjectFactory, reducedResponse);
+        createGroupFieldsList(groupFieldsSet);
+    }
+
+    public GroupingDocumentTransformer(String tableName, Query settings, ResponseObjectFactory responseObjectFactory, Collection<String> groupFieldsSet,
+                    Boolean reducedResponse) {
+        super(tableName, settings, responseObjectFactory, reducedResponse);
+        createGroupFieldsList(groupFieldsSet);
+    }
+
+    /**
+     * @deprecated use {@link #GroupingDocumentTransformer(BaseQueryLogic, Query, ResponseObjectFactory, Collection)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public GroupingDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Collection<String> groupFieldsSet) {
-        super(logic, settings, markingFunctions, responseObjectFactory);
-        createGroupFieldsList(groupFieldsSet);
+        this(logic, settings, responseObjectFactory, groupFieldsSet);
     }
 
+    /**
+     * @deprecated use {@link #GroupingDocumentTransformer(BaseQueryLogic, Query, ResponseObjectFactory, Collection, Boolean)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public GroupingDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Collection<String> groupFieldsSet, Boolean reducedResponse) {
-        super(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
-        createGroupFieldsList(groupFieldsSet);
+        this(logic, settings, responseObjectFactory, groupFieldsSet, reducedResponse);
     }
 
+    /**
+     * @deprecated use {@link #GroupingDocumentTransformer(String, Query, ResponseObjectFactory, Collection, Boolean)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public GroupingDocumentTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
                     Collection<String> groupFieldsSet, Boolean reducedResponse) {
-        super(tableName, settings, markingFunctions, responseObjectFactory, reducedResponse);
-        createGroupFieldsList(groupFieldsSet);
+        this(tableName, settings, responseObjectFactory, groupFieldsSet, reducedResponse);
     }
 
     public void createGroupFieldsList(Collection<String> groupFieldsSet) {
@@ -88,16 +115,13 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
     }
 
     protected BaseQueryResponse createGroupedResponse(Multiset<Collection<FieldBase<?>>> multiset) {
-        Markings<?> markings = AccessExpressionMarkings.builder().build();
         EventQueryResponseBase response = this.responseObjectFactory.getEventQueryResponse();
         List<EventBase> events = new ArrayList<>();
         for (Collection<FieldBase<?>> entry : multiset.elementSet()) {
             EventBase event = this.responseObjectFactory.getEvent();
-            event.setMarkings(markings);
             List<FieldBase<?>> fields = new ArrayList(entry);
             FieldBase<?> counter = this.responseObjectFactory.getField();
             counter.setName("COUNT");
-            counter.setMarkings(markings);
             counter.setValue(multiset.count(entry));
             counter.setTimestamp(0L);
             fields.add(counter);
@@ -130,8 +154,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
                     log.trace(this.groupFieldsList + " contains " + shorterName);
                 FieldBase<?> created = null;
                 try {
-                    created = this.makeField(shortName, markingFunctions.translateFromColumnVisibility(new ColumnVisibility(field.getColumnVisibility())),
-                                    field.getColumnVisibility(), 0L, field.getValueOfTypedValue());
+                    created = this.makeField(shortName, field.getColumnVisibility(), 0L, field.getValueOfTypedValue());
                 } catch (Exception ex) {
                     log.error(ex);
                 }

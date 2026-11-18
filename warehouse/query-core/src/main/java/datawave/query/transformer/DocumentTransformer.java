@@ -17,9 +17,9 @@ import datawave.core.query.logic.Flushable;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Document;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -46,22 +46,47 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
      *            query settings
      * @param responseObjectFactory
      *            the response object factory
-     * @param markingFunctions
-     *            the marking functions
      */
+    public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory) {
+        super(logic, settings, responseObjectFactory);
+    }
+
+    public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
+        super(logic, settings, responseObjectFactory, reducedResponse);
+    }
+
+    public DocumentTransformer(String tableName, Query settings, ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
+        super(tableName, settings, responseObjectFactory, reducedResponse);
+    }
+
+    /**
+     * @deprecated use {@link #DocumentTransformer(BaseQueryLogic, Query, ResponseObjectFactory)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
-        super(logic, settings, markingFunctions, responseObjectFactory);
+        this(logic, settings, responseObjectFactory);
     }
 
+    /**
+     * @deprecated use {@link #DocumentTransformer(BaseQueryLogic, Query, ResponseObjectFactory, Boolean)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
-        super(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
+        this(logic, settings, responseObjectFactory, reducedResponse);
     }
 
+    /**
+     * @deprecated use {@link #DocumentTransformer(String, Query, ResponseObjectFactory, Boolean)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public DocumentTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
                     Boolean reducedResponse) {
-        super(tableName, settings, markingFunctions, responseObjectFactory, reducedResponse);
+        this(tableName, settings, responseObjectFactory, reducedResponse);
     }
 
     @Override
@@ -144,7 +169,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         EventBase output = null;
         try {
             // build response method here
-            output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
+            output = buildResponse(document, documentKey, eventCV, colf, row);
         } catch (Exception ex) {
             log.error("Error building response document", ex);
             throw new RuntimeException(ex);
@@ -162,17 +187,16 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         return output;
     }
 
-    protected EventBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row,
-                    MarkingFunctions<?> markingFunctions) throws MarkingFunctions.Exception {
+    protected EventBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row) {
 
-        Markings<?> markings = markingFunctions.translateFromColumnVisibility(eventCV);
+        String visibility = AccessExpressionUtil.normalize(eventCV).getExpression();
 
         EventBase event = null;
-        final Collection<FieldBase<?>> documentFields = buildDocumentFields(documentKey, null, document, eventCV, markingFunctions);
+        final Collection<FieldBase<?>> documentFields = buildDocumentFields(documentKey, null, document, eventCV);
         // if documentFields is empty, then the response contained only timing metadata
         if (!documentFields.isEmpty()) {
             event = this.responseObjectFactory.getEvent();
-            event.setMarkings(markings);
+            event.setColumnVisibility(visibility);
             event.setFields(new ArrayList<>(documentFields));
 
             Metadata metadata = new Metadata();

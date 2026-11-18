@@ -93,7 +93,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                     {
                         FieldBase<?> field = responseObjectFactory.getField();
                         field.setName("QUERY");
-                        field.setMarkings(valueField.getMarkings());
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getQueryHash().toString());
@@ -104,7 +103,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                         // add a new value field that preserves the case of the original matched ssdeep.
                         FieldBase<?> field = responseObjectFactory.getField();
                         field.setName("VALUE");
-                        field.setMarkings(valueField.getMarkings());
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getMatchingHash().toString());
@@ -114,7 +112,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                     {
                         FieldBase<?> field = responseObjectFactory.getField();
                         field.setName("WEIGHTED_SCORE");
-                        field.setMarkings(valueField.getMarkings());
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getWeightedScore());
@@ -124,7 +121,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                     {
                         FieldBase<?> field = responseObjectFactory.getField();
                         field.setName("OVERLAP_SCORE");
-                        field.setMarkings(valueField.getMarkings());
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getOverlapScore());
@@ -134,7 +130,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                     {
                         FieldBase field = responseObjectFactory.getField();
                         field.setName("OVERLAP_SSDEEP_NGRAMS");
-                        field.setMarkings(valueField.getMarkings());
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getOverlapsAsString());
@@ -209,6 +204,12 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
         discoveryDelegate.setResponseObjectFactory(responseObjectFactory);
     }
 
+    /**
+     * @deprecated not used; retained so existing configuration that sets the {@code markingFunctions} property continues to load.
+     */
+    // TODO remove-accumulo-utils
+    @Override
+    @Deprecated(forRemoval = true)
     public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
         discoveryDelegate.setMarkingFunctions(markingFunctions);
     }
@@ -276,7 +277,9 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
         return discoveryDelegate.getPlan(client, settings, runtimeQueryAuthorizations, expandFields, expandValues);
     }
 
+    // TODO remove-accumulo-utils
     @Override
+    @Deprecated(forRemoval = true)
     public MarkingFunctions getMarkingFunctions() {
         return discoveryDelegate.getMarkingFunctions();
     }

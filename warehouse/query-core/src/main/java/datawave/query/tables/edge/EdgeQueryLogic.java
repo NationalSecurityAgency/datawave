@@ -816,7 +816,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory, this.getEdgeFields());
+        return new EdgeQueryTransformer(settings, this.responseObjectFactory, this.getEdgeFields());
     }
 
     public List<? extends Type<?>> getDataTypes() {

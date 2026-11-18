@@ -9,8 +9,7 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.log4j.Logger;
 
-import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
+import datawave.visibility.VisibilityFunctions;
 
 public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T> implements Serializable {
 
@@ -18,16 +17,8 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
     private static final Logger log = Logger.getLogger(AttributeBag.class);
     protected long shardTimestamp = Long.MAX_VALUE;
     protected boolean validMetadata = false;
-    protected MarkingFunctions<?> markingFunctions;
 
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
-
-    public MarkingFunctions<?> getMarkingFunctions() {
-        if (null == markingFunctions) {
-            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-        }
-        return markingFunctions;
-    }
 
     protected AttributeBag() {
         this(true);
@@ -73,16 +64,16 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         ColumnVisibility vis = super.getColumnVisibility();
         try {
             vis = this.combineAndSetColumnVisibilities(getRawAttributes());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("got error combining visibilities", e);
         }
         setMetadata(vis, ts);
         validMetadata = true;
     }
 
-    protected ColumnVisibility combineAndSetColumnVisibilities(Collection<Attribute<? extends Comparable<?>>> attributes) throws Exception {
+    protected ColumnVisibility combineAndSetColumnVisibilities(Collection<Attribute<? extends Comparable<?>>> attributes) {
         Collection<ColumnVisibility> visibilities = attributes.stream().map(Attribute::getColumnVisibility).collect(Collectors.toList());
-        return getMarkingFunctions().combineVisibilities(visibilities);
+        return VisibilityFunctions.getInstance().combine(visibilities);
     }
 
     private long updateTimestamps() {

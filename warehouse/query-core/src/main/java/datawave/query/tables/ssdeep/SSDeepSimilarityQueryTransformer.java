@@ -25,11 +25,20 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
     protected final ResponseObjectFactory responseObjectFactory;
 
-    public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        super(markingFunctions);
+    public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, ResponseObjectFactory responseObjectFactory) {
+        super();
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;
+    }
+
+    /**
+     * @deprecated use {@link #SSDeepSimilarityQueryTransformer(Query, SSDeepSimilarityQueryConfiguration, ResponseObjectFactory)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, MarkingFunctions<?> markingFunctions,
+                    ResponseObjectFactory responseObjectFactory) {
+        this(query, config, responseObjectFactory);
     }
 
     @SuppressWarnings("rawtypes")

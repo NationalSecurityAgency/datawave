@@ -81,10 +81,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     private static final long ONE_DAY_MS = 1000L * 60 * 60 * 24;
 
+    /**
+     * @return the markings translated from this document's column visibility, or null if they cannot be determined
+     * @deprecated use {@link #getColumnVisibility()}; translating visibilities into markings is no longer done by DataWave
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public Markings<?> getMarkings() {
         try {
-            markingFunctions = getMarkingFunctions();
-            return markingFunctions.translateFromColumnVisibility(getColumnVisibility());
+            MarkingFunctions<?> markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+            return markingFunctions == null ? null : markingFunctions.translateFromColumnVisibility(getColumnVisibility());
         } catch (MarkingFunctions.Exception ignored) {
             return null;
         }
@@ -195,7 +201,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
         // Transform the remaining entries back into Attributes
         Iterator<Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> attributes = Iterators.transform(extractedFieldNames,
-                        new ValueToAttributes(compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions(), fromIndex));
+                        new ValueToAttributes(compositeMetadata, typeMetadata, attrFilter, fromIndex));
 
         // Add all of the String=>Attribute pairs to this Document
         while (attributes.hasNext()) {

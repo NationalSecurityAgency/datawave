@@ -20,7 +20,6 @@ import com.google.common.base.Preconditions;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.data.type.StringType;
-import datawave.marking.AccessExpressionUtil;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Attribute;
@@ -28,6 +27,8 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Cardinality;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.FieldValueCardinality;
+import datawave.visibility.AccessExpressionUtil;
+import datawave.visibility.VisibilityFunctions;
 import datawave.webservice.query.result.event.FacetsBase;
 import datawave.webservice.query.result.event.FieldCardinalityBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -38,24 +39,49 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
 
     private static final Logger log = Logger.getLogger(FacetedTransformer.class);
 
-    private MarkingFunctions<?> markingFunctions;
-
     /*
      * By default, assume each cell still has the visibility attached to it
      */
+    public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory) {
+        super(logic, settings, responseObjectFactory);
+    }
+
+    public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
+        super(logic, settings, responseObjectFactory, reducedResponse);
+    }
+
+    public FacetedTransformer(String tableName, Query settings, ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
+        super(tableName, settings, responseObjectFactory, reducedResponse);
+    }
+
+    /**
+     * @deprecated use {@link #FacetedTransformer(BaseQueryLogic, Query, ResponseObjectFactory)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
-        super(logic, settings, markingFunctions, responseObjectFactory);
+        this(logic, settings, responseObjectFactory);
     }
 
+    /**
+     * @deprecated use {@link #FacetedTransformer(BaseQueryLogic, Query, ResponseObjectFactory, Boolean)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
-        super(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
+        this(logic, settings, responseObjectFactory, reducedResponse);
     }
 
+    /**
+     * @deprecated use {@link #FacetedTransformer(String, Query, ResponseObjectFactory, Boolean)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public FacetedTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
                     Boolean reducedResponse) {
-        super(tableName, settings, markingFunctions, responseObjectFactory, reducedResponse);
+        this(tableName, settings, responseObjectFactory, reducedResponse);
     }
 
     /**
@@ -65,16 +91,13 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
      *            the document key
      * @param fieldName
      *            a field name
-     * @param markingFunctions
-     *            marking functions
      * @param document
      *            a document
      * @param topLevelColumnVisibility
      *            top level column vis
      * @return list of facets
      */
-    protected Collection<FieldCardinalityBase> buildFacets(Key documentKey, String fieldName, Document document, ColumnVisibility topLevelColumnVisibility,
-                    MarkingFunctions<?> markingFunctions) {
+    protected Collection<FieldCardinalityBase> buildFacets(Key documentKey, String fieldName, Document document, ColumnVisibility topLevelColumnVisibility) {
 
         Set<FieldCardinalityBase> myFields = new HashSet<>();
 
@@ -86,7 +109,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
         for (Entry<String,Attribute<? extends Comparable<?>>> data : documentData.entrySet()) {
 
             attribute = data.getValue();
-            myFields.addAll(buildFacets(documentKey, fn, attribute, topLevelColumnVisibility, markingFunctions));
+            myFields.addAll(buildFacets(documentKey, fn, attribute, topLevelColumnVisibility));
         }
 
         return myFields;
@@ -103,12 +126,9 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
      *            an attribute
      * @param topLevelColumnVisibility
      *            the top level visibility
-     * @param markingFunctions
-     *            marking functions
      * @return list of facets
      */
-    protected Collection<FieldCardinalityBase> buildFacets(Key documentKey, String fieldName, Attribute<?> attr, ColumnVisibility topLevelColumnVisibility,
-                    MarkingFunctions<?> markingFunctions) {
+    protected Collection<FieldCardinalityBase> buildFacets(Key documentKey, String fieldName, Attribute<?> attr, ColumnVisibility topLevelColumnVisibility) {
 
         Set<FieldCardinalityBase> myFields = new HashSet<>();
 
@@ -116,10 +136,10 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
             Attributes attributeList = Attributes.class.cast(attr);
 
             for (Attribute<?> embeddedAttr : attributeList.getAttributes())
-                myFields.addAll(buildFacets(documentKey, fieldName, embeddedAttr, topLevelColumnVisibility, markingFunctions));
+                myFields.addAll(buildFacets(documentKey, fieldName, embeddedAttr, topLevelColumnVisibility));
 
         } else {
-            // Use the markings on the Field if we're returning the markings to the client
+            // Use the visibility on the Field if we're returning the visibilities to the client
             if (attr instanceof Cardinality) {
                 try {
                     Cardinality card = (Cardinality) attr;
@@ -130,8 +150,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
 
                     FieldCardinalityBase fc = this.responseObjectFactory.getFieldCardinality();
                     fc.setField(v.getFieldName());
-                    fc.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(attr.getColumnVisibility(), auths));
-                    fc.setColumnVisibility(AccessExpressionUtil.normalize(fc.getMarkings().toAccessExpression()).getExpression());
+                    fc.setColumnVisibility(AccessExpressionUtil.normalize(attr.getColumnVisibility()).getExpression());
                     fc.setLower(v.getFloorValue());
                     fc.setUpper(v.getCeilingValue());
                     fc.setCardinality(v.getEstimate().cardinality());
@@ -139,7 +158,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
                     myFields.add(fc);
 
                 } catch (Exception e) {
-                    log.error("unable to process markings:" + e);
+                    log.error("unable to process visibility:" + e);
                 }
             }
 
@@ -148,14 +167,13 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
         return myFields;
     }
 
-    protected FacetsBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row,
-                    MarkingFunctions<?> markingFunctions) throws MarkingFunctions.Exception {
+    protected FacetsBase buildResponse(Document document, Key documentKey, ColumnVisibility eventCV, String colf, String row) {
 
         FacetsBase facetedResponse = responseObjectFactory.getFacets();
 
-        final Collection<FieldCardinalityBase> documentFields = buildFacets(documentKey, null, document, eventCV, markingFunctions);
+        final Collection<FieldCardinalityBase> documentFields = buildFacets(documentKey, null, document, eventCV);
 
-        facetedResponse.setMarkings(markingFunctions.translateFromColumnVisibility(eventCV));
+        facetedResponse.setColumnVisibility(AccessExpressionUtil.normalize(eventCV).getExpression());
         facetedResponse.setFields(new ArrayList<>(documentFields));
 
         // assign an estimate of the event size based on the document size
@@ -187,19 +205,16 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
 
         ColumnVisibility cv;
         try {
-            if (null == markingFunctions) {
-                markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-            }
             // Calculate the columnVisibility for this key from the combiner.
-            cv = markingFunctions.combineVisibilities(visibilities.stream().map(ColumnVisibility::new).collect(Collectors.toList()));
+            cv = VisibilityFunctions.getInstance().combine(visibilities.stream().map(ColumnVisibility::new).collect(Collectors.toList()));
         } catch (Exception e) {
             log.error("Could not create combined columnVisibility for the count", e);
             return null;
         }
 
         try {
-            response.setMarkings(markingFunctions.translateFromColumnVisibility(cv));
-        } catch (MarkingFunctions.Exception e) {
+            response.setColumnVisibility(AccessExpressionUtil.normalize(cv).getExpression());
+        } catch (RuntimeException e) {
             log.warn(e);
             // original ignored these exceptions
         }
@@ -254,7 +269,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
         FacetsBase output = null;
         try {
             // build response method here
-            output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
+            output = buildResponse(document, documentKey, eventCV, colf, row);
         } catch (Exception ex) {
             log.error("Error building response document", ex);
             throw new RuntimeException(ex);
@@ -336,7 +351,7 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
     // }
     //
     // // build response method here
-    // output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
+    // output = buildResponse(document, documentKey, eventCV, colf, row);
     //
     // } catch (Exception ex) {
     // log.error("Error building response document", ex);

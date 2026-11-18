@@ -33,16 +33,34 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
     protected final Map<Metadata,String> metadataIdMap;
     protected final boolean decodeView;
 
-    public ContentQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
-        this(query, markingFunctions, responseObjectFactory, false);
+    public ContentQueryTransformer(Query query, ResponseObjectFactory responseObjectFactory) {
+        this(query, responseObjectFactory, false);
     }
 
-    public ContentQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory, boolean decodeView) {
-        super(markingFunctions);
+    public ContentQueryTransformer(Query query, ResponseObjectFactory responseObjectFactory, boolean decodeView) {
+        super();
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;
         this.metadataIdMap = extractMetadadaIdMap(query);
         this.decodeView = decodeView;
+    }
+
+    /**
+     * @deprecated use {@link #ContentQueryTransformer(Query, ResponseObjectFactory)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    public ContentQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
+        this(query, responseObjectFactory);
+    }
+
+    /**
+     * @deprecated use {@link #ContentQueryTransformer(Query, ResponseObjectFactory, boolean)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    public ContentQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory, boolean decodeView) {
+        this(query, responseObjectFactory, decodeView);
     }
 
     /**
@@ -122,15 +140,15 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
 
         ContentKeyValue ckv;
         try {
-            ckv = ContentKeyValueFactory.parse(entry.getKey(), entry.getValue(), auths, markingFunctions);
-        } catch (MarkingFunctions.Exception e1) {
+            ckv = ContentKeyValueFactory.parse(entry.getKey(), entry.getValue());
+        } catch (RuntimeException e1) {
             throw new IllegalArgumentException("Unable to parse visibility", e1);
         }
 
         EventBase e = responseObjectFactory.getEvent();
         FieldBase field = responseObjectFactory.getField();
 
-        e.setMarkings(ckv.getMarkings());
+        e.setColumnVisibility(ckv.getColumnVisibility());
 
         // capture the metadata that identifies the field.
         Metadata m = new Metadata();
@@ -140,7 +158,7 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         e.setMetadata(m);
 
         // store the content in a field based on it's view name.
-        field.setMarkings(ckv.getMarkings());
+        field.setColumnVisibility(ckv.getColumnVisibility());
         field.setName(ckv.getViewName());
         field.setTimestamp(entry.getKey().getTimestamp());
         if (this.decodeView) {
@@ -158,7 +176,7 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         String identifier = metadataIdMap.get(m);
         if (identifier != null) {
             FieldBase idField = responseObjectFactory.getField();
-            idField.setMarkings(ckv.getMarkings());
+            idField.setColumnVisibility(ckv.getColumnVisibility());
             idField.setName("IDENTIFIER");
             idField.setTimestamp(entry.getKey().getTimestamp());
             idField.setValue(identifier);

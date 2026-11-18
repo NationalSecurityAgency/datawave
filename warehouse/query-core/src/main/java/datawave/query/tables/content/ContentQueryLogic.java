@@ -274,7 +274,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new ContentQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory, this.decodeView);
+        return new ContentQueryTransformer(settings, this.responseObjectFactory, this.decodeView);
     }
 
     @Override

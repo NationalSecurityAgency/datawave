@@ -245,7 +245,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory, this.getEdgeFields());
+        return new EdgeQueryTransformer(settings, this.responseObjectFactory, this.getEdgeFields());
     }
 
     @Override

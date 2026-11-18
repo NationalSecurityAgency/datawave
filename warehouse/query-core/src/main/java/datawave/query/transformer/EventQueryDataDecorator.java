@@ -9,7 +9,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
 
-import datawave.marking.Markings;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
@@ -34,7 +33,6 @@ public class EventQueryDataDecorator {
                 // multiple value source fields for the substitution value not supported -- use the first one
                 Iterator<FieldBase> collectionSourceItr = collectionSourceOfData.iterator();
                 FieldBase sourceOfData = collectionSourceItr.next();
-                Markings<?> markings = sourceOfData.getMarkings();
 
                 String id = sourceOfData.getValueString();
                 String newValue = entry.getValue().replace("@field_value@", id);
@@ -42,8 +40,7 @@ public class EventQueryDataDecorator {
                 // If we have no values for the decorated data's field name
                 if (destinationOfData == null || destinationOfData.size() < 1) {
                     // Add the result
-                    data.put(fieldName, this.makeField(fieldName, sourceOfData.getMarkings(), sourceOfData.getColumnVisibility(), sourceOfData.getTimestamp(),
-                                    newValue));
+                    data.put(fieldName, this.makeField(fieldName, sourceOfData.getColumnVisibility(), sourceOfData.getTimestamp(), newValue));
                 } else {
                     // Otherwise, find the original data
                     for (FieldBase dest : destinationOfData) {
@@ -62,10 +59,9 @@ public class EventQueryDataDecorator {
         }
     }
 
-    private FieldBase makeField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
+    private FieldBase makeField(String name, String columnVisibility, Long timestamp, Object value) {
         FieldBase field = this.responseObjectFactory.getField();
         field.setName(name);
-        field.setMarkings(markings);
         field.setColumnVisibility(columnVisibility);
         field.setTimestamp(timestamp);
         field.setValue(value);

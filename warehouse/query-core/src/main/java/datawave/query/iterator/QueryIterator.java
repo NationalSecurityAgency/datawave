@@ -59,7 +59,6 @@ import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.query.Constants;
 import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
@@ -1653,8 +1652,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (groupingIterator == null && getGroupFields() != null && getGroupFields().hasGroupByFields()) {
             synchronized (getGroupFields()) {
                 if (groupingIterator == null) {
-                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(), this.groupFieldsBatchSize,
-                                    this.yieldCallback);
+                    groupingIterator = new GroupingIterator(in, getGroupFields(), this.groupFieldsBatchSize, this.yieldCallback);
                 }
             }
         }

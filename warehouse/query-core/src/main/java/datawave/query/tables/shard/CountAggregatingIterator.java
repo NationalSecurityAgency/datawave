@@ -26,7 +26,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.google.common.collect.Maps;
 
-import datawave.marking.MarkingFunctions;
+import datawave.visibility.VisibilityFunctions;
 import datawave.webservice.query.result.event.DefaultEvent;
 
 /**
@@ -60,11 +60,9 @@ public class CountAggregatingIterator extends TransformIterator implements Close
      *            the iterator
      * @param transformer
      *            the transformer
-     * @param markingFunctions
-     *            the marking functions
      */
-    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions<?> markingFunctions) {
-        this(iterator, transformer, markingFunctions, DEFAULT_PAGE_WAIT_TIME_MILLIS);
+    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer) {
+        this(iterator, transformer, DEFAULT_PAGE_WAIT_TIME_MILLIS);
     }
 
     /**
@@ -74,16 +72,13 @@ public class CountAggregatingIterator extends TransformIterator implements Close
      *            the iterator
      * @param transformer
      *            the transformer
-     * @param markingFunctions
-     *            the marking functions
      * @param pageWaitTimeMillis
      *            the time to wait for the next page
      */
     @SuppressWarnings("unchecked")
-    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, MarkingFunctions<?> markingFunctions,
-                    long pageWaitTimeMillis) {
+    public CountAggregatingIterator(Iterator<Entry<Key,Value>> iterator, Transformer transformer, long pageWaitTimeMillis) {
         super(iterator, transformer);
-        this.aggregator = new CountEntryAggregator(transformer, markingFunctions);
+        this.aggregator = new CountEntryAggregator(transformer);
         this.pageWaitTimeMillis = pageWaitTimeMillis;
 
         CountAggregatingRunnable runnable = new CountAggregatingRunnable(iterator, aggregator, executing, latch);
@@ -144,11 +139,9 @@ public class CountAggregatingIterator extends TransformIterator implements Close
         private final Set<ColumnVisibility> columnVisibilities = new HashSet<>();
 
         private final Transformer transformer;
-        private MarkingFunctions<?> markingFunctions;
 
-        public CountEntryAggregator(Transformer transformer, MarkingFunctions<?> markingFunctions) {
+        public CountEntryAggregator(Transformer transformer) {
             this.transformer = transformer;
-            this.markingFunctions = markingFunctions;
         }
 
         public void addCount(long count) {
@@ -171,10 +164,7 @@ public class CountAggregatingIterator extends TransformIterator implements Close
 
         private ColumnVisibility getCombinedColumnVisibility() {
             try {
-                if (null == markingFunctions) {
-                    markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-                }
-                return markingFunctions.combineVisibilities(columnVisibilities);
+                return VisibilityFunctions.getInstance().combine(columnVisibilities);
             } catch (Exception e) {
                 log.error("Could not combine columnVisibilities for the count", e);
                 return null;

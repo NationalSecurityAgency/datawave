@@ -43,7 +43,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.next.LongRange;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.composite.CompositeMetadata;
@@ -274,7 +273,7 @@ public class DocumentIteratorOptions implements OptionDescriber {
 
         if (attributeFactory != null) {
             // composite metadata is allowed to be null
-            valueToAttributes = new ValueToAttributes(attributeFactory, compositeMetadata, null, MarkingFunctionsFactory.createMarkingFunctions(), false);
+            valueToAttributes = new ValueToAttributes(attributeFactory, compositeMetadata, null, false);
         } else {
             throw new IllegalArgumentException("DocumentIterator requires TypeMetadata or CompositeMetadata");
         }

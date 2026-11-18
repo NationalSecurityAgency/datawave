@@ -14,8 +14,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.webservice.query.data.ObjectSizeOf;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -27,9 +25,6 @@ import io.protostuff.Schema;
 public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements Serializable, Message<SimpleEvent>, ObjectSizeOf {
 
     private static final long serialVersionUID = -1963967131747306439L;
-
-    @XmlElementWrapper(name = "Markings")
-    private Markings<?> markings;
 
     @XmlElement(name = "Metadata")
     private Metadata metadata = null;
@@ -47,8 +42,19 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
     }
 
     @Override
+    @XmlElement(name = "ColumnVisibility")
+    public String getColumnVisibility() {
+        return super.getColumnVisibility();
+    }
+
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        super.setColumnVisibility(columnVisibility);
+    }
+
+    @Override
     public String toString() {
-        return getMarkings() + ": " + this.fields;
+        return getColumnVisibility() + ": " + this.fields;
     }
 
     public Metadata getMetadata() {
@@ -101,8 +107,9 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
                         output.writeObject(2, field, SimpleField.getSchema(), true);
                 }
             }
-            if (message.markings != null) {
-                output.writeObject(3, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
+            // field 3 (markings) is retired; old payloads containing it are skipped
+            if (message.columnVisibility != null) {
+                output.writeString(4, message.columnVisibility, false);
             }
         }
 
@@ -119,9 +126,8 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
                         SimpleField f = input.mergeObject(null, SimpleField.getSchema());
                         message.fields.add(f);
                         break;
-                    case 3:
-                        message.markings = AccessExpressionMarkings.builder().build();
-                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
+                    case 4:
+                        message.columnVisibility = input.readString();
                         break;
                     default:
                         input.handleUnknownField(number, this);
@@ -136,8 +142,8 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
                     return "metadata";
                 case 2:
                     return "fields";
-                case 3:
-                    return "markings";
+                case 4:
+                    return "columnVisibility";
                 default:
                     return null;
             }
@@ -152,7 +158,7 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
         {
             fieldMap.put("metadata", 1);
             fieldMap.put("fields", 2);
-            fieldMap.put("markings", 3);
+            fieldMap.put("columnVisibility", 4);
         }
     };
 

@@ -7,11 +7,9 @@ import java.util.zip.GZIPInputStream;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
 
@@ -19,7 +17,7 @@ public class ContentKeyValueFactory {
 
     private static final Logger log = Logger.getLogger(ContentKeyValueFactory.class);
 
-    public static ContentKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions<?> markingFunctions) throws MarkingFunctions.Exception {
+    public static ContentKeyValue parse(Key key, Value value) {
 
         if (null == key)
             throw new IllegalArgumentException("Cannot pass null key to ContentKeyValueFactory");
@@ -48,7 +46,7 @@ public class ContentKeyValueFactory {
             c.setContents(contents);
         }
 
-        EventKeyValueFactory.parseColumnVisibility(c, key, auths, markingFunctions);
+        EventKeyValueFactory.parseColumnVisibility(c, key);
 
         return c;
     }

@@ -67,14 +67,21 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      *            the fields (user provided) to group by and aggregate
      * @param queryExecutionForPageTimeout
      *            how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client
-     * @param markingFunctions
-     *            the marking functions
      */
-    public GroupingTransform(GroupFields groupFields, MarkingFunctions<?> markingFunctions, long queryExecutionForPageTimeout) {
-        super.initialize(settings, markingFunctions);
+    public GroupingTransform(GroupFields groupFields, long queryExecutionForPageTimeout) {
+        super.initialize(settings);
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.groups = new Groups();
         this.groupFields = groupFields;
+    }
+
+    /**
+     * @deprecated use {@link #GroupingTransform(GroupFields, long)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    public GroupingTransform(GroupFields groupFields, MarkingFunctions<?> markingFunctions, long queryExecutionForPageTimeout) {
+        this(groupFields, queryExecutionForPageTimeout);
     }
 
     public void updateConfig(GroupFields groupFields) {
@@ -136,7 +143,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         Document document = null;
         if (!groups.isEmpty()) {
             for (Group group : groups.getGroups()) {
-                documents.add(GroupingUtils.createDocument(group, mostRecentKey, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.AVERAGE));
+                documents.add(GroupingUtils.createDocument(group, mostRecentKey, GroupingUtils.AverageAggregatorWriteFormat.AVERAGE));
             }
         }
 

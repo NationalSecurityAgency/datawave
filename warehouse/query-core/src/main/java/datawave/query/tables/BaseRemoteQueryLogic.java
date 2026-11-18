@@ -17,7 +17,6 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.remote.RemoteQueryService;
 import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.tables.remote.RemoteQueryLogic;
@@ -124,14 +123,13 @@ public abstract class BaseRemoteQueryLogic<T> extends BaseQueryLogic<T> implemen
     public QueryLogicTransformer getTransformer(Query settings) {
         // a transformer that turns EventBase objects into a response
         if (transformerInstance == null) {
-            transformerInstance = createTransformer(settings, getMarkingFunctions(), getResponseObjectFactory());
+            transformerInstance = createTransformer(settings, getResponseObjectFactory());
         }
 
         return transformerInstance;
     }
 
-    public abstract QueryLogicTransformer<T,T> createTransformer(Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory);
+    public abstract QueryLogicTransformer<T,T> createTransformer(Query settings, ResponseObjectFactory responseObjectFactory);
 
     @Override
     public void close() {
