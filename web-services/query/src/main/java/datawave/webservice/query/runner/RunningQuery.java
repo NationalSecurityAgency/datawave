@@ -411,10 +411,24 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      *             if there is a timeout
      */
     private boolean hasNext(long pageStartTime) throws TimeoutException {
-        if (useResultsThread && executor != null) {
-            startResultsThread();
+        if (!useResultsThread || executor == null) {
+            if (!this.finished && !this.canceled && this.iter.hasNext()) {
+                hasNext.incrementAndGet();
+                return true;
+            }
+            return false;
+        }
+        long generation = resultsThreadGeneration;
+        while (true) {
+            synchronized (running) {
+                // Termination must not restart the iterator belonging to this request.
+                if (generation != resultsThreadGeneration) {
+                    return false;
+                }
+                startResultsThread();
+            }
             synchronized (hasNext) {
-                while (hasNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
+                while (hasNext.get() == 0 && running.get() && !this.finished && !this.canceled && generation == resultsThreadGeneration) {
                     long timeout = getResultsWaitTimeout(pageStartTime);
                     try {
                         if (log.isDebugEnabled()) {
@@ -431,20 +445,18 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 if (forcedReturn.get() && hasNext.get() == 0) {
                     throw new TimeoutException("Query page return was forced");
                 }
-                if (hasNext.get() == 0) {
-                    log.debug("hasNext returned false.  No more results");
+                if (generation != resultsThreadGeneration || this.finished || this.canceled) {
                     return false;
-                } else {
+                }
+                if (hasNext.get() > 0) {
                     return true;
                 }
+                if (resultsThreadFinished) {
+                    log.debug("hasNext returned false.  No more results");
+                    return false;
+                }
             }
-        } else {
-            if (!this.finished && !this.canceled && this.iter.hasNext()) {
-                hasNext.incrementAndGet();
-                return true;
-            } else {
-                return false;
-            }
+            // Retry outside the wait monitor when a producer yields after our scheduling attempt.
         }
     }
 
