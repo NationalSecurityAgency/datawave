@@ -30,8 +30,6 @@ import org.junit.jupiter.api.Test;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
@@ -43,6 +41,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.TypeMetadataHelper;
 import datawave.table.constants.TableName;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
@@ -81,7 +80,6 @@ public class DiscoveryTransformerTest {
         logic.setMaxWork(-1);
         logic.setAllowLeadingWildcard(true);
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
     }
 
@@ -114,10 +112,10 @@ public class DiscoveryTransformerTest {
 
         EventBase expectedEventBase = new DefaultEvent();
         expectedEventBase.setMetadata(discoveredThingToMetadata(thing));
-        Markings<?> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
+        String visibility = normalizedVisibility.apply(thing.getColumnVisibility());
 
-        expectedEventBase.setMarkings(markings);
-        expectedEventBase.setFields(discoveredThingToFieldValuesOnly(thing, markings));
+        expectedEventBase.setColumnVisibility(visibility);
+        expectedEventBase.setFields(discoveredThingToFieldValuesOnly(thing, visibility));
         expectedEventBase.setSizeInBytes(6L);
 
         // This is the heart of the test.
@@ -150,10 +148,10 @@ public class DiscoveryTransformerTest {
 
         EventBase expectedEventBase = new DefaultEvent();
         expectedEventBase.setMetadata(discoveredThingToMetadata(thing));
-        Markings<?> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
+        String visibility = normalizedVisibility.apply(thing.getColumnVisibility());
 
-        expectedEventBase.setMarkings(markings);
-        expectedEventBase.setFields(discoveredThingToFieldValuesOnly(thing, markings));
+        expectedEventBase.setColumnVisibility(visibility);
+        expectedEventBase.setFields(discoveredThingToFieldValuesOnly(thing, visibility));
         expectedEventBase.setSizeInBytes(6L);
 
         // This is the heart of the test.
@@ -186,10 +184,10 @@ public class DiscoveryTransformerTest {
 
         EventBase expectedEventBase = new DefaultEvent();
         expectedEventBase.setMetadata(discoveredThingToMetadata(thing));
-        Markings<?> markings = markingsFromVisibility.apply(thing.getColumnVisibility());
+        String visibility = normalizedVisibility.apply(thing.getColumnVisibility());
 
-        expectedEventBase.setMarkings(markings);
-        expectedEventBase.setFields(discoveredThingToField(thing, markings));
+        expectedEventBase.setColumnVisibility(visibility);
+        expectedEventBase.setFields(discoveredThingToField(thing, visibility));
         expectedEventBase.setSizeInBytes(6L);
 
         // This is the heart of the test.
@@ -217,46 +215,40 @@ public class DiscoveryTransformerTest {
         return bos.toString();
     };
 
-    private final Function<String,Markings<?>> markingsFromVisibility = x -> {
-        try {
-            return this.logic.getMarkingFunctions().translateFromColumnVisibility(new ColumnVisibility(x));
-        } catch (MarkingFunctions.Exception e) {
-            throw new RuntimeException("could not parse to markings: " + x);
-        }
-    };
+    private final Function<String,String> normalizedVisibility = x -> AccessExpressionUtil.normalize(new ColumnVisibility(x)).getExpression();
 
     @SuppressWarnings("rawtypes")
-    private List<FieldBase> discoveredThingToFieldValuesOnly(DiscoveredThing thing, Markings<?> markings) {
+    private List<FieldBase> discoveredThingToFieldValuesOnly(DiscoveredThing thing, String visibility) {
         List<FieldBase> fields = new ArrayList<>();
 
         if (Optional.ofNullable(thing.getTerm()).isPresent()) {
-            fields.add(makeField("VALUE", markings, "", 0L, thing.getTerm()));
+            fields.add(makeField("VALUE", visibility, 0L, thing.getTerm()));
         }
         return fields;
     }
 
     @SuppressWarnings("rawtypes")
-    private List<FieldBase> discoveredThingToField(DiscoveredThing thing, Markings<?> markings) {
+    private List<FieldBase> discoveredThingToField(DiscoveredThing thing, String visibility) {
         List<FieldBase> fields = new ArrayList<>();
 
         if (Optional.ofNullable(thing.getTerm()).isPresent()) {
-            fields.add(makeField("VALUE", markings, "", 0L, thing.getTerm()));
+            fields.add(makeField("VALUE", visibility, 0L, thing.getTerm()));
         }
 
         if (Optional.ofNullable(thing.getField()).isPresent()) {
-            fields.add(makeField("FIELD", markings, "", 0L, thing.getField()));
+            fields.add(makeField("FIELD", visibility, 0L, thing.getField()));
         }
 
         if (Optional.ofNullable(thing.getDate()).isPresent()) {
-            fields.add(makeField("DATE", markings, "", 0L, thing.getDate()));
+            fields.add(makeField("DATE", visibility, 0L, thing.getDate()));
         }
 
         if (Optional.ofNullable(thing.getType()).isPresent()) {
-            fields.add(makeField("DATA TYPE", markings, "", 0L, thing.getType()));
+            fields.add(makeField("DATA TYPE", visibility, 0L, thing.getType()));
         }
 
         if (thing.getCount() > 0L) {
-            fields.add(makeField("RECORD COUNT", markings, "", 0L, String.valueOf(thing.getCount())));
+            fields.add(makeField("RECORD COUNT", visibility, 0L, String.valueOf(thing.getCount())));
         }
 
         return fields;
@@ -271,10 +263,9 @@ public class DiscoveryTransformerTest {
     }
 
     @SuppressWarnings("rawtypes")
-    private FieldBase makeField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
+    private FieldBase makeField(String name, String columnVisibility, Long timestamp, Object value) {
         FieldBase field = new DefaultField();
         field.setName(name);
-        field.setMarkings(markings);
         field.setColumnVisibility(columnVisibility);
         field.setTimestamp(timestamp);
         field.setValue(value);

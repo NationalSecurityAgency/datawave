@@ -25,7 +25,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import com.google.common.collect.Sets;
 
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
-import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper.INTERRUPT;
 import datawave.query.RebuildingScannerTestHelper.TEARDOWN;
@@ -106,7 +105,6 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQueryJUnit5 {
         this.logic.setIncludeGroupingContext(true);
 
         this.logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        this.logic.setMarkingFunctions(new MarkingFunctions.Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 

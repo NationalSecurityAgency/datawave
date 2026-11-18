@@ -39,7 +39,6 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.AbstractQueryLogicTransformer;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.QueryTestTableHelper;
@@ -98,7 +97,6 @@ public class TestCardinalityWithQuery {
         temporaryFolder = Files.createTempDirectory(tempDir, "cardinality-");
 
         logic = new ShardQueryLogic();
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());

@@ -23,7 +23,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 
 import datawave.core.iterators.ResultCountingIterator.ResultCountTuple;
-import datawave.marking.MarkingFunctions;
 
 /**
  * Tests the aggregation performed by the {@link CountAggregatingIterator} and the lifecycle of the thread that performs it.
@@ -38,14 +37,12 @@ public class CountAggregatingIteratorTest {
 
     private final Clock clock = Clock.systemUTC();
 
-    private final MarkingFunctions<?> markingFunctions = new MarkingFunctions.Default();
-
     /** returns the aggregated (count, visibility) pair untouched so tests can assert against it */
     private final Transformer transformer = input -> input;
 
     @Test
     public void testCountsAreAggregatedAcrossAllEntries() {
-        CountAggregatingIterator iterator = new CountAggregatingIterator(entries(3L, 5L, 11L), transformer, markingFunctions, THREAD_EXIT_WAIT_MILLIS);
+        CountAggregatingIterator iterator = new CountAggregatingIterator(entries(3L, 5L, 11L), transformer, THREAD_EXIT_WAIT_MILLIS);
 
         assertEquals(19L, drainToCount(iterator));
     }
@@ -55,7 +52,7 @@ public class CountAggregatingIteratorTest {
      */
     @Test
     public void testAggregationThreadExitsWithFullyConsumedIterator() {
-        CountAggregatingIterator iterator = new CountAggregatingIterator(entries(3L, 5L), transformer, markingFunctions, THREAD_EXIT_WAIT_MILLIS);
+        CountAggregatingIterator iterator = new CountAggregatingIterator(entries(3L, 5L), transformer, THREAD_EXIT_WAIT_MILLIS);
         assertEquals(8L, drainToCount(iterator));
 
         assertTrue(awaitAggregationThreadsExit(), "aggregation thread outlived the fully consumed iterator");
@@ -67,7 +64,7 @@ public class CountAggregatingIteratorTest {
     @Test
     public void testCloseReleasesThreadBlockedOnSource() throws Exception {
         CountDownLatch blocked = new CountDownLatch(1);
-        CountAggregatingIterator iterator = new CountAggregatingIterator(blockingEntries(blocked), transformer, markingFunctions, 10L);
+        CountAggregatingIterator iterator = new CountAggregatingIterator(blockingEntries(blocked), transformer, 10L);
 
         // the aggregation thread is now parked in hasNext(), so the first page is an intermediate result
         assertTrue(blocked.await(THREAD_EXIT_WAIT_MILLIS, TimeUnit.MILLISECONDS), "aggregation thread never reached the source iterator");

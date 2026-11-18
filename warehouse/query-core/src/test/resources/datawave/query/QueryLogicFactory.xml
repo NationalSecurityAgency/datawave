@@ -182,7 +182,6 @@
     </bean>
 
     <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
-        <property name="markingFunctions" ref="markingFunctions" />
         <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
 
@@ -369,7 +368,6 @@
 
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
-        <property name="markingFunctions" ref="markingFunctions" />
         <property name="sortGeoWaveQueryRanges" value="true" />
         <property name="numRangesToBuffer" value="15" />
         <property name="rangeBufferTimeoutMillis" value="15000" />

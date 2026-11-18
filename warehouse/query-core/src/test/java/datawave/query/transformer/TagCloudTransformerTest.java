@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.tables.keyword.KeywordQueryState;
@@ -50,47 +49,37 @@ public class TagCloudTransformerTest {
 
     @Test
     public void nullVersionTest() {
-        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new MarkingFunctions.Default(),
-                        new DefaultResponseObjectFactory(), Set.of());
+        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertEquals(DEFAULT_VERSION, transformer.getResponseVersion());
     }
 
     @Test
     public void version1Test() {
-        TagCloudTransformer transformer = new TagCloudTransformer("1", query, new KeywordQueryState(), new MarkingFunctions.Default(),
-                        new DefaultResponseObjectFactory(), Set.of());
+        TagCloudTransformer transformer = new TagCloudTransformer("1", query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertEquals(TagCloudTransformer.ResponseVersion.V1, transformer.getResponseVersion());
-        transformer = new TagCloudTransformer("v1", query, new KeywordQueryState(), new MarkingFunctions.Default(), new DefaultResponseObjectFactory(),
-                        Set.of());
+        transformer = new TagCloudTransformer("v1", query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertEquals(TagCloudTransformer.ResponseVersion.V1, transformer.getResponseVersion());
-        transformer = new TagCloudTransformer("V1", query, new KeywordQueryState(), new MarkingFunctions.Default(), new DefaultResponseObjectFactory(),
-                        Set.of());
+        transformer = new TagCloudTransformer("V1", query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertEquals(TagCloudTransformer.ResponseVersion.V1, transformer.getResponseVersion());
     }
 
     @Test
     public void version2Test() {
-        TagCloudTransformer transformer = new TagCloudTransformer("2", query, new KeywordQueryState(), new MarkingFunctions.Default(),
-                        new DefaultResponseObjectFactory(), Set.of());
+        TagCloudTransformer transformer = new TagCloudTransformer("2", query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertEquals(TagCloudTransformer.ResponseVersion.V2, transformer.getResponseVersion());
-        transformer = new TagCloudTransformer("v2", query, new KeywordQueryState(), new MarkingFunctions.Default(), new DefaultResponseObjectFactory(),
-                        Set.of());
+        transformer = new TagCloudTransformer("v2", query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertEquals(TagCloudTransformer.ResponseVersion.V2, transformer.getResponseVersion());
-        transformer = new TagCloudTransformer("V2", query, new KeywordQueryState(), new MarkingFunctions.Default(), new DefaultResponseObjectFactory(),
-                        Set.of());
+        transformer = new TagCloudTransformer("V2", query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertEquals(TagCloudTransformer.ResponseVersion.V2, transformer.getResponseVersion());
     }
 
     @Test
     public void defaultVersionTest() {
-        TagCloudTransformer transformer = new TagCloudTransformer("3", query, new KeywordQueryState(), new MarkingFunctions.Default(),
-                        new DefaultResponseObjectFactory(), Set.of());
+        TagCloudTransformer transformer = new TagCloudTransformer("3", query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertEquals(DEFAULT_VERSION, transformer.getResponseVersion());
-        transformer = new TagCloudTransformer("v3", query, new KeywordQueryState(), new MarkingFunctions.Default(), new DefaultResponseObjectFactory(),
-                        Set.of());
+        transformer = new TagCloudTransformer("v3", query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertEquals(DEFAULT_VERSION, transformer.getResponseVersion());
-        transformer = new TagCloudTransformer("V3", query, new KeywordQueryState(), new MarkingFunctions.Default(), new DefaultResponseObjectFactory(),
-                        Set.of());
+        transformer = new TagCloudTransformer("V3", query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertEquals(DEFAULT_VERSION, transformer.getResponseVersion());
     }
 
@@ -101,24 +90,23 @@ public class TagCloudTransformerTest {
 
     @Test
     public void transformNoTransformerTest() {
-        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new MarkingFunctions.Default(),
-                        new DefaultResponseObjectFactory(), Set.of());
+        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new DefaultResponseObjectFactory(), Set.of());
         assertThrows(IllegalArgumentException.class, () -> transformer.transform(Map.entry(new Key(), new Value())));
     }
 
     @Test
     public void transformCantDecodeTest() {
         NeverDecodingTagCloudInputTransformer neverDecodingTagCloudInputTransformer = new NeverDecodingTagCloudInputTransformer();
-        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new MarkingFunctions.Default(),
-                        new DefaultResponseObjectFactory(), Set.of(neverDecodingTagCloudInputTransformer));
+        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new DefaultResponseObjectFactory(),
+                        Set.of(neverDecodingTagCloudInputTransformer));
         assertThrows(IllegalArgumentException.class, () -> transformer.transform(Map.entry(new Key(), new Value())));
     }
 
     @Test
     public void transformTest() {
         EmptyTagCloudInputTransformer emptyTagCloudInputTransformer = new EmptyTagCloudInputTransformer();
-        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new MarkingFunctions.Default(),
-                        new DefaultResponseObjectFactory(), Set.of(emptyTagCloudInputTransformer));
+        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new DefaultResponseObjectFactory(),
+                        Set.of(emptyTagCloudInputTransformer));
         TagCloudPartition partition = transformer.transform(Map.entry(new Key(), new Value()));
         assertNotNull(partition);
         assertEquals(new TagCloudPartition(), partition);
@@ -128,8 +116,8 @@ public class TagCloudTransformerTest {
     public void transformMultipleTest() {
         NeverDecodingTagCloudInputTransformer neverDecodingTagCloudInputTransformer = new NeverDecodingTagCloudInputTransformer();
         EmptyTagCloudInputTransformer emptyTagCloudInputTransformer = new EmptyTagCloudInputTransformer();
-        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new MarkingFunctions.Default(),
-                        new DefaultResponseObjectFactory(), Set.of(neverDecodingTagCloudInputTransformer, emptyTagCloudInputTransformer));
+        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new DefaultResponseObjectFactory(),
+                        Set.of(neverDecodingTagCloudInputTransformer, emptyTagCloudInputTransformer));
         TagCloudPartition partition = transformer.transform(Map.entry(new Key(), new Value()));
         assertNotNull(partition);
         assertEquals(new TagCloudPartition(), partition);
@@ -142,8 +130,8 @@ public class TagCloudTransformerTest {
         Value v = new Value(KeywordResults.serialize(keywordResults));
 
         KeywordResultsTransformer keywordResultsTransformer = new KeywordResultsTransformer();
-        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new MarkingFunctions.Default(),
-                        new DefaultResponseObjectFactory(), Set.of(keywordResultsTransformer));
+        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new DefaultResponseObjectFactory(),
+                        Set.of(keywordResultsTransformer));
         TagCloudPartition partition = transformer.transform(Map.entry(k, v));
         assertNotNull(partition);
         assertEquals("language", partition.getPartition());
@@ -163,8 +151,8 @@ public class TagCloudTransformerTest {
         p.addInput(new TagCloudInput("source", "vis", ENTITY_MAP, metadata));
         Entry<Key,Value> entry = tagCloudPartitionTransformer.encode(p);
 
-        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new MarkingFunctions.Default(),
-                        new DefaultResponseObjectFactory(), Set.of(tagCloudPartitionTransformer));
+        TagCloudTransformer transformer = new TagCloudTransformer(null, query, new KeywordQueryState(), new DefaultResponseObjectFactory(),
+                        Set.of(tagCloudPartitionTransformer));
         TagCloudPartition transformed = transformer.transform(entry);
         assertEquals(p, transformed);
     }
@@ -175,8 +163,7 @@ public class TagCloudTransformerTest {
         TagCloudPartition p = new TagCloudPartition("data");
         p.addInput(new TagCloudInput("source", "vis", ENTITY_MAP, metadata));
 
-        TagCloudTransformer transformer = new TagCloudTransformer(null, query, state, new MarkingFunctions.Default(), new DefaultResponseObjectFactory(),
-                        Set.of());
+        TagCloudTransformer transformer = new TagCloudTransformer(null, query, state, new DefaultResponseObjectFactory(), Set.of());
         assertEquals(TagCloudTransformer.ResponseVersion.V1, transformer.getResponseVersion());
 
         Object o = transformer.createResponse(List.of(p));
@@ -196,8 +183,7 @@ public class TagCloudTransformerTest {
         TagCloudPartition p = new TagCloudPartition("data");
         p.addInput(new TagCloudInput("source", "vis", ENTITY_MAP, metadata));
 
-        TagCloudTransformer transformer = new TagCloudTransformer("2", query, state, new MarkingFunctions.Default(), new DefaultResponseObjectFactory(),
-                        Set.of());
+        TagCloudTransformer transformer = new TagCloudTransformer("2", query, state, new DefaultResponseObjectFactory(), Set.of());
         assertEquals(TagCloudTransformer.ResponseVersion.V2, transformer.getResponseVersion());
 
         Object o = transformer.createResponse(List.of(p));
@@ -217,8 +203,7 @@ public class TagCloudTransformerTest {
         TagCloudPartition p = new TagCloudPartition("data");
         p.addInput(new TagCloudInput("source", "vis", ENTITY_MAP, metadata));
 
-        TagCloudTransformer transformer = new TagCloudTransformer(null, query, state, new MarkingFunctions.Default(), new DefaultResponseObjectFactory(),
-                        Set.of());
+        TagCloudTransformer transformer = new TagCloudTransformer(null, query, state, new DefaultResponseObjectFactory(), Set.of());
         assertEquals(TagCloudTransformer.ResponseVersion.V1, transformer.getResponseVersion());
 
         Object o = transformer.createResponse(List.of(p));
@@ -238,8 +223,7 @@ public class TagCloudTransformerTest {
         TagCloudPartition p = new TagCloudPartition("data");
         p.addInput(new TagCloudInput("source", "vis", ENTITY_MAP, metadata));
 
-        TagCloudTransformer transformer = new TagCloudTransformer("2", query, state, new MarkingFunctions.Default(), new DefaultResponseObjectFactory(),
-                        Set.of());
+        TagCloudTransformer transformer = new TagCloudTransformer("2", query, state, new DefaultResponseObjectFactory(), Set.of());
         assertEquals(TagCloudTransformer.ResponseVersion.V2, transformer.getResponseVersion());
 
         Object o = transformer.createResponse(List.of(p));

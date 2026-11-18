@@ -47,7 +47,6 @@
     </bean>
 
     <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
-        <property name="markingFunctions" ref="markingFunctions" />
         <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>
     
@@ -133,7 +132,6 @@
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <property name="maxLinesToPrint" value="100"/>
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
-        <property name="markingFunctions" ref="markingFunctions" />
         <!--   reduce type metadata     -->
         <property name="reduceTypeMetadata" value="false" />
         <property name="reduceTypeMetadataPerShard" value="false" />

@@ -17,8 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
@@ -38,7 +36,6 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 public class SSDeepSimilarityQueryTransformerTest {
 
     private Query query;
-    private final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
     private final ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
 
     private SSDeepSimilarityQueryConfiguration config;
@@ -71,7 +68,7 @@ public class SSDeepSimilarityQueryTransformerTest {
         final Integer editDistance = editDistanceScorer.apply(query, match);
         final ScoredSSDeepPair scoredSSDeepPair = new ScoredSSDeepPair(query, match, overlappingNGrams, editDistance);
 
-        SSDeepSimilarityQueryTransformer transformer = new SSDeepSimilarityQueryTransformer(this.query, config, markingFunctions, responseObjectFactory);
+        SSDeepSimilarityQueryTransformer transformer = new SSDeepSimilarityQueryTransformer(this.query, config, responseObjectFactory);
         EventBase transformedEvent = transformer.transform(scoredSSDeepPair);
         List<Object> resultList = new ArrayList<>();
         resultList.add(transformedEvent);
