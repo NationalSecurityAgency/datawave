@@ -39,7 +39,6 @@
 						<property name="metadataTableName" value="${metadata.table.name}" />
 						<property name="indexTableName" value="${index.table.name}" />
 						<property name="reverseIndexTableName" value="${rindex.table.name}" />
-						<property name="markingFunctions" ref="markingFunctions" />
 						<property name="securityMarkingExemptFields">
 							<list value-type="java.lang.String">
 								${mutableMetadata.securityMarkingExemptFields}
@@ -80,7 +79,6 @@
 						<property name="metadataHelperFactory" ref="metadataHelperFactory" />
 						<property name="indexTableName" value="${index.table.name}" />
 						<property name="reverseIndexTableName" value="${rindex.table.name}" />							
-						<property name="markingFunctions" ref="markingFunctions" />
 						<property name="requiresAudit" value="false" />
 						<property name="indexOnlyMap">
 							<!-- A map of event fields to index only/derived fields to enable appropriate deleting of event fiels and all derivitives.
