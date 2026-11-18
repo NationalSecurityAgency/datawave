@@ -23,16 +23,16 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.FieldVisibilities;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.util.StringUtils;
 import datawave.util.TextUtil;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  *
@@ -64,7 +64,6 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
     protected String[] fieldOverrides = null;
     protected HashMap<String,Set<String>> subCategories;
     protected String[] sCategories = null;
-    protected MarkingFunctions<?> markingFunctions;
 
     protected Configuration conf;
 
@@ -74,7 +73,6 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
         tableName = ConfigurationHelper.isNull(context.getConfiguration(), ATOM_TABLE_NAME, String.class);
         categoryTableName = tableName + "Categories";
         subCategories = new HashMap<>();
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
         TypeRegistry.getInstance(context.getConfiguration());
         String[] types = ConfigurationHelper.isNull(context.getConfiguration(), ATOM_TYPES_TO_PROCESS, String[].class);
@@ -256,12 +254,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
      * @return the visibility
      */
     protected String getColumnQualifier(RawRecordContainer event, NormalizedContentInterface value) {
-        ColumnVisibility visibility = event.getVisibility();
-        Markings<?> markings = value.getMarkings();
-        if (markings != null && !markings.isEmpty()) {
-            visibility = markings.toColumnVisibility();
-        }
-        return flatten(visibility);
+        return flatten(FieldVisibilities.resolve(event.getVisibility(), value));
     }
 
     /**
@@ -272,7 +265,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
      * @return the flattened visibility
      */
     protected String flatten(ColumnVisibility vis) {
-        return new String(markingFunctions.flatten(vis));
+        return new String(VisibilityFunctions.getInstance().flatten(vis));
     }
 
 }

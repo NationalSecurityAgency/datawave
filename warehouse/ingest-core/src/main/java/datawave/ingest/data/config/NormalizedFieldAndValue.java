@@ -7,6 +7,7 @@ package datawave.ingest.data.config;
  */
 import java.io.UnsupportedEncodingException;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.Text;
@@ -14,7 +15,6 @@ import org.apache.hadoop.io.Text;
 import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.config.MimeDecoder;
-import datawave.marking.Markings;
 
 public class NormalizedFieldAndValue extends BaseNormalizedContent implements GroupedNormalizedContentInterface {
     private boolean grouped = false;
@@ -42,8 +42,8 @@ public class NormalizedFieldAndValue extends BaseNormalizedContent implements Gr
         super(field, value);
     }
 
-    public NormalizedFieldAndValue(String field, String value, Markings<?> markings) {
-        super(field, value, markings);
+    public NormalizedFieldAndValue(String field, String value, ColumnVisibility visibility) {
+        super(field, value, visibility);
     }
 
     public NormalizedFieldAndValue(String field, String value, String group, String subGroup) {

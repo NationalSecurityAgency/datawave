@@ -62,7 +62,6 @@ import com.google.common.collect.Sets;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestMapFileLoader.ImportMode;
-import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
@@ -545,7 +544,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     // Return the record writer
     @Override
     public RecordWriter<BulkIngestKey,Value> getRecordWriter(final TaskAttemptContext context) throws IOException, InterruptedException {
-        MarkingFunctions.Factory.createMarkingFunctions();
         // get the task output path
         FileOutputCommitter committer = (FileOutputCommitter) getOutputCommitter(context);
         workDir = committer.getWorkPath();

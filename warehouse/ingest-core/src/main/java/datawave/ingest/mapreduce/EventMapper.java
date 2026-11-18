@@ -69,7 +69,6 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.ingest.time.Now;
 import datawave.ingest.validation.FieldValidator;
-import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 import datawave.util.time.TraceStopwatch;
 
@@ -161,8 +160,6 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
     protected Set<String> sequenceFileNames = new HashSet<>();
 
-    protected MarkingFunctions<?> markingFunctions;
-
     private boolean metricsEnabled = false;
     private MetricsService<K2,V2> metricsService;
     private ReusableMetricsLabels metricsLabels;
@@ -184,9 +181,6 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             splitStart = Long.valueOf(split.getStart()).toString();
         } else
             splitStart = null;
-
-        // Needed for side-effects
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
         // Initialize the Type Registry
         TypeRegistry.getInstance(context.getConfiguration());

@@ -395,13 +395,11 @@ public class RawRecordContainerImplTest {
                 addError(RawDataErrorNames.RUNTIME_EXCEPTION);
             }
 
-            if (getVisibility() == null && getSecurityMarkings() == null) {
-                if (markingsHelper != null) {
-                    setSecurityMarkings(markingsHelper.getDefaultMarkings());
-                }
+            if (getVisibility() == null && markingsHelper != null) {
+                setVisibility(markingsHelper.getDefaultVisibility());
             }
 
-            if (getSecurityMarkings() == null) {
+            if (getVisibility() == null) {
                 addError(RawDataErrorNames.MISSING_DATA_ERROR);
             }
         }

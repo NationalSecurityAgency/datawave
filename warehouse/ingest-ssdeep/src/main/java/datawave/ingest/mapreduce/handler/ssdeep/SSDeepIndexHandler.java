@@ -29,7 +29,6 @@ import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
-import datawave.marking.MarkingFunctions;
 import datawave.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.util.ssdeep.NGramByteHashGenerator;
 import datawave.util.ssdeep.NGramGenerator;
@@ -69,8 +68,6 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     protected Text ssdeepIndexTableName;
 
-    protected MarkingFunctions<?> markingFunctions;
-
     protected TaskAttemptContext taskAttemptContext;
 
     protected Set<String> ssdeepFieldNames;
@@ -80,7 +77,6 @@ public class SSDeepIndexHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTy
 
     @Override
     public void setup(TaskAttemptContext context) {
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
         taskAttemptContext = context;
 
         Configuration conf = context.getConfiguration();

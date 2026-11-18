@@ -1,6 +1,9 @@
 package datawave.ingest.data.config;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
+
 import datawave.data.type.Type;
+import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.Markings;
 
 /**
@@ -60,12 +63,33 @@ public interface NormalizedContentInterface extends Cloneable {
     void setIndexedFieldValue(String val);
 
     /**
+     * Set the field specific visibility.
+     *
+     * @param visibility
+     *            the visibility for this field, or null if the overall event visibility is to be used
+     */
+    void setVisibility(ColumnVisibility visibility);
+
+    /**
+     * Get the field specific visibility.
+     *
+     * @return The field specific visibility, or null if the overall event visibility is to be used. An empty visibility is treated the same as null by the
+     *         ingest handlers (see {@link FieldVisibilities}).
+     */
+    ColumnVisibility getVisibility();
+
+    /**
      * Set the field specific markings
      *
      * @param markings
      *            the markings to set
+     * @deprecated use {@link #setVisibility(ColumnVisibility)}
      */
-    void setMarkings(Markings<?> markings);
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    default void setMarkings(Markings<?> markings) {
+        setVisibility(markings == null || markings.isEmpty() ? null : markings.toColumnVisibility());
+    }
 
     /**
      * When we fail to process a field (e.g. normalize), then an error can be set which in the EventMapper results in the event being dropped from normal
@@ -80,8 +104,13 @@ public interface NormalizedContentInterface extends Cloneable {
      * Get the field specific markings
      *
      * @return The field specific markings, or null if the overall event markings are to be used.
+     * @deprecated use {@link #getVisibility()}
      */
-    Markings<?> getMarkings();
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    default Markings<?> getMarkings() {
+        return AccessExpressionMarkings.createMarkings(getVisibility());
+    }
 
     /**
      * Get the processing error for this field if any.

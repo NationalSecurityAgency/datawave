@@ -32,6 +32,7 @@ import com.google.gson.stream.JsonToken;
 import datawave.data.hash.UID;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.data.config.FieldVisibilities;
 import datawave.ingest.input.reader.AbstractEventRecordReader;
 import datawave.ingest.json.config.helper.JsonDataTypeHelper;
 import datawave.ingest.json.config.helper.JsonIngestFlattener;
@@ -239,7 +240,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
             event.generateId(null);
         }
 
-        checkSecurityMarkings();
+        checkVisibility();
         enforcePolicy(event);
 
         return event;
@@ -253,11 +254,11 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
     }
 
     /**
-     * Make sure that security markings are set on the event prior to its return in {@link #getEvent()}
+     * Make sure that a visibility is set on the event prior to its return in {@link #getEvent()}
      */
-    protected void checkSecurityMarkings() {
-        if (null == event.getSecurityMarkings() || event.getSecurityMarkings().isEmpty()) {
-            event.setSecurityMarkings(this.markingsHelper.getDefaultMarkings());
+    protected void checkVisibility() {
+        if (FieldVisibilities.isEmpty(event.getVisibility())) {
+            event.setVisibility(this.markingsHelper.getDefaultVisibility());
         }
     }
 

@@ -1,13 +1,17 @@
 package datawave.ingest.data;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 
+import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
 import datawave.data.hash.UID;
+import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.Markings;
 import datawave.util.CompositeTimestamp;
 
@@ -17,9 +21,31 @@ import datawave.util.CompositeTimestamp;
  */
 public interface RawRecordContainer {
 
-    Markings<?> getSecurityMarkings();
+    /**
+     * @return the event visibility as markings, or null if no visibility is set
+     * @deprecated use {@link #getVisibility()}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    default Markings<?> getSecurityMarkings() {
+        ColumnVisibility visibility = getVisibility();
+        if (visibility == null) {
+            return null;
+        }
+        return AccessExpressionMarkings.builder().columnVisibility(new String(visibility.getExpression(), UTF_8)).build();
+    }
 
-    void setSecurityMarkings(Markings<?> securityMarkings);
+    /**
+     * @param securityMarkings
+     *            the markings to use as the event visibility; null clears the visibility
+     * @deprecated use {@link #setVisibility(ColumnVisibility)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    default void setSecurityMarkings(Markings<?> securityMarkings) {
+        AccessExpression ae = securityMarkings == null ? null : securityMarkings.toAccessExpression();
+        setVisibility(ae == null ? null : new ColumnVisibility(ae.getExpression()));
+    }
 
     UID getId();
 

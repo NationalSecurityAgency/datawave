@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -36,8 +35,6 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.ingest.IgnorableErrorHelperInterface;
 import datawave.ingest.protobuf.RawRecordContainer.Data;
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.util.CompositeTimestamp;
 
 public class RawRecordContainerImpl implements Writable, Configurable, RawRecordContainer {
@@ -81,44 +78,8 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     private Object auxData = null;
     private Map<String,String> auxMap = null;
 
-    // RawRecordContainer support
-    Markings<?> securityMarkings = null;
-
     public RawRecordContainerImpl() {
         uidBuilder = UID.builder();
-    }
-
-    @Override
-    public Markings<?> getSecurityMarkings() {
-        return this.securityMarkings;
-    }
-
-    @Override
-    public void setSecurityMarkings(Markings<?> securityMarkings) {
-        this.securityMarkings = securityMarkings;
-        syncSecurityMarkingsToFields();
-    }
-
-    protected void syncSecurityMarkingsToFields() {
-        if (securityMarkings != null) {
-            AccessExpression ae = securityMarkings.toAccessExpression();
-            if (ae != null) {
-                setVisibilityNoSync(ae.getExpression());
-            } else {
-                setVisibilityNoSync(null);
-            }
-        } else {
-            setVisibilityNoSync(null);
-        }
-    }
-
-    protected void syncFieldsToSecurityMarkings() {
-        if (visibility != null) {
-            String expr = new String(visibility.getExpression());
-            securityMarkings = AccessExpressionMarkings.builder().columnVisibility(expr).build();
-        } else {
-            securityMarkings = null;
-        }
     }
 
     @Override
@@ -423,7 +384,6 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         equals.append(this.rawData, e.rawData);
         equals.append(this.auxData, e.auxData);
         equals.append(this.auxMap, e.auxMap);
-        equals.append(this.securityMarkings, e.securityMarkings);
         return equals.isEquals();
     }
 
@@ -441,7 +401,6 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         result = 31 * result + Arrays.hashCode(rawData);
         result = 31 * result + (auxData != null ? auxData.hashCode() : 0);
         result = 31 * result + (auxMap != null ? auxMap.hashCode() : 0);
-        result = 31 * result + (securityMarkings != null ? securityMarkings.hashCode() : 0);
         return result;
     }
 
@@ -463,7 +422,6 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         rrci.rawFileName = this.rawFileName;
         rrci.rawFileTimeStamp = this.rawFileTimeStamp;
         rrci.rawRecordNumber = this.rawRecordNumber;
-        rrci.securityMarkings = this.securityMarkings;
         rrci.ids = new ArrayList<>(this.ids);
         rrci.rawData = this.rawData;
         rrci.requiresMasking = this.requiresMasking;
@@ -515,15 +473,9 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     @Override
     public void setVisibility(ColumnVisibility visibility) {
         this.visibility = visibility;
-        syncFieldsToSecurityMarkings();
     }
 
     public void setVisibility(String visibility) {
-        setVisibilityNoSync(visibility);
-        syncFieldsToSecurityMarkings();
-    }
-
-    private void setVisibilityNoSync(String visibility) {
         if (visibility == null) {
             this.visibility = null;
         } else {
@@ -710,7 +662,6 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         uid = null;
         errors.clear();
         visibility = null;
-        securityMarkings = null;
         rawFileName = null;
         rawFileTimeStamp = 0L;
         rawRecordNumber = 0;
@@ -735,7 +686,6 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
         buf.append("uid", String.valueOf(this.uid));
         buf.append("errors", errors);
         buf.append("visibility", String.valueOf(this.visibility));
-        buf.append("securityMarkings", this.securityMarkings);
         buf.append("rawFileName", this.rawFileName);
         buf.append("rawFileTimeStamp", this.rawFileTimeStamp);
         buf.append("rawRecordNumber", this.rawRecordNumber);

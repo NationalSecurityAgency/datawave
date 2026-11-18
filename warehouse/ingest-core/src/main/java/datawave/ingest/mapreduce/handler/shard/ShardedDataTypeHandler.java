@@ -29,6 +29,7 @@ import datawave.ingest.config.IngestConfiguration;
 import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
+import datawave.ingest.data.config.FieldVisibilities;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
@@ -39,10 +40,9 @@ import datawave.ingest.mapreduce.job.statsd.StatsDEnabledDataTypeHandler;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.LoadDateTableConfigHelper;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.query.model.Direction;
 import datawave.table.constants.TableName;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  * <p>
@@ -194,7 +194,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     private RawRecordMetadata metadata = null;
     private ShardIdFactory shardIdFactory = null;
     private LoadingCache<String,String> dCache = null;
-    protected MarkingFunctions<?> markingFunctions;
     protected IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
 
     // default setting is a standard index with uid and event keys
@@ -216,8 +215,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
     @Override
     public void setup(TaskAttemptContext context) {
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-
         Configuration conf = context.getConfiguration();
         shardIdFactory = new ShardIdFactory(conf);
 
@@ -933,32 +930,27 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     }
 
     /**
-     * A helper routine to determine the visibility for a field.
+     * A helper routine to determine the visibility for a field: the field specific visibility if one is set, otherwise the event visibility.
      *
      * @param event
      *            the event
      * @param value
      *            the entry value
-     * @return the visibility
+     * @return the flattened visibility
      */
     public byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
-        ColumnVisibility visibility = event.getVisibility();
-        Markings<?> markings = value.getMarkings();
-        if (markings != null && !markings.isEmpty()) {
-            visibility = markings.toColumnVisibility();
-        }
-        return flatten(visibility);
+        return flatten(FieldVisibilities.resolve(event.getVisibility(), value));
     }
 
     /**
-     * Normalize a ColumnVisibility expression via AccessExpression and return the expression bytes.
+     * Flatten a visibility into the bytes written to Accumulo keys, using {@link VisibilityFunctions#flatten(ColumnVisibility)}.
      *
      * @param vis
      *            the visibility
-     * @return the normalized visibility bytes
+     * @return the flattened visibility bytes
      */
     protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
+        return VisibilityFunctions.getInstance().flatten(vis);
     }
 
     /**

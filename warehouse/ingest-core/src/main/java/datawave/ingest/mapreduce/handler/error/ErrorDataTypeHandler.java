@@ -1,12 +1,9 @@
 package datawave.ingest.mapreduce.handler.error;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -30,6 +27,7 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.FieldVisibilities;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
@@ -37,9 +35,9 @@ import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
-import datawave.marking.MarkingFunctions;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  * Handler that take events with processing errors or fatal errors and dumps them into a processing error table. This table will be used for subsequent
@@ -111,7 +109,6 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
 
     private byte[] defaultVisibility = null;
     protected MarkingsHelper markingsHelper;
-    protected MarkingFunctions<?> markingFunctions;
 
     private String tableName = null;
 
@@ -128,18 +125,14 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
 
     @Override
     public void setup(TaskAttemptContext context) {
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
         IngestConfiguration ingestConfiguration = IngestConfigurationFactory.getIngestConfiguration();
         markingsHelper = ingestConfiguration.getMarkingsHelper(context.getConfiguration(), TypeRegistry.getType(TypeRegistry.ERROR_PREFIX));
         tableName = ConfigurationHelper.isNull(context.getConfiguration(), ERROR_TABLE_NAME, String.class);
 
         this.conf = context.getConfiguration();
 
-        if (markingsHelper != null && markingsHelper.getDefaultMarkings() != null) {
-            AccessExpression ae = markingsHelper.getDefaultMarkings().toAccessExpression();
-            if (ae != null) {
-                defaultVisibility = ae.getExpression().getBytes(UTF_8);
-            }
+        if (markingsHelper != null && markingsHelper.getDefaultVisibility() != null) {
+            defaultVisibility = markingsHelper.getDefaultVisibility().getExpression();
         }
 
         // Initialize a UID builder based on the configuration
@@ -321,8 +314,9 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
      */
     protected byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
         byte[] visibility;
-        if (value != null && value.getMarkings() != null && !value.getMarkings().isEmpty()) {
-            visibility = flatten(value.getMarkings().toColumnVisibility());
+        ColumnVisibility fieldVisibility = FieldVisibilities.getFieldVisibility(value);
+        if (fieldVisibility != null) {
+            visibility = flatten(fieldVisibility);
         } else if (event.getVisibility() != null) {
             visibility = flatten(event.getVisibility());
         } else {
@@ -332,14 +326,14 @@ public class ErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedData
     }
 
     /**
-     * Normalize a ColumnVisibility expression via AccessExpression and return the expression bytes.
+     * Flatten a visibility into the bytes written to Accumulo keys, using {@link VisibilityFunctions#flatten(ColumnVisibility)}.
      *
      * @param vis
      *            the visibility
-     * @return the normalized visibility bytes
+     * @return the flattened visibility bytes
      */
     protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
+        return VisibilityFunctions.getInstance().flatten(vis);
     }
 
     @Override

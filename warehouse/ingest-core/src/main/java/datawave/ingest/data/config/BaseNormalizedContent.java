@@ -1,10 +1,12 @@
 package datawave.ingest.data.config;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import datawave.data.type.Type;
-import datawave.marking.Markings;
 
 /**
  * Base container class implementation of the NormalizedContentInterface. This class is utilized to retain the original and transformed content and labels for a
@@ -20,8 +22,8 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
     /** The transformed field value of data. */
     protected String _indexedFieldValue = null;
 
-    /** The security markings for the field value pair. */
-    protected Markings<?> _markings = null;
+    /** The field specific visibility for the field value pair, or null to use the event visibility. */
+    protected ColumnVisibility _visibility = null;
 
     /** The field processing error if any. */
     protected Throwable error = null;
@@ -39,16 +41,16 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         _indexedFieldValue = value;
     }
 
-    public BaseNormalizedContent(String field, String value, Markings<?> markings) {
+    public BaseNormalizedContent(String field, String value, ColumnVisibility visibility) {
         this(field, value);
-        _markings = markings;
+        _visibility = visibility;
     }
 
     public BaseNormalizedContent(NormalizedContentInterface n) {
         setFieldName(n.getIndexedFieldName());
         setIndexedFieldValue(n.getIndexedFieldValue());
         setEventFieldValue(n.getEventFieldValue());
-        setMarkings(n.getMarkings());
+        setVisibility(n.getVisibility());
         setError(n.getError());
     }
 
@@ -116,14 +118,14 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
     }
 
     @Override
-    public Markings<?> getMarkings() {
-        return _markings;
+    public ColumnVisibility getVisibility() {
+        return _visibility;
     }
 
     @Override
-    public void setMarkings(Markings<?> markings) {
+    public void setVisibility(ColumnVisibility visibility) {
         hashCode = null;
-        this._markings = markings;
+        this._visibility = visibility;
     }
 
     /**
@@ -150,7 +152,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         if (hashCode == null) {
             HashCodeBuilder b = new HashCodeBuilder();
             b.append(_fieldName).append(_indexedFieldValue).append(_eventFieldValue);
-            b.append(_markings);
+            b.append(_visibility);
             if (error != null) {
                 b.append(error); // we want error in the hashCode only when it is non-null
             }
@@ -166,7 +168,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
             b.append(_fieldName, n._fieldName);
             b.append(_indexedFieldValue, n._indexedFieldValue);
             b.append(_eventFieldValue, n._eventFieldValue);
-            b.append(_markings, n._markings);
+            b.append(_visibility, n._visibility);
             b.append(error, n.error);
             return b.isEquals();
         }
@@ -188,7 +190,7 @@ public class BaseNormalizedContent implements NormalizedContentInterface, Clonea
         sb.append("fieldName=").append(this._fieldName);
         sb.append(", indexedFieldValue=").append(this._indexedFieldValue);
         sb.append(", eventFieldValue=").append(this._eventFieldValue);
-        sb.append(", markings=").append(this._markings);
+        sb.append(", visibility=").append(this._visibility == null ? null : new String(this._visibility.getExpression(), UTF_8));
         if (null != this.error) {
             sb.append(", error=").append(this.error.getClass().getCanonicalName());
         }

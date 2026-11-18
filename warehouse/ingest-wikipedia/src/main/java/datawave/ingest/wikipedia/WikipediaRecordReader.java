@@ -110,10 +110,10 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
     }
 
     @Override
-    protected void setDefaultSecurityMarkings(RawRecordContainer rrc) {
-        // get security marking set in the config, otherwise default to PUBLIC
+    protected void setDefaultVisibility(RawRecordContainer rrc) {
+        // get the default visibility set in the config, otherwise default to PUBLIC
         if (markingsHelper != null) {
-            rrc.setSecurityMarkings(markingsHelper.getDefaultMarkings());
+            rrc.setVisibility(markingsHelper.getDefaultVisibility());
         }
         if (rrc.getVisibility() == null) {
             rrc.setVisibility(new ColumnVisibility(DEFAULT_SECURITY_MARKING));
@@ -123,7 +123,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
     @Override
     public RawRecordContainer getEvent() {
         RawRecordContainer event = delegate.getEvent(this.rawFileName);
-        setDefaultSecurityMarkings(event);
+        setDefaultVisibility(event);
         return event;
     }
 
