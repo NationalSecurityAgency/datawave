@@ -51,8 +51,8 @@ import datawave.webservice.query.exception.QueryException;
 /**
  * A base test class to encapsulate everything needed to run query tests against an edge query logic.
  * <p>
- * One-time fixture setup uses JUnit 5 {@code @BeforeAll}, and assertions come from {@code org.junit.jupiter.api.Assertions}.
- * New edge query tests should extend this class.
+ * One-time fixture setup uses JUnit 5 {@code @BeforeAll}, and assertions come from {@code org.junit.jupiter.api.Assertions}. New edge query tests should extend
+ * this class.
  */
 public abstract class BaseEdgeQueryTestJUnit5 {
 
