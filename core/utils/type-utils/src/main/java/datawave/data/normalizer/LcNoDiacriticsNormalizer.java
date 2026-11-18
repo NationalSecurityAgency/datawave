@@ -26,6 +26,9 @@ public class LcNoDiacriticsNormalizer extends AbstractNormalizer<String> {
         if (null == fieldValue) {
             return null;
         }
+        if (isAscii(fieldValue)) {
+            return fieldValue.toLowerCase(Locale.ENGLISH);
+        }
         String decomposed = Normalizer.normalize(fieldValue, Form.NFD);
         String noDiacriticals = removeDiacriticalMarks(decomposed);
         String recomposed = Normalizer.normalize(noDiacriticals, Form.NFC);
@@ -41,9 +44,12 @@ public class LcNoDiacriticsNormalizer extends AbstractNormalizer<String> {
         if (null == fieldRegex) {
             return null;
         }
-        String decomposed = Normalizer.normalize(fieldRegex, Form.NFD);
-        String noDiacriticals = removeDiacriticalMarks(decomposed);
-        String recomposed = Normalizer.normalize(noDiacriticals, Form.NFC);
+        String recomposed = fieldRegex;
+        if (!isAscii(fieldRegex)) {
+            String decomposed = Normalizer.normalize(fieldRegex, Form.NFD);
+            String noDiacriticals = removeDiacriticalMarks(decomposed);
+            recomposed = Normalizer.normalize(noDiacriticals, Form.NFC);
+        }
         try {
             JavaRegexAnalyzer regex = new JavaRegexAnalyzer(recomposed);
             regex.applyRegexCaseSensitivity(false);
@@ -70,5 +76,14 @@ public class LcNoDiacriticsNormalizer extends AbstractNormalizer<String> {
     @Override
     public String denormalize(String in) {
         return in;
+    }
+
+    private static boolean isAscii(String str) {
+        for (int i = 0; i < str.length(); i++) {
+            if (str.charAt(i) > 0x7f) {
+                return false;
+            }
+        }
+        return true;
     }
 }
