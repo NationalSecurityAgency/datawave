@@ -1,6 +1,7 @@
 package datawave.webservice.dictionary.data;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -18,8 +19,6 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlSchema;
 
 import org.junit.jupiter.api.Test;
-
-import datawave.marking.AccessExpressionMarkings;
 
 public class DefaultDescriptionTest {
 
@@ -39,6 +38,7 @@ public class DefaultDescriptionTest {
 
         assertTrue(result.contains("<columnVisibility>PRIVATE</columnVisibility>"));
         assertTrue(result.contains("<description>my description</description>"));
+        assertFalse(result.contains("<markings>"));
     }
 
     @Test
@@ -64,7 +64,7 @@ public class DefaultDescriptionTest {
 
     private static DefaultFields getDefaultFields() {
         DefaultDescription desc = new DefaultDescription();
-        desc.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
+        desc.setColumnVisibility("PRIVATE");
         desc.setDescription("my description");
 
         Set<DefaultDescription> descs = new HashSet<>();
@@ -83,8 +83,11 @@ public class DefaultDescriptionTest {
         return dicFieldsList;
     }
 
+    /**
+     * Payloads that only carry the legacy nested markings element still expose the column visibility.
+     */
     @Test
-    public void testUnmarshall() throws JAXBException {
+    public void testUnmarshallLegacyMarkings() throws JAXBException {
 
         String namespace = "";
 
@@ -120,15 +123,12 @@ public class DefaultDescriptionTest {
         DefaultFields resp = (DefaultFields) u.unmarshal(new ByteArrayInputStream(xmlString.getBytes()));
         int fieldCount = 0;
         int descriptionCount = 0;
-        int markingCount = 0;
 
         for (DefaultDictionaryField f : resp.getFields()) {
             assertEquals("myType", f.getDatatype());
             for (DefaultDescription d : f.getDescriptions()) {
                 assertEquals("my description", d.getDescription());
-                assertTrue(d.getMarkings() instanceof AccessExpressionMarkings);
-                AccessExpressionMarkings aem = (AccessExpressionMarkings) d.getMarkings();
-                assertEquals("PRIVATE", aem.getColumnVisibilityString());
+                assertEquals("PRIVATE", d.getColumnVisibility());
                 descriptionCount++;
             }
             fieldCount++;

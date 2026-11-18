@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 
 import datawave.accumulo.util.security.UserAuthFunctions;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.accumulo.config.AccumuloConfiguration.MetricsClusterProperties;
 import datawave.microservice.accumulo.config.AccumuloConfiguration.WarehouseClusterProperties;
 import datawave.microservice.config.accumulo.AccumuloProperties;
@@ -33,12 +32,6 @@ public class AccumuloConfiguration {
     @ConditionalOnMissingBean
     public AccumuloProperties metricsAccumuloProperies(MetricsClusterProperties metricsProperties) {
         return metricsProperties.getAccumulo();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public MarkingFunctions<?> markingFunctions() {
-        return new MarkingFunctions.Default();
     }
 
     @Bean

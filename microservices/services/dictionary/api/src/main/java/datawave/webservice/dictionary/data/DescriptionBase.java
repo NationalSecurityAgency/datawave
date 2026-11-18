@@ -13,6 +13,11 @@ public abstract class DescriptionBase<T> implements HasMarkings, HasColumnVisibi
 
     protected String description;
 
+    /**
+     * @deprecated use {@link #columnVisibility}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     protected Markings<?> markings;
 
     protected String columnVisibility;

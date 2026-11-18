@@ -7,17 +7,25 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlTransient;
 
+import org.apache.accumulo.access.AccessExpression;
+
+import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.Markings;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public class Visibility {
+public class Visibility implements HasColumnVisibility {
 
     @XmlAttribute(name = "valid")
     private Boolean valid;
 
+    /**
+     * The normalized form of {@link #visibility}, set once the visibility has been validated. Not serialized; deployments that present security markings can
+     * translate it at the response edge.
+     */
     @XmlTransient
-    private Markings<?> markings;
+    private String columnVisibility;
 
     @XmlAttribute(name = "visibility")
     private String visibility;
@@ -38,12 +46,40 @@ public class Visibility {
         this.visibility = visibility;
     }
 
-    public Markings<?> getMarkings() {
-        return markings;
+    /**
+     * @return the normalized column visibility, or null if the visibility has not been validated
+     */
+    @Override
+    public String getColumnVisibility() {
+        return columnVisibility;
     }
 
+    /**
+     * @param columnVisibility
+     *            the normalized column visibility
+     */
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
+    }
+
+    /**
+     * @deprecated use {@link #getColumnVisibility()}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    public Markings<?> getMarkings() {
+        return columnVisibility == null ? null : AccessExpressionMarkings.builder().columnVisibility(columnVisibility).build();
+    }
+
+    /**
+     * @deprecated use {@link #setColumnVisibility(String)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
+        AccessExpression ae = markings == null ? null : markings.toAccessExpression();
+        this.columnVisibility = ae == null ? null : ae.getExpression();
     }
 
 }

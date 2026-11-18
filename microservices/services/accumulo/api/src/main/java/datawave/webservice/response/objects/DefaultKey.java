@@ -68,6 +68,7 @@ public class DefaultKey extends KeyBase {
         }
     }
 
+    @Override
     public String getColumnVisibility() {
         if (this.columnVisibility.getType().equals(TypedValue.XSD_STRING) && this.columnVisibility.isBase64Encoded()) {
             return new String(Base64.decodeBase64(this.columnVisibility.getValue().toString().getBytes(UTF_8)), UTF_8);
@@ -85,16 +86,28 @@ public class DefaultKey extends KeyBase {
         }
     }
 
+    /**
+     * @deprecated use {@link #setColumnVisibility(String)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     @Override
     public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-        AccessExpression ae = markings.toAccessExpression();
-        this.columnVisibility = new TypedValue(ae != null ? ae.getExpression() : "");
+        AccessExpression ae = markings == null ? null : markings.toAccessExpression();
+        setColumnVisibility(ae != null ? ae.getExpression() : "");
     }
 
+    /**
+     * @deprecated use {@link #getColumnVisibility()}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     @Override
     public Markings<?> getMarkings() {
-        return this.markings;
+        if (this.columnVisibility == null) {
+            return null;
+        }
+        return AccessExpressionMarkings.builder().columnVisibility(getColumnVisibility()).build();
     }
 
     public void setRow(String row) {
@@ -109,10 +122,9 @@ public class DefaultKey extends KeyBase {
         this.colQual = new TypedValue(colQual);
     }
 
+    @Override
     public void setColumnVisibility(String colVis) {
         this.columnVisibility = (colVis == null) ? new TypedValue("") : new TypedValue(colVis);
-        String expr = this.columnVisibility.getValue().toString();
-        this.markings = AccessExpressionMarkings.builder().columnVisibility(expr).build();
     }
 
     public void setTimestamp(long timestamp) {

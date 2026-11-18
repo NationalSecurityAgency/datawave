@@ -11,6 +11,8 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import org.apache.accumulo.access.AccessExpression;
+
 import datawave.marking.AccessExpressionMarkings;
 import datawave.marking.Markings;
 import io.protostuff.Input;
@@ -29,9 +31,19 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
         this.description = description;
     }
 
+    public DefaultDescription(String description, String columnVisibility) {
+        this.description = description;
+        this.columnVisibility = columnVisibility;
+    }
+
+    /**
+     * @deprecated use {@link #DefaultDescription(String, String)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     public DefaultDescription(String description, Markings<?> markings) {
         this.description = description;
-        this.markings = markings;
+        setMarkings(markings);
     }
 
     @XmlElement(name = "description")
@@ -43,15 +55,31 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
         this.description = description;
     }
 
+    /**
+     * @deprecated use {@link #getColumnVisibility()}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     @Override
     @XmlElement(name = "markings", type = AccessExpressionMarkings.class)
     public Markings<?> getMarkings() {
         return this.markings;
     }
 
+    /**
+     * Sets the legacy markings. The column visibility is also set from the markings so that payloads which only carry markings still expose a visibility.
+     *
+     * @deprecated use {@link #setColumnVisibility(String)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     @Override
     public void setMarkings(Markings<?> markings) {
         this.markings = markings;
+        AccessExpression ae = markings == null ? null : markings.toAccessExpression();
+        if (ae != null) {
+            this.columnVisibility = ae.getExpression();
+        }
     }
 
     @Override

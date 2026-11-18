@@ -20,9 +20,7 @@ import javax.xml.bind.annotation.XmlType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import datawave.marking.AccessExpressionMarkings;
 import datawave.webservice.dictionary.data.DefaultDescription;
-import datawave.webservice.dictionary.data.DescriptionBase;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -135,6 +133,10 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
         return SCHEMA;
     }
 
+    /**
+     * Protostuff schema. Field 9 (descriptions written as a count followed by description/markings pairs) is retired and skipped when read; descriptions are
+     * written as repeated {@link DefaultDescription} messages, which carry the column visibility, under field 12.
+     */
     @XmlTransient
     private static final Schema<DefaultMetadataField> SCHEMA = new Schema<>() {
         private final HashMap<String,Integer> fieldMap = new HashMap<>();
@@ -147,9 +149,9 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
             fieldMap.put("reverseIndexed", 6);
             fieldMap.put("normalized", 7);
             fieldMap.put("types", 8);
-            fieldMap.put("descriptions", 9);
             fieldMap.put("lastUpdated", 10);
             fieldMap.put("tokenized", 11);
+            fieldMap.put("descriptions", 12);
         }
 
         @Override
@@ -171,12 +173,12 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
                     return "normalized";
                 case 8:
                     return "types";
-                case 9:
-                    return "descriptions";
                 case 10:
                     return "lastUpdated";
                 case 11:
                     return "tokenized";
+                case 12:
+                    return "descriptions";
                 default:
                     return null;
             }
@@ -245,20 +247,17 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
                         }
                         message.types.add(input.readString());
                         break;
-                    case 9:
-                        int size = input.readInt32();
-                        message.descriptions = new HashSet<>(size);
-                        for (int i = 0; i < size; i++) {
-                            AccessExpressionMarkings markings = AccessExpressionMarkings.builder().build();
-                            input.mergeObject(markings, AccessExpressionMarkings.SCHEMA);
-                            message.descriptions.add(new DefaultDescription(input.readString(), markings));
-                        }
-                        break;
                     case 10:
                         message.lastUpdated = input.readString();
                         break;
                     case 11:
                         message.tokenized = input.readBool();
+                        break;
+                    case 12:
+                        if (null == message.descriptions) {
+                            message.descriptions = new HashSet<>();
+                        }
+                        message.descriptions.add(input.mergeObject(null, DefaultDescription.getSchema()));
                         break;
                     default:
                         input.handleUnknownField(number, this);
@@ -291,13 +290,16 @@ public class DefaultMetadataField extends MetadataFieldBase<DefaultMetadataField
                     output.writeString(8, typeClass, true);
             }
 
-            output.writeInt32(9, message.getDescriptions().size(), false);
-            for (DescriptionBase desc : message.getDescriptions()) {
-                output.writeString(9, desc.getDescription(), true);
-                output.writeObject(9, (AccessExpressionMarkings) desc.getMarkings(), AccessExpressionMarkings.SCHEMA, false);
+            if (message.lastUpdated != null) {
+                output.writeString(10, message.lastUpdated, false);
             }
-            output.writeString(10, message.lastUpdated, false);
             output.writeBool(11, message.tokenized, false);
+
+            if (message.descriptions != null) {
+                for (DefaultDescription desc : message.descriptions) {
+                    output.writeObject(12, desc, DefaultDescription.getSchema(), true);
+                }
+            }
         }
 
     };

@@ -28,8 +28,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.Connection;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.microservice.metadata.MetadataDescriptionsHelper;
@@ -60,9 +58,6 @@ public class DataDictionaryImplTest {
     private AccumuloClient accumuloClient;
 
     @Mock
-    private MarkingFunctions<?> markingFunctions;
-
-    @Mock
     private ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory;
 
     @Mock
@@ -84,13 +79,13 @@ public class DataDictionaryImplTest {
         connectionConfig.setMetadataTable(METADATA_TABLE);
         connectionConfig.setModelTable(MODEL_TABLE);
         connectionConfig.setModelName(MODEL_NAME);
-        dataDictionary = new DataDictionaryImpl(markingFunctions, responseObjectFactory, metadataHelperFactory, metadataDescriptionsHelperFactory);
+        dataDictionary = new DataDictionaryImpl(responseObjectFactory, metadataHelperFactory, metadataDescriptionsHelperFactory);
     }
 
     @Test
     public void whenSettingDescription_givenSingleDefaultDescription_shouldSetDescription() throws Exception {
         DefaultDescription description = new DefaultDescription();
-        description.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
+        description.setColumnVisibility("PRIVATE");
         description.setDescription("my ultra cool description");
 
         // Ensure no alias will be found.
@@ -109,7 +104,7 @@ public class DataDictionaryImplTest {
     @Test
     public void whenSettingDescription_givenDefaultDictionaryField_shouldSetDescriptionFromProperties() throws Exception {
         DefaultDescription description = new DefaultDescription();
-        description.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
+        description.setColumnVisibility("PRIVATE");
         description.setDescription("my ultra cool description");
 
         Set<DefaultDescription> descriptions = Collections.singleton(description);
@@ -134,7 +129,7 @@ public class DataDictionaryImplTest {
     @Test
     public void whenSettingDescription_givenNoAlias_shouldSetDescriptionWithOriginalFieldName() throws Exception {
         DefaultDescription description = new DefaultDescription();
-        description.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
+        description.setColumnVisibility("PRIVATE");
         description.setDescription("my ultra cool description");
 
         Set<DefaultDescription> descriptions = Collections.singleton(description);
@@ -154,7 +149,7 @@ public class DataDictionaryImplTest {
     @Test
     public void whenSettingDescription_givenAlias_shouldSetDescriptionWithAlias() throws Exception {
         DefaultDescription description = new DefaultDescription();
-        description.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
+        description.setColumnVisibility("PRIVATE");
         description.setDescription("my ultra cool description");
 
         Set<DefaultDescription> descriptions = Collections.singleton(description);
@@ -284,7 +279,7 @@ public class DataDictionaryImplTest {
     @Test
     public void whenDeletingDescription_givenNoAlias_shouldDeleteDescriptionWithOriginalFieldName() throws Exception {
         DefaultDescription description = new DefaultDescription();
-        description.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
+        description.setColumnVisibility("PRIVATE");
         description.setDescription("my ultra cool description");
 
         // Ensure no alias will be found.
@@ -302,7 +297,7 @@ public class DataDictionaryImplTest {
     @Test
     public void whenDeletingDescription_givenAlias_shouldDeleteDescriptionWithAlias() throws Exception {
         DefaultDescription description = new DefaultDescription();
-        description.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
+        description.setColumnVisibility("PRIVATE");
         description.setDescription("my ultra cool description");
 
         // Ensure an alias will be found.

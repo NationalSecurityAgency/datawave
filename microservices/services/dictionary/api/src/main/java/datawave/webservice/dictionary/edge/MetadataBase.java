@@ -15,6 +15,11 @@ import io.protostuff.Message;
 @XmlSeeAlso(DefaultMetadata.class)
 public abstract class MetadataBase<T> implements HasMarkings, HasColumnVisibility, Message<T> {
 
+    /**
+     * @deprecated use {@link #columnVisibility}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     protected transient Markings<?> markings;
 
     protected transient String columnVisibility;
@@ -29,10 +34,22 @@ public abstract class MetadataBase<T> implements HasMarkings, HasColumnVisibilit
         this.columnVisibility = columnVisibility;
     }
 
+    /**
+     * @deprecated use {@link #getColumnVisibility()}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    @Override
     public Markings<?> getMarkings() {
         return markings;
     }
 
+    /**
+     * @deprecated use {@link #setColumnVisibility(String)}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
+    @Override
     public void setMarkings(Markings<?> markings) {
         this.markings = markings;
     }

@@ -30,12 +30,11 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.query.util.MetadataEntry;
 import datawave.security.util.ScannerHelper;
 import datawave.table.constants.MetadataColumnFamilyConstants;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.dictionary.data.DescriptionBase;
 
 /**
@@ -47,15 +46,13 @@ import datawave.webservice.dictionary.data.DescriptionBase;
 public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
     private static final Logger log = LoggerFactory.getLogger(MetadataDescriptionsHelper.class);
 
-    private final MarkingFunctions<?> markingFunctions;
     private final ResponseObjectFactory<DESC,?,?,?,?> responseObjectFactory;
 
     private String metadataTableName;
     private AccumuloClient accumuloClient;
     private Set<Authorizations> fullUserAuths;
 
-    public MetadataDescriptionsHelper(MarkingFunctions<?> markingFunctions, ResponseObjectFactory<DESC,?,?,?,?> responseObjectFactory) {
-        this.markingFunctions = markingFunctions;
+    public MetadataDescriptionsHelper(ResponseObjectFactory<DESC,?,?,?,?> responseObjectFactory) {
         this.responseObjectFactory = responseObjectFactory;
     }
 
@@ -65,7 +62,7 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
         this.fullUserAuths = fullUserAuths;
     }
 
-    public SetMultimap<MetadataEntry,DESC> getDescriptions(Set<String> ingestTypeFilter) throws TableNotFoundException, MarkingFunctions.Exception {
+    public SetMultimap<MetadataEntry,DESC> getDescriptions(Set<String> ingestTypeFilter) throws TableNotFoundException {
 
         SetMultimap<MetadataEntry,DESC> descriptions = loadDescriptions();
 
@@ -84,7 +81,7 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
         return descs;
     }
 
-    public SetMultimap<String,DESC> getFieldDescriptions(Set<String> ingestTypeFilter) throws TableNotFoundException, MarkingFunctions.Exception {
+    public SetMultimap<String,DESC> getFieldDescriptions(Set<String> ingestTypeFilter) throws TableNotFoundException {
         SetMultimap<MetadataEntry,DESC> descriptions = getDescriptions(ingestTypeFilter);
         SetMultimap<String,DESC> fieldDescriptions = HashMultimap.create();
 
@@ -97,11 +94,11 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
         return fieldDescriptions;
     }
 
-    public SetMultimap<MetadataEntry,DESC> getDescriptions(String datatype) throws TableNotFoundException, MarkingFunctions.Exception {
+    public SetMultimap<MetadataEntry,DESC> getDescriptions(String datatype) throws TableNotFoundException {
         return getDescriptions(Collections.singleton(datatype));
     }
 
-    public Set<DESC> getDescriptions(String fieldname, String datatype) throws TableNotFoundException, MarkingFunctions.Exception {
+    public Set<DESC> getDescriptions(String fieldname, String datatype) throws TableNotFoundException {
         SetMultimap<MetadataEntry,DESC> descriptions = getDescriptions(datatype);
         MetadataEntry desired = new MetadataEntry(fieldname, datatype);
         if (descriptions.containsKey(desired)) {
@@ -111,8 +108,7 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
         return Collections.emptySet();
     }
 
-    public void setDescription(MetadataEntry entry, DescriptionBase desc)
-                    throws TableNotFoundException, MutationsRejectedException, MarkingFunctions.Exception {
+    public void setDescription(MetadataEntry entry, DescriptionBase desc) throws TableNotFoundException, MutationsRejectedException {
         setDescriptions(entry, Collections.singleton(desc));
     }
 
@@ -123,13 +119,7 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
             bw = accumuloClient.createBatchWriter(metadataTableName, bwConfig);
             Mutation m = new Mutation(entry.getFieldName());
             for (DescriptionBase desc : descs) {
-                ColumnVisibility cv = null;
-                if (desc.getMarkings() != null) {
-                    cv = desc.getMarkings().toColumnVisibility();
-                }
-                if (null == cv || cv.getExpression().length == 0) {
-                    throw new IllegalArgumentException("ColumnVisibility was null or empty, unable to create Accumulo mutation");
-                }
+                ColumnVisibility cv = getColumnVisibility(desc);
                 m.put(MetadataColumnFamilyConstants.COLF_DESC, new Text(entry.getDatatype()), cv, new Value(desc.getDescription().getBytes(UTF_8)));
             }
             bw.addMutation(m);
@@ -162,13 +152,7 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
             BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(10000L).setMaxLatency(100L, TimeUnit.MILLISECONDS).setMaxWriteThreads(1);
             bw = accumuloClient.createBatchWriter(metadataTableName, bwConfig);
             Mutation m = new Mutation(entry.getFieldName());
-            ColumnVisibility cv = null;
-            if (desc.getMarkings() != null) {
-                cv = desc.getMarkings().toColumnVisibility();
-            }
-            if (null == cv || cv.getExpression().length == 0) {
-                throw new IllegalArgumentException("ColumnVisibility was null or empty, unable to create Accumulo mutation");
-            }
+            ColumnVisibility cv = getColumnVisibility(desc);
             m.putDelete(MetadataColumnFamilyConstants.COLF_DESC, new Text(entry.getDatatype()), cv);
             bw.addMutation(m);
         } finally {
@@ -183,7 +167,7 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
 
     }
 
-    protected SetMultimap<MetadataEntry,DESC> loadDescriptions() throws TableNotFoundException, MarkingFunctions.Exception {
+    protected SetMultimap<MetadataEntry,DESC> loadDescriptions() throws TableNotFoundException {
         if (log.isTraceEnabled())
             log.trace("loadDescriptions from table: " + metadataTableName);
         // unlike other entries, the desc colf entries have many auths set. We'll use the fullUserAuths in the scanner instead
@@ -199,7 +183,7 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
             log.trace("{}", entry.getKey());
             DESC desc = this.responseObjectFactory.getDescription();
             desc.setDescription(entry.getValue().toString());
-            desc.setMarkings(getMarkings(entry.getKey()));
+            desc.setColumnVisibility(AccessExpressionUtil.normalize(entry.getKey().getColumnVisibility().toString()).getExpression());
 
             descriptions.put(mentry, desc);
         }
@@ -208,7 +192,24 @@ public class MetadataDescriptionsHelper<DESC extends DescriptionBase<DESC>> {
 
     }
 
-    private Markings<?> getMarkings(Key k) throws MarkingFunctions.Exception {
-        return markingFunctions.translateFromColumnVisibility(k.getColumnVisibilityParsed());
+    /**
+     * Get the normalized column visibility to write a description with.
+     *
+     * @param desc
+     *            the description
+     * @return the normalized column visibility
+     * @throws IllegalArgumentException
+     *             if the description has no column visibility
+     */
+    private static ColumnVisibility getColumnVisibility(DescriptionBase<?> desc) {
+        String columnVisibility = desc.getColumnVisibility();
+        if (null == columnVisibility || columnVisibility.isEmpty()) {
+            throw new IllegalArgumentException("ColumnVisibility was null or empty, unable to create Accumulo mutation");
+        }
+        ColumnVisibility cv = AccessExpressionUtil.toColumnVisibility(AccessExpressionUtil.normalize(columnVisibility));
+        if (null == cv || cv.getExpression().length == 0) {
+            throw new IllegalArgumentException("ColumnVisibility was null or empty, unable to create Accumulo mutation");
+        }
+        return cv;
     }
 }

@@ -14,7 +14,9 @@ interface Markings {
 
 interface Record {
   description: string;
-  markings: Markings;
+  columnVisibility?: string;
+  // legacy payloads only
+  markings?: Markings;
 }
 
 /*
@@ -37,6 +39,12 @@ export function parseVal(colName: string, colValue: any, colDataTypeCount?: any)
     }
 
     const firstEntry = colValue[0] as Record;
+    const description = firstEntry.description || '';
+
+    if (firstEntry.columnVisibility) {
+      return `${firstEntry.columnVisibility} ${description}`;
+    }
+
     if (!firstEntry.markings || !firstEntry.markings.entry) {
       return '';
     }
@@ -45,7 +53,6 @@ export function parseVal(colName: string, colValue: any, colDataTypeCount?: any)
 
     const marking = markingsEntry.length > 0 ? markingsEntry[0].value : '';
     const markingAccess = markingsEntry.length > 1 ? markingsEntry[1].value : '';
-    const description = firstEntry.description || '';
 
     return `${marking} ${markingAccess} ${description}`;
   } else if (colName === 'dataType' && regexDataType.test(colDataTypeCount)) {

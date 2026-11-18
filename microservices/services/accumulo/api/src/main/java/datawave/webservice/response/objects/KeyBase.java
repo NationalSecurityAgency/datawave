@@ -12,6 +12,11 @@ import datawave.webservice.query.result.event.HasMarkings;
 @XmlSeeAlso(DefaultKey.class)
 public abstract class KeyBase implements HasMarkings, HasColumnVisibility {
 
+    /**
+     * @deprecated no longer populated; the column visibility is available from {@link #getColumnVisibility()}
+     */
+    // TODO remove-accumulo-utils
+    @Deprecated(forRemoval = true)
     protected Markings<?> markings;
 
     public abstract String getRow();
