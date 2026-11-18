@@ -1,7 +1,7 @@
 package datawave.query.testframework;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -103,7 +103,7 @@ public class BooksDataManager extends AbstractDataManager {
      *            uri of CSV file
      */
     public void loadGroupingData(final URI file) {
-        assertFalse("datatype has already been configured(" + this.datatype + ")", this.rawData.containsKey(this.datatype));
+        assertFalse(this.rawData.containsKey(this.datatype), "datatype has already been configured(" + this.datatype + ")");
 
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloClient, this.cfgData.getDateField(), this.fieldIndex,

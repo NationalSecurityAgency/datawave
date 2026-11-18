@@ -1,7 +1,7 @@
 package datawave.query.testframework;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.IOException;
 import java.net.URI;
@@ -54,7 +54,7 @@ public class FlattenDataManager extends AbstractDataManager {
 
     @Override
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
-        assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
+        assertFalse(this.rawData.containsKey(datatype), "datatype has already been configured(" + datatype + ")");
         FlattenDataType flatten = FlattenDataType.getFlattenDataType(datatype);
         DataLoader loader = new JsonTestFileLoader(file, flatten.getHadoopConfiguration());
         Collection<Multimap<String,NormalizedContentInterface>> rawData = loader.getRawData();
@@ -90,7 +90,7 @@ public class FlattenDataManager extends AbstractDataManager {
          */
         FlattenRawData(final String datatype, Map<String,Collection<NormalizedContentInterface>> fields, final FlattenData data) {
             super(datatype, data.headers(), data.getMetadata());
-            assertEquals("flatten ingest data field count is invalid", data.headers().size(), fields.size());
+            assertEquals(data.headers().size(), fields.size(), "flatten ingest data field count is invalid");
             this.flattenData = data;
             processNormalizedContent(datatype, fields);
         }
