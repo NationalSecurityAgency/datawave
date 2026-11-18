@@ -16,7 +16,7 @@
         <dependencies>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>accumulo-utils</artifactId>
+                <artifactId>common-utils</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -50,10 +50,6 @@
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>accumulo-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>

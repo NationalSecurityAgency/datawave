@@ -19,8 +19,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Sets;
 
 import datawave.data.type.Type;
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.visibility.AccessExpressionUtil;
 import datawave.visibility.VisibilityFunctions;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
@@ -62,6 +60,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
      * @param timestamp
      *            the timestamp of the value
      */
+    @Override
     public void addColumn(String columnName, String columnValueString, String columnVisibility, Long timestamp) {
         addColumn(columnName, new TypedValue(columnValueString), columnVisibility, timestamp);
     }
@@ -79,6 +78,7 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
      * @param timestamp
      *            the timestamp of the value
      */
+    @Override
     public void addColumn(String columnName, TypedValue columnTypedValue, String columnVisibility, Long timestamp) {
 
         final String cleanColumnName = columnName.replace(' ', '_');
@@ -109,46 +109,6 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
         if (!typedColumnName.isEmpty() && !typedColumnName.startsWith("XS_STRING")) {
             manageColumnInsert(datawaveType, typedColumnName, columnTypedValue, normalizedVisibility);
         }
-    }
-
-    /**
-     * @param columnName
-     *            the column name
-     * @param columnStringValue
-     *            the column value
-     * @param markings
-     *            ignored unless {@code columnVisibility} is null or empty, in which case its access expression is used as the column visibility
-     * @param columnVisibility
-     *            the column visibility expression
-     * @param timestamp
-     *            the timestamp
-     * @deprecated use {@link #addColumn(String, String, String, Long)}
-     */
-    // TODO remove-accumulo-utils
-    @Override
-    @Deprecated(forRemoval = true)
-    public void addColumn(String columnName, String columnStringValue, Markings<?> markings, String columnVisibility, Long timestamp) {
-        addColumn(columnName, columnStringValue, toVisibility(markings, columnVisibility), timestamp);
-    }
-
-    /**
-     * @param columnName
-     *            the column name
-     * @param columnValue
-     *            the column value
-     * @param markings
-     *            ignored unless {@code columnVisibility} is null or empty, in which case its access expression is used as the column visibility
-     * @param columnVisibility
-     *            the column visibility expression
-     * @param timestamp
-     *            the timestamp
-     * @deprecated use {@link #addColumn(String, TypedValue, String, Long)}
-     */
-    // TODO remove-accumulo-utils
-    @Override
-    @Deprecated(forRemoval = true)
-    public void addColumn(String columnName, TypedValue columnValue, Markings<?> markings, String columnVisibility, Long timestamp) {
-        addColumn(columnName, columnValue, toVisibility(markings, columnVisibility), timestamp);
     }
 
     private void manageColumnInsert(Type<?> datawaveType, String columnName, TypedValue columnTypedValue, String columnVisibility) {
@@ -221,19 +181,6 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
         return visibility == null ? null : new ColumnVisibility(visibility);
     }
 
-    // TODO remove-accumulo-utils: bridging helpers for the deprecated Markings-based members
-    private static String toVisibility(Markings<?> markings, String columnVisibility) {
-        if ((columnVisibility == null || columnVisibility.isEmpty()) && markings != null && !markings.isEmpty()) {
-            return markings.toAccessExpression().getExpression();
-        }
-        return columnVisibility;
-    }
-
-    // TODO remove-accumulo-utils: bridging helpers for the deprecated Markings-based members
-    private static Markings<?> toMarkings(String visibility) {
-        return AccessExpressionMarkings.createMarkings(visibility);
-    }
-
     public String getUser() {
         return user;
     }
@@ -260,30 +207,6 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
 
     public String getColFam() {
         return colFam;
-    }
-
-    /**
-     * @return the row-level visibility as markings
-     * @deprecated use {@link #getColumnVisibility()}
-     */
-    // TODO remove-accumulo-utils
-    @Override
-    @Deprecated(forRemoval = true)
-    public Markings<?> getMarkings() {
-        return toMarkings(getColumnVisibility());
-    }
-
-    /**
-     * @param columnName
-     *            the column name
-     * @return the column visibility as markings
-     * @deprecated use {@link #getColumnVisibility(String)}
-     */
-    // TODO remove-accumulo-utils
-    @Override
-    @Deprecated(forRemoval = true)
-    public Markings<?> getColumnMarkings(String columnName) {
-        return toMarkings(getColumnVisibility(columnName));
     }
 
     public String getColumnTimestampString(Map<String,Integer> columnMap) {
@@ -368,34 +291,6 @@ public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSi
 
     public void setColFam(String colFam) {
         this.colFam = colFam;
-    }
-
-    /**
-     * @param markings
-     *            the row-level markings; their access expression becomes the row-level visibility
-     * @deprecated use {@link #setColumnVisibility(String)}
-     */
-    // TODO remove-accumulo-utils
-    @Override
-    @Deprecated(forRemoval = true)
-    public void setMarkings(Markings<?> markings) {
-        setColumnVisibility(toVisibility(markings, null));
-    }
-
-    /**
-     * @param columnMarkingsMap
-     *            per-column markings; their access expressions replace the per-column visibilities
-     * @deprecated use {@link #setColumnColumnVisibilityMap(Map)}
-     */
-    // TODO remove-accumulo-utils
-    @Override
-    @Deprecated(forRemoval = true)
-    public void setColumnMarkingsMap(Map<String,Markings<?>> columnMarkingsMap) {
-        Map<String,String> visibilities = new HashMap<>();
-        if (columnMarkingsMap != null) {
-            columnMarkingsMap.forEach((column, markings) -> visibilities.put(column, toVisibility(markings, null)));
-        }
-        setColumnColumnVisibilityMap(visibilities);
     }
 
     public void setColumnTimestampMap(Map<String,Long> columnTimestampMap) {

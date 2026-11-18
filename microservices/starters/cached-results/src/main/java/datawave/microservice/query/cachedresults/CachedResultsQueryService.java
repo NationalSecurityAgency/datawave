@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -51,7 +50,6 @@ import datawave.core.query.cachedresults.CacheableQueryRowReader;
 import datawave.core.query.cachedresults.CachedResultsQueryParameters;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
-import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
@@ -102,10 +100,6 @@ public class CachedResultsQueryService {
     private static final String SPACE = " ";
     private static final String LPAREN = "(";
     private static final String RPAREN = ")";
-
-    // TODO remove-accumulo-utils: CacheableQueryRowReader.createRow still requires MarkingFunctions; remove once it takes visibilities only
-    @SuppressWarnings("rawtypes")
-    private static final MarkingFunctions CACHED_ROW_MARKING_FUNCTIONS = new MarkingFunctions.Default();
 
     private final CachedResultsQueryProperties cachedResultsQueryProperties;
     private final JdbcTemplate cachedResultsJdbcTemplate;
@@ -460,7 +454,6 @@ public class CachedResultsQueryService {
                             }
                         }
 
-                        // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
                         ps.setString(9, cacheableQueryRow.getColumnSecurityMarkingString(cachedResultsQueryStatus.getFieldIndexMap()));
                         ps.setString(10, cacheableQueryRow.getColumnTimestampString(cachedResultsQueryStatus.getFieldIndexMap()));
 
@@ -502,16 +495,8 @@ public class CachedResultsQueryService {
      *            the row
      * @return the row-level visibility, or an empty string if the row has none
      */
-    @SuppressWarnings("removal")
     static String getRowVisibility(CacheableQueryRow cacheableQueryRow) {
         String visibility = cacheableQueryRow.getColumnVisibility();
-        // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn (drop the markings fallback once query logics set the row column visibility)
-        if (visibility == null && cacheableQueryRow.getMarkings() != null) {
-            AccessExpression ae = cacheableQueryRow.getMarkings().toAccessExpression();
-            if (ae != null) {
-                visibility = ae.getExpression();
-            }
-        }
         return visibility == null ? EMPTY_STRING : visibility;
     }
 
@@ -1159,9 +1144,8 @@ public class CachedResultsQueryService {
 
                             long resultBytes = 0;
                             while (resultSet.next() && !hitPageByteTrigger.get()) {
-                                // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn (createRow still takes MarkingFunctions)
                                 CacheableQueryRow row = CacheableQueryRowReader.createRow(resultSet, cachedResultsQueryStatus.getFixedFields(),
-                                                responseObjectFactory, CACHED_ROW_MARKING_FUNCTIONS);
+                                                responseObjectFactory);
                                 rows.add(row);
                                 if (cachedResultsQueryProperties.getPageByteTrigger() != 0) {
                                     resultBytes += ObjectSizeOf.Sizer.getObjectSize(row);

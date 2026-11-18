@@ -21,7 +21,6 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
 import datawave.core.query.logic.BaseQueryLogic;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -54,36 +53,6 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
                     Boolean reducedResponse) {
         super(tableName, settings, responseObjectFactory, reducedResponse);
         createGroupFieldsList(groupFieldsSet);
-    }
-
-    /**
-     * @deprecated use {@link #GroupingDocumentTransformer(BaseQueryLogic, Query, ResponseObjectFactory, Collection)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public GroupingDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, Collection<String> groupFieldsSet) {
-        this(logic, settings, responseObjectFactory, groupFieldsSet);
-    }
-
-    /**
-     * @deprecated use {@link #GroupingDocumentTransformer(BaseQueryLogic, Query, ResponseObjectFactory, Collection, Boolean)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public GroupingDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, Collection<String> groupFieldsSet, Boolean reducedResponse) {
-        this(logic, settings, responseObjectFactory, groupFieldsSet, reducedResponse);
-    }
-
-    /**
-     * @deprecated use {@link #GroupingDocumentTransformer(String, Query, ResponseObjectFactory, Collection, Boolean)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public GroupingDocumentTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
-                    Collection<String> groupFieldsSet, Boolean reducedResponse) {
-        this(tableName, settings, responseObjectFactory, groupFieldsSet, reducedResponse);
     }
 
     public void createGroupFieldsList(Collection<String> groupFieldsSet) {

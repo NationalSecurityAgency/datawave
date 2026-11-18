@@ -5,16 +5,12 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
-import datawave.marking.Markings;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.HasColumnVisibility;
-import datawave.webservice.query.result.event.HasMarkings;
 import datawave.webservice.result.BaseQueryResponse;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public abstract class EdgeQueryResponseBase extends BaseQueryResponse implements HasMarkings, HasColumnVisibility {
-
-    protected Markings<?> markings;
+public abstract class EdgeQueryResponseBase extends BaseQueryResponse implements HasColumnVisibility {
 
     protected String columnVisibility;
 

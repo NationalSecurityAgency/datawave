@@ -33,8 +33,6 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.query.Constants;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.composite.CompositeMetadata;
@@ -80,21 +78,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
     private boolean intermediateResult;
 
     private static final long ONE_DAY_MS = 1000L * 60 * 60 * 24;
-
-    /**
-     * @return the markings translated from this document's column visibility, or null if they cannot be determined
-     * @deprecated use {@link #getColumnVisibility()}; translating visibilities into markings is no longer done by DataWave
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public Markings<?> getMarkings() {
-        try {
-            MarkingFunctions<?> markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-            return markingFunctions == null ? null : markingFunctions.translateFromColumnVisibility(getColumnVisibility());
-        } catch (MarkingFunctions.Exception ignored) {
-            return null;
-        }
-    }
 
     public Document() {
         this(null, true);

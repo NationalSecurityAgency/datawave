@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Required;
 import datawave.audit.SelectorExtractor;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
@@ -47,9 +46,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected ProxiedUserDetails serverUser;
 
     protected Set<String> requiredRoles;
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    protected MarkingFunctions<?> markingFunctions;
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
     protected ResponseEnricherBuilder responseEnricherBuilder = null;
@@ -99,26 +95,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
                     throws Exception {
         // for many query logics, the query is what it is
         return settings.getQuery();
-    }
-
-    /**
-     * @deprecated not used by query logics; retained so existing configuration that sets the {@code markingFunctions} property continues to load.
-     */
-    // TODO remove-accumulo-utils
-    @Override
-    @Deprecated(forRemoval = true)
-    public MarkingFunctions<?> getMarkingFunctions() {
-        return markingFunctions;
-    }
-
-    /**
-     * @deprecated not used by query logics; retained so existing configuration that sets the {@code markingFunctions} property continues to load.
-     */
-    // TODO remove-accumulo-utils
-    @Override
-    @Deprecated(forRemoval = true)
-    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
-        this.markingFunctions = markingFunctions;
     }
 
     public ResponseObjectFactory getResponseObjectFactory() {

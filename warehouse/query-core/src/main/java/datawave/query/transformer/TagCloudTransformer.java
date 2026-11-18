@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.tables.keyword.KeywordQueryState;
 import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
@@ -54,16 +53,6 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
         this.responseObjectFactory = responseObjectFactory;
         this.state = state;
         this.transformers = transformers;
-    }
-
-    /**
-     * @deprecated use {@link #TagCloudTransformer(String, Query, KeywordQueryState, ResponseObjectFactory, Set)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public TagCloudTransformer(String responseVersion, Query query, KeywordQueryState state, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, Set<TagCloudInputTransformer<?>> transformers) {
-        this(responseVersion, query, state, responseObjectFactory, transformers);
     }
 
     private ResponseVersion getResponseVersion(String responseVersion) {

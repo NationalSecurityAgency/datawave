@@ -21,7 +21,6 @@ import com.google.common.collect.Lists;
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.model.QueryModel;
@@ -72,25 +71,6 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         this.responseObjectFactory = responseObjectFactory;
     }
 
-    /**
-     * @deprecated use {@link #EventQueryTransformerSupport(String, Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public EventQueryTransformerSupport(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
-        this(tableName, settings, responseObjectFactory);
-    }
-
-    /**
-     * @deprecated use {@link #EventQueryTransformerSupport(BaseQueryLogic, Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public EventQueryTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        this(logic, settings, responseObjectFactory);
-    }
-
     protected ResponseObjectFactory getResponseObjectFactory() {
         return this.responseObjectFactory;
     }
@@ -112,8 +92,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
 
         List<? extends FieldBase<?>> fields = event.getFields();
         for (FieldBase<?> f : fields) {
-            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
-            cqo.addColumn(f.getName(), f.getTypedValue(), null, f.getColumnVisibility(), f.getTimestamp());
+            cqo.addColumn(f.getName(), f.getTypedValue(), f.getColumnVisibility(), f.getTimestamp());
         }
         return cqo;
     }

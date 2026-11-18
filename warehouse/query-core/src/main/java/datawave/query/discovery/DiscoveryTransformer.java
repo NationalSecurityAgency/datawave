@@ -171,8 +171,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
 
         List<FieldBase> fields = event.getFields();
         for (FieldBase f : fields) {
-            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
-            cqo.addColumn(f.getName(), f.getTypedValue(), null, f.getColumnVisibility(), f.getTimestamp());
+            cqo.addColumn(f.getName(), f.getTypedValue(), f.getColumnVisibility(), f.getTimestamp());
         }
         return cqo;
     }

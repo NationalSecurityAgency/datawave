@@ -81,11 +81,6 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave}</version>
             </dependency>
@@ -424,11 +419,11 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>accumulo-utils</artifactId>
+            <artifactId>base-rest-responses</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>base-rest-responses</artifactId>
+            <artifactId>common-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>

@@ -9,26 +9,12 @@ import org.apache.accumulo.core.data.Key;
 
 import com.google.common.base.Function;
 
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Document;
 
 public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.Entry<Key,Document>> {
     // called when adding the document transform
     void initialize(Query settings);
-
-    /**
-     * @param settings
-     *            the query settings
-     * @param markingFunctions
-     *            ignored
-     * @deprecated use {@link #initialize(Query)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    default void initialize(Query settings, MarkingFunctions<?> markingFunctions) {
-        initialize(settings);
-    }
 
     // called after the last document is passed through to get any remaining aggregated results.
     Map.Entry<Key,Document> flush();

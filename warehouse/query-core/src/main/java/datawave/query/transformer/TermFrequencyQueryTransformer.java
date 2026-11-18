@@ -10,7 +10,6 @@ import org.apache.accumulo.core.security.Authorizations;
 
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.table.parser.TermFrequencyKeyValueFactory;
 import datawave.query.table.parser.TermFrequencyKeyValueFactory.TermFrequencyKeyValue;
@@ -33,15 +32,6 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         this.query = query;
         this.responseObjectFactory = responseObjectFactory;
         this.auths = new Authorizations(this.query.getQueryAuthorizations().split(","));
-    }
-
-    /**
-     * @deprecated use {@link #TermFrequencyQueryTransformer(Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public TermFrequencyQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
-        this(query, responseObjectFactory);
     }
 
     @Override

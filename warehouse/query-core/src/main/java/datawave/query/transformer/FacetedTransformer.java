@@ -20,7 +20,6 @@ import com.google.common.base.Preconditions;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.data.type.StringType;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -52,36 +51,6 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
 
     public FacetedTransformer(String tableName, Query settings, ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
         super(tableName, settings, responseObjectFactory, reducedResponse);
-    }
-
-    /**
-     * @deprecated use {@link #FacetedTransformer(BaseQueryLogic, Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        this(logic, settings, responseObjectFactory);
-    }
-
-    /**
-     * @deprecated use {@link #FacetedTransformer(BaseQueryLogic, Query, ResponseObjectFactory, Boolean)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public FacetedTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
-        this(logic, settings, responseObjectFactory, reducedResponse);
-    }
-
-    /**
-     * @deprecated use {@link #FacetedTransformer(String, Query, ResponseObjectFactory, Boolean)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public FacetedTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
-                    Boolean reducedResponse) {
-        this(tableName, settings, responseObjectFactory, reducedResponse);
     }
 
     /**

@@ -12,7 +12,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
 import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.table.parser.ContentKeyValueFactory;
 import datawave.query.table.parser.ContentKeyValueFactory.ContentKeyValue;
@@ -43,24 +42,6 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         this.responseObjectFactory = responseObjectFactory;
         this.metadataIdMap = extractMetadadaIdMap(query);
         this.decodeView = decodeView;
-    }
-
-    /**
-     * @deprecated use {@link #ContentQueryTransformer(Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public ContentQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
-        this(query, responseObjectFactory);
-    }
-
-    /**
-     * @deprecated use {@link #ContentQueryTransformer(Query, ResponseObjectFactory, boolean)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public ContentQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory, boolean decodeView) {
-        this(query, responseObjectFactory, decodeView);
     }
 
     /**

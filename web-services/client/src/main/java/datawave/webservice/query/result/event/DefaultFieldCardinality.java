@@ -15,7 +15,6 @@ import javax.xml.bind.annotation.XmlTransient;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
-import datawave.marking.Markings;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -62,16 +61,6 @@ public class DefaultFieldCardinality extends FieldCardinalityBase implements Ser
     @Override
     public void setField(String field) {
         this.field = field;
-    }
-
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-    }
-
-    @Override
-    public Markings<?> getMarkings() {
-        return this.markings;
     }
 
     public Long getCardinality() {

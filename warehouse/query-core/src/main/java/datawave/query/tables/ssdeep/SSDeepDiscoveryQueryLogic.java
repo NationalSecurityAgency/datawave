@@ -20,7 +20,6 @@ import datawave.core.query.logic.AbstractQueryLogicTransformer;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResponseEnricherBuilder;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.discovery.DiscoveryLogic;
 import datawave.query.discovery.DiscoveryTransformer;
@@ -204,16 +203,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
         discoveryDelegate.setResponseObjectFactory(responseObjectFactory);
     }
 
-    /**
-     * @deprecated not used; retained so existing configuration that sets the {@code markingFunctions} property continues to load.
-     */
-    // TODO remove-accumulo-utils
-    @Override
-    @Deprecated(forRemoval = true)
-    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
-        discoveryDelegate.setMarkingFunctions(markingFunctions);
-    }
-
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         return discoveryDelegate.initialize(client, settings, runtimeQueryAuthorizations);
@@ -275,13 +264,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
         return discoveryDelegate.getPlan(client, settings, runtimeQueryAuthorizations, expandFields, expandValues);
-    }
-
-    // TODO remove-accumulo-utils
-    @Override
-    @Deprecated(forRemoval = true)
-    public MarkingFunctions getMarkingFunctions() {
-        return discoveryDelegate.getMarkingFunctions();
     }
 
     @Override

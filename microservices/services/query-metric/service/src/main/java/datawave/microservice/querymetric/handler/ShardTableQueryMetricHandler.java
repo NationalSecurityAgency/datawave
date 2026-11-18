@@ -19,7 +19,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -565,14 +564,8 @@ public abstract class ShardTableQueryMetricHandler<T extends BaseQueryMetric> ex
      *            the event
      * @return the column visibility, or null
      */
-    @SuppressWarnings("removal")
     protected static String getColumnVisibility(EventBase event) {
         String columnVisibility = event.getColumnVisibility();
-        // TODO remove-accumulo-utils: drop the markings fallback once query logics set the event column visibility
-        if (columnVisibility == null && event.getMarkings() != null && !event.getMarkings().isEmpty()) {
-            AccessExpression ae = event.getMarkings().toAccessExpression();
-            columnVisibility = ae == null ? null : ae.getExpression();
-        }
         return columnVisibility == null || columnVisibility.isEmpty() ? null : columnVisibility;
     }
 

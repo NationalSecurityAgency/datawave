@@ -28,7 +28,6 @@ import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.microservice.querymetric.BaseQueryMetric;
@@ -116,36 +115,6 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
 
         this(null != logic ? logic.getTableName() : null, settings, responseObjectFactory, reducedResponse);
         this.logic = logic;
-    }
-
-    /**
-     * @deprecated use {@link #DocumentTransformerSupport(BaseQueryLogic, Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        this(logic, settings, responseObjectFactory);
-    }
-
-    /**
-     * @deprecated use {@link #DocumentTransformerSupport(BaseQueryLogic, Query, ResponseObjectFactory, Boolean)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public DocumentTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
-        this(logic, settings, responseObjectFactory, reducedResponse);
-    }
-
-    /**
-     * @deprecated use {@link #DocumentTransformerSupport(String, Query, ResponseObjectFactory, Boolean)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public DocumentTransformerSupport(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
-                    Boolean reducedResponse) {
-        this(tableName, settings, responseObjectFactory, reducedResponse);
     }
 
     public DocumentTransformerSupport(String tableName, Query settings, ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {

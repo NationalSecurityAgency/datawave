@@ -9,16 +9,12 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
-import datawave.marking.Markings;
-
 /**
  *
  */
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultFieldCardinality.class)
-public abstract class FieldCardinalityBase implements HasMarkings, HasColumnVisibility {
-
-    protected Markings<?> markings;
+public abstract class FieldCardinalityBase implements HasColumnVisibility {
 
     public abstract String getColumnVisibility();
 

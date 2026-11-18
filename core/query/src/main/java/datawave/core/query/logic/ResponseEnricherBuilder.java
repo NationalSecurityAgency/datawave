@@ -1,7 +1,6 @@
 package datawave.core.query.logic;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
@@ -12,18 +11,6 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
  */
 public interface ResponseEnricherBuilder {
     public ResponseEnricherBuilder withConfig(GenericQueryConfiguration config);
-
-    /**
-     * @param functions
-     *            ignored
-     * @return this builder
-     * @deprecated query logics no longer supply {@link MarkingFunctions}; enrichers should translate the column visibility of response objects themselves.
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public default ResponseEnricherBuilder withMarkingFunctions(MarkingFunctions functions) {
-        return this;
-    }
 
     public ResponseEnricherBuilder withResponseObjectFactory(ResponseObjectFactory factory);
 

@@ -14,7 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 
@@ -61,8 +60,7 @@ public class TestLegacyBaseQueryLogicTransformer {
         BaseQueryResponse response;
 
         public TestTransformer(BaseQueryResponse response) {
-            // TODO remove-accumulo-utils: use super() once BaseQueryLogicTransformer no longer takes MarkingFunctions
-            super(new MarkingFunctions.Default());
+            super();
             this.response = response;
         }
 

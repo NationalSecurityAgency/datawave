@@ -4,7 +4,6 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.config.QueryMetricHandlerProperties;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
@@ -34,8 +33,6 @@ public class QueryMetricQueryLogicFactory implements FactoryBean<ShardQueryLogic
     public ShardQueryLogic getObject() throws Exception {
 
         ShardQueryLogic logic = new ShardQueryLogic();
-        // TODO remove-accumulo-utils: ShardQueryLogic transformers still require MarkingFunctions; remove once query-core no longer takes them
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setTableName(this.queryMetricHandlerProperties.getShardTableName());
         logic.setIndexTableName(this.queryMetricHandlerProperties.getIndexTableName());
         logic.setReverseIndexTableName(this.queryMetricHandlerProperties.getReverseIndexTableName());

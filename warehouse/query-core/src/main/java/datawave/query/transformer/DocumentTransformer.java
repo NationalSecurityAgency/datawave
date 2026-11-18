@@ -16,7 +16,6 @@ import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.Flushable;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Document;
 import datawave.visibility.AccessExpressionUtil;
@@ -57,36 +56,6 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
 
     public DocumentTransformer(String tableName, Query settings, ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
         super(tableName, settings, responseObjectFactory, reducedResponse);
-    }
-
-    /**
-     * @deprecated use {@link #DocumentTransformer(BaseQueryLogic, Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        this(logic, settings, responseObjectFactory);
-    }
-
-    /**
-     * @deprecated use {@link #DocumentTransformer(BaseQueryLogic, Query, ResponseObjectFactory, Boolean)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public DocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
-        this(logic, settings, responseObjectFactory, reducedResponse);
-    }
-
-    /**
-     * @deprecated use {@link #DocumentTransformer(String, Query, ResponseObjectFactory, Boolean)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public DocumentTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
-                    Boolean reducedResponse) {
-        this(tableName, settings, responseObjectFactory, reducedResponse);
     }
 
     @Override

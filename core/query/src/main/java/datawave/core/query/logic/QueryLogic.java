@@ -14,7 +14,6 @@ import datawave.audit.SelectorExtractor;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
@@ -344,28 +343,6 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     void setRequiredRoles(Set<String> requiredRoles);
 
     Set<String> getRequiredRoles();
-
-    /**
-     * @return the marking functions configured for this logic, if any
-     * @deprecated query logics no longer use {@link MarkingFunctions}; visibilities are combined with {@code datawave.visibility.VisibilityFunctions} and
-     *             responses carry column visibility strings. Retained only so that existing configuration continues to load.
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    default MarkingFunctions<?> getMarkingFunctions() {
-        return null;
-    }
-
-    /**
-     * @param markingFunctions
-     *            ignored by query logics
-     * @deprecated query logics no longer use {@link MarkingFunctions}. Retained only so that existing configuration continues to load.
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    default void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
-        // no-op
-    }
 
     ResponseObjectFactory getResponseObjectFactory();
 

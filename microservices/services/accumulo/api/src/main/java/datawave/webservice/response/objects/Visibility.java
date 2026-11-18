@@ -7,10 +7,6 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlTransient;
 
-import org.apache.accumulo.access.AccessExpression;
-
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.webservice.query.result.event.HasColumnVisibility;
 
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -61,25 +57,6 @@ public class Visibility implements HasColumnVisibility {
     @Override
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
-    }
-
-    /**
-     * @deprecated use {@link #getColumnVisibility()}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public Markings<?> getMarkings() {
-        return columnVisibility == null ? null : AccessExpressionMarkings.builder().columnVisibility(columnVisibility).build();
-    }
-
-    /**
-     * @deprecated use {@link #setColumnVisibility(String)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public void setMarkings(Markings<?> markings) {
-        AccessExpression ae = markings == null ? null : markings.toAccessExpression();
-        this.columnVisibility = ae == null ? null : ae.getExpression();
     }
 
 }

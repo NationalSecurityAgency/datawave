@@ -5,13 +5,10 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
-import datawave.marking.Markings;
 import io.protostuff.Message;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings, HasColumnVisibility, Message<T> {
-
-    protected transient Markings<?> markings;
+public abstract class EventBase<T,F extends FieldBase<F>> implements HasColumnVisibility, Message<T> {
 
     protected String columnVisibility;
 
@@ -45,14 +42,6 @@ public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings
     public abstract void setFields(List<F> fields);
 
     public abstract List<F> getFields();
-
-    public Markings<?> getMarkings() {
-        return markings;
-    }
-
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-    }
 
     @Override
     public String getColumnVisibility() {

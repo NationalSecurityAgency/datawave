@@ -29,8 +29,6 @@
 					<bean class="datawave.modification.MutableMetadataHandler">
 						<property name="authorizedRoles" ref="authorizedRoles" />
 						<property name="metadataHelperFactory" ref="metadataHelperFactory" />
-						<!-- TODO remove-accumulo-utils: provided by ModificationServiceConfiguration until the handlers no longer take MarkingFunctions -->
-						<property name="markingFunctions" ref="markingFunctions" />
 						<property name="eventTableName" value="${datawave.modification.handlers.eventTableName}" />
 						<property name="metadataTableName" value="${datawave.modification.handlers.metadataTableName}" />
 						<property name="indexTableName" value="${datawave.modification.handlers.indexTableName}" />

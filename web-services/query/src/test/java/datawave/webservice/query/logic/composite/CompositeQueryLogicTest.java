@@ -45,7 +45,6 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.composite.CompositeLogicException;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.core.query.logic.filtered.FilteredQueryLogic;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.AuthorizationException;
@@ -156,19 +155,6 @@ public class CompositeQueryLogicTest {
             return totalResults;
         }
 
-        // TODO remove-accumulo-utils: required by HasMarkings on EdgeQueryResponseBase; delete with HasMarkings
-        @Override
-        @Deprecated(forRemoval = true)
-        public void setMarkings(Markings<?> markings) {
-            this.markings = markings;
-        }
-
-        // TODO remove-accumulo-utils: required by HasMarkings on EdgeQueryResponseBase; delete with HasMarkings
-        @Override
-        @Deprecated(forRemoval = true)
-        public Markings<?> getMarkings() {
-            return this.markings;
-        }
     }
 
     public static class TestQueryResponseList extends BaseQueryResponse {

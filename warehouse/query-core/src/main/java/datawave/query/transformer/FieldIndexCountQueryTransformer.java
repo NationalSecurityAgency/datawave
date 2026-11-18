@@ -15,7 +15,6 @@ import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.data.hash.UID;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.tables.shard.FieldIndexCountQueryLogic.Tuple;
@@ -43,16 +42,6 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
         this.auths = new Authorizations(settings.getQueryAuthorizations().split(","));
         this.logic = logic;
         this.responseObjectFactory = responseObjectFactory;
-    }
-
-    /**
-     * @deprecated use {@link #FieldIndexCountQueryTransformer(BaseQueryLogic, Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public FieldIndexCountQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        this(logic, settings, responseObjectFactory);
     }
 
     @Override
@@ -171,8 +160,7 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
 
         List<? extends FieldBase> fields = event.getFields();
         for (FieldBase f : fields) {
-            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
-            cqo.addColumn(f.getName(), f.getTypedValue(), null, f.getColumnVisibility(), f.getTimestamp());
+            cqo.addColumn(f.getName(), f.getTypedValue(), f.getColumnVisibility(), f.getTimestamp());
         }
 
         // set the size in bytes using the initial event size as an approximation

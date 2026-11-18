@@ -89,12 +89,9 @@ public class LookupResponseTest {
     }
 
     @Test
-    @SuppressWarnings("removal")
     public void testNullVisibilityStaysNull() {
         DefaultKey key = new DefaultKey();
         key.setColumnVisibility(null);
-        assertNull(key.getColumnVisibility());
-        key.setMarkings(null);
         assertNull(key.getColumnVisibility());
         key.setColumnVisibility("");
         assertEquals("", key.getColumnVisibility());

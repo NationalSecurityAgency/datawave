@@ -12,34 +12,12 @@ import java.util.TreeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 public class CacheableQueryRowReader {
 
     private static Logger log = LoggerFactory.getLogger(CacheableQueryRowReader.class);
-
-    /**
-     * @param cachedRowSet
-     *            the result set positioned at the row to read
-     * @param fixedFieldsInEvent
-     *            fixed columns that should be returned as event fields
-     * @param responseObjectFactory
-     *            the factory used to create the row
-     * @param markingFunctions
-     *            set on the row for implementations that still use it; otherwise ignored
-     * @return the row
-     * @deprecated use {@link #createRow(ResultSet, Set, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public static CacheableQueryRow createRow(ResultSet cachedRowSet, Set<String> fixedFieldsInEvent, ResponseObjectFactory responseObjectFactory,
-                    MarkingFunctions<?> markingFunctions) {
-        CacheableQueryRow cqfc = responseObjectFactory.getCacheableQueryRow();
-        cqfc.setMarkingFunctions(markingFunctions);
-        return populateRow(cqfc, cachedRowSet, fixedFieldsInEvent);
-    }
 
     /**
      * Read a cached results row. The {@code _markings_} column holds the row-level column visibility and the {@code _column_markings_} column holds the

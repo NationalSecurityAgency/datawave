@@ -8,7 +8,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
 import datawave.core.query.logic.BaseQueryLogic;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.table.util.TLD;
 import datawave.webservice.query.result.event.EventBase;
@@ -24,26 +23,6 @@ public class ParentDocumentTransformer extends DocumentTransformer {
     public ParentDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory,
                     Boolean cellLevelVisibility) {
         super(logic, settings, responseObjectFactory, cellLevelVisibility);
-    }
-
-    /**
-     * @deprecated use {@link #ParentDocumentTransformer(BaseQueryLogic, Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public ParentDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        this(logic, settings, responseObjectFactory);
-    }
-
-    /**
-     * @deprecated use {@link #ParentDocumentTransformer(BaseQueryLogic, Query, ResponseObjectFactory, Boolean)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public ParentDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, Boolean cellLevelVisibility) {
-        this(logic, settings, responseObjectFactory, cellLevelVisibility);
     }
 
     @Override

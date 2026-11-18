@@ -49,7 +49,6 @@ import datawave.core.iterators.FieldIndexDocumentFilter;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.modification.configuration.ModificationServiceConfiguration;
@@ -245,29 +244,6 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
 
     public void setMetadataTableName(String metadataTableName) {
         this.metadataTableName = metadataTableName;
-    }
-
-    /**
-     * @return null; marking functions are no longer used
-     * @deprecated marking functions are no longer used; field markings are handled as column visibilities
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public MarkingFunctions<?> getMarkingFunctions() {
-        return null;
-    }
-
-    /**
-     * Retained so that existing Spring configuration that sets the {@code markingFunctions} property continues to load.
-     *
-     * @param markingFunctions
-     *            ignored
-     * @deprecated marking functions are no longer used; field markings are handled as column visibilities
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
-        // no-op
     }
 
     public Multimap<String,String> getIndexOnlyMap() {

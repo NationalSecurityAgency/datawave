@@ -483,7 +483,6 @@ doc.beans.TokenizedLuceneToJexlQueryParser.allowedFunctions: allowedFunctions
 doc.beans.TokenizedLuceneToJexlQueryParser.skipTokenizeUnfieldedFields: skipTokenizeUnfieldedFields
 doc.beans.TokenizedLuceneToJexlQueryParser.tokenizedFields: tokenizedFields
 doc.beans.allowedFunctions.parser: LuceneToJexlQueryParser
-doc.beans.baseQueryLogic.markingFunctions: markingFunctions
 doc.beans.baseQueryLogic.responseObjectFactory: responseObjectFactory
 
 Effective Properties (name=value)

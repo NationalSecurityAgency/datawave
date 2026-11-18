@@ -429,11 +429,6 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>accumulo-utils</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -463,10 +458,6 @@
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>common-utils</artifactId>
                     </exclusion>
                     <exclusion>
@@ -487,10 +478,6 @@
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>base-rest-responses</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
@@ -517,10 +504,6 @@
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>common-utils</artifactId>
                     </exclusion>
                     <exclusion>
@@ -544,10 +527,6 @@
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>common-utils</artifactId>
                     </exclusion>
                     <exclusion>
@@ -568,10 +547,6 @@
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>base-rest-responses</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
@@ -603,10 +578,6 @@
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>common-utils</artifactId>
                     </exclusion>
                     <exclusion>
@@ -628,10 +599,6 @@
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>base-rest-responses</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
@@ -659,10 +626,6 @@
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>base-rest-responses</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>

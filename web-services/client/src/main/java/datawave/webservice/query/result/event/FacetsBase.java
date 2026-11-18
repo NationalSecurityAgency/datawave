@@ -11,16 +11,12 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.accumulo.access.AccessExpression;
 
-import datawave.marking.Markings;
-
 /**
  *
  */
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultFacets.class)
-public abstract class FacetsBase implements HasMarkings, HasColumnVisibility {
-
-    protected Markings<?> markings;
+public abstract class FacetsBase implements HasColumnVisibility {
 
     @XmlTransient
     protected String columnVisibility;

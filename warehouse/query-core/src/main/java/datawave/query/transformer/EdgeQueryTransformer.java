@@ -16,7 +16,6 @@ import datawave.edge.model.EdgeModelFields;
 import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue;
 import datawave.edge.util.EdgeValueHelper;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.util.time.DateHelper;
 import datawave.visibility.AccessExpressionUtil;
@@ -28,15 +27,6 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
 
     public EdgeQueryTransformer(Query settings, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
         super(settings, responseObjectFactory, fields);
-    }
-
-    /**
-     * @deprecated use {@link #EdgeQueryTransformer(Query, ResponseObjectFactory, EdgeModelFields)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public EdgeQueryTransformer(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
-        this(settings, responseObjectFactory, fields);
     }
 
     @Override

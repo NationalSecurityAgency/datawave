@@ -11,8 +11,6 @@
                 <value>classpath*:CDIProcessor.xml</value>
                 <value>classpath*:/datawave/query/QueryLogicFactory.xml</value>
                 <value>classpath*:/datawave/webservice/annotation/AnnotationManagerFactory.xml</value>
-                <!-- TODO remove-accumulo-utils: query-core's test QueryLogicFactory.xml (BaseEventQuery/EventQuery) still references the markingFunctions bean -->
-                <value>classpath*:/MarkingFunctionsContext.xml</value>
                 <value>classpath*:/MetadataHelperContext.xml</value>
                 <value>classpath*:/JexlFunctionNamespaceRegistryContext.xml</value>
                 <value>classpath*:/CacheContext.xml</value>

@@ -3,8 +3,6 @@ package datawave.ingest.data.config;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
 import datawave.data.type.Type;
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 
 /**
  * Interface utilized to reference the original and transformed content and labels for a value pair ingested into accumulo.
@@ -79,19 +77,6 @@ public interface NormalizedContentInterface extends Cloneable {
     ColumnVisibility getVisibility();
 
     /**
-     * Set the field specific markings
-     *
-     * @param markings
-     *            the markings to set
-     * @deprecated use {@link #setVisibility(ColumnVisibility)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    default void setMarkings(Markings<?> markings) {
-        setVisibility(markings == null || markings.isEmpty() ? null : markings.toColumnVisibility());
-    }
-
-    /**
      * When we fail to process a field (e.g. normalize), then an error can be set which in the EventMapper results in the event being dropped from normal
      * processing and sent over to the ErrorDataTypeHandler.
      *
@@ -99,18 +84,6 @@ public interface NormalizedContentInterface extends Cloneable {
      *            the error to throw
      */
     void setError(Throwable e);
-
-    /**
-     * Get the field specific markings
-     *
-     * @return The field specific markings, or null if the overall event markings are to be used.
-     * @deprecated use {@link #getVisibility()}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    default Markings<?> getMarkings() {
-        return AccessExpressionMarkings.createMarkings(getVisibility());
-    }
 
     /**
      * Get the processing error for this field if any.

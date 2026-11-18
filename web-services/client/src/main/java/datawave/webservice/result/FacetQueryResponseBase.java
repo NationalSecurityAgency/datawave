@@ -5,19 +5,15 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
-import datawave.marking.Markings;
 import datawave.webservice.query.result.event.FacetsBase;
 import datawave.webservice.query.result.event.HasColumnVisibility;
-import datawave.webservice.query.result.event.HasMarkings;
 
 /**
  *
  */
 @XmlAccessorType(XmlAccessType.NONE)
-public abstract class FacetQueryResponseBase extends BaseQueryResponse implements HasMarkings, HasColumnVisibility {
+public abstract class FacetQueryResponseBase extends BaseQueryResponse implements HasColumnVisibility {
     private static final long serialVersionUID = -3483112784845232037L;
-
-    protected transient Markings<?> markings;
 
     protected transient String columnVisibility;
 

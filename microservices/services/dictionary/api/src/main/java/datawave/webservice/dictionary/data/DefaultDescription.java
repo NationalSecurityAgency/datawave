@@ -11,10 +11,6 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import org.apache.accumulo.access.AccessExpression;
-
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -36,16 +32,6 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
         this.columnVisibility = columnVisibility;
     }
 
-    /**
-     * @deprecated use {@link #DefaultDescription(String, String)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public DefaultDescription(String description, Markings<?> markings) {
-        this.description = description;
-        setMarkings(markings);
-    }
-
     @XmlElement(name = "description")
     public String getDescription() {
         return description;
@@ -53,33 +39,6 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    /**
-     * @deprecated use {@link #getColumnVisibility()}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    @Override
-    @XmlElement(name = "markings", type = AccessExpressionMarkings.class)
-    public Markings<?> getMarkings() {
-        return this.markings;
-    }
-
-    /**
-     * Sets the legacy markings. The column visibility is also set from the markings so that payloads which only carry markings still expose a visibility.
-     *
-     * @deprecated use {@link #setColumnVisibility(String)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-        AccessExpression ae = markings == null ? null : markings.toAccessExpression();
-        if (ae != null) {
-            this.columnVisibility = ae.getExpression();
-        }
     }
 
     @Override
@@ -153,8 +112,7 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
             if (message.description != null) {
                 output.writeString(1, message.description, false);
             }
-            if (message.markings != null)
-                output.writeObject(2, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
+            // field 2 (markings) is retired
             if (message.columnVisibility != null) {
                 output.writeString(3, message.columnVisibility, false);
             }
@@ -166,10 +124,6 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
                 switch (number) {
                     case 1:
                         message.description = input.readString();
-                        break;
-                    case 2:
-                        message.markings = AccessExpressionMarkings.builder().build();
-                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
                         break;
                     case 3:
                         message.columnVisibility = input.readString();
@@ -185,8 +139,6 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
             switch (number) {
                 case 1:
                     return "description";
-                case 2:
-                    return "markings";
                 case 3:
                     return "columnVisibility";
                 default:
@@ -202,7 +154,6 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("description", 1);
-            fieldMap.put("markings", 2);
             fieldMap.put("columnVisibility", 3);
         }
     };

@@ -6,11 +6,8 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.codec.binary.Base64;
 
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.webservice.query.util.TypedValue;
 
 @XmlAccessorType(XmlAccessType.NONE)
@@ -87,30 +84,6 @@ public class DefaultKey extends KeyBase {
         } else {
             return 0L;
         }
-    }
-
-    /**
-     * @deprecated use {@link #setColumnVisibility(String)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        AccessExpression ae = markings == null ? null : markings.toAccessExpression();
-        setColumnVisibility(ae == null ? null : ae.getExpression());
-    }
-
-    /**
-     * @deprecated use {@link #getColumnVisibility()}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    @Override
-    public Markings<?> getMarkings() {
-        if (this.columnVisibility == null) {
-            return null;
-        }
-        return AccessExpressionMarkings.builder().columnVisibility(getColumnVisibility()).build();
     }
 
     public void setRow(String row) {

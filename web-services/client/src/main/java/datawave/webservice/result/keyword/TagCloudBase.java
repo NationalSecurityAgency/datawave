@@ -7,27 +7,14 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
-import datawave.marking.Markings;
 import datawave.webservice.query.result.event.HasColumnVisibility;
-import datawave.webservice.query.result.event.HasMarkings;
 import io.protostuff.Message;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultTagCloud.class)
-public abstract class TagCloudBase<T,E extends TagCloudEntryBase<E>> implements HasMarkings, HasColumnVisibility, Message<T> {
-    protected transient Markings<?> markings;
+public abstract class TagCloudBase<T,E extends TagCloudEntryBase<E>> implements HasColumnVisibility, Message<T> {
     protected String columnVisibility;
     protected transient boolean intermediateResult;
-
-    @Override
-    public Markings<?> getMarkings() {
-        return markings;
-    }
-
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-    }
 
     @Override
     public String getColumnVisibility() {

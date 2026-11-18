@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 
 import com.google.common.collect.Maps;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.common.grouping.DocumentGrouper;
 import datawave.query.common.grouping.Group;
@@ -73,15 +72,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.groups = new Groups();
         this.groupFields = groupFields;
-    }
-
-    /**
-     * @deprecated use {@link #GroupingTransform(GroupFields, long)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public GroupingTransform(GroupFields groupFields, MarkingFunctions<?> markingFunctions, long queryExecutionForPageTimeout) {
-        this(groupFields, queryExecutionForPageTimeout);
     }
 
     public void updateConfig(GroupFields groupFields) {

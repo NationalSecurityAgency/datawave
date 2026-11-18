@@ -18,7 +18,6 @@ import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.model.QueryModel;
 import datawave.visibility.AccessExpressionUtil;
@@ -46,16 +45,6 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         this.auths = new Authorizations(settings.getQueryAuthorizations().split(","));
         this.logic = logic;
         this.myQueryModel = qm;
-    }
-
-    /**
-     * @deprecated use {@link #ShardIndexQueryTransformer(BaseQueryLogic, Query, ResponseObjectFactory, QueryModel)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public ShardIndexQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, QueryModel qm) {
-        this(logic, settings, responseObjectFactory, qm);
     }
 
     @Override
@@ -157,8 +146,7 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
 
         List<FieldBase> fields = event.getFields();
         for (FieldBase f : fields) {
-            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
-            cqo.addColumn(f.getName(), f.getTypedValue(), null, f.getColumnVisibility(), f.getTimestamp());
+            cqo.addColumn(f.getName(), f.getTypedValue(), f.getColumnVisibility(), f.getTimestamp());
         }
 
         // set the size in bytes using the initial event size as an approximation

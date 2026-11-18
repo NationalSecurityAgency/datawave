@@ -11,7 +11,6 @@ import org.apache.log4j.Logger;
 
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.visibility.AccessExpressionUtil;
@@ -38,15 +37,6 @@ public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<E
         super();
         this.responseObjectFactory = responseObjectFactory;
         this.auths = new Authorizations(settings.getQueryAuthorizations().split(","));
-    }
-
-    /**
-     * @deprecated use {@link #ShardQueryCountTableTransformer(Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public ShardQueryCountTableTransformer(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
-        this(settings, responseObjectFactory);
     }
 
     @Override
@@ -117,8 +107,7 @@ public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<E
 
         List<FieldBase> fields = event.getFields();
         for (FieldBase f : fields) {
-            // TODO remove-accumulo-utils: CacheableQueryRow visibility addColumn
-            cqo.addColumn(f.getName(), f.getTypedValue(), null, f.getColumnVisibility(), f.getTimestamp());
+            cqo.addColumn(f.getName(), f.getTypedValue(), f.getColumnVisibility(), f.getTimestamp());
         }
 
         // set the size in bytes using the initial event size as an approximation

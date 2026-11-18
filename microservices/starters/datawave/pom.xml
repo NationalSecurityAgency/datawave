@@ -88,11 +88,6 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>accumulo-utils</artifactId>
-                <version>${version.datawave}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${version.datawave}</version>
             </dependency>
@@ -258,10 +253,6 @@
         <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>accumulo-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>

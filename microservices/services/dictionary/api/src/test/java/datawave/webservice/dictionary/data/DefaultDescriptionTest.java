@@ -83,11 +83,8 @@ public class DefaultDescriptionTest {
         return dicFieldsList;
     }
 
-    /**
-     * Payloads that only carry the legacy nested markings element still expose the column visibility.
-     */
     @Test
-    public void testUnmarshallLegacyMarkings() throws JAXBException {
+    public void testUnmarshall() throws JAXBException {
 
         String namespace = "";
 
@@ -107,9 +104,7 @@ public class DefaultDescriptionTest {
                         + "            <datatype>myType</datatype>\n"
                         + "            <descriptions>\n"
                         + "                <description>my description</description>\n"
-                        + "                <markings>\n"
-                        + "                    <columnVisibility>PRIVATE</columnVisibility>\n"
-                        + "                </markings>\n"
+                        + "                <columnVisibility>PRIVATE</columnVisibility>\n"
                         + "            </descriptions>\n"
                         + "            <fieldName>myField</fieldName>\n"
                         + "        </Field>\n"

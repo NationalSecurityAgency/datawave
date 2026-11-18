@@ -16,7 +16,6 @@ import com.esotericsoftware.kryo.io.Input;
 
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.parser.EventFields;
@@ -36,25 +35,6 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
 
     public EventQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory) {
         super(logic, settings, responseObjectFactory);
-    }
-
-    /**
-     * @deprecated use {@link #EventQueryTransformer(String, Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public EventQueryTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
-        this(tableName, settings, responseObjectFactory);
-    }
-
-    /**
-     * @deprecated use {@link #EventQueryTransformer(BaseQueryLogic, Query, ResponseObjectFactory)}
-     */
-    // TODO remove-accumulo-utils
-    @Deprecated(forRemoval = true)
-    public EventQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        this(logic, settings, responseObjectFactory);
     }
 
     @Override
