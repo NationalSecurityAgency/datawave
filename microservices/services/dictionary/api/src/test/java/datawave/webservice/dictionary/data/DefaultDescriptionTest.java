@@ -41,6 +41,27 @@ public class DefaultDescriptionTest {
         assertTrue(result.contains("<description>my description</description>"));
     }
 
+    @Test
+    public void testColumnVisibilityRoundTrip() throws JAXBException {
+        DefaultDescription desc = new DefaultDescription("my description");
+        desc.setColumnVisibility("PRIVATE&PUBLIC");
+        DefaultDictionaryField dicField = new DefaultDictionaryField();
+        dicField.setDatatype("myType");
+        dicField.setFieldName("myField");
+        dicField.setDescriptions(new HashSet<>(List.of(desc)));
+        DefaultFields fields = new DefaultFields();
+        fields.setFields(List.of(dicField));
+
+        JAXBContext j = JAXBContext.newInstance(DefaultFields.class);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        j.createMarshaller().marshal(fields, out);
+
+        DefaultFields restored = (DefaultFields) j.createUnmarshaller().unmarshal(new ByteArrayInputStream(out.toByteArray()));
+        DefaultDescription restoredDesc = restored.getFields().get(0).getDescriptions().iterator().next();
+        assertEquals("my description", restoredDesc.getDescription());
+        assertEquals("PRIVATE&PUBLIC", restoredDesc.getColumnVisibility());
+    }
+
     private static DefaultFields getDefaultFields() {
         DefaultDescription desc = new DefaultDescription();
         desc.setMarkings(AccessExpressionMarkings.create("PRIVATE"));

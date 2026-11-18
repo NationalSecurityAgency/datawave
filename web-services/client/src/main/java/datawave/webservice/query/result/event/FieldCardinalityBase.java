@@ -16,7 +16,7 @@ import datawave.marking.Markings;
  */
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultFieldCardinality.class)
-public abstract class FieldCardinalityBase implements HasMarkings {
+public abstract class FieldCardinalityBase implements HasMarkings, HasColumnVisibility {
 
     protected Markings<?> markings;
 

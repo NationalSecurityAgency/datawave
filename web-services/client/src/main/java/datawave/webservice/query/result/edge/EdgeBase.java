@@ -6,11 +6,12 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
+import datawave.webservice.query.result.event.HasColumnVisibility;
 import datawave.webservice.query.result.event.HasMarkings;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultEdge.class)
-public interface EdgeBase extends HasMarkings {
+public interface EdgeBase extends HasMarkings, HasColumnVisibility {
     String getSource();
 
     void setSource(String source);

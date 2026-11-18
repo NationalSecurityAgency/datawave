@@ -58,6 +58,17 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
     }
 
     @Override
+    @XmlElement(name = "columnVisibility")
+    public String getColumnVisibility() {
+        return super.getColumnVisibility();
+    }
+
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        super.setColumnVisibility(columnVisibility);
+    }
+
+    @Override
     public String getLanguage() {
         return language;
     }
@@ -135,6 +146,10 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                     }
                 }
             }
+
+            if (message.columnVisibility != null) {
+                output.writeString(5, message.columnVisibility, false);
+            }
         }
 
         public void mergeFrom(Input input, DefaultTagCloud message) throws IOException {
@@ -163,6 +178,9 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                         DefaultTagCloudEntry f = input.mergeObject(null, schema);
                         message.tags.add(f);
                         break;
+                    case 5:
+                        message.columnVisibility = input.readString();
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -180,6 +198,8 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                     return "metadata";
                 case 4:
                     return "tags";
+                case 5:
+                    return "columnVisibility";
                 default:
                     return null;
             }
@@ -196,6 +216,7 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
             fieldMap.put("language", 2);
             fieldMap.put("metadata", 3);
             fieldMap.put("tags", 4);
+            fieldMap.put("columnVisibility", 5);
         }
     };
 
@@ -210,13 +231,13 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
         }
 
         DefaultTagCloud otherCloud = (DefaultTagCloud) other;
-        return Objects.equals(this.markings, otherCloud.markings) && Objects.equals(this.language, otherCloud.language)
-                        && Objects.equals(this.metadata, otherCloud.metadata) && this.tags.size() == otherCloud.tags.size()
-                        && new HashSet<>(this.tags).containsAll(otherCloud.tags);
+        return Objects.equals(this.markings, otherCloud.markings) && Objects.equals(this.columnVisibility, otherCloud.columnVisibility)
+                        && Objects.equals(this.language, otherCloud.language) && Objects.equals(this.metadata, otherCloud.metadata)
+                        && this.tags.size() == otherCloud.tags.size() && new HashSet<>(this.tags).containsAll(otherCloud.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(markings, language, metadata, tags);
+        return Objects.hash(markings, columnVisibility, language, metadata, tags);
     }
 }

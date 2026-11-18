@@ -9,9 +9,11 @@ import datawave.marking.Markings;
 import io.protostuff.Message;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings, Message<T> {
+public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings, HasColumnVisibility, Message<T> {
 
     protected transient Markings<?> markings;
+
+    protected String columnVisibility;
 
     protected transient boolean intermediateResult;
 
@@ -50,6 +52,16 @@ public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings
 
     public void setMarkings(Markings<?> markings) {
         this.markings = markings;
+    }
+
+    @Override
+    public String getColumnVisibility() {
+        return columnVisibility;
+    }
+
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
     }
 
     public boolean isIntermediateResult() {

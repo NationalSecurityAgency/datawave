@@ -55,6 +55,17 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
     }
 
     @Override
+    @XmlElement(name = "columnVisibility")
+    public String getColumnVisibility() {
+        return super.getColumnVisibility();
+    }
+
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        super.setColumnVisibility(columnVisibility);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (o instanceof DefaultDescription) {
             DefaultDescription other = (DefaultDescription) o;
@@ -116,6 +127,9 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
             }
             if (message.markings != null)
                 output.writeObject(2, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
+            if (message.columnVisibility != null) {
+                output.writeString(3, message.columnVisibility, false);
+            }
         }
 
         public void mergeFrom(Input input, DefaultDescription message) throws IOException {
@@ -128,6 +142,9 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
                     case 2:
                         message.markings = AccessExpressionMarkings.builder().build();
                         input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
+                        break;
+                    case 3:
+                        message.columnVisibility = input.readString();
                         break;
                     default:
                         input.handleUnknownField(number, this);
@@ -142,6 +159,8 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
                     return "description";
                 case 2:
                     return "markings";
+                case 3:
+                    return "columnVisibility";
                 default:
                     return null;
             }
@@ -156,6 +175,7 @@ public class DefaultDescription extends DescriptionBase<DefaultDescription> impl
         {
             fieldMap.put("description", 1);
             fieldMap.put("markings", 2);
+            fieldMap.put("columnVisibility", 3);
         }
     };
 

@@ -7,14 +7,27 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
 import datawave.marking.Markings;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 import datawave.webservice.query.result.event.HasMarkings;
 import io.protostuff.Message;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultMetadata.class)
-public abstract class MetadataBase<T> implements HasMarkings, Message<T> {
+public abstract class MetadataBase<T> implements HasMarkings, HasColumnVisibility, Message<T> {
 
     protected transient Markings<?> markings;
+
+    protected transient String columnVisibility;
+
+    @Override
+    public String getColumnVisibility() {
+        return columnVisibility;
+    }
+
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
+    }
 
     public Markings<?> getMarkings() {
         return markings;

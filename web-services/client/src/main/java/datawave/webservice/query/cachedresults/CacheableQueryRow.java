@@ -9,10 +9,11 @@ import java.util.Set;
 
 import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 import datawave.webservice.query.result.event.HasMarkings;
 import datawave.webservice.query.util.TypedValue;
 
-public abstract class CacheableQueryRow implements HasMarkings {
+public abstract class CacheableQueryRow implements HasMarkings, HasColumnVisibility {
 
     private static final Set<String> fixedColumnSet = new LinkedHashSet<String>();
     static {
@@ -29,6 +30,8 @@ public abstract class CacheableQueryRow implements HasMarkings {
     }
 
     protected MarkingFunctions<?> markingFunctions;
+
+    protected String columnVisibility;
 
     public static Set<String> getFixedColumnSet() {
         return Collections.unmodifiableSet(fixedColumnSet);
@@ -104,6 +107,23 @@ public abstract class CacheableQueryRow implements HasMarkings {
     public abstract void setColumnColumnVisibilityMap(Map<String,String> columnVisibilityMap);
 
     public abstract void setColumnTimestampMap(Map<String,Long> parseColumnTimestamps);
+
+    /**
+     * @return the row-level column visibility
+     */
+    @Override
+    public String getColumnVisibility() {
+        return columnVisibility;
+    }
+
+    /**
+     * @param columnVisibility
+     *            the row-level column visibility
+     */
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
+    }
 
     public MarkingFunctions<?> getMarkingFunctions() {
         return markingFunctions;

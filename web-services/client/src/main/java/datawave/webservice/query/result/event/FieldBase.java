@@ -13,7 +13,7 @@ import datawave.webservice.query.util.TypedValue;
 import io.protostuff.Message;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public abstract class FieldBase<T> implements HasMarkings, Message<T> {
+public abstract class FieldBase<T> implements HasMarkings, HasColumnVisibility, Message<T> {
 
     protected transient Markings<?> markings;
 

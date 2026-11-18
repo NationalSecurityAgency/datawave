@@ -63,6 +63,17 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
         this.markings = markings;
     }
 
+    @Override
+    @XmlElement(name = "ColumnVisibility")
+    public String getColumnVisibility() {
+        return super.getColumnVisibility();
+    }
+
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        super.setColumnVisibility(columnVisibility);
+    }
+
     public Metadata getMetadata() {
         return metadata;
     }
@@ -79,6 +90,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
             EqualsBuilder eb = new EqualsBuilder();
 
             eb.append(this.markings, v.markings);
+            eb.append(this.columnVisibility, v.columnVisibility);
             eb.append(this.metadata, v.metadata);
             eb.append(this.fields, v.fields);
             return eb.isEquals();
@@ -90,6 +102,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
     @Override
     public int hashCode() {
         int result = markings != null ? markings.hashCode() : 0;
+        result = 31 * result + (columnVisibility != null ? columnVisibility.hashCode() : 0);
         result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
         result = 31 * result + (fields != null ? fields.hashCode() : 0);
         return result;
@@ -141,6 +154,10 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
                     }
                 }
             }
+
+            if (message.columnVisibility != null) {
+                output.writeString(4, message.columnVisibility, false);
+            }
         }
 
         public void mergeFrom(Input input, DefaultEvent message) throws IOException {
@@ -165,6 +182,9 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
                         DefaultField f = input.mergeObject(null, schema);
                         message.fields.add(f);
                         break;
+                    case 4:
+                        message.columnVisibility = input.readString();
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -180,6 +200,8 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
                     return "metadata";
                 case 3:
                     return "fields";
+                case 4:
+                    return "columnVisibility";
                 default:
                     return null;
             }
@@ -195,6 +217,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
             fieldMap.put("markings", 1);
             fieldMap.put("metadata", 2);
             fieldMap.put("fields", 3);
+            fieldMap.put("columnVisibility", 4);
         }
     };
 

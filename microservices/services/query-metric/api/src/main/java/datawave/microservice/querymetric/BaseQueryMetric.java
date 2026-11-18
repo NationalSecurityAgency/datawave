@@ -40,6 +40,7 @@ import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 import datawave.webservice.query.result.event.HasMarkings;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -47,7 +48,7 @@ import io.protostuff.Output;
 import io.protostuff.Schema;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public abstract class BaseQueryMetric implements HasMarkings, Serializable {
+public abstract class BaseQueryMetric implements HasMarkings, HasColumnVisibility, Serializable {
 
     private static final Logger log = LoggerFactory.getLogger(BaseQueryMetric.class);
 

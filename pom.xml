@@ -769,6 +769,11 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-access-core</artifactId>
+                <version>1.0.0-beta3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.accumulo</groupId>
                 <artifactId>accumulo-core</artifactId>
                 <version>${version.accumulo}</version>
                 <exclusions>

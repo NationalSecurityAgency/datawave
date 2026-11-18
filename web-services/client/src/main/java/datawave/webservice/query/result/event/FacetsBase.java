@@ -18,9 +18,12 @@ import datawave.marking.Markings;
  */
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultFacets.class)
-public abstract class FacetsBase implements HasMarkings {
+public abstract class FacetsBase implements HasMarkings, HasColumnVisibility {
 
     protected Markings<?> markings;
+
+    @XmlTransient
+    protected String columnVisibility;
 
     @XmlElementWrapper(name = "Fields")
     @XmlElement(name = "Field")
@@ -44,6 +47,16 @@ public abstract class FacetsBase implements HasMarkings {
 
     public void setAccessExpression(AccessExpression accessExpression) {
         this.accessExpression = accessExpression;
+    }
+
+    @Override
+    public String getColumnVisibility() {
+        return columnVisibility;
+    }
+
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
     }
 
     public abstract void setSizeInBytes(long sizeInBytes);
