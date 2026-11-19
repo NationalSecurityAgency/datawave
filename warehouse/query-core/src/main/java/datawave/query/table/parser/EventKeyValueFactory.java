@@ -2,16 +2,14 @@ package datawave.query.table.parser;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.query.Constants;
+import datawave.visibility.AccessExpressionUtil;
 
 public class EventKeyValueFactory {
 
-    public static EventKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions<?> markingFunctions) throws MarkingFunctions.Exception {
+    public static EventKeyValue parse(Key key, Value value) {
 
         if (null == key)
             throw new IllegalArgumentException("Cannot pass null key to EventKeyValueFactory");
@@ -33,14 +31,13 @@ public class EventKeyValueFactory {
 
         e.setTimestamp(key.getTimestamp());
 
-        parseColumnVisibility(e, key, auths, markingFunctions);
+        parseColumnVisibility(e, key);
 
         return e;
     }
 
-    protected static void parseColumnVisibility(EventKeyValue event, Key key, Authorizations auths, MarkingFunctions<?> markingFunctions)
-                    throws MarkingFunctions.Exception {
-        event.setMarkings(markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(key.getColumnVisibility()), auths));
+    protected static void parseColumnVisibility(EventKeyValue event, Key key) {
+        event.setColumnVisibility(AccessExpressionUtil.normalize(new ColumnVisibility(key.getColumnVisibility())).getExpression());
     }
 
     public static class EventKeyValue {
@@ -49,7 +46,7 @@ public class EventKeyValueFactory {
         protected String uid = null;
         protected String fieldName = null;
         protected String fieldValue = null;
-        protected Markings<?> markings = null;
+        protected String columnVisibility = null;
         protected long timestamp = 0L;
 
         public String getShardId() {
@@ -100,12 +97,15 @@ public class EventKeyValueFactory {
             this.timestamp = timestamp;
         }
 
-        public Markings<?> getMarkings() {
-            return this.markings;
+        /**
+         * @return the normalized column visibility of the key
+         */
+        public String getColumnVisibility() {
+            return this.columnVisibility;
         }
 
-        public void setMarkings(Markings<?> markings) {
-            this.markings = markings;
+        public void setColumnVisibility(String columnVisibility) {
+            this.columnVisibility = columnVisibility;
         }
 
     }

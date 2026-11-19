@@ -44,7 +44,6 @@ import org.apache.lucene.util.fst.FST;
 import com.google.common.collect.Maps;
 
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
-import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
@@ -54,6 +53,7 @@ import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  * Extended so that calls to a function node, which can return a collection of 'hits' instead of a Boolean, can be evaluated as true/false based on the size of
@@ -70,7 +70,6 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 public class DatawaveInterpreter extends Interpreter {
 
     protected Map<String,Object> resultMap;
-    private MarkingFunctions<?> markingFunctions;
 
     private static final Logger log = Logger.getLogger(DatawaveInterpreter.class);
 
@@ -468,13 +467,10 @@ public class DatawaveInterpreter extends Interpreter {
             }
         }
 
-        if (null == markingFunctions) {
-            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-        }
         ColumnVisibility columnVisibility;
         try {
-            columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
-        } catch (MarkingFunctions.Exception e) {
+            columnVisibility = VisibilityFunctions.getInstance().combine(columnVisibilities);
+        } catch (RuntimeException e) {
             log.error("Failed to combine column visibilities while generating HIT_TERM for phrase function for field [" + field + "]");
             log.error("msg: ", e);
             return;

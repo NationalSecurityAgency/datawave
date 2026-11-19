@@ -1,11 +1,12 @@
 package datawave.ingest.mapreduce.handler.atom;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
@@ -22,6 +23,7 @@ import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.FieldVisibilities;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
@@ -29,8 +31,6 @@ import datawave.ingest.data.config.ingest.ErrorShardedIngestHelper;
 import datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 
 /**
  * This class differs from the parent in that when it sees a field name of ERROR it creates a category name using the field name and value.
@@ -51,7 +51,7 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
     public static final String STACK_TRACE_FIELD = "STACKTRACE";
     public static final String EVENT_CONTENT_FIELD = "EVENT";
     private MarkingsHelper mHelper = null;
-    private AccessExpression defaultVisibility = null;
+    private String defaultVisibility = null;
     private Configuration conf = null;
     private ErrorShardedIngestHelper errorHelper = null;
 
@@ -62,7 +62,6 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
         this.errorHelper = (ErrorShardedIngestHelper) (TypeRegistry.getType("error").getIngestHelper(context.getConfiguration()));
 
         this.conf = context.getConfiguration();
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     }
 
     @Override
@@ -76,7 +75,8 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
         }
 
         mHelper = IngestConfigurationFactory.getIngestConfiguration().getMarkingsHelper(conf, record.getDataType());
-        defaultVisibility = mHelper.getDefaultMarkings().toAccessExpression();
+        ColumnVisibility defaultColumnVisibility = mHelper.getDefaultVisibility();
+        defaultVisibility = defaultColumnVisibility == null ? null : new String(defaultColumnVisibility.getExpression(), UTF_8);
 
         // write out the event into a value before we muck with it
         DataOutputBuffer buffer = new DataOutputBuffer();
@@ -89,9 +89,9 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
         // set the event timestamp to now to enable keeping track of when this error occurred (determines date for shard)
         record.setTimestamp(System.currentTimeMillis());
 
-        // set the default markings if needed
+        // set the default visibility if needed
         if (record.hasError(RawDataErrorNames.MISSING_DATA_ERROR)) {
-            record.setSecurityMarkings(mHelper.getDefaultMarkings());
+            record.setVisibility(mHelper.getDefaultVisibility());
         }
 
         // add the error fields to our list of fields
@@ -175,10 +175,10 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
     }
 
     protected String getVisibilityColumnString(RawRecordContainer event, NormalizedContentInterface value) {
-        Markings<?> markings = value.getMarkings();
-        // value marking is 1st choice
-        if (markings != null && !markings.isEmpty()) {
-            return markings.toAccessExpression().getExpression();
+        ColumnVisibility fieldVisibility = value.getVisibility();
+        // value visibility is 1st choice
+        if (!FieldVisibilities.isEmpty(fieldVisibility)) {
+            return new String(fieldVisibility.getExpression(), UTF_8);
         }
         ColumnVisibility visibility = event.getVisibility();
         if (visibility != null) {
@@ -186,6 +186,6 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
             return new String(visibility.getExpression());
         }
         // default marking is the last resort
-        return defaultVisibility != null ? defaultVisibility.getExpression() : "";
+        return defaultVisibility != null ? defaultVisibility : "";
     }
 }

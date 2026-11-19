@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.io.IOException;
 import java.util.Objects;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -28,8 +29,6 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.marking.ColumnVisibilitySecurityMarking;
-import datawave.marking.Markings;
 
 public class NormalizedContentInterfaceTest {
     private static final Logger log = LoggerFactory.getLogger(NormalizedContentInterfaceTest.class);
@@ -168,7 +167,7 @@ public class NormalizedContentInterfaceTest {
     private NormalizedContentInterface createNormalizedContent(String field, String value) {
         NormalizedFieldAndValue fieldAndValue = new NormalizedFieldAndValue(field, value);
         if (!field.equals(FAILED_NORMALIZATION_FIELD)) {
-            fieldAndValue.setMarkings(createDefaultMarkings());
+            fieldAndValue.setVisibility(createDefaultVisibility());
         }
         return fieldAndValue;
     }
@@ -179,10 +178,8 @@ public class NormalizedContentInterfaceTest {
         return fieldAndValue;
     }
 
-    private Markings<?> createDefaultMarkings() {
-        ColumnVisibilitySecurityMarking sm = new ColumnVisibilitySecurityMarking();
-        sm.setColumnVisibility("PRIVATE");
-        return sm.toMarkings();
+    private ColumnVisibility createDefaultVisibility() {
+        return new ColumnVisibility("PRIVATE");
     }
 
     private void compare(Multimap<String,NormalizedContentInterface> actualValues, Multimap<String,NormalizedContentInterface> expectedValues) {

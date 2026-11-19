@@ -8,7 +8,6 @@ import java.util.Date;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
 import datawave.data.hash.UID;
-import datawave.marking.Markings;
 import datawave.util.CompositeTimestamp;
 
 /**
@@ -16,10 +15,6 @@ import datawave.util.CompositeTimestamp;
  * shard table schema
  */
 public interface RawRecordContainer {
-
-    Markings<?> getSecurityMarkings();
-
-    void setSecurityMarkings(Markings<?> securityMarkings);
 
     UID getId();
 

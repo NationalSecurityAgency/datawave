@@ -107,7 +107,6 @@ import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 import datawave.ingest.metric.IngestInput;
 import datawave.ingest.metric.IngestOutput;
 import datawave.ingest.metric.IngestProcess;
-import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 
@@ -263,8 +262,6 @@ public class IngestJob implements Tool {
         log.addAppender(ca);
         log.setLevel(Level.INFO);
 
-        // Initialize the markings file helper so we get the right markings file
-        MarkingFunctions.Factory.createMarkingFunctions();
         TypeRegistry.reset();
 
         // Parse the job arguments

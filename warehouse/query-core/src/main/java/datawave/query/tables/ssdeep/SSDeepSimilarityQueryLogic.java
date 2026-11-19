@@ -161,7 +161,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<ScoredSSDeepPair>
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         final SSDeepSimilarityQueryConfiguration config = getConfig();
-        return new SSDeepSimilarityQueryTransformer(settings, config, this.markingFunctions, this.responseObjectFactory);
+        return new SSDeepSimilarityQueryTransformer(settings, config, this.responseObjectFactory);
     }
 
     @Override

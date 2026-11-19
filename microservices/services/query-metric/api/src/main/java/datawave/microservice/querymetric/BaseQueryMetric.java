@@ -24,7 +24,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -35,19 +34,17 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.result.event.HasMarkings;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public abstract class BaseQueryMetric implements HasMarkings, Serializable {
+public abstract class BaseQueryMetric implements HasColumnVisibility, Serializable {
 
     private static final Logger log = LoggerFactory.getLogger(BaseQueryMetric.class);
 
@@ -1113,10 +1110,12 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
         this.lastUpdated = lastUpdated;
     }
 
+    @Override
     public String getColumnVisibility() {
         return columnVisibility;
     }
 
+    @Override
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
     }
@@ -1164,24 +1163,6 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
 
     public void setPredictions(Set<Prediction> predictions) {
         this.predictions = predictions;
-    }
-
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        if (markings == null || markings.isEmpty()) {
-            this.columnVisibility = null;
-        } else {
-            AccessExpression ae = markings.toAccessExpression();
-            this.columnVisibility = ae.getExpression();
-        }
-    }
-
-    @Override
-    public Markings<?> getMarkings() {
-        if (this.columnVisibility != null) {
-            return AccessExpressionMarkings.builder().columnVisibility(this.columnVisibility).build();
-        }
-        return null;
     }
 
     public Schema<? extends BaseQueryMetric> getSchemaInstance() {

@@ -2,9 +2,7 @@ package datawave.query.table.parser;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
 import datawave.util.StringUtils;
@@ -12,7 +10,7 @@ import datawave.util.StringUtils;
 /** Parses results returned from the KeywordExtractingIterator. Expects 'd' column keys, and serialized bytes as the value */
 public class KeywordKeyValueFactory {
 
-    public static KeywordKeyValue parse(Key key, Value value, Authorizations auths, MarkingFunctions<?> markingFunctions) throws MarkingFunctions.Exception {
+    public static KeywordKeyValue parse(Key key, Value value) {
 
         if (null == key)
             throw new IllegalArgumentException("Cannot pass null key to KeywordKeyValueFactory");
@@ -36,7 +34,7 @@ public class KeywordKeyValueFactory {
             k.setContents(value.get());
         }
 
-        EventKeyValueFactory.parseColumnVisibility(k, key, auths, markingFunctions);
+        EventKeyValueFactory.parseColumnVisibility(k, key);
 
         return k;
     }

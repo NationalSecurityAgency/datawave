@@ -5,17 +5,26 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
-import datawave.marking.Markings;
 import datawave.webservice.query.result.edge.EdgeBase;
-import datawave.webservice.query.result.event.HasMarkings;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 import datawave.webservice.result.BaseQueryResponse;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public abstract class EdgeQueryResponseBase extends BaseQueryResponse implements HasMarkings {
+public abstract class EdgeQueryResponseBase extends BaseQueryResponse implements HasColumnVisibility {
 
-    protected Markings<?> markings;
+    protected String columnVisibility;
 
     private static final long serialVersionUID = 5957852042933196910L;
+
+    @Override
+    public String getColumnVisibility() {
+        return columnVisibility;
+    }
+
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
+    }
 
     public abstract void addEdge(EdgeBase edge);
 

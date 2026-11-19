@@ -18,8 +18,6 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.webservice.query.result.event.MapSchema;
 import datawave.webservice.xml.util.StringMapAdapter;
 import io.protostuff.Input;
@@ -33,9 +31,6 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
 
     private static final long serialVersionUID = 6614332701390895105L;
 
-    @XmlElement(name = "markings", type = AccessExpressionMarkings.class)
-    private Markings<?> markings;
-
     @XmlElement(name = "language")
     private String language = null;
 
@@ -48,13 +43,14 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
     private List<DefaultTagCloudEntry> tags = null;
 
     @Override
-    public Markings<?> getMarkings() {
-        return markings;
+    @XmlElement(name = "columnVisibility")
+    public String getColumnVisibility() {
+        return super.getColumnVisibility();
     }
 
     @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
+    public void setColumnVisibility(String columnVisibility) {
+        super.setColumnVisibility(columnVisibility);
     }
 
     @Override
@@ -113,9 +109,7 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
         }
 
         public void writeTo(Output output, DefaultTagCloud message) throws IOException {
-            if (message.markings != null)
-                output.writeObject(1, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
-
+            // field 1 (markings) is retired
             if (message.language != null) {
                 output.writeString(2, message.language, false);
             }
@@ -135,6 +129,10 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                     }
                 }
             }
+
+            if (message.columnVisibility != null) {
+                output.writeString(5, message.columnVisibility, false);
+            }
         }
 
         public void mergeFrom(Input input, DefaultTagCloud message) throws IOException {
@@ -142,10 +140,6 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
             Schema<DefaultTagCloudEntry> schema = null;
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {
-                    case 1:
-                        message.markings = AccessExpressionMarkings.builder().build();
-                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
-                        break;
                     case 2:
                         message.language = input.readString();
                         break;
@@ -163,6 +157,9 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
                         DefaultTagCloudEntry f = input.mergeObject(null, schema);
                         message.tags.add(f);
                         break;
+                    case 5:
+                        message.columnVisibility = input.readString();
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -172,14 +169,14 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
 
         public String getFieldName(int number) {
             switch (number) {
-                case 1:
-                    return "markings";
                 case 2:
                     return "language";
                 case 3:
                     return "metadata";
                 case 4:
                     return "tags";
+                case 5:
+                    return "columnVisibility";
                 default:
                     return null;
             }
@@ -192,10 +189,10 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
 
         final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
-            fieldMap.put("markings", 1);
             fieldMap.put("language", 2);
             fieldMap.put("metadata", 3);
             fieldMap.put("tags", 4);
+            fieldMap.put("columnVisibility", 5);
         }
     };
 
@@ -210,13 +207,13 @@ public class DefaultTagCloud extends TagCloudBase<DefaultTagCloud,DefaultTagClou
         }
 
         DefaultTagCloud otherCloud = (DefaultTagCloud) other;
-        return Objects.equals(this.markings, otherCloud.markings) && Objects.equals(this.language, otherCloud.language)
+        return Objects.equals(this.columnVisibility, otherCloud.columnVisibility) && Objects.equals(this.language, otherCloud.language)
                         && Objects.equals(this.metadata, otherCloud.metadata) && this.tags.size() == otherCloud.tags.size()
                         && new HashSet<>(this.tags).containsAll(otherCloud.tags);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(markings, language, metadata, tags);
+        return Objects.hash(columnVisibility, language, metadata, tags);
     }
 }

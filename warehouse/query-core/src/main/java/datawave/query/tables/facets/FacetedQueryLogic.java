@@ -70,7 +70,7 @@ public class FacetedQueryLogic extends IndexQueryLogic {
             reducedInSettings = Boolean.parseBoolean(reducedResponseStr);
         }
         boolean reduced = (this.isReducedResponse() || reducedInSettings);
-        FacetedTransformer transformer = new FacetedTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
+        FacetedTransformer transformer = new FacetedTransformer(this, settings, responseObjectFactory, reduced);
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
 
         transformer.setQm(queryModel);

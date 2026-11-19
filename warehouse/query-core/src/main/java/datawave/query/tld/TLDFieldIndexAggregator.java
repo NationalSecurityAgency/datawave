@@ -12,7 +12,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import datawave.marking.ColumnVisibilityCache;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
@@ -23,6 +22,7 @@ import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.SeekingAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.table.util.TLD;
+import datawave.visibility.ColumnVisibilityCache;
 
 public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldIndexAggregator {
     private final Set<String> fieldsToAggregate;

@@ -55,6 +55,7 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.FieldVisibilities;
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
@@ -76,14 +77,13 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.table.config.LoadDateTableConfigHelper;
 import datawave.ingest.time.Now;
-import datawave.marking.AccessExpressionUtil;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.metadata.protobuf.EdgeMetadata;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue;
 import datawave.metadata.protobuf.EdgeMetadata.MetadataValue.Metadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
+import datawave.visibility.AccessExpressionUtil;
+import datawave.visibility.VisibilityFunctions;
 
 public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
 
@@ -146,7 +146,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected String edgeTableName = null;
     protected String metadataTableName = null;
     protected boolean enableMetadata = false;
-    protected MarkingFunctions<?> markingFunctions;
 
     protected Map<String,EdgeDefinitionConfigurationHelper> edges = null;
 
@@ -178,8 +177,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     }
 
     public void setup(Configuration conf) {
-
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
         // This will fail if the TypeRegistry has not been initialized in the VM.
         TypeRegistry registry = TypeRegistry.getInstance(conf);
@@ -1326,18 +1323,17 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     /**
      * A helper routine to determine the visibility for a field.
      *
-     * @param markings
-     *            a map of the markings
+     * @param fieldVisibility
+     *            the field specific visibility, or null to use the event visibility
      * @param event
      *            the event container
      * @return the visibility as Text object
      */
-    @SuppressWarnings("unchecked")
-    protected Text getVisibility(Markings<?> markings, RawRecordContainer event) {
-        if (null == markings || markings.isEmpty()) {
+    protected Text getVisibility(ColumnVisibility fieldVisibility, RawRecordContainer event) {
+        if (FieldVisibilities.isEmpty(fieldVisibility)) {
             return new Text(flatten(event.getVisibility()));
         } else {
-            AccessExpression ae = AccessExpressionUtil.normalize(markings.toAccessExpression());
+            AccessExpression ae = AccessExpressionUtil.normalize(fieldVisibility);
             return new Text(ae.getExpression().getBytes(UTF_8));
         }
     }
@@ -1346,7 +1342,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         if (value.getForceMaskedVisibility()) {
             return new Text(flatten(value.getMaskedVisibility()));
         } else {
-            return getVisibility(value.getMarkings(), value.getEvent());
+            return getVisibility(value.getVisibility(), value.getEvent());
         }
     }
 
@@ -1354,7 +1350,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         if (value.getForceMaskedVisibility()) {
             return new Text(flatten(value.getMaskedVisibility()));
         } else {
-            return getVisibility(value.getDurationValue().getMarkings(), value.getEvent());
+            return getVisibility(value.getDurationValue().getVisibility(), value.getEvent());
         }
     }
 
@@ -1366,7 +1362,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      * @return the flattened visibility
      */
     protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
+        return VisibilityFunctions.getInstance().flatten(vis);
     }
 
     @Override

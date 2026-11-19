@@ -14,7 +14,6 @@
 					<bean class="datawave.modification.MutableMetadataUUIDHandler">
 						<property name="authorizedRoles" ref="authorizedRoles" />
 						<property name="metadataHelperFactory" ref="metadataHelperFactory" />
-						<property name="markingFunctions" ref="markingFunctions" />
 						<property name="eventTableName" value="${datawave.modification.handlers.eventTableName}" />
 						<property name="metadataTableName" value="${datawave.modification.handlers.metadataTableName}" />
 						<property name="indexTableName" value="${datawave.modification.handlers.indexTableName}" />
@@ -30,7 +29,6 @@
 					<bean class="datawave.modification.MutableMetadataHandler">
 						<property name="authorizedRoles" ref="authorizedRoles" />
 						<property name="metadataHelperFactory" ref="metadataHelperFactory" />
-						<property name="markingFunctions" ref="markingFunctions" />
 						<property name="eventTableName" value="${datawave.modification.handlers.eventTableName}" />
 						<property name="metadataTableName" value="${datawave.modification.handlers.metadataTableName}" />
 						<property name="indexTableName" value="${datawave.modification.handlers.indexTableName}" />

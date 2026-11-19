@@ -18,7 +18,6 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -35,8 +34,6 @@ import org.springframework.util.MultiValueMap;
 import com.google.common.base.Preconditions;
 
 import datawave.accumulo.util.security.UserAuthFunctions;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.accumulo.lookup.config.LookupAuditProperties;
 import datawave.microservice.accumulo.lookup.config.LookupProperties;
@@ -44,6 +41,7 @@ import datawave.microservice.accumulo.lookup.config.ResponseObjectFactory;
 import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.security.util.ScannerHelper;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -83,7 +81,6 @@ public class LookupService {
     }
 
     private final SecurityMarking auditSecurityMarking;
-    private final MarkingFunctions<?> markingFunctions;
     private final AccumuloClient connection;
     private final LookupAuditProperties lookupAuditProperties;
     private final LookupProperties lookupProperties;
@@ -98,7 +95,6 @@ public class LookupService {
     public LookupService(
         @Qualifier("auditLookupSecurityMarking")
         SecurityMarking auditSecurityMarking,
-        MarkingFunctions<?> markingFunctions,
         @Qualifier("warehouse")
         AccumuloClient connection,
         LookupAuditProperties lookupAuditProperties,
@@ -106,7 +102,6 @@ public class LookupService {
         UserAuthFunctions userAuthFunctions,
         ResponseObjectFactory responseObjectFactory) {
             this.auditSecurityMarking = auditSecurityMarking;
-            this.markingFunctions = markingFunctions;
             this.connection = connection;
             this.lookupAuditProperties = lookupAuditProperties;
             this.lookupProperties = lookupProperties;
@@ -219,13 +214,13 @@ public class LookupService {
                     continue;
                 }
 
-                final Markings<?> markings = markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(k.getColumnVisibility()), mergedAuths);
+                final String columnVisibility = AccessExpressionUtil.normalize(k.getColumnVisibility().toString()).getExpression();
 
                 final KeyBase responseKey = responseObjectFactory.createKey();
                 responseKey.setRow(currRow);
                 responseKey.setColFam(currCf);
                 responseKey.setColQual(currCq);
-                responseKey.setMarkings(markings);
+                responseKey.setColumnVisibility(columnVisibility);
                 responseKey.setTimestamp(k.getTimestamp());
                 entryList.add(responseObjectFactory.createEntry(responseKey, v.get()));
 

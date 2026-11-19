@@ -184,13 +184,13 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
             throw new RuntimeException("Unable to get current key", e);
         }
 
-        setDefaultSecurityMarkings(event);
+        setDefaultVisibility(event);
 
         return event;
     }
 
-    protected void setDefaultSecurityMarkings(RawRecordContainer event) {
-        event.setSecurityMarkings(markingsHelper.getDefaultMarkings());
+    protected void setDefaultVisibility(RawRecordContainer event) {
+        event.setVisibility(markingsHelper.getDefaultVisibility());
     }
 
     /**

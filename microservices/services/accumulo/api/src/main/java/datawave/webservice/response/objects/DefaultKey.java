@@ -6,11 +6,8 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.codec.binary.Base64;
 
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.webservice.query.util.TypedValue;
 
 @XmlAccessorType(XmlAccessType.NONE)
@@ -35,7 +32,7 @@ public class DefaultKey extends KeyBase {
         this.row = new TypedValue(row);
         this.colFam = new TypedValue(colFam);
         this.colQual = new TypedValue(colQual);
-        this.columnVisibility = new TypedValue(columnVisibility);
+        setColumnVisibility(columnVisibility);
         this.timestamp = new TypedValue(timestamp);
     }
 
@@ -68,7 +65,11 @@ public class DefaultKey extends KeyBase {
         }
     }
 
+    @Override
     public String getColumnVisibility() {
+        if (this.columnVisibility == null) {
+            return null;
+        }
         if (this.columnVisibility.getType().equals(TypedValue.XSD_STRING) && this.columnVisibility.isBase64Encoded()) {
             return new String(Base64.decodeBase64(this.columnVisibility.getValue().toString().getBytes(UTF_8)), UTF_8);
         } else {
@@ -85,18 +86,6 @@ public class DefaultKey extends KeyBase {
         }
     }
 
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-        AccessExpression ae = markings.toAccessExpression();
-        this.columnVisibility = new TypedValue(ae != null ? ae.getExpression() : "");
-    }
-
-    @Override
-    public Markings<?> getMarkings() {
-        return this.markings;
-    }
-
     public void setRow(String row) {
         this.row = new TypedValue(row);
     }
@@ -109,10 +98,9 @@ public class DefaultKey extends KeyBase {
         this.colQual = new TypedValue(colQual);
     }
 
+    @Override
     public void setColumnVisibility(String colVis) {
-        this.columnVisibility = (colVis == null) ? new TypedValue("") : new TypedValue(colVis);
-        String expr = this.columnVisibility.getValue().toString();
-        this.markings = AccessExpressionMarkings.builder().columnVisibility(expr).build();
+        this.columnVisibility = colVis == null ? null : new TypedValue(colVis);
     }
 
     public void setTimestamp(long timestamp) {

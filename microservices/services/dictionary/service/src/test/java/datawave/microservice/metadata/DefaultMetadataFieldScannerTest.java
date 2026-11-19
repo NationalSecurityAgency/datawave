@@ -30,8 +30,6 @@ import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.Connection;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.table.constants.MetadataColumnFamilyConstants;
@@ -95,7 +93,7 @@ public class DefaultMetadataFieldScannerTest {
         connectionConfig.setMetadataTable(METADATA_TABLE);
         connectionConfig.setAuths(AUTHS);
 
-        scanner = new DefaultMetadataFieldScanner(new MarkingFunctions.Default(), RESPONSE_OBJECT_FACTORY, normalizerMapping, connectionConfig, 1);
+        scanner = new DefaultMetadataFieldScanner(RESPONSE_OBJECT_FACTORY, normalizerMapping, connectionConfig, 1);
     }
 
     @Test
@@ -215,6 +213,16 @@ public class DefaultMetadataFieldScannerTest {
     }
 
     @Test
+    public void descriptionsCarryColumnVisibility() throws Exception {
+        Collection<DefaultMetadataField> fields = scanner.getFields(Collections.emptyMap(), Collections.emptySet());
+
+        long descriptionCount = fields.stream().mapToLong(field -> field.getDescriptions().size()).sum();
+        assertThat(descriptionCount).isEqualTo(2);
+        fields.stream().flatMap(field -> field.getDescriptions().stream())
+                        .forEach(description -> assertThat(description.getColumnVisibility()).isEqualTo("PRIVATE"));
+    }
+
+    @Test
     public void lastUpdatedTimeIsCorrect() throws Exception {
         Collection<DefaultMetadataField> fields = scanner.getFields(Collections.emptyMap(), Collections.emptySet());
 
@@ -278,7 +286,7 @@ public class DefaultMetadataFieldScannerTest {
     private DefaultDescription createDescription(String descriptionText) {
         DefaultDescription description = new DefaultDescription();
         description.setDescription(descriptionText);
-        description.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
+        description.setColumnVisibility("PRIVATE");
         return description;
     }
 }

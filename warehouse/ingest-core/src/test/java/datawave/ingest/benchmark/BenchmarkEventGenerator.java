@@ -14,7 +14,6 @@ import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.marking.AccessExpressionMarkings;
 
 /**
  * Generates the synthetic event pools the ingest benchmarks measure.
@@ -29,8 +28,8 @@ import datawave.marking.AccessExpressionMarkings;
  * and the pool covers all of them many times over. Normalizer cost varies by more than an order of magnitude across these — {@code DateType} walks a list of
  * {@code SimpleDateFormat} patterns, {@code NoOpType} returns its input — so generating a single type misrepresents where time goes.</li>
  * <li><b>Visibility diversity.</b> Events rotate through {@link #EVENT_VISIBILITIES} and, when a marked stride is requested, individual fields carry their own
- * {@link AccessExpressionMarkings} drawn from {@link #FIELD_VISIBILITIES}. This matters because {@code FlattenedVisibilityCache} is keyed on
- * {@code ColumnVisibility}: a pool with one visibility hits that cache on every lookup after the first and makes the visibility path look free.</li>
+ * {@link ColumnVisibility} drawn from {@link #FIELD_VISIBILITIES}. This matters because {@code FlattenedVisibilityCache} is keyed on {@code ColumnVisibility}:
+ * a pool with one visibility hits that cache on every lookup after the first and makes the visibility path look free.</li>
  * </ul>
  */
 final class BenchmarkEventGenerator {
@@ -308,7 +307,7 @@ final class BenchmarkEventGenerator {
     }
 
     /**
-     * Applies per-field markings to every {@code stride}-th field, cycling through {@link #FIELD_VISIBILITIES}. A stride of zero leaves the map untouched,
+     * Applies per-field visibilities to every {@code stride}-th field, cycling through {@link #FIELD_VISIBILITIES}. A stride of zero leaves the map untouched,
      * which is the case where every field inherits the event visibility.
      *
      * @param fields
@@ -324,7 +323,7 @@ final class BenchmarkEventGenerator {
         int marked = 0;
         for (NormalizedContentInterface nci : fields.values()) {
             if (i % stride == 0) {
-                nci.setMarkings(AccessExpressionMarkings.create(FIELD_VISIBILITIES[marked % FIELD_VISIBILITIES.length]));
+                nci.setVisibility(new ColumnVisibility(FIELD_VISIBILITIES[marked % FIELD_VISIBILITIES.length]));
                 marked++;
             }
             i++;

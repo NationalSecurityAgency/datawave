@@ -14,7 +14,6 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import datawave.marking.Markings;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.DefaultEdge;
@@ -51,16 +50,6 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
 
     public String getSecurityMarkings() {
         return securityMarkings;
-    }
-
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-    }
-
-    @Override
-    public Markings<?> getMarkings() {
-        return markings;
     }
 
     public void setSecurityMarkings(String securityMarkings) {

@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -10,7 +12,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Writable;
 
@@ -20,8 +21,6 @@ import datawave.data.hash.UIDBuilder;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.util.CompositeTimestamp;
 
 /**
@@ -31,7 +30,6 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
 
     private UIDBuilder<UID> uidBuilder = HashUID.builder();
 
-    private Markings<?> securityMarkings = null;
     private UID id = uidBuilder.newId();
     private Type dataType;
     private long timestamp = CompositeTimestamp.INVALID_TIMESTAMP;
@@ -45,16 +43,6 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     private Map<String,String> auxMap;
     private ColumnVisibility visibility;
     private boolean fatalError = false;
-
-    @Override
-    public Markings<?> getSecurityMarkings() {
-        return securityMarkings;
-    }
-
-    @Override
-    public void setSecurityMarkings(Markings<?> securityMarkings) {
-        this.securityMarkings = securityMarkings;
-    }
 
     @Override
     public UID getId() {
@@ -237,11 +225,8 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
     @Override
     public void write(DataOutput dataOutput) throws IOException {
         String expr = "";
-        if (securityMarkings != null) {
-            AccessExpression ae = securityMarkings.toAccessExpression();
-            if (ae != null) {
-                expr = ae.getExpression();
-            }
+        if (visibility != null) {
+            expr = new String(visibility.getExpression(), UTF_8);
         }
         dataOutput.writeUTF(expr);
 
@@ -263,16 +248,16 @@ public class SimpleRawRecord implements RawRecordContainer, Writable {
             dataOutput.write(rawData);
         }
 
-        // skipping auxData and visibility for now
+        // skipping auxData for now
     }
 
     @Override
     public void readFields(DataInput dataInput) throws IOException {
         String expr = dataInput.readUTF();
         if (!expr.isEmpty()) {
-            securityMarkings = AccessExpressionMarkings.builder().columnVisibility(expr).build();
+            visibility = new ColumnVisibility(expr);
         } else {
-            securityMarkings = null;
+            visibility = null;
         }
 
         id = uidBuilder.newId();

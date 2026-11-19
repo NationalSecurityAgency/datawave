@@ -35,7 +35,6 @@ import datawave.webservice.query.exception.UnauthorizedQueryException;
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",
         "classpath:beanRefContext.xml",
-        "classpath:MarkingFunctionsContext.xml",
         "classpath:MetadataHelperContext.xml",
         "classpath:CacheContext.xml"})
 // @formatter:on

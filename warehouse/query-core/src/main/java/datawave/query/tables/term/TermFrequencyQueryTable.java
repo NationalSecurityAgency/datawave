@@ -75,7 +75,7 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new TermFrequencyQueryTransformer(settings, markingFunctions, responseObjectFactory);
+        return new TermFrequencyQueryTransformer(settings, responseObjectFactory);
     }
 
     @Override

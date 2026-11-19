@@ -1,7 +1,5 @@
 package datawave.ingest.mapreduce.handler.error;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -9,9 +7,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.DataOutputBuffer;
@@ -33,6 +31,7 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.FieldVisibilities;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
@@ -159,11 +158,8 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         tableName = conf.get(ERROR_PROP_PREFIX + SHARD_DINDX_NAME);
         setShardDictionaryIndexTableName(tableName == null ? null : new Text(tableName));
 
-        if (markingsHelper != null && markingsHelper.getDefaultMarkings() != null) {
-            AccessExpression ae = markingsHelper.getDefaultMarkings().toAccessExpression();
-            if (ae != null) {
-                defaultVisibility = ae.getExpression().getBytes(UTF_8);
-            }
+        if (markingsHelper != null && markingsHelper.getDefaultVisibility() != null) {
+            defaultVisibility = markingsHelper.getDefaultVisibility().getExpression();
         }
 
         log.info("ShardedErrorDataTypeHandler configured.");
@@ -350,8 +346,9 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
     @Override
     public byte[] getVisibility(RawRecordContainer event, NormalizedContentInterface value) {
         byte[] visibility;
-        if (value != null && value.getMarkings() != null && !value.getMarkings().isEmpty()) {
-            visibility = flatten(value.getMarkings().toColumnVisibility());
+        ColumnVisibility fieldVisibility = FieldVisibilities.getFieldVisibility(value);
+        if (fieldVisibility != null) {
+            visibility = flatten(fieldVisibility);
         } else if (event.getVisibility() != null) {
             visibility = flatten(event.getVisibility());
         } else {

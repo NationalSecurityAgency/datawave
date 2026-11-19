@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.junit.jupiter.api.Test;
 
 import datawave.data.type.Type;
-import datawave.marking.Markings;
 
 public class NormalizedFieldAndValueTest {
 
@@ -22,7 +22,7 @@ public class NormalizedFieldAndValueTest {
         private String _eventFieldName;
         private String _eventFieldValue;
 
-        private Markings<?> _markings;
+        private ColumnVisibility _visibility;
         private Throwable _error;
 
         protected NonGroupedInstance() {
@@ -34,7 +34,7 @@ public class NormalizedFieldAndValueTest {
             _eventFieldName = "TestEventField";
             _eventFieldValue = "hello, world";
 
-            _markings = null;
+            _visibility = null;
             _error = null;
 
         }
@@ -87,8 +87,8 @@ public class NormalizedFieldAndValueTest {
         }
 
         @Override
-        public void setMarkings(Markings<?> markings) {
-            _markings = markings;
+        public void setVisibility(ColumnVisibility visibility) {
+            _visibility = visibility;
         }
 
         @Override
@@ -98,8 +98,8 @@ public class NormalizedFieldAndValueTest {
         }
 
         @Override
-        public Markings<?> getMarkings() {
-            return _markings;
+        public ColumnVisibility getVisibility() {
+            return _visibility;
         }
 
         @Override
@@ -138,7 +138,7 @@ public class NormalizedFieldAndValueTest {
         private String _eventFieldName;
         private String _eventFieldValue;
 
-        private Markings<?> _markings;
+        private ColumnVisibility _visibility;
         private Throwable _error;
         private boolean _grouped;
 
@@ -154,7 +154,7 @@ public class NormalizedFieldAndValueTest {
             _eventFieldName = "TestEventField";
             _eventFieldValue = "hello, world";
 
-            _markings = null;
+            _visibility = null;
             _error = null;
 
             _grouped = true;
@@ -211,8 +211,8 @@ public class NormalizedFieldAndValueTest {
         }
 
         @Override
-        public void setMarkings(Markings<?> markings) {
-            _markings = markings;
+        public void setVisibility(ColumnVisibility visibility) {
+            _visibility = visibility;
         }
 
         @Override
@@ -222,8 +222,8 @@ public class NormalizedFieldAndValueTest {
         }
 
         @Override
-        public Markings<?> getMarkings() {
-            return _markings;
+        public ColumnVisibility getVisibility() {
+            return _visibility;
         }
 
         @Override

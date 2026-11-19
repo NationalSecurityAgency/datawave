@@ -11,7 +11,6 @@ import javax.xml.bind.annotation.XmlAccessorOrder;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlTransient;
 
-import datawave.marking.Markings;
 import datawave.webservice.query.data.ObjectSizeOf;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -23,16 +22,6 @@ import io.protostuff.Schema;
 public class DefaultFacets extends FacetsBase implements Serializable, Message<DefaultFacets>, ObjectSizeOf {
 
     private static final long serialVersionUID = -836236435709294127L;
-
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-    }
-
-    @Override
-    public Markings<?> getMarkings() {
-        return this.markings;
-    }
 
     @Override
     public String toString() {

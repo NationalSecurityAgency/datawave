@@ -31,10 +31,10 @@ import org.apache.log4j.Logger;
 
 import datawave.core.common.util.TypeFilter;
 import datawave.iterators.IteratorSettingHelper;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.util.CompositeTimestamp;
 import datawave.util.TextUtil;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  *
@@ -91,7 +91,6 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     public static final Text fi_PREFIX_TEXT = new Text("fi\u0000");
 
     private Set<Text> visibilitySet = new HashSet<>();
-    private MarkingFunctions<?> markingFunctions;
 
     // -------------------------------------------------------------------------
     // ------------- Constructors
@@ -588,10 +587,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         }
         ColumnVisibility columnVisibility;
         try {
-            if (null == markingFunctions) {
-                markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-            }
-            columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
+            columnVisibility = VisibilityFunctions.getInstance().combine(columnVisibilities);
         } catch (Exception e) {
             log.warn("Invalid columnvisibility after combining!", e);
             return null;

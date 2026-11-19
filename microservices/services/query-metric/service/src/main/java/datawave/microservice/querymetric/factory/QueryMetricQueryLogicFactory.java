@@ -4,7 +4,6 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.config.QueryMetricHandlerProperties;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
@@ -16,17 +15,14 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 @Component
 public class QueryMetricQueryLogicFactory implements FactoryBean<ShardQueryLogic> {
 
-    private MarkingFunctions<?> markingFunctions;
     private ResponseObjectFactory responseObjectFactory;
     private QueryMetricHandlerProperties queryMetricHandlerProperties;
     private DateIndexHelperFactory dateIndexHelperFactory;
     private MetadataHelperFactory metadataHelperFactory;
 
     @Autowired
-    public QueryMetricQueryLogicFactory(MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory,
-                    DateIndexHelperFactory dateIndexHelperFactory, MetadataHelperFactory metadataHelperFactory,
-                    QueryMetricHandlerProperties queryMetricHandlerProperties) {
-        this.markingFunctions = markingFunctions;
+    public QueryMetricQueryLogicFactory(ResponseObjectFactory responseObjectFactory, DateIndexHelperFactory dateIndexHelperFactory,
+                    MetadataHelperFactory metadataHelperFactory, QueryMetricHandlerProperties queryMetricHandlerProperties) {
         this.responseObjectFactory = responseObjectFactory;
         this.dateIndexHelperFactory = dateIndexHelperFactory;
         this.metadataHelperFactory = metadataHelperFactory;
@@ -37,7 +33,6 @@ public class QueryMetricQueryLogicFactory implements FactoryBean<ShardQueryLogic
     public ShardQueryLogic getObject() throws Exception {
 
         ShardQueryLogic logic = new ShardQueryLogic();
-        logic.setMarkingFunctions(markingFunctions);
         logic.setTableName(this.queryMetricHandlerProperties.getShardTableName());
         logic.setIndexTableName(this.queryMetricHandlerProperties.getIndexTableName());
         logic.setReverseIndexTableName(this.queryMetricHandlerProperties.getReverseIndexTableName());

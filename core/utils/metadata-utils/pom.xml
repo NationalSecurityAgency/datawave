@@ -16,7 +16,7 @@
         <dependencies>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>accumulo-utils</artifactId>
+                <artifactId>common-utils</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -53,10 +53,6 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>accumulo-utils</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.core</groupId>
             <artifactId>common-utils</artifactId>
         </dependency>
         <dependency>
@@ -88,6 +84,12 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>visibility-provider-standard</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

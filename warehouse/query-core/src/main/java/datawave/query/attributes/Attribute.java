@@ -27,9 +27,9 @@ import com.esotericsoftware.kryo.io.Output;
 
 import datawave.core.cache.CaffeineClassCache;
 import datawave.core.cache.ClassCache;
-import datawave.marking.AccessExpressionUtil;
 import datawave.query.Constants;
 import datawave.query.jexl.DatawaveJexlContext;
+import datawave.visibility.AccessExpressionUtil;
 
 public abstract class Attribute<T extends Comparable<T>> implements WritableComparable<T>, KryoSerializable {
 

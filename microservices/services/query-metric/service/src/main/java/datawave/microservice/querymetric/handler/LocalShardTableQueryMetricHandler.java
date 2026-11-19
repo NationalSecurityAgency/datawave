@@ -23,7 +23,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
@@ -47,9 +46,9 @@ public class LocalShardTableQueryMetricHandler<T extends BaseQueryMetric> extend
     protected ExecutorService executorService;
 
     public LocalShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, AccumuloConnectionFactory connectionFactory,
-                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions<?> markingFunctions,
-                    QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser) {
-        super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser);
+                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, QueryMetricCombiner queryMetricCombiner,
+                    LuceneToJexlQueryParser luceneToJexlQueryParser) {
+        super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, queryMetricCombiner, luceneToJexlQueryParser);
 
         this.datawaveQueryMetricFactory = metricFactory;
 

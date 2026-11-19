@@ -27,8 +27,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator;
-import datawave.marking.ColumnVisibilityCache;
 import datawave.query.index.day.AbstractIndexIngest;
+import datawave.visibility.ColumnVisibilityCache;
 
 /**
  * Utility that converts a standard shard index by dropping all uids

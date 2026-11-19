@@ -32,7 +32,6 @@ import org.apache.log4j.Logger;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
@@ -44,6 +43,7 @@ import datawave.query.transformer.FieldIndexCountQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.util.CompositeTimestamp;
 import datawave.util.StringUtils;
+import datawave.visibility.VisibilityFunctions;
 import datawave.webservice.query.exception.QueryException;
 
 /**
@@ -401,7 +401,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new FieldIndexCountQueryTransformer(this, settings, this.markingFunctions, this.responseObjectFactory);
+        return new FieldIndexCountQueryTransformer(this, settings, this.responseObjectFactory);
     }
 
     @Override
@@ -461,7 +461,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                     continue;
                 }
 
-                Tuple tuple = summary.containsKey(mapKey) ? summary.get(mapKey) : new Tuple(super.getMarkingFunctions());
+                Tuple tuple = summary.containsKey(mapKey) ? summary.get(mapKey) : new Tuple();
                 tuple.aggregate(key, val);
                 summary.put(mapKey, tuple);
             } else {
@@ -476,14 +476,11 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
 
     public static class Tuple {
 
-        private MarkingFunctions<?> markingFunctions;
         private long count = 0L;
         private long maxTimestamp = 0L;
         Set<Text> uniqueVisibilities = new HashSet<>();
 
-        public Tuple(MarkingFunctions<?> markingFunctions) {
-            this.markingFunctions = markingFunctions;
-        }
+        public Tuple() {}
 
         public void aggregate(Key key, Value val) {
             uniqueVisibilities.add(key.getColumnVisibility());
@@ -507,10 +504,7 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
                 columnVisibilities.add(new ColumnVisibility(t));
             }
             try {
-                if (null == markingFunctions) {
-                    markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-                }
-                return markingFunctions.combineVisibilities(columnVisibilities);
+                return VisibilityFunctions.getInstance().combine(columnVisibilities);
             } catch (Exception e) {
                 log.warn("Invalid columnvisibility after combining!", e);
                 return null;

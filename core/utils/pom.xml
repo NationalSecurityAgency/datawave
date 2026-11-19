@@ -11,9 +11,9 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
-        <module>accumulo-utils</module>
         <module>common-utils</module>
         <module>metadata-utils</module>
         <module>type-utils</module>
+        <module>visibility-provider-standard</module>
     </modules>
 </project>

@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Scope;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import datawave.accumulo.util.security.UserAuthFunctions;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.config.accumulo.AccumuloProperties;
 import datawave.microservice.config.web.DatawaveServerProperties;
 import datawave.microservice.dictionary.data.DataDictionary;
@@ -46,17 +45,17 @@ public class DictionaryServiceConfiguration {
     @Bean
     @Scope("prototype")
     @ConditionalOnMissingBean
-    public MetadataDescriptionsHelper<DefaultDescription> metadataHelperWithDescriptions(MarkingFunctions<?> markingFunctions,
+    public MetadataDescriptionsHelper<DefaultDescription> metadataHelperWithDescriptions(
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory) {
-        return new MetadataDescriptionsHelper<>(markingFunctions, responseObjectFactory);
+        return new MetadataDescriptionsHelper<>(responseObjectFactory);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public DataDictionary datawaveDataDictionary(MarkingFunctions<?> markingFunctions,
+    public DataDictionary datawaveDataDictionary(
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory,
                     MetadataHelperFactory metadataHelperFactory, MetadataDescriptionsHelperFactory<DefaultDescription> metadataDescriptionsHelperFactory) {
-        return new DataDictionaryImpl(markingFunctions, responseObjectFactory, metadataHelperFactory, metadataDescriptionsHelperFactory);
+        return new DataDictionaryImpl(responseObjectFactory, metadataHelperFactory, metadataDescriptionsHelperFactory);
     }
 
     @Bean

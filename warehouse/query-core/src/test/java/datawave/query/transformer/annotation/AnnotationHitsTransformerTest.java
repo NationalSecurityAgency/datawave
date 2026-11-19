@@ -48,8 +48,6 @@ import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.data.normalizer.Normalizer;
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
@@ -127,7 +125,6 @@ public class AnnotationHitsTransformerTest {
     private ShardQueryConfiguration shardQueryConfiguration;
 
     private Query settings;
-    private MarkingFunctions<AccessExpressionMarkings> markingFunctions;
 
     private List<Annotation> annotations;
     private AnnotationSource annotationSource;
@@ -139,7 +136,6 @@ public class AnnotationHitsTransformerTest {
     @BeforeEach
     public void setup() {
         settings = new QueryImpl();
-        markingFunctions = new MarkingFunctions.Default();
         annotations = new ArrayList<>();
         optionalSource = Optional.empty();
         enrichmentFieldMap = new HashMap<>();
@@ -846,7 +842,7 @@ public class AnnotationHitsTransformerTest {
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
 
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
         assertTrue(shardQueryConfiguration.getIncludeGroupingContext());
     }
 
@@ -860,7 +856,7 @@ public class AnnotationHitsTransformerTest {
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
 
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
         assertTrue(shardQueryConfiguration.getIncludeGroupingContext());
     }
 
@@ -874,7 +870,7 @@ public class AnnotationHitsTransformerTest {
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
 
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
         // not forcibly changed, because should be managed externally to AnnotationHitsTransformer
         assertFalse(shardQueryConfiguration.getIncludeGroupingContext());
     }
@@ -888,7 +884,7 @@ public class AnnotationHitsTransformerTest {
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
 
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
         assertEquals(0, shardQueryConfiguration.getProjectFields().size());
     }
 
@@ -903,7 +899,7 @@ public class AnnotationHitsTransformerTest {
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
 
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
         assertEquals(2, shardQueryConfiguration.getProjectFields().size());
         assertTrue(shardQueryConfiguration.getProjectFields().contains("EVENT_FIELD"));
     }
@@ -919,7 +915,7 @@ public class AnnotationHitsTransformerTest {
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
 
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
         assertEquals(1, shardQueryConfiguration.getProjectFields().size());
         assertTrue(shardQueryConfiguration.getProjectFields().contains("EVENT_FIELD"));
     }
@@ -1306,7 +1302,7 @@ public class AnnotationHitsTransformerTest {
 
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
 
         Document doc = getGroupingTestSourceDoc();
         // this is forced false because we shouldn't actually be in a forced mode
@@ -1327,7 +1323,7 @@ public class AnnotationHitsTransformerTest {
 
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
         assertTrue(shardQueryConfiguration.getIncludeGroupingContext(), "grouping context should be forced on for the life of the query");
 
         // page 1
@@ -1358,7 +1354,7 @@ public class AnnotationHitsTransformerTest {
 
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
 
         // simulate settings changing on a later page/next() call and ShardQueryLogic invoking updateConfig()
         // (rather than reconstructing the transformer) on the existing instance
@@ -1404,7 +1400,7 @@ public class AnnotationHitsTransformerTest {
         // construct with a null jexlQueryString, simulating the premature getTransformer() call
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, null, termExtractor, normalizer, annotationDao, allHitsFactory, maxContextBoundary,
                         validTypes, targetField, enrichmentFieldMap);
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
 
         // the config's jexl query is populated afterward, as it would be later in ShardQueryLogic#initialize()
         String liveJexlQuery = "abc";
@@ -1448,7 +1444,7 @@ public class AnnotationHitsTransformerTest {
         Entry<Key,Document> finalDoc = fdti.next();
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
 
         assertEquals(finalDoc, transformer.apply(finalDoc));
 
@@ -1600,7 +1596,7 @@ public class AnnotationHitsTransformerTest {
     private void test(Entry<Key,Document> entry, Entry<Key,Document> expected) {
         transformer = new AnnotationHitsTransformer(shardQueryConfiguration, query, termExtractor, normalizer, annotationDao, allHitsFactory,
                         maxContextBoundary, validTypes, targetField, enrichmentFieldMap);
-        transformer.initialize(settings, markingFunctions);
+        transformer.initialize(settings);
         Entry<Key,Document> transformed = transformer.apply(entry);
 
         if (expected == null) {

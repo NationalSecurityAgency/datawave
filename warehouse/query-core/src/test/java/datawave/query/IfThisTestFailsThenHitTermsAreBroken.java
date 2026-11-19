@@ -26,7 +26,6 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
@@ -102,7 +101,6 @@ public class IfThisTestFailsThenHitTermsAreBroken extends AbstractQueryTest {
         logic.setModelTableName(QueryTestTableHelper.MODEL_TABLE_NAME);
         logic.setQueryPlanner(new DefaultQueryPlanner());
         logic.setIncludeGroupingContext(true);
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMaxEvaluationPipelines(1);

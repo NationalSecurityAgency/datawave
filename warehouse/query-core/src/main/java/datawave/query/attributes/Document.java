@@ -33,8 +33,6 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.query.Constants;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.composite.CompositeMetadata;
@@ -80,15 +78,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
     private boolean intermediateResult;
 
     private static final long ONE_DAY_MS = 1000L * 60 * 60 * 24;
-
-    public Markings<?> getMarkings() {
-        try {
-            markingFunctions = getMarkingFunctions();
-            return markingFunctions.translateFromColumnVisibility(getColumnVisibility());
-        } catch (MarkingFunctions.Exception ignored) {
-            return null;
-        }
-    }
 
     public Document() {
         this(null, true);
@@ -195,7 +184,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
         // Transform the remaining entries back into Attributes
         Iterator<Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> attributes = Iterators.transform(extractedFieldNames,
-                        new ValueToAttributes(compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions(), fromIndex));
+                        new ValueToAttributes(compositeMetadata, typeMetadata, attrFilter, fromIndex));
 
         // Add all of the String=>Attribute pairs to this Document
         while (attributes.hasNext()) {

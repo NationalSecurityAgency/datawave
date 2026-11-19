@@ -22,7 +22,6 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.geotools.util.Base64;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,8 +34,6 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
@@ -54,8 +51,6 @@ public class ContentQueryLogicTest {
     private GenericQueryConfiguration mockGenericConfig;
     private ContentQueryConfiguration mockContentConfig;
     private Query query;
-
-    private final MarkingFunctions<?> markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
 
     @BeforeEach
     public void setup() throws TableNotFoundException {
@@ -166,7 +161,6 @@ public class ContentQueryLogicTest {
         AccumuloClient mockClient = mock(AccumuloClient.class);
 
         ContentQueryLogic logic = new ContentQueryLogic();
-        logic.setMarkingFunctions(markingFunctions);
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         Authorizations auths = new Authorizations("A");
@@ -180,15 +174,15 @@ public class ContentQueryLogicTest {
         Value viewValue = new Value(Base64.encodeBytes("my happy message".getBytes()));
         Map.Entry<Key,Value> entry = new AbstractMap.SimpleImmutableEntry<>(dataKey, viewValue);
 
-        markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility("A"), auths);
-
         // test with decode view
         logic.initialize(mockClient, settings, Set.of(auths));
         QueryLogicTransformer<Map.Entry<Key,Value>,EventBase> transformer = logic.getTransformer(settings);
         EventBase base = transformer.transform(entry);
 
+        assertEquals("A", base.getColumnVisibility());
         assertEquals(1, base.getFields().size());
         DefaultField field = (DefaultField) base.getFields().get(0);
+        assertEquals("A", field.getColumnVisibility());
         assertEquals("my happy message", field.getTypedValue().getValue());
         assertEquals("xs:string", field.getTypedValue().getType());
 

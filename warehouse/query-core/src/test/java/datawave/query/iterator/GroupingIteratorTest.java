@@ -11,13 +11,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.data.type.NumberType;
-import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.common.grouping.GroupFields;
@@ -27,17 +25,12 @@ public class GroupingIteratorTest {
     private static final Logger log = LoggerFactory.getLogger(GroupingIteratorTest.class);
     private int uidCount = 0;
 
-    @BeforeAll
-    public static void setup() {
-        MarkingFunctions.Factory.createMarkingFunctions();
-    }
-
     @Test
     public void testSingleDocument() {
         Iterator<Map.Entry<Key,Document>> iter = getDocumentIterator(1);
         GroupFields groupFields = new GroupFields();
         groupFields.setCountFields(Set.of("FIELD_A", "FIELD_B"));
-        GroupingIterator groupingIterator = new GroupingIterator(iter, MarkingFunctions.Factory.createMarkingFunctions(), groupFields, 1, null);
+        GroupingIterator groupingIterator = new GroupingIterator(iter, groupFields, 1, null);
 
         assertTrue(groupingIterator.hasNext());
         Document d = groupingIterator.next().getValue();
@@ -52,7 +45,7 @@ public class GroupingIteratorTest {
         Iterator<Map.Entry<Key,Document>> iter = getDocumentIterator(10_000);
         GroupFields groupFields = new GroupFields();
         groupFields.setCountFields(Set.of("FIELD_A", "FIELD_B"));
-        GroupingIterator groupingIterator = new GroupingIterator(iter, MarkingFunctions.Factory.createMarkingFunctions(), groupFields, 100_000, null);
+        GroupingIterator groupingIterator = new GroupingIterator(iter, groupFields, 100_000, null);
 
         assertTrue(groupingIterator.hasNext());
         Document d = groupingIterator.next().getValue();

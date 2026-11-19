@@ -14,7 +14,6 @@ import datawave.audit.SelectorExtractor;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
@@ -344,10 +343,6 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     void setRequiredRoles(Set<String> requiredRoles);
 
     Set<String> getRequiredRoles();
-
-    MarkingFunctions<?> getMarkingFunctions();
-
-    void setMarkingFunctions(MarkingFunctions<?> markingFunctions);
 
     ResponseObjectFactory getResponseObjectFactory();
 

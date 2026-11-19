@@ -33,9 +33,9 @@ import com.google.common.collect.Multimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
-import datawave.marking.AccessExpressionUtil;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
+import datawave.visibility.AccessExpressionUtil;
+import datawave.visibility.VisibilityFunctions;
 
 public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
 
@@ -50,7 +50,6 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
     private boolean showReferenceCount = false;
     private boolean reverseIndex = false;
     private boolean sumCounts = false;
-    private MarkingFunctions<?> markingFunctions;
     private boolean valuesOnly = false;
 
     @Override
@@ -176,10 +175,7 @@ public class DiscoveryIterator implements SortedKeyValueIterator<Key,Value> {
             } else {
                 // Otherwise, combine the visibilities, and return the aggregated result.
                 try {
-                    if (null == markingFunctions) {
-                        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-                    }
-                    ColumnVisibility visibility = markingFunctions.combineVisibilities(visibilities);
+                    ColumnVisibility visibility = VisibilityFunctions.getInstance().combine(visibilities);
 
                     MapWritable countsByVis = new MapWritable();
                     visibilityToCounts.forEach((key, value) -> countsByVis.put(new Text(key), new LongWritable(value)));

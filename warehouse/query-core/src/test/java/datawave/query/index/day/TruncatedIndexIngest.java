@@ -26,7 +26,7 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.ingest.table.aggregator.BitSetCombiner;
 import datawave.ingest.table.aggregator.util.TruncatedIndexKeyParser;
-import datawave.marking.ColumnVisibilityCache;
+import datawave.visibility.ColumnVisibilityCache;
 
 /**
  * Utility that converts a standard shard index to a truncated index

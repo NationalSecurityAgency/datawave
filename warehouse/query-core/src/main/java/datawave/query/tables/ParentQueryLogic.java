@@ -47,8 +47,7 @@ public class ParentQueryLogic extends ShardQueryLogic {
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
 
-        DocumentTransformer transformer = new ParentDocumentTransformer(this, settings, this.getMarkingFunctions(), this.getResponseObjectFactory(),
-                        this.isReducedResponse());
+        DocumentTransformer transformer = new ParentDocumentTransformer(this, settings, this.getResponseObjectFactory(), this.isReducedResponse());
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
 
         transformer.setQm(queryModel);

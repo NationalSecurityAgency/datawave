@@ -31,7 +31,6 @@ import com.github.benmanes.caffeine.cache.CaffeineSpec;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.http.converter.html.BannerProvider;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.Correlator;
@@ -98,16 +97,16 @@ public class QueryMetricHandlerConfiguration {
     @ConditionalOnMissingBean
     public ShardTableQueryMetricHandler shardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties,
                     AccumuloConnectionFactory connectionFactory, QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory,
-                    MarkingFunctions<?> markingFunctions, QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser,
-                    ResponseObjectFactory responseObjectFactory, WebClient.Builder webClientBuilder,
-                    @Autowired(required = false) JWTTokenHandler jwtTokenHandler, QueryMetricResponseFactory queryMetricResponseFactory) {
+                    QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser, ResponseObjectFactory responseObjectFactory,
+                    WebClient.Builder webClientBuilder, @Autowired(required = false) JWTTokenHandler jwtTokenHandler,
+                    QueryMetricResponseFactory queryMetricResponseFactory) {
         ShardTableQueryMetricHandler handler;
         if (queryMetricHandlerProperties.isUseRemoteQuery()) {
-            handler = new RemoteShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions,
-                            queryMetricCombiner, luceneToJexlQueryParser, responseObjectFactory, webClientBuilder, jwtTokenHandler);
+            handler = new RemoteShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, queryMetricCombiner,
+                            luceneToJexlQueryParser, responseObjectFactory, webClientBuilder, jwtTokenHandler);
         } else {
-            handler = new LocalShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions,
-                            queryMetricCombiner, luceneToJexlQueryParser);
+            handler = new LocalShardTableQueryMetricHandler(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, queryMetricCombiner,
+                            luceneToJexlQueryParser);
         }
         handler.setQueryMetricResponseFactory(queryMetricResponseFactory);
         return handler;

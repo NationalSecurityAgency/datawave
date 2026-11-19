@@ -1,7 +1,8 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
+
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.marking.Markings;
 
 /**
  * Extracts the duration field specified by a Normalized Content Interface
@@ -12,12 +13,12 @@ import datawave.marking.Markings;
 public class DurationValue {
     private int duration = -1;
 
-    private Markings<?> markings = null;
+    private ColumnVisibility visibility = null;
 
     public DurationValue(NormalizedContentInterface elapsedTimeNCI) {
         String durString = elapsedTimeNCI.getIndexedFieldValue();
         this.duration = Integer.parseInt(durString);
-        this.markings = elapsedTimeNCI.getMarkings();
+        this.visibility = elapsedTimeNCI.getVisibility();
     }
 
     public DurationValue(NormalizedContentInterface uptimeNCI, NormalizedContentInterface downtimeNCI) {
@@ -35,7 +36,10 @@ public class DurationValue {
         }
     }
 
-    public Markings<?> getMarkings() {
-        return this.markings;
+    /**
+     * @return the field specific visibility of the duration value, or null if the event visibility applies
+     */
+    public ColumnVisibility getVisibility() {
+        return this.visibility;
     }
 }

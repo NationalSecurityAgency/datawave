@@ -45,8 +45,8 @@ import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.metadata.RawRecordMetadata;
-import datawave.marking.MarkingFunctions;
 import datawave.util.time.DateHelper;
+import datawave.visibility.VisibilityFunctions;
 
 public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT>, FacetedEstimator<RawRecordContainer> {
 
@@ -91,7 +91,6 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
 
     /* Instance variables */
 
-    protected MarkingFunctions<?> markingFunctions;
     protected ShardIdFactory shardIdFactory;
     protected TaskAttemptContext taskAttemptContext;
 
@@ -105,8 +104,6 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
 
     @Override
     public void setup(TaskAttemptContext context) {
-        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-
         taskAttemptContext = context;
 
         Configuration conf = context.getConfiguration();
@@ -192,7 +189,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     }
 
     protected byte[] flatten(ColumnVisibility vis) {
-        return markingFunctions == null ? vis.flatten() : markingFunctions.flatten(vis);
+        return VisibilityFunctions.getInstance().flatten(vis);
     }
 
     @Override

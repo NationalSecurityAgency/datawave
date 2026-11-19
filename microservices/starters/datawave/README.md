@@ -44,8 +44,10 @@ to access both the warehouse and metrics Accumulo clusters.
 
 ### Markings
 
-Provides default markings configuration including `MarkingFunctions` and
-a caffeine cache manager to storing cached markings.
+Provides the default `SecurityMarking`, which converts request parameters into
+a column visibility. Combining and flattening column visibilities is handled by
+`datawave.visibility.VisibilityFunctions`, which is discovered at runtime
+rather than configured as a Spring bean.
 
 ### Metrics
 

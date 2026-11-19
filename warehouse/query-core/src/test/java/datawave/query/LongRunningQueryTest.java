@@ -30,7 +30,6 @@ import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -84,7 +83,6 @@ public class LongRunningQueryTest {
         logic = new ShardQueryLogic();
         logic.setIncludeGroupingContext(true);
         logic.setIncludeDataTypeAsField(true);
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());

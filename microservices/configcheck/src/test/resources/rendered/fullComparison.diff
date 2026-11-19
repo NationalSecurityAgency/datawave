@@ -1320,7 +1320,6 @@ doc.beans.allowedFunctions.parser: LuceneToJexlQueryParser
 =======
 doc.beans.allowedQueryFunctions.parser: LuceneToJexlQueryParser
 >>>>>>> SECOND
-doc.beans.baseQueryLogic.markingFunctions: markingFunctions
 doc.beans.baseQueryLogic.responseObjectFactory: responseObjectFactory
 <<<<<<< FIRST
 =======

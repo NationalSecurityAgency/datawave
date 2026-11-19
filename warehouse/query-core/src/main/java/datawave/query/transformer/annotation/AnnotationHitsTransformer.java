@@ -42,7 +42,6 @@ import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
 import datawave.data.normalizer.Normalizer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -130,17 +129,16 @@ public class AnnotationHitsTransformer extends DocumentTransform.DefaultDocument
     }
 
     @Override
-    public void initialize(Query settings, MarkingFunctions<?> markingFunctions) {
-        super.initialize(settings, markingFunctions);
+    public void initialize(Query settings) {
+        super.initialize(settings);
         updateConfig(settings);
     }
 
     /**
-     * Parses the query parameters relevant to this transform and updates its configuration accordingly. Called once by
-     * {@link #initialize(Query, MarkingFunctions)} when this transform is first constructed, and again by {@code ShardQueryLogic#addConfigBasedTransformers()}
-     * on subsequent pages, following the same initialize()/updateConfig() lifecycle contract used by the other config-based transforms (e.g.
-     * {@code UniqueTransform}, {@code GroupingTransform}, {@code FieldRenameTransform}), in case the query parameters legitimately change across pages (e.g.
-     * after a checkpoint/resume).
+     * Parses the query parameters relevant to this transform and updates its configuration accordingly. Called once by {@link #initialize(Query)} when this
+     * transform is first constructed, and again by {@code ShardQueryLogic#addConfigBasedTransformers()} on subsequent pages, following the same
+     * initialize()/updateConfig() lifecycle contract used by the other config-based transforms (e.g. {@code UniqueTransform}, {@code GroupingTransform},
+     * {@code FieldRenameTransform}), in case the query parameters legitimately change across pages (e.g. after a checkpoint/resume).
      *
      * @param settings
      *            the query settings to read parameters from

@@ -10,7 +10,6 @@ import org.apache.accumulo.core.security.Authorizations;
 
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.table.parser.TermFrequencyKeyValueFactory;
 import datawave.query.table.parser.TermFrequencyKeyValueFactory.TermFrequencyKeyValue;
@@ -28,8 +27,8 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
     private final Authorizations auths;
     private final ResponseObjectFactory responseObjectFactory;
 
-    public TermFrequencyQueryTransformer(Query query, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
-        super(markingFunctions);
+    public TermFrequencyQueryTransformer(Query query, ResponseObjectFactory responseObjectFactory) {
+        super();
         this.query = query;
         this.responseObjectFactory = responseObjectFactory;
         this.auths = new Authorizations(this.query.getQueryAuthorizations().split(","));
@@ -78,13 +77,13 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
 
         TermFrequencyKeyValue tfkv;
         try {
-            tfkv = TermFrequencyKeyValueFactory.parse(entry.getKey(), entry.getValue(), auths, markingFunctions);
+            tfkv = TermFrequencyKeyValueFactory.parse(entry.getKey(), entry.getValue());
         } catch (Exception e) {
             throw new IllegalArgumentException("Unable to parse visibility", e);
         }
         EventBase e = responseObjectFactory.getEvent();
 
-        e.setMarkings(tfkv.getMarkings());
+        e.setColumnVisibility(tfkv.getColumnVisibility());
 
         Metadata m = new Metadata();
         m.setRow(tfkv.getShardId());
@@ -116,7 +115,7 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
 
     protected FieldBase createField(TermFrequencyKeyValue tfkv, Entry<Key,Value> e, String name, String value) {
         FieldBase field = responseObjectFactory.getField();
-        field.setMarkings(tfkv.getMarkings());
+        field.setColumnVisibility(tfkv.getColumnVisibility());
         field.setName(name);
         field.setValue(value);
         field.setTimestamp(e.getKey().getTimestamp());

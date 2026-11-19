@@ -14,7 +14,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.Connection;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.microservice.metadata.DefaultMetadataFieldScanner;
@@ -32,17 +31,15 @@ import datawave.webservice.metadata.DefaultMetadataField;
 
 public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,DefaultDescription,DefaultDictionaryField> {
 
-    private final MarkingFunctions<?> markingFunctions;
     private final ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory;
     private final MetadataHelperFactory metadataHelperFactory;
     private final MetadataDescriptionsHelperFactory<DefaultDescription> metadataDescriptionsHelperFactory;
     private Map<String,String> normalizationMap = Maps.newHashMap();
     private String dataDictionarySystem = "";
 
-    public DataDictionaryImpl(MarkingFunctions<?> markingFunctions,
+    public DataDictionaryImpl(
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory,
                     MetadataHelperFactory metadataHelperFactory, MetadataDescriptionsHelperFactory<DefaultDescription> metadataDescriptionsHelperFactory) {
-        this.markingFunctions = markingFunctions;
         this.responseObjectFactory = responseObjectFactory;
         this.metadataHelperFactory = metadataHelperFactory;
         this.metadataDescriptionsHelperFactory = metadataDescriptionsHelperFactory;
@@ -87,8 +84,7 @@ public class DataDictionaryImpl implements DataDictionary<DefaultMetadataField,D
     @Override
     public Collection<DefaultMetadataField> getFields(Connection connectionConfig, Collection<String> dataTypeFilters, int numThreads) throws Exception {
         Map<String,String> aliases = getAliases(connectionConfig);
-        DefaultMetadataFieldScanner scanner = new DefaultMetadataFieldScanner(markingFunctions, responseObjectFactory, normalizationMap, connectionConfig,
-                        numThreads);
+        DefaultMetadataFieldScanner scanner = new DefaultMetadataFieldScanner(responseObjectFactory, normalizationMap, connectionConfig, numThreads);
         return scanner.getFields(aliases, dataTypeFilters);
     }
 

@@ -117,11 +117,11 @@
                 <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                 <include>gov.nsa.datawave.core:datawave-core-query</include>
                 <include>gov.nsa.datawave.core:datawave-core-tables</include>
-                <include>gov.nsa.datawave.core:accumulo-utils</include>
                 <include>gov.nsa.datawave.core:metadata-utils</include>
                 <include>gov.nsa.datawave.core:type-utils</include>
                 <include>gov.nsa.datawave.core:base-rest-responses</include>
                 <include>gov.nsa.datawave.core:common-utils</include>
+                <include>gov.nsa.datawave.core:visibility-provider-standard</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
@@ -171,11 +171,12 @@
                   <include>gov.nsa.datawave.core:datawave-core-common</include>
                   <include>gov.nsa.datawave.core:datawave-core-common-util</include>
                   <include>gov.nsa.datawave.core:datawave-core-tables</include>
-                  <include>gov.nsa.datawave.core:accumulo-utils</include>
                   <include>gov.nsa.datawave.core:metadata-utils</include>
                   <include>gov.nsa.datawave.core:type-utils</include>
                   <include>gov.nsa.datawave.core:base-rest-responses</include>
                   <include>gov.nsa.datawave.core:common-utils</include>
+                  <include>gov.nsa.datawave.core:visibility-provider-standard</include>
+                  <include>org.apache.accumulo:accumulo-access-core</include>
                   <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                   <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                   <include>com.google.code.gson:gson</include>

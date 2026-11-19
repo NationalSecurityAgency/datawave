@@ -1,7 +1,10 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import org.apache.accumulo.core.security.ColumnVisibility;
+
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.marking.Markings;
 
 /**
  * Combines a VertexDefinition with value obtained from a {@link datawave.ingest.data.config.NormalizedContentInterface}.
@@ -22,7 +25,7 @@ public class VertexValue {
     private String indexedRealmLabel = null;
     private String eventRealmLabel = null;
     private String sourceIndex = null;
-    private Markings<?> markings = null;
+    private ColumnVisibility visibility = null;
     private String maskedValue = null;
     private boolean hasMaskedValue = false;
     private String relationshipType = null;
@@ -39,7 +42,7 @@ public class VertexValue {
         this.indexedFieldValue = nci.getIndexedFieldValue();
         this.eventFieldName = nci.getEventFieldName();
         this.eventFieldValue = nci.getEventFieldValue();
-        this.markings = nci.getMarkings();
+        this.visibility = nci.getVisibility();
         this.useRealm = useRealm;
         if (this.useRealm && indexedRealmLabel != null && eventRealmLabel != null) {
             this.indexedRealmLabel = indexedRealmLabel;
@@ -49,8 +52,11 @@ public class VertexValue {
         }
     }
 
-    public Markings<?> getMarkings() {
-        return this.markings;
+    /**
+     * @return the field specific visibility of the vertex value, or null if the event visibility applies
+     */
+    public ColumnVisibility getVisibility() {
+        return this.visibility;
     }
 
     public String getValue(ValueType valueType) {
@@ -162,7 +168,8 @@ public class VertexValue {
     @Override
     public String toString() {
         return "VertexValue [fieldName=" + eventFieldName + ", fieldValue=" + eventFieldValue + ", relationship=" + relationshipIndex + ", useRealm=" + useRealm
-                        + ", realmLabel=" + eventRealmLabel + ", vertexType=" + sourceIndex + ", markings=" + this.markings + ", maskedValue=" + maskedValue
+                        + ", realmLabel=" + eventRealmLabel + ", vertexType=" + sourceIndex + ", visibility="
+                        + (this.visibility == null ? null : new String(this.visibility.getExpression(), UTF_8)) + ", maskedValue=" + maskedValue
                         + ", hasMaskedValue=" + hasMaskedValue + "]";
     }
 

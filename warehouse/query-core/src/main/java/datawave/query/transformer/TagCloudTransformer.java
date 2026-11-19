@@ -10,18 +10,17 @@ import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.tables.keyword.KeywordQueryState;
 import datawave.query.tables.keyword.transform.TagCloudInputTransformer;
 import datawave.util.keyword.TagCloud;
 import datawave.util.keyword.TagCloudEntry;
 import datawave.util.keyword.TagCloudPartition;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.keyword.TagCloudBase;
@@ -46,9 +45,9 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
     }
 
     // TODO-crwill9 pass in state data, not the state object so this is more reusable
-    public TagCloudTransformer(String responseVersion, Query query, KeywordQueryState state, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, Set<TagCloudInputTransformer<?>> transformers) {
-        super(markingFunctions);
+    public TagCloudTransformer(String responseVersion, Query query, KeywordQueryState state, ResponseObjectFactory responseObjectFactory,
+                    Set<TagCloudInputTransformer<?>> transformers) {
+        super();
         this.responseVersion = getResponseVersion(responseVersion);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;
@@ -189,7 +188,7 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
                 }
             }
         }
-        convertAndSetMarkings(base, tagCloud.getVisibility());
+        setVisibility(base, tagCloud.getVisibility());
         base.setTags(generateTagCloudEntries(tagCloud));
     }
 
@@ -197,18 +196,13 @@ public class TagCloudTransformer extends BaseQueryLogicTransformer<Entry<Key,Val
         if (tagCloud.getMetadata() != null && !tagCloud.getMetadata().isEmpty()) {
             base.setMetadata(tagCloud.getMetadata());
         }
-        convertAndSetMarkings(base, tagCloud.getVisibility());
+        setVisibility(base, tagCloud.getVisibility());
         base.setTags(generateTagCloudEntries(tagCloud));
     }
 
-    @SuppressWarnings("unchecked")
-    private void convertAndSetMarkings(TagCloudBase base, AccessExpression visibility) {
+    private void setVisibility(TagCloudBase base, AccessExpression visibility) {
         if (visibility != null && !visibility.getExpression().isEmpty()) {
-            try {
-                base.setMarkings(markingFunctions.translateFromColumnVisibility(new ColumnVisibility(visibility.getExpression())));
-            } catch (MarkingFunctions.Exception e) {
-                throw new RuntimeException(e);
-            }
+            base.setColumnVisibility(AccessExpressionUtil.normalize(visibility).getExpression());
         }
     }
 

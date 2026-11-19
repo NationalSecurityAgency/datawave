@@ -37,7 +37,6 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.MetadataCardinalityCounts;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.model.IndexFieldHole;
 import datawave.query.model.QueryModel;
@@ -151,7 +150,7 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Metadata getMetadata(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException, MarkingFunctions.Exception {
+    public Metadata getMetadata(Set<String> ingestTypeFilter) throws TableNotFoundException, ExecutionException {
         // TODO: filter this?
         return metadata;
     }

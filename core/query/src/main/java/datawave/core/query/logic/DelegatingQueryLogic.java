@@ -14,7 +14,6 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import datawave.audit.SelectorExtractor;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
@@ -258,16 +257,6 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     @Override
     public String getConnPoolName() {
         return delegate.getConnPoolName();
-    }
-
-    @Override
-    public MarkingFunctions<?> getMarkingFunctions() {
-        return delegate.getMarkingFunctions();
-    }
-
-    @Override
-    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
-        delegate.setMarkingFunctions(markingFunctions);
     }
 
     @Override

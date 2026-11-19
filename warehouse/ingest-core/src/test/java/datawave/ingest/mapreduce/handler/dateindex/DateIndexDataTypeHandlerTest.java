@@ -194,7 +194,6 @@ public class DateIndexDataTypeHandlerTest {
     private RawRecordContainer getEvent(String data) {
         RawRecordContainerImplTest.ValidatingRawRecordContainerImpl event = new RawRecordContainerImplTest.ValidatingRawRecordContainerImpl();
         event.setDataType(TypeRegistry.getType("testdatatype"));
-        event.setSecurityMarkings(null);
         event.setVisibility(new ColumnVisibility("A&B"));
         event.setTimestamp(getTime(data));
         event.setRawFileName("DateIndexDataTypeHandlerTest.data");

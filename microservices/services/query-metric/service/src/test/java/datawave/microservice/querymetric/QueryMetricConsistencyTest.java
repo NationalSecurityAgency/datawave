@@ -304,7 +304,7 @@ public class QueryMetricConsistencyTest extends QueryMetricTestBase {
             });
         });
         event.setFields(fields);
-        event.setMarkings(queryMetric.getMarkings());
+        event.setColumnVisibility(queryMetric.getColumnVisibility());
         BaseQueryMetric newMetric = this.shardTableQueryMetricHandler.toMetric(event);
         metricAssertEquals("metrics are not equal", queryMetric, newMetric);
     }

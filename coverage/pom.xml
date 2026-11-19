@@ -108,11 +108,6 @@
             <version>${version.datawave.accumulo-api}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>accumulo-utils</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>audit-api</artifactId>
             <version>${version.datawave.audit-api}</version>
@@ -185,10 +180,6 @@
                 <exclusion>
                     <groupId>gov.nsa.datawave</groupId>
                     <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>gov.nsa.datawave.microservice</groupId>
-                    <artifactId>accumulo-utils</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>gov.nsa.datawave.webservices</groupId>

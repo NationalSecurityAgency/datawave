@@ -13,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.Query;
@@ -38,10 +37,10 @@ public class RemoteShardTableQueryMetricHandler<T extends BaseQueryMetric> exten
     private final JWTTokenHandler jwtTokenHandler;
 
     public RemoteShardTableQueryMetricHandler(QueryMetricHandlerProperties queryMetricHandlerProperties, AccumuloConnectionFactory connectionFactory,
-                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, MarkingFunctions<?> markingFunctions,
-                    QueryMetricCombiner queryMetricCombiner, LuceneToJexlQueryParser luceneToJexlQueryParser, ResponseObjectFactory responseObjectFactory,
-                    WebClient.Builder webClientBuilder, JWTTokenHandler jwtTokenHandler) {
-        super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, markingFunctions, queryMetricCombiner, luceneToJexlQueryParser);
+                    QueryMetricQueryLogicFactory logicFactory, QueryMetricFactory metricFactory, QueryMetricCombiner queryMetricCombiner,
+                    LuceneToJexlQueryParser luceneToJexlQueryParser, ResponseObjectFactory responseObjectFactory, WebClient.Builder webClientBuilder,
+                    JWTTokenHandler jwtTokenHandler) {
+        super(queryMetricHandlerProperties, connectionFactory, logicFactory, metricFactory, queryMetricCombiner, luceneToJexlQueryParser);
 
         this.responseObjectFactory = responseObjectFactory;
 

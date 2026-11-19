@@ -9,8 +9,6 @@
         http://www.springframework.org/schema/util/spring-util.xsd">
 
     <bean id="baseQueryLogic" class="datawave.core.query.logic.BaseQueryLogic" abstract="true" >
-        <!-- This is injected via MarkingConfig.java -->
-        <property name="markingFunctions" ref="markingFunctions" />
         <!-- This is injected via QueryLogicFactoryConfiguration.java -->
         <property name="responseObjectFactory" ref="responseObjectFactory" />
     </bean>

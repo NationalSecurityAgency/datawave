@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 
 import com.google.common.collect.Maps;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.common.grouping.DocumentGrouper;
 import datawave.query.common.grouping.Group;
@@ -67,11 +66,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      *            the fields (user provided) to group by and aggregate
      * @param queryExecutionForPageTimeout
      *            how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client
-     * @param markingFunctions
-     *            the marking functions
      */
-    public GroupingTransform(GroupFields groupFields, MarkingFunctions<?> markingFunctions, long queryExecutionForPageTimeout) {
-        super.initialize(settings, markingFunctions);
+    public GroupingTransform(GroupFields groupFields, long queryExecutionForPageTimeout) {
+        super.initialize(settings);
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.groups = new Groups();
         this.groupFields = groupFields;
@@ -136,7 +133,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         Document document = null;
         if (!groups.isEmpty()) {
             for (Group group : groups.getGroups()) {
-                documents.add(GroupingUtils.createDocument(group, mostRecentKey, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.AVERAGE));
+                documents.add(GroupingUtils.createDocument(group, mostRecentKey, GroupingUtils.AverageAggregatorWriteFormat.AVERAGE));
             }
         }
 

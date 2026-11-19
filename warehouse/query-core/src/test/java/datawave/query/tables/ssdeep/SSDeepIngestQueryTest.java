@@ -32,8 +32,6 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.RebuildingScannerTestHelper;
@@ -91,13 +89,11 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQueryJUnit5 {
 
     @BeforeEach
     public void setupQuery() {
-        MarkingFunctions<AccessExpressionMarkings> markingFunctions = new MarkingFunctions.Default();
         ResponseObjectFactory responseFactory = new DefaultResponseObjectFactory();
         MetadataHelperFactory metadataHelperFactory = new MetadataHelperFactory();
 
         similarityQueryLogic = new SSDeepSimilarityQueryLogic();
         similarityQueryLogic.setTableName(SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME);
-        similarityQueryLogic.setMarkingFunctions(markingFunctions);
         similarityQueryLogic.setResponseObjectFactory(responseFactory);
         similarityQueryLogic.setBucketEncodingBase(BUCKET_ENCODING_BASE);
         similarityQueryLogic.setBucketEncodingLength(BUCKET_ENCODING_LENGTH);
@@ -110,7 +106,6 @@ public class SSDeepIngestQueryTest extends AbstractFunctionalQueryJUnit5 {
         discoveryQueryLogic.setReverseIndexTableName("shardReverseIndex");
         discoveryQueryLogic.setMetadataTableName("metadata");
         discoveryQueryLogic.setModelName("DATAWAVE");
-        discoveryQueryLogic.setMarkingFunctions(markingFunctions);
         discoveryQueryLogic.setMetadataHelperFactory(metadataHelperFactory);
         discoveryQueryLogic.setResponseObjectFactory(responseFactory);
 

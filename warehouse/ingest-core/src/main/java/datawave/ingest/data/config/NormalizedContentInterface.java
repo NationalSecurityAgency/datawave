@@ -1,7 +1,8 @@
 package datawave.ingest.data.config;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
+
 import datawave.data.type.Type;
-import datawave.marking.Markings;
 
 /**
  * Interface utilized to reference the original and transformed content and labels for a value pair ingested into accumulo.
@@ -60,12 +61,20 @@ public interface NormalizedContentInterface extends Cloneable {
     void setIndexedFieldValue(String val);
 
     /**
-     * Set the field specific markings
+     * Set the field specific visibility.
      *
-     * @param markings
-     *            the markings to set
+     * @param visibility
+     *            the visibility for this field, or null if the overall event visibility is to be used
      */
-    void setMarkings(Markings<?> markings);
+    void setVisibility(ColumnVisibility visibility);
+
+    /**
+     * Get the field specific visibility.
+     *
+     * @return The field specific visibility, or null if the overall event visibility is to be used. An empty visibility is treated the same as null by the
+     *         ingest handlers (see {@link FieldVisibilities}).
+     */
+    ColumnVisibility getVisibility();
 
     /**
      * When we fail to process a field (e.g. normalize), then an error can be set which in the EventMapper results in the event being dropped from normal
@@ -75,13 +84,6 @@ public interface NormalizedContentInterface extends Cloneable {
      *            the error to throw
      */
     void setError(Throwable e);
-
-    /**
-     * Get the field specific markings
-     *
-     * @return The field specific markings, or null if the overall event markings are to be used.
-     */
-    Markings<?> getMarkings();
 
     /**
      * Get the processing error for this field if any.
