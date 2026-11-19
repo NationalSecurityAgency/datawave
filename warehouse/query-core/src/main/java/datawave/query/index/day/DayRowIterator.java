@@ -1,9 +1,10 @@
 package datawave.query.index.day;
 
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.TimeZone;
 
 import datawave.util.time.DateHelper;
 
@@ -12,24 +13,26 @@ import datawave.util.time.DateHelper;
  */
 public class DayRowIterator implements Iterator<String> {
 
+    private static final DateTimeFormatter DAY_FORMAT = DateTimeFormatter.ofPattern(DateHelper.DATE_FORMAT_STRING_TO_DAY);
+
     // date bound
-    private final Calendar start;
-    private final Calendar end;
+    private LocalDate start;
+    private final LocalDate end;
 
     // top key
     private String day;
 
     public DayRowIterator(Date startDate, Date stopDate) {
-        this.start = getCalendarDay(startDate);
-        this.end = getCalendarDay(stopDate);
+        this.start = getDay(startDate);
+        this.end = getDay(stopDate);
     }
 
     @Override
     public boolean hasNext() {
         if (day == null) {
             if (start.compareTo(end) <= 0) {
-                day = DateHelper.format(start.getTime());
-                start.add(Calendar.DAY_OF_YEAR, 1);
+                day = DAY_FORMAT.format(start);
+                start = start.plusDays(1);
             } else {
                 // shouldn't need this, but just to be safe
                 day = null;
@@ -47,19 +50,13 @@ public class DayRowIterator implements Iterator<String> {
     }
 
     /**
-     * Get the {@link Calendar} representation of a {@link Date}.
+     * Get the GMT day of a {@link Date}.
      *
      * @param date
      *            the Date
-     * @return the Calendar equivalent
+     * @return the GMT day
      */
-    private Calendar getCalendarDay(Date date) {
-        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-        calendar.setTime(date);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar;
+    private LocalDate getDay(Date date) {
+        return date.toInstant().atZone(ZoneOffset.UTC).toLocalDate();
     }
 }
