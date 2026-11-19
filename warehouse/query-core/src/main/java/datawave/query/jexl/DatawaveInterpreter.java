@@ -229,6 +229,33 @@ public class DatawaveInterpreter extends Interpreter {
     }
 
     public Object visit(ASTOrNode node, Object data) {
+        int childCount = node.jjtGetNumChildren();
+        boolean allIdentifiers = true;
+        for (int i = 0; i < childCount; i++) {
+            JexlNode child = dereference(node.jjtGetChild(i));
+            if (child instanceof ASTOrNode) {
+                return visitNestedOr(node, data);
+            }
+            allIdentifiers &= child instanceof ASTIdentifier;
+        }
+
+        // JEXL 3.5 already supplies flat junctions. Evaluate those without rebuilding two traversal queues for every document.
+        Object result = null;
+        if (allIdentifiers) {
+            for (int i = 0; i < childCount; i++) {
+                JexlNode child = dereference(node.jjtGetChild(i));
+                result = interpretOr(child.jjtAccept(this, data), result);
+            }
+        } else {
+            for (int i = 0; (result == null || !arithmetic.toBoolean(result)) && i < childCount; i++) {
+                JexlNode child = dereference(node.jjtGetChild(i));
+                result = interpretOr(child.jjtAccept(this, data), result);
+            }
+        }
+        return result;
+    }
+
+    private Object visitNestedOr(ASTOrNode node, Object data) {
         Deque<JexlNode> children = new ArrayDeque<>();
         Deque<JexlNode> stack = new ArrayDeque<>();
         stack.push(node);
@@ -344,7 +371,7 @@ public class DatawaveInterpreter extends Interpreter {
     }
 
     private JexlNode dereference(JexlNode node) {
-        while (node.jjtGetNumChildren() == 1 && node instanceof ASTReferenceExpression) {
+        while (node instanceof ASTReferenceExpression && node.jjtGetNumChildren() == 1) {
             node = node.jjtGetChild(0);
         }
         return node;
@@ -499,10 +526,12 @@ public class DatawaveInterpreter extends Interpreter {
             return null;
         }
 
-        // check for the special case of a range (conjunction of a G/GE and a L/LE node) and reinterpret as a function
-        Object evaluation = evaluateRange(node);
-        if (evaluation != null) {
-            return evaluation;
+        // RangeFinder requires a marker (possibly around a delayed range). Reuse the marker check above for ordinary ANDs.
+        if (instance.isAnyType()) {
+            Object evaluation = evaluateRange(node);
+            if (evaluation != null) {
+                return evaluation;
+            }
         }
 
         // holds all values for intersection

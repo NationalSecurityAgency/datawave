@@ -60,8 +60,8 @@ public class BooleanOptimizationRebuildingVisitorTest {
     @Test
     public void testDistributeLargestOrTerms() throws ParseException {
         String original = "(a || b) && (c || d) && (e || f || g)";
-        String expected = "((c || d) && (e || f || g) && a) || ((c || d) && (e || f || g) && b)";
-        // Without flatten the first OR node's terms are distributed throughout the query.
+        String expected = "((c || d) && (a || b) && e) || ((c || d) && (a || b) && f) || ((c || d) && (a || b) && g)";
+        // JEXL 3.5 exposes all OR operands directly, so the largest OR is selected even before flattening.
         assertResult(original, expected, false);
     }
 
