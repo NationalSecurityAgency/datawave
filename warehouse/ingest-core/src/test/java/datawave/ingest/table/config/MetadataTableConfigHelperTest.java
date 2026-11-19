@@ -3,7 +3,6 @@ package datawave.ingest.table.config;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -47,7 +46,7 @@ public class MetadataTableConfigHelperTest {
 
     protected List<String> debugMessages = null;
     protected List<String> infoMessages = null;
-    protected Map<String,String> configuration = null;
+    protected Configuration configuration = null;
     public Map<String,String> tableProperties;
     public Map<String,Set<Text>> localityGroups;
 
@@ -130,46 +129,11 @@ public class MetadataTableConfigHelperTest {
         return mock;
     }
 
-    public Configuration createMockConfiguration() {
-
-        if (null == configuration) {
-
-            configuration = new HashMap<>();
+    public Configuration createConfiguration() {
+        if (configuration == null) {
+            configuration = new Configuration(false);
         }
-
-        Configuration mock = mock(Configuration.class);
-
-        lenient().doAnswer(invocation -> {
-
-            String results = null;
-            String key = (String) invocation.getArguments()[0];
-            String defaultValue = (String) invocation.getArguments()[1];
-
-            if (configuration.containsKey(key)) {
-
-                results = configuration.get(key);
-            } else {
-
-                results = defaultValue;
-            }
-
-            return results;
-        }).when(mock).get(nullable(String.class), nullable(String.class));
-
-        lenient().doAnswer(invocation -> {
-
-            String key = (String) invocation.getArguments()[0];
-            boolean results = (Boolean) invocation.getArguments()[1];
-
-            if (configuration.containsKey(key)) {
-
-                results = Boolean.parseBoolean(configuration.get(key));
-            }
-
-            return results;
-        }).when(mock).getBoolean(nullable(String.class), anyBoolean());
-
-        return mock;
+        return configuration;
     }
 
     protected Logger createMockLogger() {
@@ -231,7 +195,7 @@ public class MetadataTableConfigHelperTest {
 
             WrappedMetadataTableConfigHelper uut = new WrappedMetadataTableConfigHelper();
 
-            Configuration config = this.createMockConfiguration();
+            Configuration config = this.createConfiguration();
             Logger log = this.createMockLogger();
 
             uut.setup(MetadataTableConfigHelperTest.TABLE_NAME, config, log);
@@ -258,10 +222,10 @@ public class MetadataTableConfigHelperTest {
 
             WrappedMetadataTableConfigHelper uut = new WrappedMetadataTableConfigHelper();
 
-            Configuration config = this.createMockConfiguration();
+            Configuration config = this.createConfiguration();
             Logger log = this.createMockLogger();
 
-            this.configuration.put(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
 
             uut.setup(MetadataTableConfigHelperTest.TABLE_NAME, config, log);
 
@@ -283,10 +247,10 @@ public class MetadataTableConfigHelperTest {
 
             WrappedMetadataTableConfigHelper uut = new WrappedMetadataTableConfigHelper();
 
-            Configuration config = this.createMockConfiguration();
+            Configuration config = this.createConfiguration();
             Logger log = this.createMockLogger();
 
-            this.configuration.put(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
             try {
 
                 uut.setup(MetadataTableConfigHelperTest.BAD_TABLE_NAME, config, log);
@@ -334,13 +298,13 @@ public class MetadataTableConfigHelperTest {
 
         try {
 
-            Configuration config = createMockConfiguration();
+            Configuration config = createConfiguration();
             Logger log = createMockLogger();
             TableOperations tops = mockUpTableOperations();
 
             WrappedMetadataTableConfigHelper uut = new WrappedMetadataTableConfigHelper();
 
-            this.configuration.put(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
 
             this.tableProperties.clear();
             this.localityGroups.clear();
@@ -358,7 +322,7 @@ public class MetadataTableConfigHelperTest {
 
             uut = new WrappedMetadataTableConfigHelper();
 
-            this.configuration.put(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
 
             this.tableProperties.clear();
             this.localityGroups.clear();

@@ -13,9 +13,10 @@ import static datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler.SHA
 import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_START;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.AdditionalMatchers.and;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doAnswer;
@@ -64,7 +65,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.shaded.com.google.common.io.Files;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -99,7 +102,11 @@ public class ShardReindexMapperTest {
     private Configuration conf;
     private ShardIdFactory shardIdFactory;
 
-    private ContextWriter<BulkIngestKey,Value> mockContextWriter;
+    private CollectingContextWriter contextWriter;
+    private final List<Map.Entry<BulkIngestKey,Value>> expectedRecords = new ArrayList<>();
+    private final Map<BulkIngestKey,Integer> expectedKeys = new HashMap<>();
+    private int expectedCleanupCalls;
+    private boolean outputsComparedWithFiles;
     private Mapper.Context context;
 
     private AccumuloClient mockClient;
@@ -132,12 +139,22 @@ public class ShardReindexMapperTest {
         // disable timestamp
         conf.setBoolean(ShardReindexMapper.FLOOR_TIMESTAMPS, false);
 
-        // create contextWriter mock
-        mockContextWriter = mock(ContextWriter.class);
+        // Collect output while retaining mocks for the Hadoop context and scanner boundary.
+        contextWriter = new CollectingContextWriter();
         context = mock(Mapper.Context.class);
         mockClient = mock(AccumuloClient.class);
         mockSecOps = mock(SecurityOperations.class);
         mockScanner = mock(Scanner.class);
+    }
+
+    @AfterEach
+    public void verifyInteractionsAndOutput() {
+        assertAll(interactionChecks);
+        if (!outputsComparedWithFiles) {
+            assertWrittenRecords();
+        }
+        assertEquals(expectedCleanupCalls, contextWriter.cleanupCalls);
+        verifyNoMoreInteractions(ignoreStubs(context, mockClient, mockScanner, mockSecOps));
     }
 
     private void setupDataType(String name, String indexed, String reverseIndexed, String indexOnly, String tokenized) {
@@ -167,23 +184,7 @@ public class ShardReindexMapperTest {
         mapper.map(fiKey, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -198,23 +199,7 @@ public class ShardReindexMapperTest {
         mapper.map(fiKey, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -230,28 +215,12 @@ public class ShardReindexMapperTest {
         conf.setBoolean(ShardReindexMapper.CLEANUP_SHARD, true);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik), isA(Value.class), eq(context));
+        expectWrittenKey(bik);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -266,28 +235,12 @@ public class ShardReindexMapperTest {
         conf.setBoolean(ShardReindexMapper.CLEANUP_SHARD, true);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik), isA(Value.class), eq(context));
+        expectWrittenKey(bik);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -304,23 +257,7 @@ public class ShardReindexMapperTest {
         mapper.map(fiKey, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -345,23 +282,7 @@ public class ShardReindexMapperTest {
         verify(context, times(1)).write(eq(bik), isA(Value.class));
         verify(context, times(1)).write(eq(fiBik), isA(Value.class));
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -379,29 +300,13 @@ public class ShardReindexMapperTest {
         conf.setBoolean(ShardReindexMapper.CLEANUP_SHARD, true);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik1), isA(Value.class), eq(context));
-        verify(mockContextWriter, times(1)).write(eq(bik2), isA(Value.class), eq(context));
+        expectWrittenKey(bik1);
+        expectWrittenKey(bik2);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -416,28 +321,12 @@ public class ShardReindexMapperTest {
         conf.setBoolean(ShardReindexMapper.CLEANUP_SHARD, true);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(and(isA(BulkIngestKey.class), eq(bik2)), isA(Value.class), eq(context));
+        expectWrittenKey(bik2);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -456,28 +345,12 @@ public class ShardReindexMapperTest {
         // enable cleanup keys
         conf.setBoolean(ShardReindexMapper.CLEANUP_SHARD, true);
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik2), isA(Value.class), eq(context));
+        expectWrittenKey(bik2);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -495,23 +368,7 @@ public class ShardReindexMapperTest {
         mapper.map(fiKey, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -524,23 +381,7 @@ public class ShardReindexMapperTest {
         mapper.map(event, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -560,28 +401,12 @@ public class ShardReindexMapperTest {
         BulkIngestKey bik = new BulkIngestKey(new Text("shard"), event);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik), isA(Value.class), eq(context));
+        expectWrittenKey(bik);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -589,30 +414,14 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event = expectIndexed(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDA", "ABC", true);
+        Key event = expectIndexed(context, "20240216", "1.2.3", "samplecsv", "FIELDA", "ABC", true);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -620,30 +429,14 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event = expectIndexed(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDA.123.234.345.456", "ABC", true);
+        Key event = expectIndexed(context, "20240216", "1.2.3", "samplecsv", "FIELDA.123.234.345.456", "ABC", true);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -652,8 +445,8 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "generate some tokens",
-                        new String[] {"generate", "some", "tokens"}, false);
+        Key event = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "generate some tokens", new String[] {"generate", "some", "tokens"},
+                        false);
 
         // ingest handler may call progress internally
 
@@ -661,26 +454,9 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event, new Value(), context);
 
-        assertAll(interactionChecks);
-
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -691,8 +467,8 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "generate some tokens",
-                        new String[] {"generate", "some", "tokens"}, true);
+        Key event = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "generate some tokens", new String[] {"generate", "some", "tokens"},
+                        true);
 
         // ingest handler may call progress internally
 
@@ -700,26 +476,9 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event, new Value(), context);
 
-        assertAll(interactionChecks);
-
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     // all offsets are at 1 instead of being processed together
@@ -731,8 +490,8 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event1 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true);
-        Key event2 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true);
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true);
+        Key event2 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true);
 
         // ingest handler may call progress internally
 
@@ -740,27 +499,10 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
 
-        assertAll(interactionChecks);
-
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     // multivalued tokens are offset by being processed together but no cleanup called
@@ -781,30 +523,14 @@ public class ShardReindexMapperTest {
         Key event2 = new Key(shard, "samplecsv" + '\u0000' + uid, "FIELDF" + '\u0000' + "value2", eventTime);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
 
-        verify(mockContextWriter).write(eq(new BulkIngestKey(new Text("shard"), event1)), isA(Value.class), eq(context));
-        verify(mockContextWriter).write(eq(new BulkIngestKey(new Text("shard"), event2)), isA(Value.class), eq(context));
+        expectWrittenKey(new BulkIngestKey(new Text("shard"), event1));
+        expectWrittenKey(new BulkIngestKey(new Text("shard"), event2));
         verify(context, times(2)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -815,9 +541,9 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event1 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 11);
-        Key event2 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0);
-        Key event3 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value3", new String[] {"value3"}, true, 22);
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 11);
+        Key event2 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0);
+        Key event3 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value3", new String[] {"value3"}, true, 22);
 
         // ingest handler may call progress internally
 
@@ -825,30 +551,14 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
         mapper.map(event3, new Value(), context);
         mapper.cleanup(context);
 
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -859,9 +569,9 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event1 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 11, "a");
-        Key event2 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
-        Key event3 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value3", new String[] {"value3"}, true, 0, "b");
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 11, "a");
+        Key event2 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
+        Key event3 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value3", new String[] {"value3"}, true, 0, "b");
 
         // ingest handler may call progress internally
 
@@ -869,30 +579,14 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
         mapper.map(event3, new Value(), context);
         mapper.cleanup(context);
 
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -903,8 +597,8 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event1 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0, "a");
-        Key event2 = expectTokenized(context, mockContextWriter, "20240216", "1.2.4", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0, "a");
+        Key event2 = expectTokenized(context, "20240216", "1.2.4", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
 
         // ingest handler may call progress internally
 
@@ -912,29 +606,13 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
         mapper.cleanup(context);
 
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -945,8 +623,8 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event1 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true);
-        Key event2 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDG", "value1", new String[] {"value1"}, true);
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true);
+        Key event2 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDG", "value1", new String[] {"value1"}, true);
 
         // ingest handler may call progress internally
 
@@ -954,29 +632,13 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
         mapper.cleanup(context);
 
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -987,8 +649,8 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event1 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true);
-        Key event2 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDG", "value1", new String[] {"value1"}, true);
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true);
+        Key event2 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDG", "value1", new String[] {"value1"}, true);
 
         // ingest handler may call progress internally
 
@@ -996,29 +658,13 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
         mapper.cleanup(context);
 
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1029,8 +675,8 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event1 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0, "a");
-        Key event2 = expectTokenized(context, mockContextWriter, "20240216", "1.2.4", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0, "a");
+        Key event2 = expectTokenized(context, "20240216", "1.2.4", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
 
         // ingest handler may call progress internally
 
@@ -1038,29 +684,13 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
         mapper.cleanup(context);
 
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1071,10 +701,8 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event1 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3.4.6", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0,
-                        "a");
-        Key event2 = expectTokenized(context, mockContextWriter, "20240216", "1.2.4.2.1", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0,
-                        "a");
+        Key event1 = expectTokenized(context, "20240216", "1.2.3.4.6", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0, "a");
+        Key event2 = expectTokenized(context, "20240216", "1.2.4.2.1", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
 
         // ingest handler may call progress internally
 
@@ -1082,29 +710,13 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
         mapper.cleanup(context);
 
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1115,10 +727,10 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event1 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0, "a");
-        Key event1a = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value3", new String[] {"value3"}, true, 11, "a");
-        Key event2 = expectTokenized(context, mockContextWriter, "20240216", "1.2.4", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
-        Key event2a = expectTokenized(context, mockContextWriter, "20240216", "1.2.4", "samplecsv", "FIELDF", "value4", new String[] {"value4"}, true, 11, "a");
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true, 0, "a");
+        Key event1a = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value3", new String[] {"value3"}, true, 11, "a");
+        Key event2 = expectTokenized(context, "20240216", "1.2.4", "samplecsv", "FIELDF", "value2", new String[] {"value2"}, true, 0, "a");
+        Key event2a = expectTokenized(context, "20240216", "1.2.4", "samplecsv", "FIELDF", "value4", new String[] {"value4"}, true, 11, "a");
 
         // ingest handler may call progress internally
 
@@ -1126,31 +738,15 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event1a, new Value(), context);
         mapper.map(event2, new Value(), context);
         mapper.map(event2a, new Value(), context);
         mapper.cleanup(context);
 
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1162,8 +758,8 @@ public class ShardReindexMapperTest {
         lenient().doReturn(conf).when(context).getConfiguration();
 
         // expect all keys for the tokenized field
-        Key event1 = expectTokenized(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true);
-        Key event2 = expectIndexed(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDA", "not tokenized", true);
+        Key event1 = expectTokenized(context, "20240216", "1.2.3", "samplecsv", "FIELDF", "value1", new String[] {"value1"}, true);
+        Key event2 = expectIndexed(context, "20240216", "1.2.3", "samplecsv", "FIELDA", "not tokenized", true);
 
         // ingest handler may call progress internally
 
@@ -1171,29 +767,13 @@ public class ShardReindexMapperTest {
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event1, new Value(), context);
         mapper.map(event2, new Value(), context);
         mapper.cleanup(context);
 
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1219,29 +799,13 @@ public class ShardReindexMapperTest {
         BulkIngestKey eventBik = new BulkIngestKey(new Text("shard"), event);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik), isA(Value.class), isA(Mapper.Context.class));
-        verify(mockContextWriter, times(1)).write(eq(eventBik), isA(Value.class), isA(Mapper.Context.class));
+        expectWrittenKey(bik);
+        expectWrittenKey(eventBik);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1273,31 +837,15 @@ public class ShardReindexMapperTest {
         BulkIngestKey eventBik = new BulkIngestKey(new Text("shard"), event);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik), isA(Value.class), eq(context));
-        verify(mockContextWriter, times(1)).write(eq(rbik), isA(Value.class), eq(context));
-        verify(mockContextWriter, times(1)).write(eq(fiBik), isA(Value.class), eq(context));
-        verify(mockContextWriter, times(1)).write(eq(eventBik), isA(Value.class), eq(context));
+        expectWrittenKey(bik);
+        expectWrittenKey(rbik);
+        expectWrittenKey(fiBik);
+        expectWrittenKey(eventBik);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1323,28 +871,12 @@ public class ShardReindexMapperTest {
         lenient().doReturn(conf).when(context).getConfiguration();
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik), isA(Value.class), isA(Mapper.Context.class));
+        expectWrittenKey(bik);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1359,23 +891,7 @@ public class ShardReindexMapperTest {
         mapper.map(tfKey, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1391,23 +907,7 @@ public class ShardReindexMapperTest {
         mapper.map(tfKey, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1421,28 +921,12 @@ public class ShardReindexMapperTest {
         BulkIngestKey bik = new BulkIngestKey(new Text("shard"), tfKey);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(tfKey, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik), isA(Value.class), isA(Mapper.Context.class));
+        expectWrittenKey(bik);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1457,28 +941,12 @@ public class ShardReindexMapperTest {
         BulkIngestKey bik = new BulkIngestKey(new Text("shard"), tfKey);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(tfKey, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik), isA(Value.class), eq(context));
+        expectWrittenKey(bik);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1492,28 +960,12 @@ public class ShardReindexMapperTest {
         BulkIngestKey bik = new BulkIngestKey(new Text("shard"), tfKey);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(tfKey, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik), isA(Value.class), eq(context));
+        expectWrittenKey(bik);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1530,23 +982,7 @@ public class ShardReindexMapperTest {
         mapper.map(tfKey, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1561,23 +997,7 @@ public class ShardReindexMapperTest {
         mapper.map(dKey, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1593,23 +1013,7 @@ public class ShardReindexMapperTest {
         mapper.map(dKey, new Value(), context);
 
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1623,28 +1027,12 @@ public class ShardReindexMapperTest {
         BulkIngestKey bik = new BulkIngestKey(new Text("shard"), dKey);
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(dKey, new Value(), context);
 
-        verify(mockContextWriter, times(1)).write(eq(bik), isA(Value.class), eq(context));
+        expectWrittenKey(bik);
         verify(context, times(1)).progress();
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1653,7 +1041,7 @@ public class ShardReindexMapperTest {
         enableEventProcessing(true);
         lenient().doReturn(conf).when(context).getConfiguration();
 
-        Key event = expectIndexed(context, mockContextWriter, "20240216", "1.2.3", "samplecsv", "FIELDA", "ABC", true);
+        Key event = expectIndexed(context, "20240216", "1.2.3", "samplecsv", "FIELDA", "ABC", true);
 
         expectMetadata("FIELDA", "f", "samplecsv", "20240216", 1L, event.getTimestamp());
         expectMetadata("FIELDA", "i", "samplecsv", "20240216", 1L, event.getTimestamp());
@@ -1661,29 +1049,13 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), event.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(event, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     private void configureMetadataOnly(boolean metadataOnly, boolean generateFromFi, boolean disableFrequencyCounts, boolean generateRiFromFi,
@@ -1705,9 +1077,7 @@ public class ShardReindexMapperTest {
             iKey = new Key(field, type, dataType, timestamp);
         }
         BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
-        List<?> expectedCall9 = Arrays.asList(mockContextWriter, "write", iBik, Value.class, context);
-        expectedCallCounts.merge(expectedCall9, 1, Integer::sum);
-        interactionChecks.add(() -> verify(mockContextWriter, times(expectedCallCounts.get(expectedCall9))).write(eq(iBik), isA(Value.class), eq(context)));
+        expectWrittenKey(iBik);
     }
 
     private void expectMetadata(String field, String type, String dataType, String date, long count, long timestamp) throws IOException, InterruptedException {
@@ -1716,10 +1086,7 @@ public class ShardReindexMapperTest {
         BulkIngestKey iBik = new BulkIngestKey(new Text("DatawaveMetadata"), iKey);
         DateFrequencyMap map = new DateFrequencyMap();
         map.put(date, count);
-        List<?> expectedCall10 = Arrays.asList(mockContextWriter, "write", iBik, new Value(map.toBytes()), context);
-        expectedCallCounts.merge(expectedCall10, 1, Integer::sum);
-        interactionChecks.add(() -> verify(mockContextWriter, times(expectedCallCounts.get(expectedCall10))).write(eq(iBik), eq(new Value(map.toBytes())),
-                        eq(context)));
+        expectedRecords.add(Map.entry(iBik, new Value(map.toBytes())));
     }
 
     private Key createFiKey(String row, String field, String value, String dataType, String uid, String date) throws ParseException {
@@ -1776,29 +1143,13 @@ public class ShardReindexMapperTest {
         lenient().doReturn(conf).when(context).getConfiguration();
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1809,29 +1160,13 @@ public class ShardReindexMapperTest {
         lenient().doReturn(conf).when(context).getConfiguration();
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1842,29 +1177,13 @@ public class ShardReindexMapperTest {
         lenient().doReturn(conf).when(context).getConfiguration();
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1880,29 +1199,13 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1917,29 +1220,13 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -1955,29 +1242,13 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2010,7 +1281,7 @@ public class ShardReindexMapperTest {
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         // this causes no recheck because the previous combo of FIELDA/samplecsv
         mapper.map(nextFiKey, new Value(), context);
@@ -2019,24 +1290,8 @@ public class ShardReindexMapperTest {
         mapper.cleanup(context);
 
         verify(context, times(3)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2059,29 +1314,13 @@ public class ShardReindexMapperTest {
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2095,29 +1334,13 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDA", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2170,7 +1393,7 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDB", "tf", "undesignatedTokens", null, fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.map(nonTokenFi, new Value(), context);
         mapper.map(regularTokenizedFi, new Value(), context);
@@ -2180,24 +1403,8 @@ public class ShardReindexMapperTest {
         mapper.cleanup(context);
 
         verify(context, times(6)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     // this test verifies the RegExFilter applied for TF lookups works as expected
@@ -2250,30 +1457,14 @@ public class ShardReindexMapperTest {
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
+        expectedCleanupCalls = 1;
         verify(mockScanner).addScanIterator(fieldECapture.capture());
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2298,34 +1489,18 @@ public class ShardReindexMapperTest {
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
+        expectedCleanupCalls = 1;
         verify(mockScanner, times(1)).addScanIterator(iteratorSettingCapture.capture());
 
         // make sure the regex iterator on the scanner is setup correctly
         assertEquals('\u0000' + "FIELDE_TOKEN$", iteratorSettingCapture.getValue().getOptions().get("colqRegex"));
         assertEquals("true", iteratorSettingCapture.getValue().getOptions().get("matchSubstring"));
-        assertAll(interactionChecks);
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2364,14 +1539,14 @@ public class ShardReindexMapperTest {
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.map(nextFiKey, new Value(), context);
         mapper.map(fFiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(3)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
+        expectedCleanupCalls = 1;
         verify(mockScanner, times(2)).addScanIterator(fieldECapture.capture());
 
         // make sure the regex iterator on the scanner is setup correctly
@@ -2379,23 +1554,6 @@ public class ShardReindexMapperTest {
         assertEquals("true", fieldECapture.getAllValues().get(0).getOptions().get("matchSubstring"));
         assertEquals('\u0000' + "FIELDF_TOKEN$", fieldECapture.getAllValues().get(1).getOptions().get("colqRegex"));
 
-        assertAll(interactionChecks);
-
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2410,29 +1568,13 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2448,29 +1590,13 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2484,29 +1610,13 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2521,29 +1631,13 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDB", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2563,29 +1657,13 @@ public class ShardReindexMapperTest {
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(1)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2608,30 +1686,14 @@ public class ShardReindexMapperTest {
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.map(anotherFiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(2)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2659,31 +1721,15 @@ public class ShardReindexMapperTest {
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.map(altFiKey, new Value(), context);
         mapper.map(sample2FiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(3)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2710,30 +1756,14 @@ public class ShardReindexMapperTest {
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.map(sample2FiKey, new Value(), context);
         mapper.cleanup(context);
 
         verify(context, times(2)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2764,7 +1794,7 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDB", "t", "samplecsv2", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.map(dupDataType, new Value(), context);
         mapper.map(nextDataType, new Value(), context);
@@ -2773,24 +1803,8 @@ public class ShardReindexMapperTest {
         mapper.cleanup(context);
 
         verify(context, times(5)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2820,7 +1834,7 @@ public class ShardReindexMapperTest {
         expectMetadata("FIELDF", "t", "samplecsv", NoOpType.class.getCanonicalName(), fiKey.getTimestamp());
 
         mapper.setup(context);
-        mapper.setContextWriter(mockContextWriter);
+        mapper.setContextWriter(contextWriter);
         mapper.map(fiKey, new Value(), context);
         mapper.map(nextFiKey, new Value(), context);
         mapper.map(fFiKey, new Value(), context);
@@ -2828,24 +1842,8 @@ public class ShardReindexMapperTest {
         mapper.cleanup(context);
 
         verify(context, times(4)).progress();
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
     }
 
     @Test
@@ -2858,13 +1856,6 @@ public class ShardReindexMapperTest {
         lenient().doReturn(conf).when(context).getConfiguration();
 
         Multimap generated = TreeMultimap.create();
-
-        lenient().doAnswer(invocation -> {
-            BulkIngestKey bik = (BulkIngestKey) invocation.getArguments()[0];
-            Value value = (Value) invocation.getArguments()[1];
-            generated.put(bik, new Value(value.get()));
-            return null;
-        }).when(mockContextWriter).write(isA(BulkIngestKey.class), isA(Value.class), eq(context));
 
         // ingest handler may access counters, this is a catch all
         lenient().doReturn(new Counters.Counter()).when(context).getCounter(isA(String.class), isA(String.class));
@@ -2891,7 +1882,7 @@ public class ShardReindexMapperTest {
             File shardFiles = new File(inputFiles, "shard/magic.rf");
 
             mapper.setup(context);
-            mapper.setContextWriter(mockContextWriter);
+            mapper.setContextWriter(contextWriter);
             RFile.Reader reader = RFileUtil.getRFileReader(conf, new Path(shardFiles.toString()));
             reader.seek(new Range(), Collections.emptySet(), false);
             System.out.println("processing mapper input");
@@ -2904,8 +1895,10 @@ public class ShardReindexMapperTest {
             }
 
             mapper.cleanup(context);
+            contextWriter.records.forEach(record -> generated.put(record.getKey(), record.getValue()));
 
             System.out.println("processing diff");
+            outputsComparedWithFiles = true;
             // write out the generated data
             File outDir = Files.createTempDir();
             try {
@@ -2928,43 +1921,26 @@ public class ShardReindexMapperTest {
             }
         }
 
-        verify(mockContextWriter, times(1)).cleanup(context);
-        assertAll(interactionChecks);
+        expectedCleanupCalls = 1;
 
-        if (context != null && mockingDetails(context).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(context));
-        }
-        if (mockClient != null && mockingDetails(mockClient).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockClient));
-        }
-        if (mockContextWriter != null && mockingDetails(mockContextWriter).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockContextWriter));
-        }
-        if (mockScanner != null && mockingDetails(mockScanner).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockScanner));
-        }
-        if (mockSecOps != null && mockingDetails(mockSecOps).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockSecOps));
-        }
+        assertEquals(expectedCleanupCalls, contextWriter.cleanupCalls);
         if (verificationContext != null && mockingDetails(verificationContext).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(verificationContext));
         }
     }
 
-    private Key expectTokenized(Mapper.Context context, ContextWriter<BulkIngestKey,Value> contextWriter, String date, String uid, String dataType,
-                    String field, String fullValue, String[] tokens, boolean writeTF) throws ParseException, IOException, InterruptedException {
-        return expectTokenized(context, contextWriter, date, uid, dataType, field, fullValue, tokens, writeTF, 0);
+    private Key expectTokenized(Mapper.Context context, String date, String uid, String dataType, String field, String fullValue, String[] tokens,
+                    boolean writeTF) throws ParseException, IOException, InterruptedException {
+        return expectTokenized(context, date, uid, dataType, field, fullValue, tokens, writeTF, 0);
     }
 
-    private Key expectTokenized(Mapper.Context context, ContextWriter<BulkIngestKey,Value> contextWriter, String date, String uid, String dataType,
-                    String field, String fullValue, String[] tokens, boolean writeTF, int tokenOffset)
-                    throws ParseException, IOException, InterruptedException {
-        return expectTokenized(context, contextWriter, date, uid, dataType, field, fullValue, tokens, writeTF, tokenOffset, "");
+    private Key expectTokenized(Mapper.Context context, String date, String uid, String dataType, String field, String fullValue, String[] tokens,
+                    boolean writeTF, int tokenOffset) throws ParseException, IOException, InterruptedException {
+        return expectTokenized(context, date, uid, dataType, field, fullValue, tokens, writeTF, tokenOffset, "");
     }
 
-    private Key expectTokenized(Mapper.Context context, ContextWriter<BulkIngestKey,Value> contextWriter, String date, String uid, String dataType,
-                    String field, String fullValue, String[] tokens, boolean writeTF, int tokenOffset, String vis)
-                    throws ParseException, IOException, InterruptedException {
+    private Key expectTokenized(Mapper.Context context, String date, String uid, String dataType, String field, String fullValue, String[] tokens,
+                    boolean writeTF, int tokenOffset, String vis) throws ParseException, IOException, InterruptedException {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         Date d = sdf.parse(date);
         long eventTime = getTimestamp(d);
@@ -2972,11 +1948,11 @@ public class ShardReindexMapperTest {
 
         int offset = 1 + tokenOffset;
 
-        Key event = expectIndexed(context, contextWriter, date, uid, dataType, field, fullValue, true, vis);
+        Key event = expectIndexed(context, date, uid, dataType, field, fullValue, true, vis);
 
         for (String token : tokens) {
             String tokenField = field + "_TOKEN";
-            expectIndexed(context, contextWriter, date, uid, dataType, tokenField, token, false, vis);
+            expectIndexed(context, date, uid, dataType, tokenField, token, false, vis);
             // create the token
             if (writeTF) {
                 Key tfKey = new Key(shard, "tf", dataType + '\u0000' + uid + '\u0000' + token + '\u0000' + tokenField, vis, eventTime);
@@ -2984,9 +1960,7 @@ public class ShardReindexMapperTest {
                 TermWeight.Info.Builder termBuilder = TermWeight.Info.newBuilder();
                 termBuilder.addTermOffset(offset);
                 Value tfValue = new Value(termBuilder.build().toByteArray());
-                List<?> expectedCall1 = Arrays.asList(contextWriter, "write", tfBik, tfValue, context);
-                expectedCallCounts.merge(expectedCall1, 1, Integer::sum);
-                interactionChecks.add(() -> verify(contextWriter, times(expectedCallCounts.get(expectedCall1))).write(eq(tfBik), eq(tfValue), eq(context)));
+                expectedRecords.add(Map.entry(tfBik, tfValue));
                 offset += 1;
             }
         }
@@ -2994,13 +1968,13 @@ public class ShardReindexMapperTest {
         return event;
     }
 
-    private Key expectIndexed(Mapper.Context context, ContextWriter<BulkIngestKey,Value> contextWriter, String date, String uid, String dataType, String field,
-                    String value, boolean writeEvent) throws ParseException, IOException, InterruptedException {
-        return expectIndexed(context, contextWriter, date, uid, dataType, field, value, writeEvent, "");
+    private Key expectIndexed(Mapper.Context context, String date, String uid, String dataType, String field, String value, boolean writeEvent)
+                    throws ParseException, IOException, InterruptedException {
+        return expectIndexed(context, date, uid, dataType, field, value, writeEvent, "");
     }
 
-    private Key expectIndexed(Mapper.Context context, ContextWriter<BulkIngestKey,Value> contextWriter, String date, String uid, String dataType, String field,
-                    String value, boolean writeEvent, String vis) throws ParseException, IOException, InterruptedException {
+    private Key expectIndexed(Mapper.Context context, String date, String uid, String dataType, String field, String value, boolean writeEvent, String vis)
+                    throws ParseException, IOException, InterruptedException {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         Date d = sdf.parse(date);
         long eventTime = getTimestamp(d);
@@ -3015,24 +1989,17 @@ public class ShardReindexMapperTest {
         // write a global index key
         Key indexKey = new Key(value, field, shard + '\u0000' + dataType, vis, eventTime);
         BulkIngestKey bik = new BulkIngestKey(new Text("shardIndex"), indexKey);
-        List<?> expectedCall11 = Arrays.asList(contextWriter, "write", bik, Value.class, context);
-        expectedCallCounts.merge(expectedCall11, 1, Integer::sum);
-        interactionChecks.add(() -> verify(contextWriter, times(expectedCallCounts.get(expectedCall11))).write(eq(bik), isA(Value.class), eq(context)));
+        expectWrittenKey(bik);
 
         // write an fi key
         Key fiKey = new Key(shard, FI_START + field, value + '\u0000' + dataType + '\u0000' + uid, vis, eventTime);
         BulkIngestKey fiBik = new BulkIngestKey(new Text("shard"), fiKey);
-        List<?> expectedCall12 = Arrays.asList(contextWriter, "write", fiBik, Value.class, context);
-        expectedCallCounts.merge(expectedCall12, 1, Integer::sum);
-        interactionChecks.add(() -> verify(contextWriter, times(expectedCallCounts.get(expectedCall12))).write(eq(fiBik), isA(Value.class), eq(context)));
+        expectWrittenKey(fiBik);
 
         // write the event key
         if (writeEvent) {
             BulkIngestKey eventBik = new BulkIngestKey(new Text("shard"), event);
-            List<?> expectedCall13 = Arrays.asList(contextWriter, "write", eventBik, Value.class, context);
-            expectedCallCounts.merge(expectedCall13, 1, Integer::sum);
-            interactionChecks
-                            .add(() -> verify(contextWriter, times(expectedCallCounts.get(expectedCall13))).write(eq(eventBik), isA(Value.class), eq(context)));
+            expectWrittenKey(eventBik);
         }
 
         return event;
@@ -3080,6 +2047,59 @@ public class ShardReindexMapperTest {
         @Override
         public AbstractContentIngestHelper getContentIndexingDataTypeHelper() {
             return (CSVIngestHelper) helper;
+        }
+    }
+
+    private void expectWrittenKey(BulkIngestKey key) {
+        expectedKeys.merge(key, 1, Integer::sum);
+    }
+
+    private void assertWrittenRecords() {
+        List<Map.Entry<BulkIngestKey,Value>> remaining = new ArrayList<>(contextWriter.records);
+        for (Map.Entry<BulkIngestKey,Value> expected : expectedRecords) {
+            assertTrue(remaining.remove(expected), "Missing output record: " + expected);
+        }
+        Map<BulkIngestKey,Integer> actualKeys = new HashMap<>();
+        remaining.forEach(record -> actualKeys.merge(record.getKey(), 1, Integer::sum));
+        assertEquals(expectedKeys, actualKeys, "Unexpected or missing output records");
+    }
+
+    private class CollectingContextWriter implements ContextWriter<BulkIngestKey,Value> {
+        private final List<Map.Entry<BulkIngestKey,Value>> records = new ArrayList<>();
+        private int cleanupCalls;
+
+        @Override
+        public void write(BulkIngestKey key, Value value, TaskInputOutputContext<?,?,BulkIngestKey,Value> writeContext) {
+            assertSame(context, writeContext);
+            // The mapper may reuse its keys and values after writing them.
+            BulkIngestKey copy = new BulkIngestKey(new Text(key.getTableName()), new Key(key.getKey()));
+            records.add(Map.entry(copy, new Value(value)));
+        }
+
+        @Override
+        public void write(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> writeContext) {
+            fail("Unexpected bulk write");
+        }
+
+        @Override
+        public void setup(Configuration configuration, boolean outputTableCounters) {
+            fail("Unexpected writer setup");
+        }
+
+        @Override
+        public void commit(TaskInputOutputContext<?,?,BulkIngestKey,Value> writeContext) {
+            fail("Unexpected writer commit");
+        }
+
+        @Override
+        public void rollback() {
+            fail("Unexpected writer rollback");
+        }
+
+        @Override
+        public void cleanup(TaskInputOutputContext<?,?,BulkIngestKey,Value> writeContext) {
+            assertSame(context, writeContext);
+            cleanupCalls++;
         }
     }
 }

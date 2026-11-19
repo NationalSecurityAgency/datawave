@@ -13,11 +13,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.ignoreStubs;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -48,7 +46,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -112,9 +109,6 @@ public class ExcerptTransformTest {
         assertNull(excerptTransform.apply(null));
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -139,9 +133,6 @@ public class ExcerptTransformTest {
         assertFalse(document.containsKey(HIT_EXCERPT));
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -166,9 +157,6 @@ public class ExcerptTransformTest {
         assertFalse(document.containsKey(HIT_EXCERPT));
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -193,7 +181,7 @@ public class ExcerptTransformTest {
         givenPhraseIndex("BODY", 10, 14);
 
         // setup a matching term for BODY:word
-        givenMockDocumentWithHitTerm("BODY", "word");
+        givenDocumentWithHitTerm("BODY", "word");
         givenMatchingTermFrequencies("BODY", new int[][] {{24, 24}}, "word");
         // end offset is inclusive
         givenMatchingPhrase("BODY", 22, 26, "and the [word] from bird", List.of("word"));
@@ -202,14 +190,12 @@ public class ExcerptTransformTest {
         // end offset is inclusive
         givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog", List.of("word"));
 
-        ArgumentCaptor<Attributes> capturedArg = ArgumentCaptor.forClass(Attributes.class);
-
         initTransform();
 
         applyTransform();
-        verify(document, times(1)).put(eq(HIT_EXCERPT), capturedArg.capture());
 
-        Attributes arg = capturedArg.getValue();
+        Attributes arg = (Attributes) document.get(HIT_EXCERPT);
+        assertNotNull(arg);
         assertEquals(2, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
         // both excerpts should be returned
@@ -217,9 +203,6 @@ public class ExcerptTransformTest {
         assertTrue(excerpts.contains("the quick brown fox jumped over the lazy dog"));
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -244,29 +227,24 @@ public class ExcerptTransformTest {
         givenPhraseIndex("BODY", 10, 14);
 
         // setup a matching term for BODY:quick brown overlapping the phrase match
-        givenMockDocumentWithHitTerm("BODY", "quick brown");
+        givenDocumentWithHitTerm("BODY", "quick brown");
         givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
         // note that the start is relative to index 9 (i.e. 9-2=7) because the overlapping term starts at 9
         // end offset is inclusive
         givenMatchingPhrase("BODY", 7, 16, "and the [quick] [brown] fox jumped over the lazy dog", List.of("quick", "brown"));
 
-        ArgumentCaptor<Attributes> capturedArg = ArgumentCaptor.forClass(Attributes.class);
-
         initTransform();
 
         applyTransform();
-        verify(document, times(1)).put(eq(HIT_EXCERPT), capturedArg.capture());
 
-        Attributes arg = capturedArg.getValue();
+        Attributes arg = (Attributes) document.get(HIT_EXCERPT);
+        assertNotNull(arg);
         assertEquals(1, arg.size());
         String excerpt = arg.getAttributes().iterator().next().getData().toString();
         // only one excerpt should return
         assertEquals("and the [quick] [brown] fox jumped over the lazy dog", excerpt);
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -293,7 +271,7 @@ public class ExcerptTransformTest {
         givenPhraseIndex("BODY", 4, 5);
 
         // setup a matching term for BODY:quick brown overlapping the phrase match
-        givenMockDocumentWithHitTerm("BODY", "quick brown");
+        givenDocumentWithHitTerm("BODY", "quick brown");
         givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
         // end offset is inclusive
         givenMatchingPhrase("BODY", 23, 28, "Jack and Jill jumped over the", List.of("quick", "brown"));
@@ -301,14 +279,12 @@ public class ExcerptTransformTest {
         // AND then we combined the phrase from 2 to 7 with the one from 7 to 16
         givenMatchingPhrase("BODY", 2, 16, "the [brown] chicken layed an egg and the [quick] [brown] fox jumped over the lazy dog", List.of("quick", "brown"));
 
-        ArgumentCaptor<Attributes> capturedArg = ArgumentCaptor.forClass(Attributes.class);
-
         initTransform();
 
         applyTransform();
-        verify(document, times(1)).put(eq(HIT_EXCERPT), capturedArg.capture());
 
-        Attributes arg = capturedArg.getValue();
+        Attributes arg = (Attributes) document.get(HIT_EXCERPT);
+        assertNotNull(arg);
         assertEquals(2, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
         // all excerpts should be returned
@@ -316,9 +292,6 @@ public class ExcerptTransformTest {
         assertTrue(excerpts.contains("the [brown] chicken layed an egg and the [quick] [brown] fox jumped over the lazy dog"));
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -338,25 +311,20 @@ public class ExcerptTransformTest {
         givenExcerptField("BODY", 2);
         givenPhraseIndex("BODY.hash1", 10, 14);
 
-        givenMockDocument();
+        givenDocumentWithPhraseIndexes();
         givenMatchingPhrase("BODY.hash1", 8, 16, "the quick brown fox jumped over the lazy dog", Collections.emptyList());
-
-        ArgumentCaptor<Attributes> capturedArg = ArgumentCaptor.forClass(Attributes.class);
 
         initTransform();
 
         applyTransform();
-        verify(document, times(1)).put(eq(HIT_EXCERPT), capturedArg.capture());
 
-        Attributes arg = capturedArg.getValue();
+        Attributes arg = (Attributes) document.get(HIT_EXCERPT);
+        assertNotNull(arg);
         assertEquals(1, arg.size());
         String excerpt = arg.getAttributes().iterator().next().getData().toString();
         assertEquals("the quick brown fox jumped over the lazy dog", excerpt);
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -375,26 +343,21 @@ public class ExcerptTransformTest {
     public void testGroupedHitTermUsesGroupedFieldForExcerpt() throws IOException {
         givenExcerptField("BODY", 2);
 
-        givenMockDocumentWithHitTerm("BODY.hash1", "word");
+        givenDocumentWithHitTerm("BODY.hash1", "word");
         givenMatchingTermFrequencies("BODY.hash1", new int[][] {{24, 24}}, "word");
         givenMatchingPhrase("BODY.hash1", 22, 26, "and the [word] from bird", List.of("word"));
-
-        ArgumentCaptor<Attributes> capturedArg = ArgumentCaptor.forClass(Attributes.class);
 
         initTransform();
 
         applyTransform();
-        verify(document, times(1)).put(eq(HIT_EXCERPT), capturedArg.capture());
 
-        Attributes arg = capturedArg.getValue();
+        Attributes arg = (Attributes) document.get(HIT_EXCERPT);
+        assertNotNull(arg);
         assertEquals(1, arg.size());
         String excerpt = arg.getAttributes().iterator().next().getData().toString();
         assertEquals("and the [word] from bird", excerpt);
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -415,55 +378,32 @@ public class ExcerptTransformTest {
         givenExcerptField("BODY", 2);
 
         Key metadata = new Key("shard", "dt\u0000uid");
-        Document firstDocument = mock(Document.class);
-        doReturn(true).when(firstDocument).isToKeep();
-        doReturn(false).when(firstDocument).containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        doReturn(true).when(firstDocument).containsKey(JexlEvaluation.HIT_TERM_FIELD);
+        Document firstDocument = new Document(metadata, true);
         Attribute firstHitTerms = new Attributes(Collections.singletonList(new Content("BODY:first", metadata, true)), true);
-        doReturn(firstHitTerms).when(firstDocument).get(JexlEvaluation.HIT_TERM_FIELD);
+        firstDocument.put(JexlEvaluation.HIT_TERM_FIELD, firstHitTerms);
         givenMatchingTermFrequencies("BODY", new int[][] {{2, 2}}, "first");
         givenMatchingPhrase("BODY", 0, 4, "the [first] document excerpt", List.of("first"));
 
         PhraseIndexes secondPhraseIndexes = new PhraseIndexes();
         secondPhraseIndexes.addIndexTriplet("BODY", EVENT_ID, 4, 4);
-        Document secondDocument = mock(Document.class);
-        doReturn(true).when(secondDocument).isToKeep();
-        doReturn(true).when(secondDocument).containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
+        Document secondDocument = new Document(metadata, true);
         Attribute phraseIndexAttribute = new Content(secondPhraseIndexes.toString(), metadata, false);
-        doReturn(phraseIndexAttribute).when(secondDocument).get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        doReturn(false).when(secondDocument).containsKey(JexlEvaluation.HIT_TERM_FIELD);
+        secondDocument.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, phraseIndexAttribute);
         givenMatchingPhrase("BODY", 2, 6, "the second document excerpt", Collections.emptyList());
 
         initTransform();
 
         excerptTransform.apply(Map.entry(new Key(), firstDocument));
         excerptTransform.apply(Map.entry(new Key(), secondDocument));
-        verify(firstDocument, times(1)).isToKeep();
-        verify(firstDocument, times(1)).containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        verify(firstDocument, times(1)).containsKey(JexlEvaluation.HIT_TERM_FIELD);
-        verify(firstDocument, times(1)).get(JexlEvaluation.HIT_TERM_FIELD);
-        verify(secondDocument, times(1)).isToKeep();
-        verify(secondDocument, times(1)).containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        verify(secondDocument, times(1)).get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        verify(secondDocument, times(1)).containsKey(JexlEvaluation.HIT_TERM_FIELD);
-        verify(firstDocument, times(1)).put(eq(HIT_EXCERPT), isA(Attributes.class));
-        verify(secondDocument, times(1)).put(eq(HIT_EXCERPT), isA(Attributes.class));
+        assertEquals("the [first] document excerpt", ((Attributes) firstDocument.get(HIT_EXCERPT)).getAttributes().iterator().next().getData().toString());
+        assertEquals("the second document excerpt", ((Attributes) secondDocument.get(HIT_EXCERPT)).getAttributes().iterator().next().getData().toString());
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
-        if (firstDocument != null && mockingDetails(firstDocument).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(firstDocument));
-        }
         if (iterator != null && mockingDetails(iterator).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(iterator));
-        }
-        if (secondDocument != null && mockingDetails(secondDocument).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(secondDocument));
         }
         if (source != null && mockingDetails(source).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(source));
@@ -479,26 +419,21 @@ public class ExcerptTransformTest {
         // end offset is inclusive
         givenPhraseIndex("CONTENT", 1, 5);
 
-        givenMockDocument();
+        givenDocumentWithPhraseIndexes();
         // end offset is inclusive
         givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog", Collections.emptyList());
-
-        ArgumentCaptor<Attributes> capturedArg = ArgumentCaptor.forClass(Attributes.class);
 
         initTransform();
 
         applyTransform();
-        verify(document, times(1)).put(eq(HIT_EXCERPT), capturedArg.capture());
 
-        Attributes arg = capturedArg.getValue();
+        Attributes arg = (Attributes) document.get(HIT_EXCERPT);
+        assertNotNull(arg);
         assertEquals(1, arg.size());
         Attribute<?>[] attributes = arg.getAttributes().toArray(new Attribute[0]);
         assertEquals("the quick brown fox jumped over the lazy dog", ((Content) attributes[0]).getContent());
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -539,9 +474,6 @@ public class ExcerptTransformTest {
         assertEquals("and the [fox] from bird", c.getContent());
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -604,28 +536,23 @@ public class ExcerptTransformTest {
         givenExcerptField("BODY", 2);
 
         // setup a matching term for BODY:word with an empty phrase index attribute
-        givenMockDocumentWithHitTerm("BODY", "word");
+        givenDocumentWithHitTerm("BODY", "word");
         givenMatchingTermFrequencies("BODY", new int[][] {{24, 24}}, "word");
         // end offset is inclusive
         givenMatchingPhrase("BODY", 22, 26, "and the [word] from bird", List.of("word"));
 
-        ArgumentCaptor<Attributes> capturedArg = ArgumentCaptor.forClass(Attributes.class);
-
         initTransform();
 
         applyTransform();
-        verify(document, times(1)).put(eq(HIT_EXCERPT), capturedArg.capture());
 
-        Attributes arg = capturedArg.getValue();
+        Attributes arg = (Attributes) document.get(HIT_EXCERPT);
+        assertNotNull(arg);
         assertEquals(1, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
         // both excerpts should be returned
         assertTrue(excerpts.contains("and the [word] from bird"));
         assertAll(interactionChecks);
 
-        if (document != null && mockingDetails(document).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(document));
-        }
         if (env != null && mockingDetails(env).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(env));
         }
@@ -645,65 +572,17 @@ public class ExcerptTransformTest {
         excerptTransform.apply(getDocumentEntry());
     }
 
-    private void givenMockDocument() {
-        Document document = mock(Document.class);
-
-        doReturn(true).when(document).isToKeep();
-        List<?> expectedCall1 = Arrays.asList(document, "isToKeep");
-        expectedCallCounts.merge(expectedCall1, 1, Integer::sum);
-        interactionChecks.add(() -> verify(document, times(expectedCallCounts.get(expectedCall1))).isToKeep());
-        doReturn(true).when(document).containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        List<?> expectedCall2 = Arrays.asList(document, "containsKey", ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        expectedCallCounts.merge(expectedCall2, 1, Integer::sum);
-        interactionChecks.add(() -> verify(document, times(expectedCallCounts.get(expectedCall2))).containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE));
-        Key metadata = new Key("Row", "cf", "cq");
-        @SuppressWarnings("rawtypes")
-        Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), metadata, false);
-        // noinspection unchecked
-        doReturn(phraseIndexAttribute).when(document).get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        List<?> expectedCall3 = Arrays.asList(document, "get", ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        expectedCallCounts.merge(expectedCall3, 1, Integer::sum);
-        interactionChecks.add(() -> verify(document, times(expectedCallCounts.get(expectedCall3))).get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE));
-
-        doReturn(false).when(document).containsKey(JexlEvaluation.HIT_TERM_FIELD);
-        List<?> expectedCall4 = Arrays.asList(document, "containsKey", JexlEvaluation.HIT_TERM_FIELD);
-        expectedCallCounts.merge(expectedCall4, 1, Integer::sum);
-        interactionChecks.add(() -> verify(document, times(expectedCallCounts.get(expectedCall4))).containsKey(JexlEvaluation.HIT_TERM_FIELD));
-
+    private void givenDocumentWithPhraseIndexes() {
+        Document document = new Document(new Key("Row", "cf", "cq"), true);
+        document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, new Content(phraseIndexes.toString(), document.getMetadata(), false));
         givenDocument(document);
     }
 
-    @SuppressWarnings("rawtypes")
-    private void givenMockDocumentWithHitTerm(String field, String value) {
-        Document document = mock(Document.class);
-
-        doReturn(true).when(document).isToKeep();
-        List<?> expectedCall13 = Arrays.asList(document, "isToKeep");
-        expectedCallCounts.merge(expectedCall13, 1, Integer::sum);
-        interactionChecks.add(() -> verify(document, times(expectedCallCounts.get(expectedCall13))).isToKeep());
-        doReturn(true).when(document).containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        List<?> expectedCall14 = Arrays.asList(document, "containsKey", ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        expectedCallCounts.merge(expectedCall14, 1, Integer::sum);
-        interactionChecks.add(() -> verify(document, times(expectedCallCounts.get(expectedCall14))).containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE));
+    private void givenDocumentWithHitTerm(String field, String value) {
         Key metadata = new Key("shard", "dt\u0000uid");
-        Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), metadata, false);
-        // noinspection unchecked
-        doReturn(phraseIndexAttribute).when(document).get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        List<?> expectedCall15 = Arrays.asList(document, "get", ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE);
-        expectedCallCounts.merge(expectedCall15, 1, Integer::sum);
-        interactionChecks.add(() -> verify(document, times(expectedCallCounts.get(expectedCall15))).get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE));
-
-        doReturn(true).when(document).containsKey(JexlEvaluation.HIT_TERM_FIELD);
-        List<?> expectedCall16 = Arrays.asList(document, "containsKey", JexlEvaluation.HIT_TERM_FIELD);
-        expectedCallCounts.merge(expectedCall16, 1, Integer::sum);
-        interactionChecks.add(() -> verify(document, times(expectedCallCounts.get(expectedCall16))).containsKey(JexlEvaluation.HIT_TERM_FIELD));
-
-        Attribute hitTerms = new Attributes(Collections.singletonList(new Content(field + ":" + value, metadata, true)), true);
-        doReturn(hitTerms).when(document).get(JexlEvaluation.HIT_TERM_FIELD);
-        List<?> expectedCall17 = Arrays.asList(document, "get", JexlEvaluation.HIT_TERM_FIELD);
-        expectedCallCounts.merge(expectedCall17, 1, Integer::sum);
-        interactionChecks.add(() -> verify(document, times(expectedCallCounts.get(expectedCall17))).get(JexlEvaluation.HIT_TERM_FIELD));
-
+        Document document = new Document(metadata, true);
+        document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, new Content(phraseIndexes.toString(), metadata, false));
+        document.put(JexlEvaluation.HIT_TERM_FIELD, new Attributes(Collections.singletonList(new Content(field + ":" + value, metadata, true)), true));
         givenDocument(document);
     }
 

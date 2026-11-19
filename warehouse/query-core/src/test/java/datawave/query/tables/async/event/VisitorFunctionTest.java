@@ -6,11 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.ignoreStubs;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockingDetails;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,7 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.LcNoDiacriticsType;
-import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -57,12 +52,12 @@ public class VisitorFunctionTest {
     private VisitorFunction function;
 
     private ShardQueryConfiguration config;
-    private MetadataHelper helper;
+    private MockMetadataHelper helper;
 
     @BeforeEach
     public void setup() {
         config = new ShardQueryConfiguration();
-        helper = mock(MetadataHelper.class);
+        helper = new MockMetadataHelper();
     }
 
     private void setupExpects() throws TableNotFoundException, IOException, URISyntaxException {
@@ -90,9 +85,9 @@ public class VisitorFunctionTest {
         config.setIndexedFields(indexedFields);
         config.setDatatypeFilter(dataTypes);
         config.setIvaratorCacheDirConfigs(Collections.singletonList(new IvaratorCacheDirConfig(hdfsCacheURI.toString())));
-        lenient().doReturn(indexedFields).when(helper).getIndexedFields(dataTypes);
-        lenient().doReturn(indexedFields).when(helper).getIndexOnlyFields(dataTypes);
-        lenient().doReturn(Collections.emptySet()).when(helper).getNonEventFields(dataTypes);
+        helper.setIndexedFields(indexedFields);
+        helper.setIndexOnlyFields(indexedFields);
+        helper.setNonEventFields(Collections.emptySet());
     }
 
     @Test
@@ -104,9 +99,10 @@ public class VisitorFunctionTest {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = mock(Query.class);
-        config.setQuery(mockQuery);
-        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
+        QueryImpl settings = new QueryImpl();
+        settings.setId(new UUID(0, 0));
+        settings.setQueryName("testQuery1");
+        config.setQuery(settings);
 
         // set thresholds
         config.setFinalMaxTermThreshold(2);
@@ -129,12 +125,6 @@ public class VisitorFunctionTest {
         function = new VisitorFunction(config, helper);
         function.apply(chunk);
 
-        if (helper != null && mockingDetails(helper).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(helper));
-        }
-        if (mockQuery != null && mockingDetails(mockQuery).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockQuery));
-        }
     }
 
     @Test
@@ -145,10 +135,10 @@ public class VisitorFunctionTest {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = mock(Query.class);
-        config.setQuery(mockQuery);
-        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
-        lenient().doReturn(mockQuery).when(mockQuery).duplicate("testQuery1");
+        QueryImpl settings = new QueryImpl();
+        settings.setId(new UUID(0, 0));
+        settings.setQueryName("testQuery1");
+        config.setQuery(settings);
 
         // set thresholds
         config.setFinalMaxTermThreshold(1);
@@ -185,12 +175,6 @@ public class VisitorFunctionTest {
         assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
         assertTrue(updatedQuery.contains("values\":[\"a\",\"b\"]"), updatedQuery);
 
-        if (helper != null && mockingDetails(helper).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(helper));
-        }
-        if (mockQuery != null && mockingDetails(mockQuery).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockQuery));
-        }
     }
 
     @Test
@@ -201,10 +185,10 @@ public class VisitorFunctionTest {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = mock(Query.class);
-        config.setQuery(mockQuery);
-        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
-        lenient().doReturn(mockQuery).when(mockQuery).duplicate("testQuery1");
+        QueryImpl settings = new QueryImpl();
+        settings.setId(new UUID(0, 0));
+        settings.setQueryName("testQuery1");
+        config.setQuery(settings);
 
         // set thresholds
         config.setFinalMaxTermThreshold(10);
@@ -243,12 +227,6 @@ public class VisitorFunctionTest {
         function = new VisitorFunction(config, helper);
         assertThrows(DatawaveFatalQueryException.class, () -> function.apply(chunk));
 
-        if (helper != null && mockingDetails(helper).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(helper));
-        }
-        if (mockQuery != null && mockingDetails(mockQuery).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockQuery));
-        }
     }
 
     @Test
@@ -259,11 +237,10 @@ public class VisitorFunctionTest {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = mock(Query.class);
-        config.setQuery(mockQuery);
-        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
-        lenient().doReturn("testQuery1").when(mockQuery).getQueryName();
-        lenient().doReturn(mockQuery).when(mockQuery).duplicate("testQuery1");
+        QueryImpl settings = new QueryImpl();
+        settings.setId(new UUID(0, 0));
+        settings.setQueryName("testQuery1");
+        config.setQuery(settings);
 
         // set thresholds
         config.setFinalMaxTermThreshold(1);
@@ -301,11 +278,10 @@ public class VisitorFunctionTest {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = mock(Query.class);
-        config.setQuery(mockQuery);
-        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
-        lenient().doReturn("testQuery1").when(mockQuery).getQueryName();
-        lenient().doReturn(mockQuery).when(mockQuery).duplicate("testQuery1");
+        QueryImpl settings = new QueryImpl();
+        settings.setId(new UUID(0, 0));
+        settings.setQueryName("testQuery1");
+        config.setQuery(settings);
 
         // set thresholds
         config.setFinalMaxTermThreshold(5);
@@ -343,12 +319,6 @@ public class VisitorFunctionTest {
         assertTrue(updatedQuery.contains("FIELD1 == 'x' || FIELD1 == 'y'"), updatedQuery);
         assertTrue(updatedQuery.contains("&& (field = 'FIELD2') && (params = '{\"values\":[\"a\",\"b\",\"c\",\"d\"]}')"), updatedQuery);
 
-        if (helper != null && mockingDetails(helper).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(helper));
-        }
-        if (mockQuery != null && mockingDetails(mockQuery).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockQuery));
-        }
     }
 
     @Test
@@ -359,10 +329,10 @@ public class VisitorFunctionTest {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = mock(Query.class);
-        config.setQuery(mockQuery);
-        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
-        lenient().doReturn(mockQuery).when(mockQuery).duplicate("testQuery1");
+        QueryImpl settings = new QueryImpl();
+        settings.setId(new UUID(0, 0));
+        settings.setQueryName("testQuery1");
+        config.setQuery(settings);
 
         // set thresholds
         config.setFinalMaxTermThreshold(1);
@@ -398,12 +368,6 @@ public class VisitorFunctionTest {
         assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
         assertTrue(updatedQuery.contains("ranges\":[[\"(a\",\"z)\"]"), updatedQuery);
 
-        if (helper != null && mockingDetails(helper).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(helper));
-        }
-        if (mockQuery != null && mockingDetails(mockQuery).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(mockQuery));
-        }
     }
 
     @Test

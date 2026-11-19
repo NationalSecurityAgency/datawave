@@ -4,8 +4,7 @@ import static datawave.query.Constants.ANY_FIELD;
 import static datawave.query.Constants.NO_FIELD;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.ignoreStubs;
-import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.Arrays;
@@ -40,11 +39,12 @@ public class FieldMissingFromDateRangeVisitorTest {
     private final Set<String> dataTypes = new HashSet<>();
     private final Set<String> expectedImmaterialFields = new LinkedHashSet<>();
 
-    private boolean helperMocked = false;
+    private Set<String> expectedFoundFields;
 
     @AfterEach
     void tearDown() {
         this.query = null;
+        this.expectedFoundFields = null;
         this.dataTypes.clear();
         this.expectedImmaterialFields.clear();
     }
@@ -252,15 +252,13 @@ public class FieldMissingFromDateRangeVisitorTest {
         Set<String> actualImmaterialFields = FieldMissingFromDateRangeVisitor.getNonIngestedFields(this.helper, script, dataTypes, specialFields,
                         DateHelper.parse(beginDate), DateHelper.parse(endDate));
 
-        if (helperMocked) {
-            // If the helper function was mocked, verify that the arguments to the function matched what we expected.
+        if (expectedFoundFields != null) {
+            verify(helper).getMissingFieldsInDateRange(expectedFoundFields, dataTypes, beginDate, endDate, specialFields);
         }
 
         assertThat(actualImmaterialFields).isEqualTo(expectedImmaterialFields);
 
-        if (helper != null && mockingDetails(helper).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(helper));
-        }
+        verifyNoMoreInteractions(helper);
     }
 
     private void givenQuery(String query) {
@@ -269,7 +267,7 @@ public class FieldMissingFromDateRangeVisitorTest {
 
     private void expectHelperToBeCalled(Set<String> foundFields, Set<String> missingFields) {
         doReturn(missingFields).when(this.helper).getMissingFieldsInDateRange(foundFields, dataTypes, beginDate, endDate, specialFields);
-        helperMocked = true;
+        expectedFoundFields = foundFields;
     }
 
     private void givenDataTypes(String... dataTypes) {

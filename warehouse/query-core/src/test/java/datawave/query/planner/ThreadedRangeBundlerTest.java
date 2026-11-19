@@ -4,9 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.ignoreStubs;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -14,6 +12,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -21,7 +20,9 @@ import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.QueryData;
 import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.CloseableIterable;
+import datawave.query.jexl.JexlASTHelper;
 
 public class ThreadedRangeBundlerTest {
 
@@ -38,12 +39,12 @@ public class ThreadedRangeBundlerTest {
     }
 
     @Test
-    public void whenInstantiatingViaModifiedBuilder_thenSpecifiedValuesAreSet() {
-        QueryData original = mock(QueryData.class);
+    public void whenInstantiatingViaModifiedBuilder_thenSpecifiedValuesAreSet() throws Exception {
+        QueryData original = new QueryData();
         CloseableIterable<QueryPlan> ranges = mock(CloseableIterable.class);
-        Query settings = mock(Query.class);
-        ASTJexlScript queryTree = mock(ASTJexlScript.class);
-        Collection<Comparator<QueryPlan>> queryPlanComparators = mock(Collection.class);
+        Query settings = new QueryImpl();
+        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery("FIELD == 'value'");
+        Collection<Comparator<QueryPlan>> queryPlanComparators = Collections.singletonList(Comparator.comparing(QueryPlan::getQueryString));
 
         // @formatter:off
         ThreadedRangeBundler bundler = ThreadedRangeBundler.builder()
@@ -88,9 +89,7 @@ public class ThreadedRangeBundlerTest {
         bundler.close();
         verify(iterator, times(1)).close();
 
-        if (iterator != null && mockingDetails(iterator).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(iterator));
-        }
+        verifyNoMoreInteractions(iterator);
     }
 
     private void setIterator(final ThreadedRangeBundler bundler, final ThreadedRangeBundlerIterator iterator)

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -44,7 +43,7 @@ public class ShardTableConfigHelperTest {
 
     protected List<String> debugMessages = null;
     protected List<String> infoMessages = null;
-    protected Map<String,String> configuration = null;
+    protected Configuration configuration = null;
     public Map<String,String> tableProperties;
     public Map<String,Set<Text>> localityGroups;
 
@@ -127,46 +126,11 @@ public class ShardTableConfigHelperTest {
         return mock;
     }
 
-    public Configuration createMockConfiguration() {
-
-        if (null == configuration) {
-
-            configuration = new HashMap<>();
+    public Configuration createConfiguration() {
+        if (configuration == null) {
+            configuration = new Configuration(false);
         }
-
-        Configuration mock = mock(Configuration.class);
-
-        lenient().doAnswer(invocation -> {
-
-            String results = null;
-            String key = (String) invocation.getArguments()[0];
-            String defaultValue = (String) invocation.getArguments()[1];
-
-            if (configuration.containsKey(key)) {
-
-                results = configuration.get(key);
-            } else {
-
-                results = defaultValue;
-            }
-
-            return results;
-        }).when(mock).get(nullable(String.class), nullable(String.class));
-
-        lenient().doAnswer(invocation -> {
-
-            String key = (String) invocation.getArguments()[0];
-            boolean results = (Boolean) invocation.getArguments()[1];
-
-            if (configuration.containsKey(key)) {
-
-                results = Boolean.parseBoolean(configuration.get(key));
-            }
-
-            return results;
-        }).when(mock).getBoolean(nullable(String.class), anyBoolean());
-
-        return mock;
+        return configuration;
     }
 
     protected Logger createMockLogger() {
@@ -228,7 +192,7 @@ public class ShardTableConfigHelperTest {
 
             ShardTableConfigHelper uut = new ShardTableConfigHelper();
 
-            Configuration config = this.createMockConfiguration();
+            Configuration config = this.createConfiguration();
             Logger log = this.createMockLogger();
 
             uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
@@ -256,10 +220,10 @@ public class ShardTableConfigHelperTest {
 
             ShardTableConfigHelper uut = new ShardTableConfigHelper();
 
-            Configuration config = this.createMockConfiguration();
+            Configuration config = this.createConfiguration();
             Logger log = this.createMockLogger();
 
-            this.configuration.put(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
 
             uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
 
@@ -269,7 +233,7 @@ public class ShardTableConfigHelperTest {
 
             this.configuration.clear();
 
-            this.configuration.put(ShardedDataTypeHandler.SHARD_GIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
 
             uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
 
@@ -279,7 +243,7 @@ public class ShardTableConfigHelperTest {
 
             this.configuration.clear();
 
-            this.configuration.put(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
 
             uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
 
@@ -302,10 +266,10 @@ public class ShardTableConfigHelperTest {
 
             ShardTableConfigHelper uut = new ShardTableConfigHelper();
 
-            Configuration config = this.createMockConfiguration();
+            Configuration config = this.createConfiguration();
             Logger log = this.createMockLogger();
 
-            this.configuration.put(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
             try {
 
                 uut.setup(ShardTableConfigHelperTest.BAD_TABLE_NAME, config, log);
@@ -319,7 +283,7 @@ public class ShardTableConfigHelperTest {
             }
 
             this.configuration.clear();
-            this.configuration.put(ShardedDataTypeHandler.SHARD_GIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
             try {
 
                 uut.setup(ShardTableConfigHelperTest.BAD_TABLE_NAME, config, log);
@@ -333,7 +297,7 @@ public class ShardTableConfigHelperTest {
             }
 
             this.configuration.clear();
-            this.configuration.put(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
             try {
 
                 uut.setup(ShardTableConfigHelperTest.BAD_TABLE_NAME, config, log);
@@ -378,13 +342,13 @@ public class ShardTableConfigHelperTest {
 
         try {
 
-            Configuration config = createMockConfiguration();
+            Configuration config = createConfiguration();
             Logger log = createMockLogger();
             TableOperations tops = mockUpTableOperations();
 
             ShardTableConfigHelper uut = new ShardTableConfigHelper();
 
-            this.configuration.put(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
 
             this.tableProperties.clear();
             this.localityGroups.clear();
@@ -402,8 +366,8 @@ public class ShardTableConfigHelperTest {
 
             uut = new ShardTableConfigHelper();
 
-            this.configuration.put(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
-            this.configuration.put(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, "true");
+            this.configuration.set(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, "true");
 
             this.tableProperties.clear();
             this.localityGroups.clear();
@@ -431,13 +395,13 @@ public class ShardTableConfigHelperTest {
 
         try {
 
-            Configuration config = createMockConfiguration();
+            Configuration config = createConfiguration();
             Logger log = createMockLogger();
             TableOperations tops = mockUpTableOperations();
 
             ShardTableConfigHelper uut = new ShardTableConfigHelper();
 
-            this.configuration.put(ShardedDataTypeHandler.SHARD_GIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
 
             this.tableProperties.clear();
             this.localityGroups.clear();
@@ -455,8 +419,8 @@ public class ShardTableConfigHelperTest {
 
             uut = new ShardTableConfigHelper();
 
-            this.configuration.put(ShardedDataTypeHandler.SHARD_GIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
-            this.configuration.put(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, "true");
+            this.configuration.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, "true");
 
             this.tableProperties.clear();
             this.localityGroups.clear();
@@ -484,13 +448,13 @@ public class ShardTableConfigHelperTest {
 
         try {
 
-            Configuration config = createMockConfiguration();
+            Configuration config = createConfiguration();
             Logger log = createMockLogger();
             TableOperations tops = mockUpTableOperations();
 
             ShardTableConfigHelper uut = new ShardTableConfigHelper();
 
-            this.configuration.put(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
 
             this.tableProperties.clear();
             this.localityGroups.clear();
@@ -508,8 +472,8 @@ public class ShardTableConfigHelperTest {
 
             uut = new ShardTableConfigHelper();
 
-            this.configuration.put(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
-            this.configuration.put(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, "true");
+            this.configuration.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, "true");
 
             this.tableProperties.clear();
             this.localityGroups.clear();
@@ -542,14 +506,14 @@ public class ShardTableConfigHelperTest {
     }
 
     private void testKeepCountOnlyConfig(String tableProperty, boolean keepCountOnlyIndexEntries, Class<?> expectedAggregatorClass) throws Exception {
-        Configuration config = createMockConfiguration();
+        Configuration config = createConfiguration();
         Logger log = createMockLogger();
         TableOperations tops = mockUpTableOperations();
 
         ShardTableConfigHelper uut = new ShardTableConfigHelper();
 
-        this.configuration.put(tableProperty, ShardTableConfigHelperTest.TABLE_NAME);
-        this.configuration.put(ShardTableConfigHelper.KEEP_COUNT_ONLY_INDEX_ENTRIES, Boolean.toString(keepCountOnlyIndexEntries));
+        this.configuration.set(tableProperty, ShardTableConfigHelperTest.TABLE_NAME);
+        this.configuration.set(ShardTableConfigHelper.KEEP_COUNT_ONLY_INDEX_ENTRIES, Boolean.toString(keepCountOnlyIndexEntries));
 
         this.tableProperties.clear();
         this.localityGroups.clear();
@@ -569,13 +533,13 @@ public class ShardTableConfigHelperTest {
     }
 
     private void assertBitSetCombinerExists(String tableProperty) throws Exception {
-        Configuration config = createMockConfiguration();
+        Configuration config = createConfiguration();
         Logger log = createMockLogger();
         TableOperations tops = mockUpTableOperations();
 
         ShardTableConfigHelper uut = new ShardTableConfigHelper();
 
-        this.configuration.put(tableProperty, ShardTableConfigHelperTest.TABLE_NAME);
+        this.configuration.set(tableProperty, ShardTableConfigHelperTest.TABLE_NAME);
 
         this.tableProperties.clear();
         this.localityGroups.clear();

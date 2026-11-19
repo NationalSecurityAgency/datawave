@@ -5,12 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +28,6 @@ import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.MRJobConfig;
-import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.ZooKeeper;
@@ -131,14 +124,14 @@ public class TableSplitsCacheTest {
 
         FileSystem fs = new TableSplitsCacheTest.WrappedLocalFileSystem();
 
-        mockConfiguration.put(FileSystem.FS_DEFAULT_NAME_KEY, "file:///localhost");
+        configuration.put(FileSystem.FS_DEFAULT_NAME_KEY, "file:///localhost");
 
         // Lifted from DfsMonitorTest
-        mockConfiguration.put("fs.file.impl", TableSplitsCacheTest.WrappedLocalFileSystem.class.getName());
-        mockConfiguration.put("fs.automatic.close", "false");
-        mockConfiguration.put(MRJobConfig.CACHE_FILES, ".");
+        configuration.put("fs.file.impl", TableSplitsCacheTest.WrappedLocalFileSystem.class.getName());
+        configuration.put("fs.automatic.close", "false");
+        configuration.put(MRJobConfig.CACHE_FILES, ".");
 
-        Configuration conf = (Configuration) createMockJobConf();
+        Configuration conf = (Configuration) createJobConf();
         fs.setConf(conf);
         fs.initialize(URI.create("file:///localhost"), conf);
 
@@ -149,8 +142,8 @@ public class TableSplitsCacheTest {
     @BeforeEach
     public void setup() throws Exception {
 
-        mockConfiguration.clear();
-        mockConfiguration.put(TableSplitsCache.REFRESH_SPLITS, "false");
+        configuration.clear();
+        configuration.put(TableSplitsCache.REFRESH_SPLITS, "false");
         testDriverLevel = logger.getLevel();
         logger.setLevel(Level.ALL);
 
@@ -177,11 +170,11 @@ public class TableSplitsCacheTest {
     public void setSplitsCacheDir() {
         URL url = TableSplitsCacheTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
         assertNotNull(url, "TableSplitsCacheTest#setup failed to load test cache directory.");
-        mockConfiguration.put(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
+        configuration.put(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
     }
 
     public void setSplitsCacheDir(String splitsCacheDir) {
-        mockConfiguration.put(TableSplitsCache.SPLITS_CACHE_DIR, splitsCacheDir);
+        configuration.put(TableSplitsCache.SPLITS_CACHE_DIR, splitsCacheDir);
     }
 
     @AfterEach
@@ -207,127 +200,25 @@ public class TableSplitsCacheTest {
         method.invoke(null, uri, conf, fs);
     }
 
-    protected Map<String,String> mockConfiguration = new HashMap<>();
+    protected Map<String,String> configuration = new HashMap<>();
 
     protected void setupConfiguration() {
 
-        mockConfiguration.put(AccumuloHelper.USERNAME, USER_NAME);
-        mockConfiguration.put(AccumuloHelper.INSTANCE_NAME, HOST_NAME);
-        mockConfiguration.put(AccumuloHelper.PASSWORD, Base64.encodeBase64String(PASSWORD.getBytes()));
-        mockConfiguration.put(AccumuloHelper.ZOOKEEPERS, HOST_NAME);
-        mockConfiguration.put(FileSystem.FS_DEFAULT_NAME_KEY, "file:///");
+        configuration.put(AccumuloHelper.USERNAME, USER_NAME);
+        configuration.put(AccumuloHelper.INSTANCE_NAME, HOST_NAME);
+        configuration.put(AccumuloHelper.PASSWORD, Base64.encodeBase64String(PASSWORD.getBytes()));
+        configuration.put(AccumuloHelper.ZOOKEEPERS, HOST_NAME);
+        configuration.put(FileSystem.FS_DEFAULT_NAME_KEY, "file:///");
 
         TableSplitsCacheTest.FILE_STATUS_MODIFICATION_TIME = Long.MAX_VALUE;
         TableSplitsCacheTest.FILE_STATUS_ACCESS_TIME = 0l;
 
     }
 
-    protected JobConf createMockJobConf() {
-        JobConf mocked = mock(JobConf.class);
-
-        lenient().doReturn("file:///").when(mocked).getTrimmed("fs.defaultFS", "file:///");
-
-        lenient().doAnswer(invocation -> {
-
-            String key = (String) invocation.getArguments()[0];
-            String results = (String) invocation.getArguments()[1];
-
-            if (mockConfiguration.containsKey(key)) {
-
-                results = mockConfiguration.get(key);
-            }
-
-            return results;
-        }).when(mocked).get(nullable(String.class), nullable(String.class));
-
-        lenient().doAnswer(invocation -> {
-
-            String key = (String) invocation.getArguments()[0];
-            long results = (Long) invocation.getArguments()[1];
-
-            if (mockConfiguration.containsKey(key)) {
-
-                try {
-
-                    results = Long.parseLong(mockConfiguration.get(key));
-
-                } catch (Throwable t) {
-
-                    logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
-                }
-            }
-
-            return results;
-        }).when(mocked).getLong(nullable(String.class), anyLong());
-
-        lenient().doAnswer(invocation -> {
-
-            String key = (String) invocation.getArguments()[0];
-
-            return mockConfiguration.get(key);
-        }).when(mocked).get(nullable(String.class));
-
-        lenient().doAnswer(invocation -> {
-            String key = (String) invocation.getArguments()[0];
-            boolean results = (Boolean) invocation.getArguments()[1];
-
-            if (mockConfiguration.containsKey(key)) {
-
-                try {
-
-                    results = Boolean.parseBoolean(mockConfiguration.get(key));
-
-                } catch (Throwable t) {
-
-                    logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
-                }
-            }
-
-            return results;
-        }).when(mocked).getBoolean(nullable(String.class), anyBoolean());
-
-        lenient().doAnswer(invocation -> {
-
-            String key = (String) invocation.getArguments()[0];
-            int results = (Integer) invocation.getArguments()[1];
-
-            if (mockConfiguration.containsKey(key)) {
-
-                try {
-
-                    results = Integer.parseInt(mockConfiguration.get(key));
-
-                } catch (Throwable t) {
-
-                    logger.debug(String.format("MockConfiguration#getLong threw exception: %s", t.getClass().getName()));
-                }
-            }
-
-            return results;
-        }).when(mocked).getInt(nullable(String.class), anyInt());
-
-        lenient().doAnswer(invocation -> {
-
-            String key = (String) invocation.getArguments()[0];
-            String value = (String) invocation.getArguments()[1];
-
-            mockConfiguration.put(key, value);
-
-            return null;
-        }).when(mocked).set(nullable(String.class), nullable(String.class));
-
-        lenient().doAnswer(invocation -> {
-            String key = (String) invocation.getArguments()[0];
-            String[] results = null;
-
-            if (mockConfiguration.containsKey(key)) {
-                results = StringUtils.getStrings(mockConfiguration.get(key));
-            }
-
-            return results;
-        }).when(mocked).getStrings(nullable(String.class));
-
-        return mocked;
+    protected JobConf createJobConf() {
+        JobConf conf = new JobConf(false);
+        configuration.forEach(conf::set);
+        return conf;
     }
 
     @Test
@@ -352,7 +243,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createJobConf());
 
             assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
@@ -367,7 +258,7 @@ public class TableSplitsCacheTest {
         setupConfiguration();
 
         try {
-            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createJobConf());
             assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
             assertThrows(IOException.class, uut::getSplits);
         } finally {
@@ -382,7 +273,7 @@ public class TableSplitsCacheTest {
         setupConfiguration();
         setSplitsCacheDir(String.format("/random/dir%s/must/not/exist", (int) (Math.random() * 100) + 1));
         try {
-            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createJobConf());
             uut.update();
             assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
             assertThrows(IOException.class, uut::getSplits);
@@ -399,7 +290,7 @@ public class TableSplitsCacheTest {
         setSplitsCacheDir();
         setupConfiguration();
         try {
-            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createJobConf());
             FileStatus fileStatus = uut.getFileStatus();
             assertNotNull(fileStatus, "FileStatus");
         } finally {
@@ -417,7 +308,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createJobConf());
 
             assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
@@ -451,7 +342,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createJobConf());
 
             assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
@@ -474,7 +365,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createJobConf());
 
             assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
@@ -497,7 +388,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createJobConf());
             uut.getSplits();
 
             assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
@@ -522,7 +413,7 @@ public class TableSplitsCacheTest {
 
         try {
 
-            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createMockJobConf());
+            TableSplitsCache uut = TableSplitsCache.getCurrentCache(createJobConf());
             uut.getSplits();
             assertNotNull(uut, "TableSplitsCache constructor failed to construct an instance.");
 
@@ -564,7 +455,7 @@ public class TableSplitsCacheTest {
     @Test
     public void testLocs() throws IOException {
         setSplitsCacheDir();
-        TableSplitsCache splitsCache = TableSplitsCache.getCurrentCache(createMockJobConf());
+        TableSplitsCache splitsCache = TableSplitsCache.getCurrentCache(createJobConf());
         splitsCache.getSplitsAndLocation();
         assertEquals(5, splitsCache.getSplitsAndLocationByTable("shard").size());
         assertEquals(1, splitsCache.getSplitsAndLocationByTable("shard1").size());

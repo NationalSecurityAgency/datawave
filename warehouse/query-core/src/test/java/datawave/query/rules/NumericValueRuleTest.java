@@ -1,10 +1,5 @@
 package datawave.query.rules;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-
-import java.util.Set;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,9 +10,6 @@ import datawave.query.language.tree.QueryNode;
 import datawave.query.util.TypeMetadata;
 
 class NumericValueRuleTest extends ShardQueryRuleTest {
-
-    private static final Set<String> NUMBER_TYPE = Set.of(NumberType.class.getName());
-    private static final Set<String> LC_NO_DIACRITICS_TYPE = Set.of(LcNoDiacriticsType.class.getName());
 
     @BeforeEach
     void setUp() {
@@ -38,14 +30,14 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
     void testQueryWithNumericValuesForNumericFields() throws Exception {
         givenQuery("FOO == 1 && BAR != '1' || HAT > 1 || BAT < 1 || HEN <= 1 || VEE >= 1");
 
-        // Set up a mock TypeMetadata that will return field type information.
-        TypeMetadata typeMetadata = mock(TypeMetadata.class);
-        doReturn(NUMBER_TYPE).when(typeMetadata).getNormalizerNamesForField("FOO");
-        doReturn(NUMBER_TYPE).when(typeMetadata).getNormalizerNamesForField("BAR");
-        doReturn(NUMBER_TYPE).when(typeMetadata).getNormalizerNamesForField("HAT");
-        doReturn(NUMBER_TYPE).when(typeMetadata).getNormalizerNamesForField("BAT");
-        doReturn(NUMBER_TYPE).when(typeMetadata).getNormalizerNamesForField("HEN");
-        doReturn(NUMBER_TYPE).when(typeMetadata).getNormalizerNamesForField("VEE");
+        // Populate TypeMetadata with field type information.
+        TypeMetadata typeMetadata = new TypeMetadata();
+        typeMetadata.put("FOO", "test", NumberType.class.getName());
+        typeMetadata.put("BAR", "test", NumberType.class.getName());
+        typeMetadata.put("HAT", "test", NumberType.class.getName());
+        typeMetadata.put("BAT", "test", NumberType.class.getName());
+        typeMetadata.put("HEN", "test", NumberType.class.getName());
+        typeMetadata.put("VEE", "test", NumberType.class.getName());
         givenTypeMetadata(typeMetadata);
 
         // Do not expect any messages.
@@ -57,9 +49,9 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
         // Numeric literals without range operators should not trigger messages.
         givenQuery("FOO == 1 && BAR == 2");
 
-        TypeMetadata typeMetadata = mock(TypeMetadata.class);
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("FOO");
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("BAR");
+        TypeMetadata typeMetadata = new TypeMetadata();
+        typeMetadata.put("FOO", "test", LcNoDiacriticsType.class.getName());
+        typeMetadata.put("BAR", "test", LcNoDiacriticsType.class.getName());
         givenTypeMetadata(typeMetadata);
 
         // No messages expected because there are no range operators.
@@ -71,13 +63,13 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
         // FOO is numeric and has a proper range; others are ranges on non-numeric fields.
         givenQuery("(FOO >= 1 && FOOBAR <= 2) || BAR > 5 || BAT < 10 || HEN <= 15 || VEE >= 20");
 
-        TypeMetadata typeMetadata = mock(TypeMetadata.class);
-        doReturn(NUMBER_TYPE).when(typeMetadata).getNormalizerNamesForField("FOO");
-        doReturn(NUMBER_TYPE).when(typeMetadata).getNormalizerNamesForField("FOOBAR");
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("BAR");
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("BAT");
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("HEN");
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("VEE");
+        TypeMetadata typeMetadata = new TypeMetadata();
+        typeMetadata.put("FOO", "test", NumberType.class.getName());
+        typeMetadata.put("FOOBAR", "test", NumberType.class.getName());
+        typeMetadata.put("BAR", "test", LcNoDiacriticsType.class.getName());
+        typeMetadata.put("BAT", "test", LcNoDiacriticsType.class.getName());
+        typeMetadata.put("HEN", "test", LcNoDiacriticsType.class.getName());
+        typeMetadata.put("VEE", "test", LcNoDiacriticsType.class.getName());
         givenTypeMetadata(typeMetadata);
 
         expectMessage("Range values supplied for non-numeric field(s): BAR, BAT, HEN, VEE");
@@ -94,10 +86,10 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
 
         givenQuery(jexl);
 
-        TypeMetadata typeMetadata = mock(TypeMetadata.class);
-        doReturn(NUMBER_TYPE).when(typeMetadata).getNormalizerNamesForField("A");
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("B");
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("D");
+        TypeMetadata typeMetadata = new TypeMetadata();
+        typeMetadata.put("A", "test", NumberType.class.getName());
+        typeMetadata.put("B", "test", LcNoDiacriticsType.class.getName());
+        typeMetadata.put("D", "test", LcNoDiacriticsType.class.getName());
         givenTypeMetadata(typeMetadata);
 
         expectMessage("Range values supplied for non-numeric field(s): B, D");
@@ -110,10 +102,10 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
         // Mixed open/closed range expressions in JEXL.
         givenQuery("X > -1.5 && X <= 10.25 && Y >= 0 || Z < 0");
 
-        TypeMetadata typeMetadata = mock(TypeMetadata.class);
-        doReturn(NUMBER_TYPE).when(typeMetadata).getNormalizerNamesForField("X");
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("Y");
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("Z");
+        TypeMetadata typeMetadata = new TypeMetadata();
+        typeMetadata.put("X", "test", NumberType.class.getName());
+        typeMetadata.put("Y", "test", LcNoDiacriticsType.class.getName());
+        typeMetadata.put("Z", "test", LcNoDiacriticsType.class.getName());
         givenTypeMetadata(typeMetadata);
 
         expectMessage("Range values supplied for non-numeric field(s): Y, Z");
@@ -126,8 +118,8 @@ class NumericValueRuleTest extends ShardQueryRuleTest {
         // Even within negation, range usage should still be validated.
         givenQuery("!(Q >= 1 && Q < 10)");
 
-        TypeMetadata typeMetadata = mock(TypeMetadata.class);
-        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("Q");
+        TypeMetadata typeMetadata = new TypeMetadata();
+        typeMetadata.put("Q", "test", LcNoDiacriticsType.class.getName());
         givenTypeMetadata(typeMetadata);
 
         expectMessage("Range values supplied for non-numeric field(s): Q");
