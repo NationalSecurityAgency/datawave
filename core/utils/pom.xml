@@ -14,5 +14,6 @@
         <module>common-utils</module>
         <module>metadata-utils</module>
         <module>type-utils</module>
+        <module>visibility-provider-standard</module>
     </modules>
 </project>

@@ -213,6 +213,13 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>visibility-provider-standard</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
             <!-- wildfly bom brings this in as provided, but we need it at runtime for MapReduce jobs -->
@@ -733,6 +740,8 @@
                                             <include>gov.nsa.datawave.core:type-utils</include>
                                             <include>gov.nsa.datawave.core:base-rest-responses</include>
                                             <include>gov.nsa.datawave.core:common-utils</include>
+                                            <include>gov.nsa.datawave.core:visibility-provider-standard</include>
+                                            <include>org.apache.accumulo:accumulo-access-core</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
@@ -783,6 +792,8 @@
                                             <include>gov.nsa.datawave.core:type-utils</include>
                                             <include>gov.nsa.datawave.core:base-rest-responses</include>
                                             <include>gov.nsa.datawave.core:common-utils</include>
+                                            <include>gov.nsa.datawave.core:visibility-provider-standard</include>
+                                            <include>org.apache.accumulo:accumulo-access-core</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common</include>
                                             <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                                             <include>com.google.code.gson:gson</include>

@@ -52,6 +52,8 @@ DATAWAVE_CORE_CONNECTION_POOL_JAR=$(findJar datawave-core-connection-pool)
 INMEMORY_ACCUMULO_JAR=$(findJar datawave-in-memory-accumulo)
 DATAWAVE_BASE_REST_RESPONSES_JAR=$(findJar base-rest-responses)
 DATAWAVE_COMMON_UTILS_JAR=$(findJar common-utils)
+# Downstream distributions may substitute their provider JAR on both the launcher and distributed job classpaths.
+DATAWAVE_VISIBILITY_PROVIDER_JAR=${DATAWAVE_VISIBILITY_PROVIDER_JAR:-$(findJar visibility-provider-standard)}
 DATAWAVE_CORE_JAR=$(findJar datawave-core)
 DATAWAVE_CORE_QUERY_JAR=$(findJar datawave-core-query)
 DATAWAVE_CORE_TABLES_JAR=$(findJar datawave-core-tables)

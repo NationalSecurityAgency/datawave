@@ -5,8 +5,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.accumulo.access.ParsedAccessExpression.ExpressionType.AND;
 import static org.apache.accumulo.access.ParsedAccessExpression.ExpressionType.AUTHORIZATION;
 
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.access.Access;
 import org.apache.accumulo.access.AccessExpression;
@@ -24,6 +28,24 @@ public final class AccessExpressionUtil {
     private static final ColumnVisibility EMPTY_VISIBILITY = new ColumnVisibility();
 
     private AccessExpressionUtil() {}
+
+    /** Normalize the conjunction of all nonempty inputs, preserving parentheses around each input expression. */
+    public static ColumnVisibility conjunction(Collection<ColumnVisibility> visibilities) {
+        Set<String> expressions = new LinkedHashSet<>();
+        if (visibilities != null) {
+            for (ColumnVisibility visibility : visibilities) {
+                if (visibility != null && visibility.getExpression().length != 0) {
+                    expressions.add(toAccessExpression(visibility).getExpression());
+                }
+            }
+        }
+        if (expressions.isEmpty()) {
+            return new ColumnVisibility();
+        }
+        String combined = expressions.size() == 1 ? expressions.iterator().next()
+                        : expressions.stream().map(expression -> "(" + expression + ")").collect(Collectors.joining("&"));
+        return new ColumnVisibility(normalize(ACCESS.newParsedExpression(combined)).expression);
+    }
 
     /**
      * Convert an {@link AccessExpression} to a {@link ColumnVisibility}.

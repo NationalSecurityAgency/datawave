@@ -1,4 +1,4 @@
-package datawave.visibility;
+package datawave.visibility.standard;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -7,13 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,11 +16,13 @@ import java.util.List;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-public class VisibilityFunctionsTest {
+import datawave.visibility.FlattenedVisibilityCache;
+import datawave.visibility.VisibilityFunctions;
 
-    private final VisibilityFunctions functions = new VisibilityFunctions.Default();
+public class StandardVisibilityFunctionsTest {
+
+    private final VisibilityFunctions functions = VisibilityFunctions.getInstance();
 
     // -- combine(Collection) --
 
@@ -116,71 +112,7 @@ public class VisibilityFunctionsTest {
 
     @Test
     public void testGetInstanceIsStable() {
-        assertSame(VisibilityFunctions.getInstance(), VisibilityFunctions.getInstance());
+        assertInstanceOf(StandardVisibilityFunctions.class, functions);
+        assertSame(functions, VisibilityFunctions.getInstance());
     }
-
-    @Test
-    public void testLoadWithoutProvidersUsesDefault() {
-        assertInstanceOf(VisibilityFunctions.Default.class, VisibilityFunctions.Holder.load(null, getClass().getClassLoader()));
-    }
-
-    @Test
-    public void testLoadWithOverride() {
-        VisibilityFunctions loaded = VisibilityFunctions.Holder.load(TestProvider.class.getName(), getClass().getClassLoader());
-        assertInstanceOf(TestProvider.class, loaded);
-    }
-
-    @Test
-    public void testLoadWithBlankOverrideUsesDiscovery() {
-        assertInstanceOf(VisibilityFunctions.Default.class, VisibilityFunctions.Holder.load("  ", getClass().getClassLoader()));
-    }
-
-    @Test
-    public void testLoadWithMissingOverrideClassFails() {
-        assertThrows(IllegalStateException.class, () -> VisibilityFunctions.Holder.load("datawave.visibility.DoesNotExist", getClass().getClassLoader()));
-    }
-
-    @Test
-    public void testLoadWithOverrideOfWrongTypeFails() {
-        assertThrows(IllegalStateException.class, () -> VisibilityFunctions.Holder.load(String.class.getName(), getClass().getClassLoader()));
-    }
-
-    @Test
-    public void testLoadWithSingleProvider(@TempDir Path dir) throws IOException {
-        try (URLClassLoader loader = loaderWithProviders(dir, TestProvider.class.getName())) {
-            assertInstanceOf(TestProvider.class, VisibilityFunctions.Holder.load(null, loader));
-        }
-    }
-
-    @Test
-    public void testOverrideTakesPrecedenceOverProvider(@TempDir Path dir) throws IOException {
-        try (URLClassLoader loader = loaderWithProviders(dir, TestProvider.class.getName())) {
-            assertInstanceOf(OtherTestProvider.class, VisibilityFunctions.Holder.load(OtherTestProvider.class.getName(), loader));
-        }
-    }
-
-    @Test
-    public void testLoadWithMultipleProvidersFails(@TempDir Path dir) throws IOException {
-        try (URLClassLoader loader = loaderWithProviders(dir, TestProvider.class.getName(), OtherTestProvider.class.getName())) {
-            assertThrows(IllegalStateException.class, () -> VisibilityFunctions.Holder.load(null, loader));
-        }
-    }
-
-    @Test
-    public void testLoadWithBrokenProviderFails(@TempDir Path dir) throws IOException {
-        try (URLClassLoader loader = loaderWithProviders(dir, "datawave.visibility.DoesNotExist")) {
-            assertThrows(IllegalStateException.class, () -> VisibilityFunctions.Holder.load(null, loader));
-        }
-    }
-
-    private URLClassLoader loaderWithProviders(Path dir, String... providers) throws IOException {
-        Path services = dir.resolve("META-INF").resolve("services");
-        Files.createDirectories(services);
-        Files.write(services.resolve(VisibilityFunctions.class.getName()), String.join("\n", providers).getBytes(UTF_8));
-        return new URLClassLoader(new URL[] {dir.toUri().toURL()}, getClass().getClassLoader());
-    }
-
-    public static class TestProvider extends VisibilityFunctions.Default {}
-
-    public static class OtherTestProvider extends VisibilityFunctions.Default {}
 }

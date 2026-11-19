@@ -268,6 +268,13 @@
             <artifactId>spring-expression</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>visibility-provider-standard</artifactId>
+            <version>${project.version}</version>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
             <scope>runtime</scope>
@@ -283,6 +290,12 @@
                     <skinnyWars>true</skinnyWars>
                     <classifier>${build.env}</classifier>
                     <modules combine.children="append">
+                        <!-- The EAR plugin does not bundle optional dependencies unless explicitly listed. -->
+                        <jarModule>
+                            <groupId>gov.nsa.datawave.core</groupId>
+                            <artifactId>visibility-provider-standard</artifactId>
+                            <bundleDir>lib</bundleDir>
+                        </jarModule>
                         <ejbModule>
                             <groupId>gov.nsa.datawave.webservices</groupId>
                             <artifactId>datawave-ws-common</artifactId>
