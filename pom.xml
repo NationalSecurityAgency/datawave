@@ -1887,6 +1887,7 @@
                                             <exclude>org.powermock:*</exclude>
                                             <exclude>junit:junit</exclude>
                                             <exclude>org.junit.vintage:junit-vintage-engine</exclude>
+                                            <exclude>org.easymock:*</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
@@ -1939,6 +1940,10 @@
                                     <restrictImports>
                                         <reason>Use Mockito instead of PowerMock</reason>
                                         <bannedImport>org.powermock.**</bannedImport>
+                                    </restrictImports>
+                                    <restrictImports>
+                                        <reason>Use Mockito instead of EasyMock</reason>
+                                        <bannedImport>org.easymock.**</bannedImport>
                                     </restrictImports>
                                 </rules>
                             </configuration>
