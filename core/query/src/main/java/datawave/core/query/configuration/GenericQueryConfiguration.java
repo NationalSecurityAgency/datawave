@@ -36,6 +36,11 @@ import datawave.table.constants.TableName;
  *
  */
 public class GenericQueryConfiguration implements Serializable {
+    /** Whether scan progress may drive intermediate pages. */
+    public boolean isReportScanProgress() {
+        return false;
+    }
+
     // is this execution expected to be checkpointable (changes how we allocate ranges to scanners)
     private boolean checkpointable = false;
 

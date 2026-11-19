@@ -45,8 +45,11 @@ public class SerialIterator extends PipelineIterator {
             return false;
         }
 
-        while (result == null && this.docSource.hasNext() && (yieldCallback == null || !yieldCallback.hasYielded())) {
+        while (result == null && (yieldCallback == null || !yieldCallback.hasYielded())) {
             try {
+                if (!this.docSource.hasNext()) {
+                    break;
+                }
                 Key docKey = this.docSource.next();
                 Document doc = this.docSource.document();
                 waitWindowObserver.checkWaitWindow(docKey, true, "docKey in SerialIterator.hasNext()");
@@ -55,6 +58,9 @@ public class SerialIterator extends PipelineIterator {
                 // If an exception is thrown, caught, and saved during Pipeline
                 // evaluation, then it is re-thrown when getResult() is called
                 result = currentPipeline.getResult();
+                if (result == null) {
+                    waitWindowObserver.recordRejectedCandidate(docKey);
+                }
             } catch (WaitWindowOverrunException e) {
                 result = handleWaitWindowOverrun(e);
             }
@@ -95,6 +101,7 @@ public class SerialIterator extends PipelineIterator {
                 // evaluation, then it is re-thrown when getResult() is called
                 result = currentPipeline.getResult();
                 if (null == result) {
+                    waitWindowObserver.recordRejectedCandidate(docKey);
                     hasNext();
                 }
             } catch (WaitWindowOverrunException e) {
@@ -108,8 +115,7 @@ public class SerialIterator extends PipelineIterator {
     /**
      * handleWaitWindowOverrun for collectTimingDetails = true or false and either yield or return an entry to be used in a WAIT_WINDOW_OVERRUN document
      *
-     * If collectTimingDetails == true, then we will set the (future) yieldKey in waitWindowObserver and return an entry with the yield key and a
-     * WAIT_WINDOW_OVERRUN document to which the timing details can be added. If collectTimingDetails == false, then we yield and return a null.
+     * When timing or scan progress needs to be reported, return an overrun document before signaling the yield. Otherwise yield immediately.
      *
      * @param e
      *            - the WaitWindowOverrunException that has been propagated
@@ -126,9 +132,9 @@ public class SerialIterator extends PipelineIterator {
             Pair<Key,String> yieldKey = waitWindowObserver.createYieldKey(rangeStart, true, description);
             e.setYieldKey(yieldKey);
         }
-        if (collectTimingDetails) {
+        if (collectTimingDetails || waitWindowObserver.hasReportableProgress(e.getYieldKey().getLeft())) {
             waitWindowObserver.setYieldKey(e.getYieldKey());
-            result = new AbstractMap.SimpleEntry<>(e.getYieldKey().getLeft(), WaitWindowObserver.getWaitWindowOverrunDocument());
+            result = new AbstractMap.SimpleEntry<>(e.getYieldKey().getLeft(), waitWindowObserver.overrunDocument(e.getYieldKey().getLeft()));
             if (log.isDebugEnabled()) {
                 logYieldKeyHistory(e, "WaitWindowOverrun");
                 log.debug("WaitWindowOverrun at yieldKey " + e.getYieldKey().getLeft() + " for queryId:" + queryId);

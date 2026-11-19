@@ -29,6 +29,7 @@ import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.ScanProgressAware;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.core.query.predict.QueryPredictor;
@@ -94,6 +95,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private int currentTimeoutcount = 0;
     private boolean allowIntermediateEmptyPages = false;
     private boolean useResultsThread = true;
+    private transient ScanProgressAware webserverProgressSource;
+    private long reportedWebserverProgress;
 
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -215,9 +218,20 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.lastPageNumber.set(0);
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
+            webserverProgressSource = null;
+            reportedWebserverProgress = 0;
+            if (iter.getTransformer() instanceof ScanProgressAware) {
+                ScanProgressAware progress = (ScanProgressAware) iter.getTransformer();
+                boolean reportScanProgress = configuration.isReportScanProgress();
+                progress.setReturnScanProgress(reportScanProgress);
+                if (reportScanProgress && progress.tracksWebserverProgress()) {
+                    webserverProgressSource = progress;
+                    reportedWebserverProgress = progress.getWebserverProgress();
+                }
+            }
             this.allowIntermediateEmptyPages = logic.isIntermediateEmptyPagesEnabled();
-            // force us to use asynchronous results thread to allow intermediate empty pages
-            if (this.allowIntermediateEmptyPages) {
+            // Keep the results worker alive across page boundaries, including when a transform consumed input without publishing a result.
+            if (this.allowIntermediateEmptyPages || webserverProgressSource != null) {
                 this.useResultsThread = true;
             } else {
                 // force us to not use asynchronous results thread if synchronous is requested
@@ -364,18 +378,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         // if we got interrupted, then just return false
                         return false;
                     }
-                    if (resultsThreadException != null) {
-                        if (resultsThreadException instanceof RuntimeException) {
-                            throw (RuntimeException) resultsThreadException;
-                        } else {
-                            throw new RuntimeException(resultsThreadException);
-                        }
-                    }
+                    throwIfResultsWorkerFailed();
                     if (running.get() && (hasNext.get() == 0)) {
                         throw new TimeoutException("hasNext timed out");
                     }
                 }
                 if (hasNext.get() == 0) {
+                    // A producer can fail after an intermediate page and before the next request starts waiting.
+                    throwIfResultsWorkerFailed();
                     log.debug("hasNext returned false.  No more results");
                     return false;
                 } else {
@@ -389,6 +399,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             } else {
                 return false;
             }
+        }
+    }
+
+    private void throwIfResultsWorkerFailed() {
+        Throwable failure = resultsThreadException;
+        if (failure instanceof RuntimeException) {
+            throw (RuntimeException) failure;
+        }
+        if (failure != null) {
+            throw new RuntimeException(failure);
         }
     }
 
@@ -621,7 +641,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 // This means the iter.hasNext() call didn't return within the allotted time. If this is a long running query,
                 // then we want to signal that the caller should call next to keep going (as opposed to just returning the
                 // page as COMPLETE)
-                if (allowIntermediateEmptyPages) {
+                long observedProgress = webserverProgressSource == null ? reportedWebserverProgress : webserverProgressSource.getWebserverProgress();
+                if (observedProgress != reportedWebserverProgress) {
+                    // Acknowledge only the progress used to make this page decision.
+                    reportedWebserverProgress = observedProgress;
+                    log.info("Returning a partial page after webserver transform progress");
+                    hitIntermediateResult = true;
+                } else if (allowIntermediateEmptyPages) {
                     log.info("Short circuiting the long running query");
                     hitShortCircuitForLongRunningQuery = true;
                 } else if (resultList.isEmpty()) {

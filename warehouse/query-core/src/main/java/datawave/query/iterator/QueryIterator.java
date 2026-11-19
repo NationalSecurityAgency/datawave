@@ -182,6 +182,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected Value value;
     protected YieldCallback<Key> yieldCallback;
     protected WaitWindowObserver waitWindowObserver = new WaitWindowObserver();
+    private boolean progressAtTop;
 
     protected IteratorEnvironment myEnvironment;
 
@@ -247,6 +248,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         // affects the way waitWindowObserver creates some yieldKeys
         this.waitWindowObserver.setSortedUIDs(sortedUIDs);
+        this.waitWindowObserver.setReportScanProgress(Boolean.parseBoolean(options.get(REPORT_SCAN_PROGRESS)));
 
         // We want to add in spoofed dataTypes for Aggregation/Evaluation to
         // ensure proper numeric evaluation.
@@ -321,8 +323,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     @Override
     public boolean hasTop() {
-        // If collectTimingDetails, then yielding happens in (SerialIterator|PipelineIterator).handleWaitWindowOverrun()
-        // If !collectTimingDetails, then yielding happens in this call after a WaitWindowOverrun Document is returned
+        // A synthetic overrun entry, when emitted, is exposed before signaling the yield.
         this.waitWindowObserver.yieldOnWaitWindowOverrun();
         boolean yielded = (this.yieldCallback != null) && this.yieldCallback.hasYielded();
         boolean result = (!yielded) && (this.key != null) && (this.value != null);
@@ -344,8 +345,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     @Override
     public void next() throws IOException {
-        // If collectTimingDetails, then we return an WAIT_WINDOW_OVERRUN first, then yield.
-        // In this case, we are ready to yield and the iterator stack is not in a state to iterate
+        if (progressAtTop) {
+            // Do not signal the yield while hasTop() is still exposing the progress entry.
+            waitWindowObserver.yieldAfterProgressEntry();
+            progressAtTop = false;
+            key = null;
+            value = null;
+            waitWindowObserver.stop();
+            return;
+        }
+        // After exposing an overrun entry, wait for hasTop() to signal the yield.
+        // The iterator stack is not in a state to iterate in the meantime.
         if (this.waitWindowObserver.isReadyToYield()) {
             return;
         }
@@ -489,7 +499,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // now apply the unique iterator if requested
             UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
-                pipelineDocuments = uniquify.getIterator(pipelineDocuments, this.yieldCallback);
+                pipelineDocuments = uniquify.getIterator(pipelineDocuments, this.yieldCallback, this.waitWindowObserver);
             }
 
             // apply the grouping iterator if requested and if the batch size is greater than zero
@@ -1187,10 +1197,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * Gets the next document and serializes it for return
      */
     protected void prepareKeyValue() {
+        progressAtTop = false;
         if (documentIterator.hasNext()) {
 
             // just in time serialization
             Entry<Key,Document> docEntry = documentIterator.next();
+            progressAtTop = WaitWindowObserver.isScanProgress(docEntry.getValue());
             Entry<Key,Value> entry = getDocumentSerializer().apply(docEntry);
 
             if (log.isTraceEnabled()) {

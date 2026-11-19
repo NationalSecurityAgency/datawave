@@ -3,6 +3,7 @@ package datawave.query.transformer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -14,12 +15,14 @@ import com.google.common.base.Preconditions;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.Flushable;
+import datawave.core.query.logic.ScanProgressAware;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.core.query.logic.WritesResultCardinalities;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.query.attributes.Document;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -33,7 +36,29 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
  *
  */
 public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Value>,EventBase>
-                implements WritesQueryMetrics, WritesResultCardinalities, Flushable<EventBase> {
+                implements WritesQueryMetrics, WritesResultCardinalities, Flushable<EventBase>, ScanProgressAware {
+
+    private boolean returnScanProgress;
+    private final AtomicLong webserverProgress = new AtomicLong();
+
+    @Override
+    public boolean tracksWebserverProgress() {
+        return transforms.stream().anyMatch(DocumentTransformer::tracksProgress);
+    }
+
+    @Override
+    public long getWebserverProgress() {
+        return webserverProgress.get();
+    }
+
+    private static boolean tracksProgress(DocumentTransform transform) {
+        return transform instanceof UniqueTransform || transform instanceof GroupingTransform;
+    }
+
+    @Override
+    public void setReturnScanProgress(boolean returnScanProgress) {
+        this.returnScanProgress = returnScanProgress;
+    }
 
     private static final Logger log = Logger.getLogger(DocumentTransformer.class);
 
@@ -95,9 +120,23 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
     public EventBase transform(Entry<Key,Value> entry) throws EmptyObjectException {
 
         Entry<Key,Document> documentEntry = deserializer.apply(entry);
+        if (WaitWindowObserver.isScanProgress(documentEntry.getValue())) {
+            extractMetrics(documentEntry.getValue(), documentEntry.getKey(), false);
+            if (!returnScanProgress) {
+                throw new EmptyObjectException();
+            }
+            EventBase output = responseObjectFactory.getEvent();
+            output.setIntermediateResult(true);
+            return output;
+        }
         for (DocumentTransform transform : transforms) {
             if (documentEntry != null) {
+                boolean trackProgress = returnScanProgress && tracksProgress(transform)
+                                && !documentEntry.getValue().containsKey(WaitWindowObserver.WAIT_WINDOW_OVERRUN);
                 documentEntry = transform.apply(documentEntry);
+                if (trackProgress && documentEntry == null) {
+                    webserverProgress.incrementAndGet();
+                }
             } else {
                 break;
             }

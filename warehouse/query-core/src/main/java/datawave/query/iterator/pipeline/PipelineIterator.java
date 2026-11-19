@@ -304,8 +304,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
     /**
      * handleWaitWindowOverrun for collectTimingDetails = true or false and either yield or return an entry to be used in a WAIT_WINDOW_OVERRUN document
      *
-     * If collectTimingDetails == true, then we will set the (future) yieldKey in waitWindowObserver and return an entry with the yield key and a
-     * WAIT_WINDOW_OVERRUN document to which the timing details can be added. If collectTimingDetails == false, then we yield and return a null.
+     * When timing or scan progress needs to be reported, return an overrun document before signaling the yield. Otherwise yield immediately.
      *
      * @param e
      *            - the WaitWindowOverrunException that has been propagated
@@ -326,13 +325,13 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
         List<Pair<Key,String>> possibleYieldKeys = getPossibleYieldKeys(additionalYieldKeys);
         // set the lowestYieldKey into the exception to preserve the yieldKey history
         e.setYieldKey(findLowestYieldKey(possibleYieldKeys));
-        if (collectTimingDetails) {
+        if (collectTimingDetails || waitWindowObserver.hasReportableProgress(e.getYieldKey().getLeft())) {
             if (log.isDebugEnabled()) {
                 logYieldKeyHistory(e, "WaitWindowOverrun");
                 log.debug("WaitWindowOverrun at yieldKey " + e.getYieldKey().getLeft() + " for queryId:" + queryId);
             }
             waitWindowObserver.setYieldKey(e.getYieldKey());
-            result = new AbstractMap.SimpleEntry<>(e.getYieldKey().getLeft(), WaitWindowObserver.getWaitWindowOverrunDocument());
+            result = new AbstractMap.SimpleEntry<>(e.getYieldKey().getLeft(), waitWindowObserver.overrunDocument(e.getYieldKey().getLeft()));
         } else {
             if (log.isDebugEnabled()) {
                 logYieldKeyHistory(e, "Yielded");
@@ -427,6 +426,9 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
 
             // record the last evaluated key
             lastKeyEvaluated = nextFuture.second().getSource().getKey();
+            if (nextEntry == null) {
+                waitWindowObserver.recordRejectedCandidate(lastKeyEvaluated);
+            }
             // remove completed Entry<Future<?>,Pipeline> from the evaluation queue
             evaluationQueue.remove();
             // return the pipeline for reuse

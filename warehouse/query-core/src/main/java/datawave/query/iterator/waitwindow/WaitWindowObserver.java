@@ -39,6 +39,11 @@ public class WaitWindowObserver {
     private static final Logger log = Logger.getLogger(WaitWindowObserver.class);
     private static Timer timer = null;
     public static final String WAIT_WINDOW_OVERRUN = "WAIT_WINDOW_OVERRUN";
+    public static final String SCAN_PROGRESS = "SCAN_PROGRESS";
+
+    private boolean reportScanProgress;
+    private boolean progressEntryPending;
+    private Key rejectedCandidate;
     public static final String YIELD_AT_BEGIN_STR = "!YIELD_AT_BEGIN";
     public static final Text YIELD_AT_BEGIN = new Text(YIELD_AT_BEGIN_STR);
     public static final String YIELD_AT_END_STR = "\uffffYIELD_AT_END";
@@ -121,6 +126,13 @@ public class WaitWindowObserver {
      * Set seekRange
      */
     public void setSeekRange(Range seekRange) {
+        stop();
+        this.remainingTimeMs.set(Long.MAX_VALUE);
+        this.rejectedCandidate = null;
+        this.yieldKey = null;
+        this.readyToYield = false;
+        this.progressEntryPending = false;
+        this.resultCountingIterator = null;
         Key startKey = seekRange.getStartKey();
         if (startKey == null) {
             startKey = convertInfiniteStartKey(startKey);
@@ -221,6 +233,19 @@ public class WaitWindowObserver {
      * document that contains the WAIT_WINDOW_OVERRUN and TIMING_METADATA attributes. readyToYield will be set to true after the first call to yieldOnOverrun
      */
     public void yieldOnWaitWindowOverrun() {
+        if (!progressEntryPending) {
+            yieldIfReady();
+        }
+    }
+
+    public void yieldAfterProgressEntry() {
+        if (progressEntryPending) {
+            readyToYield = true;
+            yieldIfReady();
+        }
+    }
+
+    private void yieldIfReady() {
         if (this.yieldCallback != null && this.yieldKey != null && !this.yieldCallback.hasYielded()) {
             if (readyToYield) {
                 if (this.resultCountingIterator != null) {
@@ -364,6 +389,7 @@ public class WaitWindowObserver {
     }
 
     public void setYieldKey(Pair<Key,String> yieldKey) {
+        progressEntryPending = hasReportableProgress(yieldKey.getLeft());
         // only do this once
         if (this.trackingSpan != null && this.yieldKey == null) {
             this.trackingSpan.yield();
@@ -579,6 +605,34 @@ public class WaitWindowObserver {
         }
         // default to YIELD_AT_BEGIN unless the key already has a YIELD_AT_END marker
         return createYieldKey(highestKey.getLeft(), !hasEndMarker(highestKey.getLeft()), highestKey.getRight());
+    }
+
+    public void setReportScanProgress(boolean reportScanProgress) {
+        this.reportScanProgress = reportScanProgress;
+    }
+
+    public void recordRejectedCandidate(Key key) {
+        // Remember the earliest rejection: later rejected candidates might still be replayed.
+        if (reportScanProgress && (rejectedCandidate == null || key.compareTo(rejectedCandidate) < 0)) {
+            rejectedCandidate = new Key(key);
+        }
+    }
+
+    public boolean hasReportableProgress(Key resumeKey) {
+        // Don't report work that will be replayed from the chosen resume position.
+        return rejectedCandidate != null && resumeKey.compareTo(createDocumentYieldKey(rejectedCandidate, false), PartialKey.ROW_COLFAM_COLQUAL) >= 0;
+    }
+
+    public static boolean isScanProgress(Document document) {
+        return document.get(SCAN_PROGRESS) instanceof WaitWindowExceededMetadata;
+    }
+
+    public Document overrunDocument(Key resumeKey) {
+        Document document = getWaitWindowOverrunDocument();
+        if (hasReportableProgress(resumeKey)) {
+            document.put(SCAN_PROGRESS, new WaitWindowExceededMetadata());
+        }
+        return document;
     }
 
     public void setResultCountingIterator(ResultCountingIterator resultCountingIterator) {

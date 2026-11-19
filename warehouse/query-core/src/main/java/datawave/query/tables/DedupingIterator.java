@@ -10,8 +10,9 @@ import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
 
 import datawave.core.query.configuration.Result;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 class DedupingIterator implements Iterator<Result> {
     static final int BLOOM_EXPECTED_DEFAULT = 500000;
@@ -21,6 +22,7 @@ class DedupingIterator implements Iterator<Result> {
     private Result next;
     private byte[] nextBytes;
     private BloomFilter<byte[]> bloom = null;
+    private final DocumentDeserializer progressDeserializer;
 
     public DedupingIterator(Iterator<Result> iterator) {
         this(iterator, BLOOM_EXPECTED_DEFAULT, BLOOM_FPP_DEFAULT);
@@ -35,7 +37,17 @@ class DedupingIterator implements Iterator<Result> {
     }
 
     public DedupingIterator(Iterator<Result> iterator, BloomFilter<byte[]> bloom, int bloomFilterExpected, double bloomFilterFpp) {
+        this(iterator, bloom, bloomFilterExpected, bloomFilterFpp, null);
+    }
+
+    DedupingIterator(Iterator<Result> iterator, BloomFilter<byte[]> bloom, DocumentDeserializer progressDeserializer) {
+        this(iterator, bloom, BLOOM_EXPECTED_DEFAULT, BLOOM_FPP_DEFAULT, progressDeserializer);
+    }
+
+    DedupingIterator(Iterator<Result> iterator, BloomFilter<byte[]> bloom, int bloomFilterExpected, double bloomFilterFpp,
+                    DocumentDeserializer progressDeserializer) {
         this.delegate = iterator;
+        this.progressDeserializer = progressDeserializer;
         if (bloom == null) {
             bloom = BloomFilter.create(new ByteFunnel(), bloomFilterExpected, bloomFilterFpp);
         }
@@ -107,13 +119,17 @@ class DedupingIterator implements Iterator<Result> {
         throw new UnsupportedOperationException("Remove not supported on DedupingIterator");
     }
 
-    private boolean isDuplicate(Result entry) {
+    private boolean isDuplicate(Result<?> entry) {
         // allow empty results to go through (required to track completion of ranges)
         if (entry.getKey() == null) {
             return false;
         }
         // allow all final documents through
         if (FinalDocumentTrackingIterator.isFinalDocumentKey(entry.getKey())) {
+            return false;
+        }
+        if (progressDeserializer != null && WaitWindowObserver.hasMarker(entry.getKey())
+                        && WaitWindowObserver.isScanProgress(progressDeserializer.apply(entry).getValue())) {
             return false;
         }
         nextBytes = getBytes(entry);
@@ -123,8 +139,6 @@ class DedupingIterator implements Iterator<Result> {
         }
         return false;
     }
-
-    KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
 
     public static class ByteFunnel implements Funnel<byte[]>, Serializable {
 

@@ -376,6 +376,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int maxRangesPerRangeIvarator = 5;
     private int maxOrExpansionFstThreshold = 750;
     private long yieldThresholdMs = Long.MAX_VALUE;
+    private boolean reportScanProgress;
     private int maxYields = 20;
     private String hdfsSiteConfigURLs = null;
     private String hdfsFileCompressionCodec = null;
@@ -633,6 +634,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
         // ShardQueryConfiguration copy
         this.setUseSynchronousRunningQuery(other.isUseSynchronousRunningQuery());
+        this.setReportScanProgress(other.isReportScanProgress());
         this.setQueryLimiterEnabled(other.isQueryLimiterEnabled());
         this.setCheckpointable(other.isCheckpointable());
         this.setTldQuery(other.isTldQuery());
@@ -777,6 +779,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxRangesPerRangeIvarator(other.getMaxRangesPerRangeIvarator());
         this.setMaxOrExpansionFstThreshold(other.getMaxOrExpansionFstThreshold());
         this.setYieldThresholdMs(other.getYieldThresholdMs());
+        this.setReportScanProgress(other.isReportScanProgress());
         this.setMaxYields(other.getMaxYields());
         this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
         this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
@@ -2609,6 +2612,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return yieldThresholdMs;
     }
 
+    @Override
+    public boolean isReportScanProgress() {
+        return reportScanProgress;
+    }
+
+    public void setReportScanProgress(boolean reportScanProgress) {
+        this.reportScanProgress = reportScanProgress;
+    }
+
     public void setYieldThresholdMs(long yieldThresholdMs) {
         this.yieldThresholdMs = yieldThresholdMs;
     }
@@ -3013,6 +3025,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         ShardQueryConfiguration that = (ShardQueryConfiguration) o;
         return isTldQuery() == that.isTldQuery() &&
                 isUseSynchronousRunningQuery() == that.isUseSynchronousRunningQuery() &&
+                isReportScanProgress() == that.isReportScanProgress() &&
                 isQueryLimiterEnabled() == that.isQueryLimiterEnabled() &&
                 isDisableIndexOnlyDocuments() == that.isDisableIndexOnlyDocuments() &&
                 getMaxScannerBatchSize() == that.getMaxScannerBatchSize() &&
@@ -3252,6 +3265,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return Objects.hash(
                 super.hashCode(),
                 isUseSynchronousRunningQuery(),
+                isReportScanProgress(),
                 isQueryLimiterEnabled(),
                 isTldQuery(),
                 getFilterOptions(),

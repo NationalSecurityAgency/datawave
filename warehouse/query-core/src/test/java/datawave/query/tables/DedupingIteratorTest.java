@@ -3,6 +3,7 @@ package datawave.query.tables;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +18,11 @@ import org.junit.jupiter.api.Test;
 
 import datawave.core.query.configuration.Result;
 import datawave.query.Constants;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.WaitWindowExceededMetadata;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.function.serializer.KryoDocumentSerializer;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 public class DedupingIteratorTest {
 
@@ -84,6 +90,26 @@ public class DedupingIteratorTest {
 
         // False positives should've prevented some entries from being included
         assertTrue(output.size() < DEDUPED_LIST_SZ);
+    }
+
+    @Test
+    public void progressNeitherMasksNorIsMaskedByAnEventWithTheSameIdentity() {
+        Key eventKey = new Key("20200101_1", "type\0uid");
+        Key progressKey = new Key(eventKey.getRow(), eventKey.getColumnFamily(), WaitWindowObserver.YIELD_AT_END);
+        Document progress = WaitWindowObserver.getWaitWindowOverrunDocument();
+        progress.put(WaitWindowObserver.SCAN_PROGRESS, new WaitWindowExceededMetadata());
+        Value progressValue = new KryoDocumentSerializer().apply(new SimpleImmutableEntry<>(progressKey, progress)).getValue();
+        Result marker = new Result(progressKey, progressValue);
+        Result event = new Result(eventKey, new Value());
+        assertEquals(List.of(marker, event), dedupWithProgress(List.of(marker, event, event)));
+        assertEquals(List.of(event, marker), dedupWithProgress(List.of(event, marker, event)));
+    }
+
+    private List<Result> dedupWithProgress(List<Result> input) {
+        DedupingIterator iterator = new DedupingIterator(input.iterator(), null, bloomExpected, bloomFpp, new KryoDocumentDeserializer());
+        List<Result> output = new ArrayList<>();
+        iterator.forEachRemaining(output::add);
+        return output;
     }
 
     private static class TestEntry extends Result {

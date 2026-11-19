@@ -1,6 +1,8 @@
 package datawave.query.iterator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.AbstractMap;
@@ -20,7 +22,9 @@ import datawave.data.type.NumberType;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.WaitWindowExceededMetadata;
 import datawave.query.common.grouping.GroupFields;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 public class GroupingIteratorTest {
 
@@ -60,6 +64,25 @@ public class GroupingIteratorTest {
         assertEquals(10_000, ((NumberType) d.get("COUNT.0").getData()).getDelegate().intValue());
         assertEquals(10_000, ((NumberType) d.get("FIELD_A_COUNT.0").getData()).getDelegate().intValue());
         assertEquals(10_000, ((NumberType) d.get("FIELD_B_COUNT.0").getData()).getDelegate().intValue());
+    }
+
+    @Test
+    public void progressWaitsBehindBufferedGroupsAndDoesNotBecomeAGroup() {
+        var candidate = getDocumentEntry();
+        Document marker = WaitWindowObserver.getWaitWindowOverrunDocument();
+        marker.put(WaitWindowObserver.SCAN_PROGRESS, new WaitWindowExceededMetadata());
+        Map.Entry<Key,Document> progress = new AbstractMap.SimpleEntry<>(new Key("row", "dt\0uid-1", WaitWindowObserver.YIELD_AT_END_STR), marker);
+        GroupingIterator iterator = new GroupingIterator(List.of(candidate, progress).iterator(), MarkingFunctions.Factory.createMarkingFunctions(),
+                        new GroupFields(), 10, null);
+
+        assertTrue(iterator.hasNext());
+        assertTrue(iterator.hasNext());
+        var grouped = iterator.next();
+        assertEquals(candidate.getKey(), grouped.getKey());
+        assertEquals(1, ((NumberType) grouped.getValue().get("COUNT.0").getData()).getDelegate().intValue());
+        assertTrue(iterator.hasNext());
+        assertSame(marker, iterator.next().getValue());
+        assertFalse(iterator.hasNext());
     }
 
     private Iterator<Map.Entry<Key,Document>> getDocumentIterator(int count) {

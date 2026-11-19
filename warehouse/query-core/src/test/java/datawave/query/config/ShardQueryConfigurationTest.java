@@ -107,6 +107,9 @@ public class ShardQueryConfigurationTest {
         defaultValues.put("useSynchronousRunningQuery", false);
         updatedValues.put("useSynchronousRunningQuery", true);
 
+        defaultValues.put("reportScanProgress", false);
+        updatedValues.put("reportScanProgress", true);
+
         defaultValues.put("queryLimiterEnabled", true);
         updatedValues.put("queryLimiterEnabled", false);
 

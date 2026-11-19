@@ -1,7 +1,14 @@
 package datawave.query.transformer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
@@ -15,6 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctionsFactory;
@@ -22,7 +30,11 @@ import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
+import datawave.query.attributes.TimingMetadata;
+import datawave.query.attributes.WaitWindowExceededMetadata;
+import datawave.query.function.LogTiming;
 import datawave.query.function.serializer.KryoDocumentSerializer;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.table.constants.TableName;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
@@ -73,6 +85,60 @@ public class DocumentTransformerTest {
     private Map.Entry<Key,Value> createEntry() {
         Map.Entry<Key,Document> entry = new SimpleEntry<>(documentKey, document);
         return serializer.apply(entry);
+    }
+
+    @Test
+    public void recordsWebserverProgressWhenUniqueOrGroupingConsumesACandidate() {
+        transformer.setReturnScanProgress(true);
+        for (DocumentTransform transform : List.of(mock(UniqueTransform.class), mock(GroupingTransform.class))) {
+            when(transform.apply(any())).thenReturn(null);
+            transformer.addTransform(transform);
+            assertTrue(transformer.tracksWebserverProgress());
+            long before = transformer.getWebserverProgress();
+            assertThrows(EmptyObjectException.class, () -> transformer.transform(createEntry()));
+            assertEquals(before + 1, transformer.getWebserverProgress());
+            transformer = new DocumentTransformer(TableName.SHARD, query, markingFunctions, responseObjectFactory, true);
+            transformer.setReturnScanProgress(true);
+        }
+    }
+
+    @Test
+    public void timingOnlyOverrunIsStillMetricsOnly() {
+        transformer.setReturnScanProgress(true);
+        document = WaitWindowObserver.getWaitWindowOverrunDocument();
+        addYieldMetric();
+        assertThrows(EmptyObjectException.class, () -> transformer.transform(createEntry()));
+        assertEquals(1, transformer.getYieldCount());
+    }
+
+    @Test
+    public void progressWithTimingRecordsMetricsAndBypassesWebserverTransforms() {
+        transformer.setReturnScanProgress(true);
+        UniqueTransform unique = mock(UniqueTransform.class);
+        transformer.addTransform(unique);
+        document = WaitWindowObserver.getWaitWindowOverrunDocument();
+        document.put(WaitWindowObserver.SCAN_PROGRESS, new WaitWindowExceededMetadata());
+        addYieldMetric();
+        assertTrue(transformer.transform(createEntry()).isIntermediateResult());
+        assertEquals(1, transformer.getYieldCount());
+        assertEquals(0, transformer.getWebserverProgress());
+        verify(unique, never()).apply(any());
+    }
+
+    @Test
+    public void progressWithoutTimingOnlyReturnsAnIntermediateResultWhenEnabled() {
+        document = WaitWindowObserver.getWaitWindowOverrunDocument();
+        document.put(WaitWindowObserver.SCAN_PROGRESS, new WaitWindowExceededMetadata());
+        assertThrows(EmptyObjectException.class, () -> transformer.transform(createEntry()));
+        transformer.setReturnScanProgress(true);
+        assertTrue(transformer.transform(createEntry()).isIntermediateResult());
+        assertEquals(0, transformer.getYieldCount());
+    }
+
+    private void addYieldMetric() {
+        TimingMetadata timing = new TimingMetadata();
+        timing.setYieldCount(1);
+        document.put(LogTiming.TIMING_METADATA, timing);
     }
 
     @Test

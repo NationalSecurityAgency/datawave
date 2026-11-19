@@ -30,6 +30,9 @@ public class ParentDocumentTransformer extends DocumentTransformer {
     @Override
     public EventBase transform(Entry<Key,Value> input) {
         EventBase event = super.transform(input);
+        if (event.isIntermediateResult()) {
+            return event;
+        }
         Metadata md = event.getMetadata();
         byte[] id = md.getInternalId().getBytes();
         ByteSequence parentIdBytes = TLD.parseParentPointerFromId(new ArrayByteSequence(id));

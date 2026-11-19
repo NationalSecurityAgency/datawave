@@ -689,7 +689,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         Iterator<Result> resultIterator = this.scheduler.iterator();
 
         if (!config.isSortedUIDs()) {
-            DedupingIterator dedupIterator = new DedupingIterator(resultIterator, config.getBloom());
+            DedupingIterator dedupIterator = new DedupingIterator(resultIterator, config.getBloom(),
+                            config.isReportScanProgress() ? DocumentSerialization.getDocumentDeserializer(config.getQuery()) : null);
             config.setBloom(dedupIterator.getBloom());
             resultIterator = dedupIterator;
         }
@@ -2202,6 +2203,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public long getYieldThresholdMs() {
         return getConfig().getYieldThresholdMs();
+    }
+
+    /**
+     * Opt in to intermediate pages driven by tablet-server scan progress in the legacy webservice. Configure a finite positive yield threshold as well. Enable
+     * only on event-returning query logic, not count or other specialized result formats.
+     */
+    public void setReportScanProgress(boolean reportScanProgress) {
+        getConfig().setReportScanProgress(reportScanProgress);
     }
 
     public void setYieldThresholdMs(long yieldThresholdMs) {

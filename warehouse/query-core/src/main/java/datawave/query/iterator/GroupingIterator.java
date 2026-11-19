@@ -26,6 +26,7 @@ import datawave.query.common.grouping.Group;
 import datawave.query.common.grouping.GroupFields;
 import datawave.query.common.grouping.GroupingUtils;
 import datawave.query.common.grouping.Groups;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 
 /**
  * Because the t-server may tear down and start a new iterator at any time after a next() call, there can be no saved state in this class. For that reason, each
@@ -60,6 +61,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
     private final Iterator<Map.Entry<Key,Document>> previousIterators;
 
     Map.Entry<Key,Document> next;
+    private Map.Entry<Key,Document> pendingProgress;
 
     public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, MarkingFunctions<?> markingFunctions, GroupFields groupFields,
                     int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
@@ -73,10 +75,21 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
 
     @Override
     public boolean hasNext() {
+        if (next != null) {
+            return true;
+        }
+        if (pendingProgress != null) {
+            next = pendingProgress;
+            return true;
+        }
         for (int i = 0; i < groupFieldsBatchSize; i++) {
             if (previousIterators.hasNext()) {
                 Map.Entry<Key,Document> entry = previousIterators.next();
                 if (entry != null) {
+                    if (WaitWindowObserver.isScanProgress(entry.getValue())) {
+                        pendingProgress = entry;
+                        break;
+                    }
                     log.trace("t-server get list key counts for: {}", entry);
                     documentCount++;
                     mostRecentKey = entry.getKey();
@@ -122,12 +135,18 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
             return true;
         }
 
-        return false;
+        next = pendingProgress;
+        return next != null;
     }
 
     @Override
     public Map.Entry<Key,Document> next() {
-        return new AbstractMap.SimpleEntry<>(next.getKey(), next.getValue());
+        if (next == pendingProgress) {
+            pendingProgress = null;
+        }
+        Map.Entry<Key,Document> result = new AbstractMap.SimpleEntry<>(next.getKey(), next.getValue());
+        next = null;
+        return result;
     }
 
     /**

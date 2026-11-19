@@ -41,6 +41,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.iterator.waitwindow.WaitWindowObserver;
 import datawave.query.model.QueryModel;
 import datawave.query.util.sortedmap.FileByteDocumentSortedMap;
 import datawave.query.util.sortedmap.FileKeyDocumentSortedMap;
@@ -121,7 +122,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @return an iterator that will supply the unique documents
      */
     public Iterator<Entry<Key,Document>> getIterator(final Iterator<Entry<Key,Document>> in, final YieldCallback yieldCallback) {
-        return new UniqueTransformIterator(in, yieldCallback);
+        return getIterator(in, yieldCallback, null);
+    }
+
+    public Iterator<Entry<Key,Document>> getIterator(Iterator<Entry<Key,Document>> in, YieldCallback<Key> yieldCallback, WaitWindowObserver observer) {
+        return new UniqueTransformIterator(in, yieldCallback, observer);
     }
 
     /**
@@ -411,11 +416,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     public class UniqueTransformIterator implements Iterator<Map.Entry<Key,Document>> {
         private final YieldCallback yieldCallback;
+        private final WaitWindowObserver observer;
         private final Iterator<Map.Entry<Key,Document>> iterator;
         private Map.Entry<Key,Document> next = null;
 
-        public UniqueTransformIterator(Iterator<Map.Entry<Key,Document>> iterator, YieldCallback yieldCallback) {
+        public UniqueTransformIterator(Iterator<Map.Entry<Key,Document>> iterator, YieldCallback yieldCallback, WaitWindowObserver observer) {
             this.yieldCallback = yieldCallback;
+            this.observer = observer;
             this.iterator = iterator;
         }
 
@@ -442,7 +449,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         private Map.Entry<Key,Document> getNext() {
             Map.Entry<Key,Document> o = null;
             while (o == null && iterator.hasNext()) {
-                o = apply(iterator.next(), false);
+                Map.Entry<Key,Document> candidate = iterator.next();
+                o = apply(candidate, false);
+                if (o == null && candidate != null && observer != null) {
+                    observer.recordRejectedCandidate(candidate.getKey());
+                }
             }
             // see if there are any results cached by the transform
             if (o == null) {

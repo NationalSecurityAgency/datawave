@@ -226,7 +226,10 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     }
 
     protected void extractMetrics(Document document, Key documentKey) {
+        extractMetrics(document, documentKey, true);
+    }
 
+    protected void extractMetrics(Document document, Key documentKey, boolean skipMetadataOnlyEntries) {
         Map<String,Attribute<? extends Comparable<?>>> dictionary = document.getDictionary();
         Attribute<? extends Comparable<?>> timingMetadataAttribute = dictionary.get(LogTiming.TIMING_METADATA);
         if (timingMetadataAttribute != null && timingMetadataAttribute instanceof TimingMetadata) {
@@ -261,7 +264,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             }
             boolean metadata = dictionary.containsKey(LogTiming.TIMING_METADATA);
             boolean waitWindowOverrun = dictionary.containsKey(WaitWindowObserver.WAIT_WINDOW_OVERRUN);
-            if ((dictionary.size() == 1 && metadata) || waitWindowOverrun) {
+            if (skipMetadataOnlyEntries && ((dictionary.size() == 1 && metadata) || waitWindowOverrun)) {
                 // this document contained only timing metadata or contains the WAIT_WINDOW_OVERRUN marker
                 throw new EmptyObjectException();
             }
