@@ -50,11 +50,18 @@ public class AccentFilter extends TokenFilter {
      * @return the token with accents removed
      */
     public static String strip(String token) {
-        char c[] = token.toCharArray();
-        char output[] = new char[c.length * 4]; // worst case
-        int outputPos = removeAccents(c, output, c.length);
-        if (outputPos > 0) {
-            return new String(output, 0, outputPos);
+        // Characters below this boundary are always copied unchanged by removeAccents.
+        // \u00c0 -> À [LATIN CAPITAL LETTER A WITH GRAVE]
+        for (int i = 0; i < token.length(); i++) {
+            if (token.charAt(i) >= '\u00c0') {
+                char c[] = token.toCharArray();
+                char output[] = new char[c.length * 4]; // worst case
+                int outputPos = removeAccents(c, output, c.length);
+                if (outputPos > 0) {
+                    return new String(output, 0, outputPos);
+                }
+                break;
+            }
         }
         return token;
     }
