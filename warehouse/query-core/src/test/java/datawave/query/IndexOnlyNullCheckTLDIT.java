@@ -258,6 +258,62 @@ public class IndexOnlyNullCheckTLDIT extends AbstractQueryTest {
         assertThrows(InvalidQueryException.class, this::planAndExecuteQuery);
     }
 
+    /**
+     * An index-only null check must be ANDed with an executable term. ORed with one, it has no anchor.
+     */
+    @Test
+    public void testIsNullOrAnchorFlagEnabled() {
+        givenFlag(true);
+        givenDate(ingest.getDate());
+        givenQuery("FOO == 'value-a' || INDEX_ONLY == null");
+        disableQueryPlanAssertion();
+        assertThrows(InvalidQueryException.class, this::planAndExecuteQuery);
+    }
+
+    @Test
+    public void testIsNotNullOrAnchorFlagEnabled() {
+        givenFlag(true);
+        givenDate(ingest.getDate());
+        givenQuery("FOO == 'value-a' || INDEX_ONLY != null");
+        disableQueryPlanAssertion();
+        assertThrows(InvalidQueryException.class, this::planAndExecuteQuery);
+    }
+
+    @Test
+    public void testNegatedIsNullOrAnchorFlagEnabled() {
+        givenFlag(true);
+        givenDate(ingest.getDate());
+        givenQuery("FOO == 'value-a' || !(INDEX_ONLY == null)");
+        disableQueryPlanAssertion();
+        assertThrows(InvalidQueryException.class, this::planAndExecuteQuery);
+    }
+
+    /**
+     * The executable term is ORed with the null check, so it does not anchor it. The other AND sibling is also a null check, so there is no anchor.
+     */
+    @Test
+    public void testIsNullOrAnchorAndIsNullFlagEnabled() {
+        givenFlag(true);
+        givenDate(ingest.getDate());
+        givenQuery("(FOO == 'value-a' || INDEX_ONLY == null) && INDEX_ONLY2 == null");
+        disableQueryPlanAssertion();
+        assertThrows(InvalidQueryException.class, this::planAndExecuteQuery);
+    }
+
+    /**
+     * The null check is ORed with an executable term, but the OR is ANDed with an anchor, so the query is valid. No anchored document has FOO = value-other, so
+     * only the null check can match.
+     */
+    @Test
+    public void testIsNullOrExecutableWithAnchor() throws Exception {
+        givenFlag(true);
+        givenDate(ingest.getDate());
+        givenQuery("FOO == 'value-a' && (FOO == 'value-other' || INDEX_ONLY == null)");
+        expectPlan("FOO == 'value-a' && (FOO == 'value-other' || INDEX_ONLY == null)");
+        expectUUIDs(Set.of("uid-1"));
+        planAndExecuteQuery();
+    }
+
     private void givenFlag(boolean enabled) {
         logic.getConfig().setAllowIndexOnlyNullChecks(enabled);
     }
