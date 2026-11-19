@@ -608,6 +608,7 @@ public class QueryOptions implements OptionDescriber {
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
         this.cardinality = other.cardinality;
+        this.allowIndexOnlyNullChecks = other.allowIndexOnlyNullChecks;
     }
 
     public String getQuery() {
