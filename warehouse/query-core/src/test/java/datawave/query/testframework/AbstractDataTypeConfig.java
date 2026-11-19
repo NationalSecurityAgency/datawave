@@ -1,7 +1,7 @@
 package datawave.query.testframework;
 
 import static datawave.query.testframework.FileType.CSV;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -145,7 +145,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
 
         // RawDataManager manager = mgr;
         URL url = this.getClass().getClassLoader().getResource(ingestFile);
-        assertNotNull("unable to resolve ingest file(" + ingestFile + ")", url);
+        assertNotNull(url, "unable to resolve ingest file(" + ingestFile + ")");
         // if this url is not a file (e.g. nested in a jar), then make it a file
         if (url.getProtocol().startsWith("jar")) {
             InputStream in = this.getClass().getClassLoader().getResourceAsStream(ingestFile);

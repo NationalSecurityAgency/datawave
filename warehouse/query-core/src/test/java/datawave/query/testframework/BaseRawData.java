@@ -1,7 +1,7 @@
 package datawave.query.testframework;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -82,7 +82,7 @@ public abstract class BaseRawData implements RawData {
     public void processFields(final String datatype, final String[] fields) {
         // add each header event
         final List<String> hdrs = getHeaders();
-        assertTrue("The number of fields must be equal or greater than the number of headers", fields.length >= hdrs.size());
+        assertTrue(fields.length >= hdrs.size(), "The number of fields must be equal or greater than the number of headers");
 
         for (int n = 0; n < hdrs.size(); n++) {
             String header = hdrs.get(n);

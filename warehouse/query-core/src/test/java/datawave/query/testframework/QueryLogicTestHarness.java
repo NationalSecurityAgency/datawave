@@ -1,10 +1,10 @@
 package datawave.query.testframework;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -162,9 +162,9 @@ public class QueryLogicTestHarness {
             }
         }
 
-        assertEquals("results do not match expected", expected.size(), actualResults.size());
-        assertTrue("expected and actual values do not match", expected.containsAll(actualResults));
-        assertTrue("expected and actual values do not match", actualResults.containsAll(expected));
+        assertEquals(expected.size(), actualResults.size(), "results do not match expected");
+        assertTrue(expected.containsAll(actualResults), "expected and actual values do not match");
+        assertTrue(actualResults.containsAll(expected), "expected and actual values do not match");
     }
 
     /**
@@ -219,8 +219,8 @@ public class QueryLogicTestHarness {
         log.debug("result(" + extractedResult + ") key(" + entry.getKey() + ") document(" + document + ")");
 
         // verify expected results
-        assertNotNull("extracted result", extractedResult);
-        assertFalse("duplicate result(" + extractedResult + ") key(" + entry.getKey() + ")", actualResults.contains(extractedResult));
+        assertNotNull(extractedResult, "extracted result");
+        assertFalse(actualResults.contains(extractedResult), "duplicate result(" + extractedResult + ") key(" + entry.getKey() + ")");
 
         // perform any custom assert checks on document
         for (final DocumentChecker check : checkers) {

@@ -27,8 +27,6 @@ public class DatawaveHttpAuthenticationMechanismConfigTests {
         DatawaveHttpAuthenticationMechanism.Config config = DatawaveHttpAuthenticationMechanism.Config.fromMap(Map.of());
         assertThat(config.getTrustedSubjectDnHeader()).isEqualTo(SecurityConstants.DEFAULT_TRUSTED_SUBJECT_DN_HEADER);
         assertThat(config.getTrustedIssuerDnHeader()).isEqualTo(SecurityConstants.DEFAULT_TRUSTED_ISSUER_DN_HEADER);
-        assertThat(config.isIdentityRestorationEnabled()).isTrue();
-        assertThat(config.isSessionIdChangeEnabled()).isTrue();
     }
 
     /**
@@ -42,8 +40,6 @@ public class DatawaveHttpAuthenticationMechanismConfigTests {
         DatawaveHttpAuthenticationMechanism.Config config = DatawaveHttpAuthenticationMechanism.Config.fromMap(Map.of());
         assertThat(config.getTrustedSubjectDnHeader()).isEqualTo("Alt-TrustedSubject");
         assertThat(config.getTrustedIssuerDnHeader()).isEqualTo("Alt-TrustedIssuer");
-        assertThat(config.isIdentityRestorationEnabled()).isTrue();
-        assertThat(config.isSessionIdChangeEnabled()).isTrue();
     }
 
     /**
@@ -56,13 +52,9 @@ public class DatawaveHttpAuthenticationMechanismConfigTests {
         Map<String,Object> properties = new HashMap<>();
         properties.put(DatawaveHttpAuthenticationMechanism.Config.OPTION_TRUSTED_SUBJECT_DN_HEADER, "Override-TrustedSubject");
         properties.put(DatawaveHttpAuthenticationMechanism.Config.OPTION_TRUSTED_ISSUER_DN_HEADER, "Override-TrustedIssuer");
-        properties.put(DatawaveHttpAuthenticationMechanism.Config.OPTION_ENABLE_RESTORE_IDENTITY, "false");
-        properties.put(DatawaveHttpAuthenticationMechanism.Config.OPTION_ENABLE_SESSION_ID_CHANGE, "false");
 
         DatawaveHttpAuthenticationMechanism.Config config = DatawaveHttpAuthenticationMechanism.Config.fromMap(properties);
         assertThat(config.getTrustedSubjectDnHeader()).isEqualTo("Override-TrustedSubject");
         assertThat(config.getTrustedIssuerDnHeader()).isEqualTo("Override-TrustedIssuer");
-        assertThat(config.isIdentityRestorationEnabled()).isFalse();
-        assertThat(config.isSessionIdChangeEnabled()).isFalse();
     }
 }

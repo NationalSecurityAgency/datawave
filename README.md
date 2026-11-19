@@ -17,6 +17,8 @@ Documentation is located [here](https://code.nsa.gov/datawave/docs/)
 
 Basic build instructions are [here](BUILDME.md)
 
+Microservice release instructions are [here](RELEASE_MICROSERVICES.md)
+
 ## How to Use this Repository
 
 The microservices and associated utility projects are intended to be developed, versioned,

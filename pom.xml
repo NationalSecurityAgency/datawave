@@ -131,7 +131,6 @@
         <version.json>20231013</version.json>
         <version.jts>1.19.0</version.jts>
         <version.junit-pioneer>2.3.0</version.junit-pioneer>
-        <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.12.0</version.junit5>
         <version.junit5.platform>1.12.0</version.junit5.platform>
         <version.jython>2.7.2b2</version.jython>
@@ -292,6 +291,12 @@
                 <groupId>com.googlecode.json-simple</groupId>
                 <artifactId>json-simple</artifactId>
                 <version>${version.googlecode-json-simple}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>
@@ -1438,12 +1443,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${version.junit4}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <!-- Upgraded for Java 17 compatibility -->
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
@@ -1543,12 +1542,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.junit.vintage</groupId>
-                <artifactId>junit-vintage-engine</artifactId>
-                <version>${version.junit5}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${version.mockito}</version>
@@ -1564,18 +1557,8 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -1915,8 +1898,35 @@
                                             <!-- exclude all versions of log4j before version.log4j -->
                                             <exclude>org.apache.logging.log4j:*:(,${version.log4j})</exclude>
                                             <exclude>org.powermock:*</exclude>
+                                            <exclude>junit:junit</exclude>
+                                            <exclude>org.junit.vintage:junit-vintage-engine</exclude>
                                         </excludes>
                                     </bannedDependencies>
+                                </rules>
+                                <fail>true</fail>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>ban-junit4-imports</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <phase>process-sources</phase>
+                            <configuration>
+                                <rules>
+                                    <restrictImports>
+                                        <reason>Use JUnit Jupiter instead of JUnit 4</reason>
+                                        <bannedImports>
+                                            <bannedImport>org.junit.**</bannedImport>
+                                            <bannedImport>junit.framework.**</bannedImport>
+                                        </bannedImports>
+                                        <allowedImports>
+                                            <allowedImport>org.junit.jupiter.**</allowedImport>
+                                            <allowedImport>org.junit.platform.**</allowedImport>
+                                        </allowedImports>
+                                        <includeCompileCode>true</includeCompileCode>
+                                        <includeTestCode>true</includeTestCode>
+                                    </restrictImports>
                                 </rules>
                                 <fail>true</fail>
                             </configuration>
