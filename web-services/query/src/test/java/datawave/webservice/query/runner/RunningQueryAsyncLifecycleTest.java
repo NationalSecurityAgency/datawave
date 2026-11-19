@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.google.common.util.concurrent.Uninterruptibles;
 
@@ -115,6 +116,55 @@ public class RunningQueryAsyncLifecycleTest {
         }
         assertEquals(Arrays.asList("b", "c", "d", "e"), remaining);
         assertEquals(ResultsPage.Status.NONE, first.next().getStatus());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void yieldedProducerResumesInsteadOfReportingEndOfResults(boolean beforeWait) throws Exception {
+        RunningQuery query = query(executor(), Arrays.<Object> asList("unread-a", "unread-b", "unread-c").iterator(), 10);
+        AtomicBoolean running = (AtomicBoolean) ReflectionTestUtils.getField(query, "running");
+        AtomicInteger hasNext = (AtomicInteger) ReflectionTestUtils.getField(query, "hasNext");
+        // Reconstruct an empty queue after the producer decides to yield, but before it clears running.
+        // Its exit must resume production whether it precedes or follows the request's wait.
+        running.set(true);
+        Future<ResultsPage> page;
+        if (beforeWait) {
+            synchronized (hasNext) {
+                page = executor().submit(query::next);
+                awaitResultWait(query, "hasNext", Thread.State.BLOCKED);
+                synchronized (running) {
+                    running.set(false);
+                }
+            }
+        } else {
+            page = executor().submit(query::next);
+            awaitResultWait(query, "hasNext");
+            synchronized (running) {
+                running.set(false);
+            }
+            synchronized (hasNext) {
+                hasNext.notifyAll();
+            }
+        }
+
+        ResultsPage results = page.get(2, TimeUnit.SECONDS);
+        assertEquals(Arrays.asList("unread-a", "unread-b", "unread-c"), results.getResults());
+        assertEquals(ResultsPage.Status.COMPLETE, results.getStatus());
+        assertEquals(ResultsPage.Status.NONE, query.next().getStatus());
+    }
+
+    @Test
+    public void terminatedProducerDoesNotRestartWaitingRequest() throws Exception {
+        RunningQuery query = query(executor(), Collections.<Object> singletonList("unread").iterator(), 10);
+        AtomicBoolean running = (AtomicBoolean) ReflectionTestUtils.getField(query, "running");
+        running.set(true);
+        Future<ResultsPage> page = executor().submit(query::next);
+        awaitResultWait(query, "hasNext");
+
+        query.terminateResultsThread();
+
+        assertEquals(ResultsPage.Status.NONE, page.get(2, TimeUnit.SECONDS).getStatus());
+        assertFalse(running.get(), "Explicit termination must not schedule another producer");
     }
 
     /**
@@ -275,12 +325,16 @@ public class RunningQueryAsyncLifecycleTest {
     }
 
     private void awaitResultWait(RunningQuery query, String method) {
+        awaitResultWait(query, method, Thread.State.TIMED_WAITING);
+    }
+
+    private void awaitResultWait(RunningQuery query, String method, Thread.State state) {
         // The producer latch only establishes that the iterator is blocked. Check the request's actual monitor wait
         // before forcing, so these cases cannot accidentally exercise the before-wait scenario instead.
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
         while (System.nanoTime() < deadline) {
             Thread thread = query.getCurrentThread();
-            if (thread != null && thread.getState() == Thread.State.TIMED_WAITING) {
+            if (thread != null && thread.getState() == state) {
                 for (StackTraceElement frame : thread.getStackTrace()) {
                     if (frame.getClassName().equals(RunningQuery.class.getName()) && frame.getMethodName().equals(method)) {
                         return;
@@ -289,7 +343,7 @@ public class RunningQueryAsyncLifecycleTest {
             }
             Thread.yield();
         }
-        throw new AssertionError("Request did not enter " + method + " wait");
+        throw new AssertionError("Request did not reach " + state + " in " + method);
     }
 
     private Iterator<Object> blockingIterator(boolean blockInNext, CountDownLatch blocked, CountDownLatch release) {
