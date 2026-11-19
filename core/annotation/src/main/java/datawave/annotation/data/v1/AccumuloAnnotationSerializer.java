@@ -79,7 +79,7 @@ public class AccumuloAnnotationSerializer implements AnnotationSerializer<Iterat
      */
     @Override
     public Iterator<Map.Entry<Key,Value>> serialize(Annotation annotation) throws AnnotationSerializationException {
-        Validator.ValidationState<Annotation> validationState = AnnotationValidators.checkAnnotation(annotation);
+        Validator.ValidationState<Annotation> validationState = AnnotationValidators.checkAnnotationUpdate(annotation);
         if (!validationState.isValid()) {
             throw new AnnotationWriteException("Annotation is not valid: " + validationState.getErrors());
         }

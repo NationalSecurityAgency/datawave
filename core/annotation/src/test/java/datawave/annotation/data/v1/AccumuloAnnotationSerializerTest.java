@@ -106,6 +106,30 @@ public class AccumuloAnnotationSerializerTest {
         assertAnnotationsEqual(expectedAnnotation, observedAnnotation);
     }
 
+    @Test
+    public void testAnnotationSerializerDeserializeWithSegmentWithoutValues() throws AnnotationSerializationException, InvalidProtocolBufferException {
+        Annotation baseAnnotation = AnnotationUtils.injectAllHashes(generateTestAnnotation());
+        Annotation.Builder annotationBuilder = baseAnnotation.toBuilder();
+        annotationBuilder.getSegmentsBuilder(0).clearValues();
+        Annotation expectedAnnotation = annotationBuilder.build();
+
+        AnnotationSerializer<Iterator<Map.Entry<Key,Value>>,Annotation> serializer = new AccumuloAnnotationSerializer();
+        Iterator<Map.Entry<Key,Value>> results = serializer.serialize(expectedAnnotation);
+        assertNotNull(results);
+
+        final List<Map.Entry<Key,Value>> savedResults = new ArrayList<>();
+        while (results.hasNext()) {
+            savedResults.add(results.next());
+        }
+        assertFalse(savedResults.isEmpty());
+
+        Annotation observedAnnotation = serializer.deserialize(savedResults.iterator());
+
+        assertSerialization(expectedAnnotation, savedResults.iterator());
+        assertAnnotationsEqual(expectedAnnotation, observedAnnotation);
+        assertTrue(observedAnnotation.getSegments(0).getValuesList().isEmpty());
+    }
+
     private void assertSerialization(Annotation expected, Iterator<Map.Entry<Key,Value>> results) throws InvalidProtocolBufferException {
         final Segment expectedSegment = expected.getSegments(0);
         final String expectedCf = expected.getDataType() + NULL + expected.getUid() + NULL + expected.getAnnotationType();
