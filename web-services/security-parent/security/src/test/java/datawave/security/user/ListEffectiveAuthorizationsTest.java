@@ -1,8 +1,15 @@
 package datawave.security.user;
 
-import static org.easymock.EasyMock.expect;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -13,8 +20,6 @@ import java.util.Set;
 import javax.ejb.EJBContext;
 import javax.enterprise.inject.Instance;
 
-import org.easymock.EasyMock;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +50,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = {ListEffectiveAuthorizationsTest.Config.class})
-public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
+public class ListEffectiveAuthorizationsTest {
     private static ResponseObjectFactory mockResponseObjectFactory;
     private static EJBContext mockEJBContext;
     private static CredentialsCacheBean mockCredentialsCache;
@@ -56,39 +61,23 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
 
     @BeforeAll
     public static void setupStatic() {
-        mockResponseObjectFactory = EasyMock.createMock(ResponseObjectFactory.class);
-        mockEJBContext = EasyMock.createMock(EJBContext.class);
-        mockCredentialsCache = EasyMock.createMock(CredentialsCacheBean.class);
-        mockElytronCacheManager = EasyMock.createMock(ElytronCacheManager.class);
-        mockCachedDatawaveUserService = EasyMock.createMock(Instance.class);
-        mockAccumuloConnectionFactory = EasyMock.createMock(AccumuloConnectionFactory.class);
-        mockRemoteUserOperations1 = EasyMock.createMock(UserOperations.class);
+        mockResponseObjectFactory = mock(ResponseObjectFactory.class);
+        mockEJBContext = mock(EJBContext.class);
+        mockCredentialsCache = mock(CredentialsCacheBean.class);
+        mockElytronCacheManager = mock(ElytronCacheManager.class);
+        mockCachedDatawaveUserService = mock(Instance.class);
+        mockAccumuloConnectionFactory = mock(AccumuloConnectionFactory.class);
+        mockRemoteUserOperations1 = mock(UserOperations.class);
     }
 
-    @Override
-    public void replayAll() {
-        super.replayAll();
-        EasyMock.replay(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockElytronCacheManager, mockCachedDatawaveUserService,
-                        mockAccumuloConnectionFactory, mockRemoteUserOperations1);
-    }
-
-    @Override
-    public void verifyAll() {
-        super.verifyAll();
-        EasyMock.verify(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockElytronCacheManager, mockCachedDatawaveUserService,
-                        mockAccumuloConnectionFactory, mockRemoteUserOperations1);
-    }
-
-    @Override
-    public void resetAll() {
-        super.resetAll();
-        EasyMock.reset(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockElytronCacheManager, mockCachedDatawaveUserService,
+    private void resetMocks() {
+        reset(mockResponseObjectFactory, mockEJBContext, mockCredentialsCache, mockElytronCacheManager, mockCachedDatawaveUserService,
                         mockAccumuloConnectionFactory, mockRemoteUserOperations1);
     }
 
     @AfterEach
     public void cleanup() {
-        resetAll();
+        resetMocks();
     }
 
     @Configuration
@@ -156,14 +145,13 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         DatawaveUser p2 = new DatawaveUser(p2dn, DatawaveUser.UserType.SERVER, Sets.newHashSet("X", "Y", "Z"), null, null, System.currentTimeMillis());
         DatawavePrincipal remoteUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p1, p2));
 
-        expect(mockResponseObjectFactory.getAuthorizationsList()).andReturn(new DefaultAuthorizationsList());
-        expect(mockRemoteUserOperations1.getRemoteUser(proxiedUserPrincipal)).andReturn(remoteUserPrincipal);
-
-        replayAll();
+        doReturn(new DefaultAuthorizationsList()).when(mockResponseObjectFactory).getAuthorizationsList();
+        doReturn(remoteUserPrincipal).when(mockRemoteUserOperations1).getRemoteUser(proxiedUserPrincipal);
 
         AuthorizationsListBase result = uob.listEffectiveAuthorizations(proxiedUserPrincipal);
 
-        verifyAll();
+        verify(mockResponseObjectFactory, times(1)).getAuthorizationsList();
+        verify(mockRemoteUserOperations1, times(1)).getRemoteUser(proxiedUserPrincipal);
 
         Set<String> expectedUsers = new HashSet<>();
         expectedUsers.add(userDN.subjectDN());
@@ -174,6 +162,28 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
             assertTrue(expectedUsers.remove(pair.subjectDN));
         }
         assertTrue(expectedUsers.isEmpty());
+
+        if (mockAccumuloConnectionFactory != null && mockingDetails(mockAccumuloConnectionFactory).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumuloConnectionFactory));
+        }
+        if (mockCachedDatawaveUserService != null && mockingDetails(mockCachedDatawaveUserService).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCachedDatawaveUserService));
+        }
+        if (mockCredentialsCache != null && mockingDetails(mockCredentialsCache).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCredentialsCache));
+        }
+        if (mockEJBContext != null && mockingDetails(mockEJBContext).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockEJBContext));
+        }
+        if (mockElytronCacheManager != null && mockingDetails(mockElytronCacheManager).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockElytronCacheManager));
+        }
+        if (mockRemoteUserOperations1 != null && mockingDetails(mockRemoteUserOperations1).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockRemoteUserOperations1));
+        }
+        if (mockResponseObjectFactory != null && mockingDetails(mockResponseObjectFactory).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockResponseObjectFactory));
+        }
     }
 
     @Test
@@ -189,14 +199,13 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         DatawaveUser p2 = new DatawaveUser(p2dn, DatawaveUser.UserType.SERVER, Sets.newHashSet("X", "Y", "Z"), null, null, System.currentTimeMillis());
         DatawavePrincipal remoteUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p2));
 
-        expect(mockResponseObjectFactory.getAuthorizationsList()).andReturn(new DefaultAuthorizationsList());
-        expect(mockRemoteUserOperations1.getRemoteUser(proxiedUserPrincipal)).andReturn(remoteUserPrincipal);
-
-        replayAll();
+        doReturn(new DefaultAuthorizationsList()).when(mockResponseObjectFactory).getAuthorizationsList();
+        doReturn(remoteUserPrincipal).when(mockRemoteUserOperations1).getRemoteUser(proxiedUserPrincipal);
 
         AuthorizationsListBase result = uob.listEffectiveAuthorizations(proxiedUserPrincipal);
 
-        verifyAll();
+        verify(mockResponseObjectFactory, times(1)).getAuthorizationsList();
+        verify(mockRemoteUserOperations1, times(1)).getRemoteUser(proxiedUserPrincipal);
 
         Set<String> expectedUsers = new HashSet<>();
         expectedUsers.add(userDN.subjectDN());
@@ -207,6 +216,28 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
             assertTrue(expectedUsers.remove(pair.subjectDN));
         }
         assertTrue(expectedUsers.isEmpty());
+
+        if (mockAccumuloConnectionFactory != null && mockingDetails(mockAccumuloConnectionFactory).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumuloConnectionFactory));
+        }
+        if (mockCachedDatawaveUserService != null && mockingDetails(mockCachedDatawaveUserService).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCachedDatawaveUserService));
+        }
+        if (mockCredentialsCache != null && mockingDetails(mockCredentialsCache).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCredentialsCache));
+        }
+        if (mockEJBContext != null && mockingDetails(mockEJBContext).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockEJBContext));
+        }
+        if (mockElytronCacheManager != null && mockingDetails(mockElytronCacheManager).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockElytronCacheManager));
+        }
+        if (mockRemoteUserOperations1 != null && mockingDetails(mockRemoteUserOperations1).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockRemoteUserOperations1));
+        }
+        if (mockResponseObjectFactory != null && mockingDetails(mockResponseObjectFactory).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockResponseObjectFactory));
+        }
     }
 
     @Test
@@ -220,14 +251,13 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         DatawavePrincipal proxiedUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p1));
         DatawavePrincipal remoteUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p1));
 
-        expect(mockResponseObjectFactory.getAuthorizationsList()).andReturn(new DefaultAuthorizationsList());
-        expect(mockRemoteUserOperations1.getRemoteUser(proxiedUserPrincipal)).andReturn(remoteUserPrincipal);
-
-        replayAll();
+        doReturn(new DefaultAuthorizationsList()).when(mockResponseObjectFactory).getAuthorizationsList();
+        doReturn(remoteUserPrincipal).when(mockRemoteUserOperations1).getRemoteUser(proxiedUserPrincipal);
 
         AuthorizationsListBase result = uob.listEffectiveAuthorizations(proxiedUserPrincipal);
 
-        verifyAll();
+        verify(mockResponseObjectFactory, times(1)).getAuthorizationsList();
+        verify(mockRemoteUserOperations1, times(1)).getRemoteUser(proxiedUserPrincipal);
 
         Set<String> expectedUsers = new HashSet<>();
         expectedUsers.add(userDN.subjectDN());
@@ -238,6 +268,28 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
             assertTrue(expectedUsers.remove(pair.subjectDN));
         }
         assertTrue(expectedUsers.isEmpty());
+
+        if (mockAccumuloConnectionFactory != null && mockingDetails(mockAccumuloConnectionFactory).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumuloConnectionFactory));
+        }
+        if (mockCachedDatawaveUserService != null && mockingDetails(mockCachedDatawaveUserService).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCachedDatawaveUserService));
+        }
+        if (mockCredentialsCache != null && mockingDetails(mockCredentialsCache).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCredentialsCache));
+        }
+        if (mockEJBContext != null && mockingDetails(mockEJBContext).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockEJBContext));
+        }
+        if (mockElytronCacheManager != null && mockingDetails(mockElytronCacheManager).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockElytronCacheManager));
+        }
+        if (mockRemoteUserOperations1 != null && mockingDetails(mockRemoteUserOperations1).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockRemoteUserOperations1));
+        }
+        if (mockResponseObjectFactory != null && mockingDetails(mockResponseObjectFactory).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockResponseObjectFactory));
+        }
     }
 
     /*
@@ -255,14 +307,13 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
         DatawavePrincipal proxiedUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user));
         DatawavePrincipal remoteUserPrincipal = new DatawavePrincipal(Lists.newArrayList(filteredUser));
 
-        expect(mockResponseObjectFactory.getAuthorizationsList()).andReturn(new DefaultAuthorizationsList());
-        expect(mockRemoteUserOperations1.getRemoteUser(proxiedUserPrincipal)).andReturn(remoteUserPrincipal);
-
-        replayAll();
+        doReturn(new DefaultAuthorizationsList()).when(mockResponseObjectFactory).getAuthorizationsList();
+        doReturn(remoteUserPrincipal).when(mockRemoteUserOperations1).getRemoteUser(proxiedUserPrincipal);
 
         AuthorizationsListBase result = uob.listEffectiveAuthorizations(proxiedUserPrincipal);
 
-        verifyAll();
+        verify(mockResponseObjectFactory, times(1)).getAuthorizationsList();
+        verify(mockRemoteUserOperations1, times(1)).getRemoteUser(proxiedUserPrincipal);
 
         Set<String> expectedUsers = new HashSet<>();
         expectedUsers.add(userDN.subjectDN());
@@ -272,6 +323,28 @@ public class ListEffectiveAuthorizationsTest extends EasyMockSupport {
             assertTrue(expectedUsers.remove(pair.subjectDN));
         }
         assertTrue(expectedUsers.isEmpty());
+
+        if (mockAccumuloConnectionFactory != null && mockingDetails(mockAccumuloConnectionFactory).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumuloConnectionFactory));
+        }
+        if (mockCachedDatawaveUserService != null && mockingDetails(mockCachedDatawaveUserService).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCachedDatawaveUserService));
+        }
+        if (mockCredentialsCache != null && mockingDetails(mockCredentialsCache).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCredentialsCache));
+        }
+        if (mockEJBContext != null && mockingDetails(mockEJBContext).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockEJBContext));
+        }
+        if (mockElytronCacheManager != null && mockingDetails(mockElytronCacheManager).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockElytronCacheManager));
+        }
+        if (mockRemoteUserOperations1 != null && mockingDetails(mockRemoteUserOperations1).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockRemoteUserOperations1));
+        }
+        if (mockResponseObjectFactory != null && mockingDetails(mockResponseObjectFactory).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockResponseObjectFactory));
+        }
     }
 
     private static class StubbedCredentialsCacheBean extends CredentialsCacheBean {

@@ -2,12 +2,19 @@ package datawave.ingest.mapreduce.job.reindex;
 
 import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_END;
 import static datawave.ingest.mapreduce.job.reindex.ShardReindexJob.FI_START;
-import static org.easymock.EasyMock.expect;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -24,22 +31,21 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.job.util.AccumuloUtil;
 import datawave.util.accumulo.RFileUtil;
 
-public class ShardReindexJobTest extends EasyMockSupport {
+public class ShardReindexJobTest {
 
     private AccumuloUtil accumuloUtil;
     private RFileUtil rFileUtil;
 
     @BeforeEach
     public void setup() {
-        accumuloUtil = createMock(AccumuloUtil.class);
-        rFileUtil = createMock(RFileUtil.class);
+        accumuloUtil = mock(AccumuloUtil.class);
+        rFileUtil = mock(RFileUtil.class);
     }
 
     private Collection<Range> buildRanges(String row, int shards) {
@@ -64,40 +70,45 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
     @Test
     public void oneDayRange_test() throws ParseException {
-        replayAll();
 
         Collection<Range> ranges = ShardReindexJob.buildFiRanges("20230925", "20230925", 5);
-
-        verifyAll();
 
         List<Range> expected = new ArrayList<>();
         expected.addAll(buildRanges("20230925", 5));
 
         verifyRanges(ranges, expected);
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
     public void twoDayRange_test() throws ParseException {
-        replayAll();
 
         Collection<Range> ranges = ShardReindexJob.buildFiRanges("20230925", "20230926", 5);
-
-        verifyAll();
 
         List<Range> expected = new ArrayList<>();
         expected.addAll(buildRanges("20230925", 5));
         expected.addAll(buildRanges("20230926", 5));
 
         verifyRanges(ranges, expected);
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
     public void oneWeekRange_test() throws ParseException {
-        replayAll();
 
         Collection<Range> ranges = ShardReindexJob.buildFiRanges("20230901", "20230907", 5);
-
-        verifyAll();
 
         List<Range> expected = new ArrayList<>();
         expected.addAll(buildRanges("20230901", 5));
@@ -109,35 +120,50 @@ public class ShardReindexJobTest extends EasyMockSupport {
         expected.addAll(buildRanges("20230907", 5));
 
         verifyRanges(ranges, expected);
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
     public void monthRollover_test() throws ParseException {
-        replayAll();
 
         Collection<Range> ranges = ShardReindexJob.buildFiRanges("20230831", "20230901", 5);
-
-        verifyAll();
 
         List<Range> expected = new ArrayList<>();
         expected.addAll(buildRanges("20230831", 5));
         expected.addAll(buildRanges("20230901", 5));
 
         verifyRanges(ranges, expected);
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
     public void singleSplit_test() throws ParseException {
-        replayAll();
 
         Collection<Range> ranges = ShardReindexJob.buildFiRanges("20230831", "20230831", 1);
-
-        verifyAll();
 
         List<Range> expected = new ArrayList<>();
         expected.addAll(buildRanges("20230831", 1));
 
         verifyRanges(ranges, expected);
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
@@ -147,13 +173,11 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
     @Test
     public void buildSplittableRanges_noTableTest() throws Throwable {
-        AccumuloUtil accumuloUtil = createMock(AccumuloUtil.class);
-        RFileUtil rFileUtil = createMock(RFileUtil.class);
+        AccumuloUtil accumuloUtil = mock(AccumuloUtil.class);
+        RFileUtil rFileUtil = mock(RFileUtil.class);
 
-        expect(accumuloUtil.getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122"))
-                        .andThrow(new RuntimeException("some error", new AccumuloException("table not found")));
-
-        replayAll();
+        doThrow(new RuntimeException("some error", new AccumuloException("table not found"))).when(accumuloUtil).getFilesFromMetadataBySplit("myShardTable",
+                        "20241121", "20241122");
 
         assertThrows(AccumuloException.class, () -> {
             try {
@@ -164,33 +188,45 @@ public class ShardReindexJobTest extends EasyMockSupport {
             }
         });
 
-        verifyAll();
+        verify(accumuloUtil, times(1)).getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122");
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
     public void buildSplittableRanges_noFilesTest() throws Throwable {
-        AccumuloUtil accumuloUtil = createMock(AccumuloUtil.class);
-        RFileUtil rFileUtil = createMock(RFileUtil.class);
+        AccumuloUtil accumuloUtil = mock(AccumuloUtil.class);
+        RFileUtil rFileUtil = mock(RFileUtil.class);
 
-        expect(accumuloUtil.getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122")).andReturn(Collections.emptyList());
-
-        replayAll();
+        doReturn(Collections.emptyList()).when(accumuloUtil).getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122");
 
         Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
                         "20241121", "20241122");
 
-        verifyAll();
+        verify(accumuloUtil, times(1)).getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122");
 
         assertTrue(ranges.size() == 0);
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     private void expectSplittableRangeSetup(Range result) throws AccumuloException, IOException {
         List<Map.Entry<String,List<String>>> results = new ArrayList<>();
         results.add(new AbstractMap.SimpleImmutableEntry<>("20241121", Collections.singletonList("/some/path/to/an/rfile")));
 
-        expect(accumuloUtil.getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122")).andReturn(results);
-        expect(rFileUtil.getRangeSplits(Collections.singletonList("/some/path/to/an/rfile"), new Key("20241121"),
-                        new Key("20241121", "" + '\uFFFF', "" + '\uFFFF'), -1, Function.identity())).andReturn(Collections.singletonList(result));
+        doReturn(results).when(accumuloUtil).getFilesFromMetadataBySplit("myShardTable", "20241121", "20241122");
+        doReturn(Collections.singletonList(result)).when(rFileUtil).getRangeSplits(Collections.singletonList("/some/path/to/an/rfile"), new Key("20241121"),
+                        new Key("20241121", "" + '\uFFFF', "" + '\uFFFF'), -1, Function.identity());
     }
 
     @Test
@@ -198,24 +234,31 @@ public class ShardReindexJobTest extends EasyMockSupport {
         Range splitRange = new Range();
         expectSplittableRangeSetup(splitRange);
 
-        replayAll();
-
         Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
                         "20241121", "20241122");
 
-        verifyAll();
-
         assertTrue(ranges.size() == 1);
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
     public void buildSplitRanges_sameStartEndTest() {
-        replayAll();
 
         assertThrows(IllegalArgumentException.class, () -> ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1,
                         ShardReindexMapper.BatchMode.NONE, "myShardTable", "20241121", "20241121"));
 
-        verifyAll();
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
@@ -226,17 +269,20 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
         expectSplittableRangeSetup(splitRange);
 
-        replayAll();
-
         Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
                         "20241121", "20241122", true, false, false, Collections.emptyList(), Collections.emptyList());
-
-        verifyAll();
 
         assertEquals(2, ranges.size());
         Iterator<Range> itr = ranges.iterator();
         assertEquals(expected1, itr.next());
         assertEquals(expected2, itr.next());
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
@@ -247,17 +293,20 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
         expectSplittableRangeSetup(splitRange);
 
-        replayAll();
-
         Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
                         "20241121", "20241122", false, true, false, Collections.emptyList(), Collections.emptyList());
-
-        verifyAll();
 
         assertEquals(2, ranges.size());
         Iterator<Range> itr = ranges.iterator();
         assertEquals(expected1, itr.next());
         assertEquals(expected2, itr.next());
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
@@ -268,17 +317,20 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
         expectSplittableRangeSetup(splitRange);
 
-        replayAll();
-
         Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
                         "20241121", "20241122", false, false, true, Collections.emptyList(), Collections.emptyList());
-
-        verifyAll();
 
         assertEquals(2, ranges.size());
         Iterator<Range> itr = ranges.iterator();
         assertEquals(expected1, itr.next());
         assertEquals(expected2, itr.next());
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
@@ -289,17 +341,20 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
         expectSplittableRangeSetup(splitRange);
 
-        replayAll();
-
         Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
                         "20241121", "20241122", false, false, false, Collections.emptyList(), Collections.singletonList("sample"));
-
-        verifyAll();
 
         assertEquals(2, ranges.size());
         Iterator<Range> itr = ranges.iterator();
         assertEquals(expected1, itr.next());
         assertEquals(expected2, itr.next());
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
@@ -309,8 +364,6 @@ public class ShardReindexJobTest extends EasyMockSupport {
         Range expected2 = new Range(new Key("20241121", "sample" + '\u0001'), true, new Key("20241121" + '\u0000'), false);
 
         expectSplittableRangeSetup(splitRange);
-
-        replayAll();
 
         assertThrows(IllegalArgumentException.class,
                         () -> ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
@@ -325,17 +378,20 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
         expectSplittableRangeSetup(splitRange);
 
-        replayAll();
-
         Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
                         "20241121", "20241122", true, true, true, Collections.singletonList("sample"), Collections.emptyList());
-
-        verifyAll();
 
         // dataType only
         assertEquals(1, ranges.size());
         Iterator<Range> itr = ranges.iterator();
         assertEquals(expected1, itr.next());
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test
@@ -348,12 +404,8 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
         expectSplittableRangeSetup(splitRange);
 
-        replayAll();
-
         Collection<Range> ranges = ShardReindexJob.buildSplittableRanges(accumuloUtil, rFileUtil, 1, -1, ShardReindexMapper.BatchMode.NONE, "myShardTable",
                         "20241121", "20241122", false, false, false, Collections.singletonList("sample"), Collections.emptyList());
-
-        verifyAll();
 
         // sort so the order is predictable
         List<Range> sorted = new ArrayList<>(ranges);
@@ -366,6 +418,13 @@ public class ShardReindexJobTest extends EasyMockSupport {
         assertEquals(expected2, itr.next());
         assertEquals(expected3, itr.next());
         assertEquals(expected4, itr.next());
+
+        if (accumuloUtil != null && mockingDetails(accumuloUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(accumuloUtil));
+        }
+        if (rFileUtil != null && mockingDetails(rFileUtil).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(rFileUtil));
+        }
     }
 
     @Test

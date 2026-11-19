@@ -3,6 +3,13 @@ package datawave.resteasy.interceptor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.lang.annotation.Annotation;
 
@@ -10,11 +17,6 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
-import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.easymock.MockType;
 import org.jboss.resteasy.core.ResourceMethodInvoker;
 import org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl;
 import org.jboss.resteasy.core.interception.jaxrs.ResponseContainerRequestContext;
@@ -24,20 +26,23 @@ import org.jboss.resteasy.specimpl.BuiltResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import datawave.annotation.GenerateQuerySessionId;
 
 /**
  *
  */
-@ExtendWith(EasyMockExtension.class)
-public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
+@ExtendWith(MockitoExtension.class)
+public class CreateQuerySessionIDFilterTest {
 
     private CreateQuerySessionIDFilter filter;
     private ResponseContainerRequestContext request;
     private ContainerResponseContextImpl response;
     private GenerateQuerySessionId annotation;
-    @Mock(type = MockType.STRICT)
+    @Mock
     private ResourceMethodInvoker method;
 
     @BeforeEach
@@ -65,8 +70,7 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
 
     @Test
     public void filter() throws Exception {
-        EasyMock.expect(method.getMethodAnnotations()).andReturn(new Annotation[] {annotation});
-        replayAll();
+        doReturn(new Annotation[] {annotation}).when(method).getMethodAnnotations();
 
         CreateQuerySessionIDFilter.QUERY_ID.set("1234");
         filter.filter(request, response);
@@ -76,17 +80,20 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         assertEquals("query-session-id", responseCookie.getName());
         assertEquals("/test/path/1234", responseCookie.getPath());
 
-        verifyAll();
+        verify(method, times(1)).getMethodAnnotations();
+
+        if (method != null && mockingDetails(method).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(method));
+        }
     }
 
     @Test
     public void filterNoQueryId() throws Exception {
-        EasyMock.expect(method.getMethodAnnotations()).andReturn(new Annotation[] {annotation});
+        doReturn(new Annotation[] {annotation}).when(method).getMethodAnnotations();
         // More method calls due to logging the error about QUERY_ID threadlocal not set.
-        EasyMock.expect(method.getResourceClass()).andReturn(null);
+        doReturn(null).when(method).getResourceClass();
         // noinspection ConfusingArgumentToVarargsMethod
-        EasyMock.expect(method.getMethod()).andReturn(getClass().getMethod("filterNoQueryId"));
-        replayAll();
+        doReturn(getClass().getMethod("filterNoQueryId")).when(method).getMethod();
 
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
         filter.filter(request, response);
@@ -96,14 +103,20 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         assertEquals("query-session-id", responseCookie.getName());
         assertEquals("/test/path/", responseCookie.getPath());
 
-        verifyAll();
+        InOrder order = inOrder(method);
+        order.verify(method).getMethodAnnotations();
+        order.verify(method).getResourceClass();
+        order.verify(method).getMethod();
+
+        if (method != null && mockingDetails(method).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(method));
+        }
     }
 
     @Test
     public void filterServerError() throws Exception {
         response.setStatusInfo(Response.Status.INTERNAL_SERVER_ERROR);
-        EasyMock.expect(method.getMethodAnnotations()).andReturn(new Annotation[] {annotation});
-        replayAll();
+        doReturn(new Annotation[] {annotation}).when(method).getMethodAnnotations();
 
         CreateQuerySessionIDFilter.QUERY_ID.set("1234");
         filter.filter(request, response);
@@ -111,14 +124,17 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         NewCookie responseCookie = (NewCookie) response.getHeaders().getFirst("Set-Cookie");
         assertNull(responseCookie, "Cookie present when we shouldn't have one.");
 
-        verifyAll();
+        verify(method, times(1)).getMethodAnnotations();
+
+        if (method != null && mockingDetails(method).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(method));
+        }
     }
 
     @Test
     public void filterClientError() throws Exception {
         response.setStatusInfo(Response.Status.BAD_REQUEST);
-        EasyMock.expect(method.getMethodAnnotations()).andReturn(new Annotation[] {annotation});
-        replayAll();
+        doReturn(new Annotation[] {annotation}).when(method).getMethodAnnotations();
 
         CreateQuerySessionIDFilter.QUERY_ID.set("1234");
         filter.filter(request, response);
@@ -126,6 +142,10 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         NewCookie responseCookie = (NewCookie) response.getHeaders().getFirst("Set-Cookie");
         assertNull(responseCookie, "Cookie present when we shouldn't have one.");
 
-        verifyAll();
+        verify(method, times(1)).getMethodAnnotations();
+
+        if (method != null && mockingDetails(method).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(method));
+        }
     }
 }

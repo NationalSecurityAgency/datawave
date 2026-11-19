@@ -12,6 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -41,7 +46,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.checkerframework.checker.nullness.qual.NonNull;
-import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit5.ArquillianExtension;
@@ -268,7 +272,7 @@ public class AnnotationManagerBeanFunctionalTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         log.setLevel(Level.TRACE);
 
-        ctx = EasyMock.createMock(EJBContext.class);
+        ctx = mock(EJBContext.class);
 
         //@formatter:off
         DatawaveUser user = new DatawaveUser(
@@ -282,32 +286,26 @@ public class AnnotationManagerBeanFunctionalTest {
         //@formatter:on
 
         defaultPrincipal = new DatawavePrincipal(List.of(user));
-        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(defaultPrincipal).times(1);
+        doReturn(defaultPrincipal).when(ctx).getCallerPrincipal();
 
-        connectionFactory = EasyMock.createMock(AccumuloConnectionFactory.class);
-        EasyMock.expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(new HashMap<>()).anyTimes();
+        connectionFactory = mock(AccumuloConnectionFactory.class);
+        lenient().doNothing().when(connectionFactory).returnClient(any());
+        lenient().doReturn(new HashMap<>()).when(connectionFactory).getTrackingMap(any());
 
         //@formatter:off
-        EasyMock.expect(
-                connectionFactory.getClient(
-                        EasyMock.anyObject(),
-                        EasyMock.anyObject(),
-                        EasyMock.anyObject(),
-                        EasyMock.anyObject(),
-                        EasyMock.anyObject()
-                )
-        ).andReturn(client).anyTimes();
+        lenient().doReturn(client).when(connectionFactory).getClient(
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any()
+                );
         //@formatter:on
 
-        connectionFactory.returnClient(EasyMock.anyObject());
-        EasyMock.expectLastCall().anyTimes();
-
-        queryExecutorBean = EasyMock.createMock(QueryExecutorBean.class);
-        queryLogicFactory = EasyMock.createMock(QueryLogicFactory.class);
-        userOperations = EasyMock.createMock(UserOperations.class);
-        accumuloConnectionRequestBean = EasyMock.createMock(AccumuloConnectionRequestBean.class);
-
-        EasyMock.replay(ctx, connectionFactory);
+        queryExecutorBean = mock(QueryExecutorBean.class);
+        queryLogicFactory = mock(QueryLogicFactory.class);
+        userOperations = mock(UserOperations.class);
+        accumuloConnectionRequestBean = mock(AccumuloConnectionRequestBean.class);
 
         annotationManager = new AnnotationManagerBean();
 
@@ -619,9 +617,8 @@ public class AnnotationManagerBeanFunctionalTest {
         //@formatter:on
 
         DatawavePrincipal principal = new DatawavePrincipal(List.of(user));
-        EasyMock.reset(ctx);
-        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal).times(1);
-        EasyMock.replay(ctx);
+        reset(ctx);
+        doReturn(principal).when(ctx).getCallerPrincipal();
 
         Annotation testAnnotation = generatePrivateAnnotation();
         Annotation expectedAnnotation = AnnotationUtils.injectAllHashes(testAnnotation);
@@ -651,9 +648,8 @@ public class AnnotationManagerBeanFunctionalTest {
         //@formatter:on
 
         DatawavePrincipal privatePrincipal = new DatawavePrincipal(List.of(privateUser));
-        EasyMock.reset(ctx);
-        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(privatePrincipal).times(1);
-        EasyMock.replay(ctx);
+        reset(ctx);
+        doReturn(privatePrincipal).when(ctx).getCallerPrincipal();
 
         Response privateResponse = annotationManager.getAnnotation("DOCUMENT", "20130101_0/test/-1kfeoq.-80b5fs.r0262j", "A22496BE");
         assertResponseStatus(200, privateResponse);
@@ -674,9 +670,8 @@ public class AnnotationManagerBeanFunctionalTest {
         //@formatter:on
 
         DatawavePrincipal publicPrincipal = new DatawavePrincipal(List.of(publicUser));
-        EasyMock.reset(ctx);
-        EasyMock.expect(ctx.getCallerPrincipal()).andReturn(publicPrincipal).times(1);
-        EasyMock.replay(ctx);
+        reset(ctx);
+        doReturn(publicPrincipal).when(ctx).getCallerPrincipal();
 
         Response publicannotationResponse = annotationManager.getAnnotation("DOCUMENT", "20130102_0/test/-a4vymb.ntjagn.-pyz1jv", "A9F9A0B4");
         assertResponseStatus(404, publicannotationResponse);

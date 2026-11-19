@@ -1,12 +1,11 @@
 package datawave.query.tables.facets;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.anyString;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.getCurrentArguments;
-import static org.easymock.EasyMock.mock;
-import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 import java.util.Collections;
 import java.util.Set;
@@ -45,12 +44,10 @@ public class FacetCheckTest {
 
         ShardQueryConfiguration shardQueryConfiguration = mock(ShardQueryConfiguration.class);
         FacetedConfiguration facetedConfiguration = mock(FacetedConfiguration.class);
-        expect(facetedConfiguration.getFacetMetadataTableName()).andReturn("facetMetadata");
+        doReturn("facetMetadata").when(facetedConfiguration).getFacetMetadataTableName();
         MetadataHelper metadataHelper = mock(MetadataHelper.class);
-        expect(metadataHelper.isIndexed(anyString(), anyObject())).andAnswer(() -> indexedFields.contains(getCurrentArguments()[0]));
-        expect(metadataHelper.getFacets("facetMetadata")).andReturn(facets);
-
-        replay(shardQueryConfiguration, facetedConfiguration, metadataHelper);
+        doAnswer(invocation -> indexedFields.contains(invocation.getArguments()[0])).when(metadataHelper).isIndexed(anyString(), any());
+        doReturn(facets).when(metadataHelper).getFacets("facetMetadata");
 
         facetCheck = new FacetCheck(shardQueryConfiguration, facetedConfiguration, metadataHelper);
     }

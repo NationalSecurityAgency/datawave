@@ -98,7 +98,6 @@
         <version.datawave.query-metric-api>4.1.7</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.dnsjava>3.6.3</version.dnsjava>
-        <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
         <version.geoserver>2.26.3</version.geoserver>
         <version.geotools>28.1</version.geotools>
@@ -1470,18 +1469,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.easymock</groupId>
-                <artifactId>easymock</artifactId>
-                <version>${version.easymock}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>cglib</groupId>
-                        <artifactId>cglib-nodep</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.arquillian.container</groupId>
                 <artifactId>arquillian-weld-embedded</artifactId>
                 <version>${version.arquillian-weld-embedded}</version>
@@ -1900,6 +1887,7 @@
                                             <exclude>org.powermock:*</exclude>
                                             <exclude>junit:junit</exclude>
                                             <exclude>org.junit.vintage:junit-vintage-engine</exclude>
+                                            <exclude>org.easymock:*</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
@@ -1952,6 +1940,10 @@
                                     <restrictImports>
                                         <reason>Use Mockito instead of PowerMock</reason>
                                         <bannedImport>org.powermock.**</bannedImport>
+                                    </restrictImports>
+                                    <restrictImports>
+                                        <reason>Use Mockito instead of EasyMock</reason>
+                                        <bannedImport>org.easymock.**</bannedImport>
                                     </restrictImports>
                                 </rules>
                             </configuration>

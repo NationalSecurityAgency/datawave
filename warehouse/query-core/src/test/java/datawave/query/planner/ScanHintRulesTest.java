@@ -1,8 +1,13 @@
 package datawave.query.planner;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static org.easymock.EasyMock.expect;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,8 +21,6 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +41,7 @@ import datawave.query.planner.scanhints.IvaratorScanHint;
 import datawave.query.planner.scanhints.PriorityScanHintRule;
 import datawave.query.util.MetadataHelper;
 
-public class ScanHintRulesTest extends EasyMockSupport {
+public class ScanHintRulesTest {
     private MetadataHelper metadataHelper;
     private DefaultQueryPlanner planner;
     private ShardQueryConfiguration config;
@@ -57,20 +60,20 @@ public class ScanHintRulesTest extends EasyMockSupport {
     }
 
     private void setupMetadata() throws TableNotFoundException, InstantiationException, IllegalAccessException {
-        expect(metadataHelper.getIndexedFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
-        expect(metadataHelper.getHiddenFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
-        expect(metadataHelper.getReverseIndexedFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
-        expect(metadataHelper.getIndexOnlyFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
-        expect(metadataHelper.getAllFields(EasyMock.anyObject())).andReturn(Collections.singleton("A")).anyTimes();
-        expect(metadataHelper.getExpansionFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
-        expect(metadataHelper.getAllDatatypes()).andReturn(Collections.singleton(new LcNoDiacriticsType())).anyTimes();
-        expect(metadataHelper.getDatatypesForField("A", Collections.emptySet())).andReturn(Collections.singleton(new LcNoDiacriticsType())).anyTimes();
-        expect(metadataHelper.getAllNormalized()).andReturn(Collections.singleton("A")).anyTimes();
-        expect(metadataHelper.getNonEventFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
-        expect(metadataHelper.getCompositeToFieldMap(EasyMock.anyObject())).andReturn(ArrayListMultimap.create()).anyTimes();
-        expect(metadataHelper.getCompositeTransitionDateMap(EasyMock.anyObject())).andReturn(Collections.emptyMap()).anyTimes();
-        expect(metadataHelper.getCompositeFieldSeparatorMap(EasyMock.anyObject())).andReturn(Collections.emptyMap()).anyTimes();
-        expect(metadataHelper.getTermFrequencyFields(EasyMock.anyObject())).andReturn(Collections.emptySet()).anyTimes();
+        lenient().doReturn(Collections.emptySet()).when(metadataHelper).getIndexedFields(any());
+        lenient().doReturn(Collections.emptySet()).when(metadataHelper).getHiddenFields(any());
+        lenient().doReturn(Collections.emptySet()).when(metadataHelper).getReverseIndexedFields(any());
+        lenient().doReturn(Collections.emptySet()).when(metadataHelper).getIndexOnlyFields(any());
+        lenient().doReturn(Collections.singleton("A")).when(metadataHelper).getAllFields(any());
+        lenient().doReturn(Collections.emptySet()).when(metadataHelper).getExpansionFields(any());
+        lenient().doReturn(Collections.singleton(new LcNoDiacriticsType())).when(metadataHelper).getAllDatatypes();
+        lenient().doReturn(Collections.singleton(new LcNoDiacriticsType())).when(metadataHelper).getDatatypesForField("A", Collections.emptySet());
+        lenient().doReturn(Collections.singleton("A")).when(metadataHelper).getAllNormalized();
+        lenient().doReturn(Collections.emptySet()).when(metadataHelper).getNonEventFields(any());
+        lenient().doReturn(ArrayListMultimap.create()).when(metadataHelper).getCompositeToFieldMap(any());
+        lenient().doReturn(Collections.emptyMap()).when(metadataHelper).getCompositeTransitionDateMap(any());
+        lenient().doReturn(Collections.emptyMap()).when(metadataHelper).getCompositeFieldSeparatorMap(any());
+        lenient().doReturn(Collections.emptySet()).when(metadataHelper).getTermFrequencyFields(any());
     }
 
     @Test
@@ -93,13 +96,13 @@ public class ScanHintRulesTest extends EasyMockSupport {
 
         setupMetadata();
 
-        replayAll();
-
         planner.updateQueryTree(null, metadataHelper, null, config, JexlStringBuildingVisitor.buildQuery(query), new QueryImpl());
 
-        verifyAll();
-
         assertEquals(Collections.emptyMap(), config.getTableHints());
+
+        if (metadataHelper != null && mockingDetails(metadataHelper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(metadataHelper));
+        }
     }
 
     @Test
@@ -123,15 +126,15 @@ public class ScanHintRulesTest extends EasyMockSupport {
 
         setupMetadata();
 
-        replayAll();
-
         planner.updateQueryTree(null, metadataHelper, null, config, JexlStringBuildingVisitor.buildQuery(query), new QueryImpl());
-
-        verifyAll();
 
         assertEquals(Collections.singleton("shard"), config.getTableHints().keySet());
         assertEquals(Collections.singleton("scan_type"), config.getTableHints().get("shard").keySet());
         assertEquals("ivarator", config.getTableHints().get("shard").get("scan_type"));
+
+        if (metadataHelper != null && mockingDetails(metadataHelper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(metadataHelper));
+        }
     }
 
     @Test
@@ -162,15 +165,15 @@ public class ScanHintRulesTest extends EasyMockSupport {
 
         setupMetadata();
 
-        replayAll();
-
         planner.updateQueryTree(null, metadataHelper, null, config, JexlStringBuildingVisitor.buildQuery(query), new QueryImpl());
-
-        verifyAll();
 
         assertEquals(Collections.singleton("shard"), config.getTableHints().keySet());
         assertEquals(Collections.singleton("scan_type"), config.getTableHints().get("shard").keySet());
         assertEquals("ivarator", config.getTableHints().get("shard").get("scan_type"));
+
+        if (metadataHelper != null && mockingDetails(metadataHelper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(metadataHelper));
+        }
     }
 
     @Test
@@ -205,15 +208,15 @@ public class ScanHintRulesTest extends EasyMockSupport {
 
         setupMetadata();
 
-        replayAll();
-
         planner.updateQueryTree(null, metadataHelper, null, config, JexlStringBuildingVisitor.buildQuery(query), new QueryImpl());
-
-        verifyAll();
 
         assertEquals(Collections.singleton("shard"), config.getTableHints().keySet());
         assertEquals(Collections.singleton("scan_type"), config.getTableHints().get("shard").keySet());
         assertEquals("untouchable", config.getTableHints().get("shard").get("scan_type"));
+
+        if (metadataHelper != null && mockingDetails(metadataHelper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(metadataHelper));
+        }
     }
 
     @Test
@@ -248,16 +251,16 @@ public class ScanHintRulesTest extends EasyMockSupport {
 
         setupMetadata();
 
-        replayAll();
-
         planner.updateQueryTree(null, metadataHelper, null, config, JexlStringBuildingVisitor.buildQuery(query), new QueryImpl());
-
-        verifyAll();
 
         assertEquals(Collections.singleton("shard"), config.getTableHints().keySet());
         assertEquals(2, config.getTableHints().get("shard").keySet().size());
         assertEquals("ivarator", config.getTableHints().get("shard").get("scan_type"));
         assertEquals("1", config.getTableHints().get("shard").get("priority"));
+
+        if (metadataHelper != null && mockingDetails(metadataHelper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(metadataHelper));
+        }
     }
 
     private class ChinableScanHintRule extends PriorityScanHintRule {

@@ -2,12 +2,11 @@ package datawave.ingest.metadata;
 
 import static datawave.ingest.mapreduce.handler.DataTypeHandler.NULL_VALUE;
 import static datawave.ingest.metadata.RawRecordMetadata.DELIMITER;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.niceMock;
-import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -448,10 +447,9 @@ public class EventMetadataTest {
 
     // Return a new mock event.
     private RawRecordContainer createMockEvent(String type, long date, IngestHelperInterface helper) {
-        RawRecordContainer event = niceMock(RawRecordContainer.class);
-        expect(event.getDataType()).andReturn(new Type(type, helper.getClass(), null, null, 4, null)).anyTimes();
-        expect(event.getDate()).andReturn(date).anyTimes();
-        replay(event);
+        RawRecordContainer event = mock(RawRecordContainer.class);
+        lenient().doReturn(new Type(type, helper.getClass(), null, null, 4, null)).when(event).getDataType();
+        lenient().doReturn(date).when(event).getDate();
         return event;
     }
 

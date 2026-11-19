@@ -1,9 +1,16 @@
 package datawave.query.planner;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,7 +18,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +29,7 @@ import datawave.query.CloseableIterable;
 /**
  * Verify the relationship between configuration and blocking on the producer and consumer side of the ThreadedRangeBundlerIterator
  */
-public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
+public class ThreadedRangeBundlerIteratorTest {
     private CloseableIterable<QueryPlan> mockPlans;
     private Query query;
     private QueryData queryData;
@@ -36,7 +42,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         // enable to see logs
         // Configurator.setLevel(ThreadedRangeBundlerIterator.class, Level.TRACE);
 
-        mockPlans = createMock(CloseableIterable.class);
+        mockPlans = mock(CloseableIterable.class);
         query = new QueryImpl();
         queryData = new QueryData();
         plans = new ArrayList<>();
@@ -65,18 +71,20 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
         Iterator<QueryPlan> producerItr = plans.iterator();
         // do not limit speed off this iterator
-        expect(mockPlans.iterator()).andReturn(producerItr);
-
-        replayAll();
+        doReturn(producerItr).when(mockPlans).iterator();
 
         ThreadedRangeBundlerIterator itr = builder.build();
         // add a moment for the rangeConsumer to work otherwise the expectation for the iterator may fail
         Thread.sleep(250);
 
-        verifyAll();
+        verify(mockPlans, times(1)).iterator();
 
         // could not instantly consume the entire producer
         assertTrue(producerItr.hasNext());
+
+        if (mockPlans != null && mockingDetails(mockPlans).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockPlans));
+        }
     }
 
     @Test
@@ -88,20 +96,21 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
         Iterator<QueryPlan> producerItr = plans.iterator();
         // do not limit speed off this iterator
-        expect(mockPlans.iterator()).andReturn(producerItr);
-        mockPlans.close();
-        expectLastCall().times(0, 1);
-
-        replayAll();
+        doReturn(producerItr).when(mockPlans).iterator();
 
         ThreadedRangeBundlerIterator itr = builder.build();
         // add a moment for the rangeConsumer to work otherwise the expectation for the iterator may fail
         Thread.sleep(250);
 
-        verifyAll();
+        verify(mockPlans, times(1)).iterator();
+        verify(mockPlans, atMost(1)).close();
 
         // the rangeConsumer consumed the entire producer
         assertFalse(producerItr.hasNext());
+
+        if (mockPlans != null && mockingDetails(mockPlans).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockPlans));
+        }
     }
 
     @Test
@@ -111,9 +120,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         Iterator<QueryPlan> producerItr = plans.iterator();
         producerItr = delayIterator(producerItr, 1000);
 
-        expect(mockPlans.iterator()).andReturn(producerItr);
-
-        replayAll();
+        doReturn(producerItr).when(mockPlans).iterator();
 
         ThreadedRangeBundlerIterator itr = builder.build();
         long start = System.currentTimeMillis();
@@ -122,7 +129,11 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         assertTrue((end - start) >= 1000);
         assertTrue((end - start) <= 1500);
 
-        verifyAll();
+        verify(mockPlans, times(1)).iterator();
+
+        if (mockPlans != null && mockingDetails(mockPlans).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockPlans));
+        }
     }
 
     @Test
@@ -133,12 +144,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
         // add a tiny delay to ensure that there is time to get inside the while loop before the rangeConsumer finishes
         // this is necessary to prevent the test from intermittently failing on some hardware and jvms
-        expect(mockPlans.iterator()).andReturn(delayIterator(Collections.emptyIterator(), delay));
-
-        mockPlans.close();
-        expectLastCall().times(0, 1);
-
-        replayAll();
+        doReturn(delayIterator(Collections.emptyIterator(), delay)).when(mockPlans).iterator();
 
         ThreadedRangeBundlerIterator itr = builder.build();
         long start = System.currentTimeMillis();
@@ -147,7 +153,12 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         assertTrue(end - start >= delay);
         // use a generous upper bound to avoid intermittent failures from thread scheduling and GC pauses
         assertTrue(end - start < delay + 500);
-        verifyAll();
+        verify(mockPlans, times(1)).iterator();
+        verify(mockPlans, atMost(1)).close();
+
+        if (mockPlans != null && mockingDetails(mockPlans).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockPlans));
+        }
     }
 
     @Test
@@ -159,11 +170,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         plan.ranges = Collections.emptyList();
         plan.queryTreeString = "abc";
 
-        expect(mockPlans.iterator()).andReturn(List.of(plan).iterator());
-        mockPlans.close();
-        expectLastCall().times(0, 1);
-
-        replayAll();
+        doReturn(List.of(plan).iterator()).when(mockPlans).iterator();
 
         ThreadedRangeBundlerIterator itr = builder.build();
         long start = System.currentTimeMillis();
@@ -172,7 +179,12 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
 
         assertTrue(end - start < maxWaitValue);
 
-        verifyAll();
+        verify(mockPlans, times(1)).iterator();
+        verify(mockPlans, atMost(1)).close();
+
+        if (mockPlans != null && mockingDetails(mockPlans).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockPlans));
+        }
     }
 
     @Test
@@ -185,9 +197,7 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         // simulate a delay on producing each range
         Iterator<QueryPlan> wrapped = delayIterator(itr, delay);
 
-        expect(mockPlans.iterator()).andReturn(wrapped);
-
-        replayAll();
+        doReturn(wrapped).when(mockPlans).iterator();
 
         ThreadedRangeBundlerIterator trbi = builder.build();
         long start = System.currentTimeMillis();
@@ -206,17 +216,17 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         // total time will be the sum of the delay + overhead
         assertTrue(total >= (delay + overhead));
 
-        verifyAll();
+        verify(mockPlans, times(1)).iterator();
+
+        if (mockPlans != null && mockingDetails(mockPlans).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockPlans));
+        }
     }
 
     @Test
     public void failFastOnExhaustedTest() throws IOException {
-        mockPlans.close();
-        // need the following line otherwise you end up with weird things like this:
-        // Expectation failure on verify: CloseableIterable.close(): expected: 1, actual: 1
-        expect(mockPlans).andVoid().anyTimes();
-        expect(mockPlans.iterator()).andReturn(Collections.emptyIterator());
-        replayAll();
+        lenient().doNothing().when(mockPlans).close();
+        doReturn(Collections.emptyIterator()).when(mockPlans).iterator();
 
         ThreadedRangeBundlerIterator trbi = builder.build();
 
@@ -225,7 +235,11 @@ public class ThreadedRangeBundlerIteratorTest extends EasyMockSupport {
         long end = System.currentTimeMillis();
         // arbitrary fast time less than any previous poll time, actual time probably 1 but to keep this unit test predictable
         assertTrue(end - start < 20);
-        verifyAll();
+        verify(mockPlans, times(1)).iterator();
+
+        if (mockPlans != null && mockingDetails(mockPlans).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockPlans));
+        }
     }
 
     private Iterator<QueryPlan> delayIterator(Iterator<QueryPlan> itr, long delay) {

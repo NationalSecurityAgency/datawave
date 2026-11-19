@@ -1,11 +1,14 @@
 package datawave.ingest.mapreduce.job.reindex;
 
 import static datawave.ingest.mapreduce.job.reindex.ShardedDataGenerator.createIngestFiles;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.isA;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +29,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.Counters;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +38,7 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 
-public class ShardReindexVerificationMapperTest extends EasyMockSupport {
+public class ShardReindexVerificationMapperTest {
 
     @TempDir
     Path folder;
@@ -56,12 +58,12 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
     public void setup() throws AccumuloSecurityException {
         mapper = new ShardReindexVerificationMapper();
         config = new Configuration();
-        context = createMock(Mapper.Context.class);
+        context = mock(Mapper.Context.class);
 
         instance = new InMemoryInstance(this.getClass().toString());
         accumuloClient = new InMemoryAccumuloClient("root", instance);
 
-        expect(context.getConfiguration()).andReturn(config).anyTimes();
+        lenient().doReturn(config).when(context).getConfiguration();
 
         dataOptions = new ArrayList<>();
         dataOptions.add("");
@@ -85,67 +87,72 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
 
     @Test
     public void setupTest_noSources() {
-        replayAll();
 
         assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_oneSource1Accumulo() {
-        replayAll();
 
         config.set("source1", "ACCUMULO");
         assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_oneSource1File() {
-        replayAll();
 
         config.set("source1", "FILE");
         assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_oneSource2Accumulo() {
-        replayAll();
 
         config.set("source2", "ACCUMULO");
         assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_oneSource2File() {
-        replayAll();
 
         config.set("source2", "FILE");
         assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_twoSources() {
-        replayAll();
 
         config.set("source1", "ACCUMULO");
         config.set("source2", "FILE");
         assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_accumuloSourceNeedsAccumuloHelperConfig() {
-        replayAll();
 
         config.set("source1", "ACCUMULO");
         config.set("source1.table", "myTable");
@@ -153,23 +160,25 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         config.set("source2.table", "myOtherTable");
         assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_accumuloSourceNeedsTable() {
-        replayAll();
 
         config.set("source1", "ACCUMULO");
         config.set("source2", "ACCUMULO");
         assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_accumuloSourceUserMustExist() throws Throwable {
-        replayAll();
 
         config.set("source1", "ACCUMULO");
         config.set("source1.table", "myTable");
@@ -192,12 +201,13 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
             }
         });
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_accumuloSourceTableMustExist() throws Throwable {
-        replayAll();
 
         config.set("source1", "ACCUMULO");
         config.set("source1.table", "accumuloSourceTable1");
@@ -223,12 +233,13 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
             }
         });
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_fileSourceMustHavePaths() {
-        replayAll();
 
         config.set("source1", "FILE");
 
@@ -236,12 +247,13 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         config.set("source2.files", "/some/path");
         assertThrows(IllegalArgumentException.class, () -> mapper.setup(context));
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_fileSourceNoPaths() throws Throwable {
-        replayAll();
 
         config.set("source1", "FILE");
         config.set("source1.files", "/some/path/no-rifles");
@@ -256,15 +268,15 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
             }
         });
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void setupTest_twoSourcesWithAccumuloConfig()
                     throws AccumuloException, TableExistsException, AccumuloSecurityException, IOException, ClassNotFoundException, InterruptedException {
         sourceDir1 = createIngestFiles(dataOptions);
-
-        replayAll();
 
         config.set("source1", "ACCUMULO");
         AccumuloHelper.setUsername(config, "root");
@@ -280,28 +292,25 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         config.set("source2.files", sourceDir1.getAbsolutePath() + "/shard/magic.rf");
         mapper.setup(context);
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
     }
 
     @Test
     public void mapTest_compareToSelf() throws IOException, ClassNotFoundException, InterruptedException {
-        Mapper.Context context = createMock(Mapper.Context.class);
-        Counter mockCounter = createMock(Counter.class);
+        Mapper.Context context = mock(Mapper.Context.class);
+        lenient().doNothing().when(context).progress();
+        Counter mockCounter = mock(Counter.class);
+        lenient().doNothing().when(mockCounter).increment(1);
 
-        expect(context.getConfiguration()).andReturn(config).anyTimes();
-
-        context.progress();
-        expectLastCall().anyTimes();
+        lenient().doReturn(config).when(context).getConfiguration();
 
         // ignore all the counters
-        expect(context.getCounter("progress", "source1")).andReturn(mockCounter).anyTimes();
-        expect(context.getCounter("progress", "source2")).andReturn(mockCounter).anyTimes();
-        mockCounter.increment(1);
-        expectLastCall().anyTimes();
+        lenient().doReturn(mockCounter).when(context).getCounter("progress", "source1");
+        lenient().doReturn(mockCounter).when(context).getCounter("progress", "source2");
 
         sourceDir1 = createIngestFiles(dataOptions);
-
-        replayAll();
 
         config.set("source1", "FILE");
         config.set("source1.files", sourceDir1.getAbsolutePath() + "/shard/magic.rf");
@@ -314,24 +323,27 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
 
         // should be no diff as the inputs are identical
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
+        if (mockCounter != null && mockingDetails(mockCounter).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCounter));
+        }
     }
 
     @Test
     public void mapTest_compareToSelfExpectDiff() throws IOException, ClassNotFoundException, InterruptedException {
-        Mapper.Context context = createMock(Mapper.Context.class);
-        Counter mockCounter = createMock(Counter.class);
+        Mapper.Context context = mock(Mapper.Context.class);
+        lenient().doNothing().when(context).write(isA(Key.class), isA(Value.class));
+        lenient().doNothing().when(context).progress();
+        Counter mockCounter = mock(Counter.class);
+        lenient().doNothing().when(mockCounter).increment(1);
 
-        expect(context.getConfiguration()).andReturn(config).anyTimes();
-
-        context.progress();
-        expectLastCall().anyTimes();
+        lenient().doReturn(config).when(context).getConfiguration();
 
         // ignore all the counters
-        expect(context.getCounter("progress", "source1")).andReturn(mockCounter).anyTimes();
-        expect(context.getCounter("progress", "source2")).andReturn(mockCounter).anyTimes();
-        mockCounter.increment(1);
-        expectLastCall().anyTimes();
+        lenient().doReturn(mockCounter).when(context).getCounter("progress", "source1");
+        lenient().doReturn(mockCounter).when(context).getCounter("progress", "source2");
 
         sourceDir1 = createIngestFiles(dataOptions);
 
@@ -347,11 +359,7 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         sourceDir2 = createIngestFiles(otherOptions);
 
         Counter c = new Counters.Counter();
-        expect(context.getCounter(isA(String.class), isA(String.class))).andAnswer(() -> c).anyTimes();
-        context.write(isA(Key.class), isA(Value.class));
-        expectLastCall().anyTimes();
-
-        replayAll();
+        lenient().doAnswer(invocation -> c).when(context).getCounter(isA(String.class), isA(String.class));
 
         config.set("source1", "FILE");
         config.set("source1.files", sourceDir1.getAbsolutePath() + "/shard/magic.rf");
@@ -362,28 +370,30 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
 
         mapper.map(new Range(), "", context);
 
-        verifyAll();
-
         // should be a non-zero diff since all values are different
         assertTrue(c.getValue() > 0);
+
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
+        if (mockCounter != null && mockingDetails(mockCounter).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCounter));
+        }
     }
 
     @Test
     public void mapTest_compareToSelfAccumulo() throws IOException, ClassNotFoundException, InterruptedException, TableNotFoundException, AccumuloException,
                     AccumuloSecurityException, TableExistsException {
-        Mapper.Context context = createMock(Mapper.Context.class);
-        Counter mockCounter = createMock(Counter.class);
+        Mapper.Context context = mock(Mapper.Context.class);
+        lenient().doNothing().when(context).progress();
+        Counter mockCounter = mock(Counter.class);
+        lenient().doNothing().when(mockCounter).increment(1);
 
-        expect(context.getConfiguration()).andReturn(config).anyTimes();
-
-        context.progress();
-        expectLastCall().anyTimes();
+        lenient().doReturn(config).when(context).getConfiguration();
 
         // ignore all the counters
-        expect(context.getCounter("progress", "source1")).andReturn(mockCounter).anyTimes();
-        expect(context.getCounter("progress", "source2")).andReturn(mockCounter).anyTimes();
-        mockCounter.increment(1);
-        expectLastCall().anyTimes();
+        lenient().doReturn(mockCounter).when(context).getCounter("progress", "source1");
+        lenient().doReturn(mockCounter).when(context).getCounter("progress", "source2");
 
         sourceDir1 = createIngestFiles(dataOptions, 10000);
         // create a copy of this data for the other table
@@ -399,8 +409,6 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
         accumuloClient.tableOperations().create("myTable2");
         File tmp2 = Files.createDirectory(folder.resolve("tmp2")).toFile();
         accumuloClient.tableOperations().importDirectory("myTable2", sourceDir2.getAbsolutePath(), tmp2.getAbsolutePath(), false);
-
-        replayAll();
 
         config.set("source1", "ACCUMULO");
         config.set("source1.table", "myTable1");
@@ -421,6 +429,11 @@ public class ShardReindexVerificationMapperTest extends EasyMockSupport {
 
         // should be no diff as the inputs are identical
 
-        verifyAll();
+        if (context != null && mockingDetails(context).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(context));
+        }
+        if (mockCounter != null && mockingDetails(mockCounter).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockCounter));
+        }
     }
 }
