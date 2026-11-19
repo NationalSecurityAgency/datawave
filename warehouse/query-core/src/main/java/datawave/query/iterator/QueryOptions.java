@@ -1335,6 +1335,10 @@ public class QueryOptions implements OptionDescriber {
         this.summaryFieldname = summaryFieldname;
     }
 
+    public Function<Range,Key> getDocumentKey() {
+        return getDocumentKey;
+    }
+
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
