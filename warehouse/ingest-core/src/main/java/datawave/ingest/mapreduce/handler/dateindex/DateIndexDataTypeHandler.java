@@ -235,11 +235,12 @@ public class DateIndexDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN>, 
             // Colq: date\0datatype\0field
             // Value: shard bit set
 
+            String shardId = getShardId(event);
             for (Map.Entry<String,String> entry : dataTypeToTypeToFields.get(event.getDataType().typeName()).entries()) {
                 String type = entry.getKey();
                 String field = entry.getValue();
                 for (NormalizedContentInterface nci : eventFields.get(field)) {
-                    KeyValue keyValue = getDateIndexEntry(getShardId(event), event.getDataType().outputName(), type, field, nci.getIndexedFieldValue(),
+                    KeyValue keyValue = getDateIndexEntry(shardId, event.getDataType().outputName(), type, field, nci.getIndexedFieldValue(),
                                     event.getVisibility());
 
                     if (keyValue != null) {
