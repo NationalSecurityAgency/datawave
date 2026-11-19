@@ -10,14 +10,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.accumulo.core.data.Key;
@@ -227,6 +230,18 @@ public class ContentSummaryIteratorTest extends EasyMockSupport {
     }
 
     @Test
+    public void testWildcardSummariesRespectTheRequestedSize() throws IOException {
+        givenOptions("CONTENT3*", 4, true);
+        initIterator();
+
+        Key startKey = new Key(row, new Text("pdf" + Constants.NULL + "111.222.333"));
+        iterator.seek(new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false), Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+        assertEquals("CONTENT31: test\nCONTENT32: test", iterator.getTopKey().getColumnQualifier().toString());
+    }
+
+    @Test
     public void testNoMatchFoundForDataTypeAndUid() throws IOException {
         givenOptions("CONTENT2", 50, false);
         initIterator();
@@ -251,5 +266,79 @@ public class ContentSummaryIteratorTest extends EasyMockSupport {
         iterator.seek(range, Collections.emptyList(), false);
 
         assertFalse(iterator.hasTop());
+    }
+
+    @Test
+    public void testBoundedSummaryOfSmallValueWithLargeExpansion() throws IOException {
+        ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+        byte[] block = new byte[8192];
+        Arrays.fill(block, (byte) 'x');
+        try (GZIPOutputStream gzip = new GZIPOutputStream(Base64.getEncoder().wrap(encoded))) {
+            for (int i = 0; i < 65536; i++) {
+                gzip.write(block);
+            }
+        }
+        assertSummary(encoded.toByteArray(), 9000, "x".repeat(1500));
+    }
+
+    @Test
+    public void testLargeValueCanExpandToLessThanMaxSummarySize() throws IOException {
+        // MIME Base64 ignores whitespace. Exercise a large stored value with a short expanded document.
+        byte[] encoded = encodeContent("short \u00e9\u4e2d\ud83d\ude00");
+        byte[] padded = Arrays.copyOf(encoded, 100 * 1024 * 1024);
+        Arrays.fill(padded, encoded.length, padded.length, (byte) '\n');
+        assertSummary(padded, 1500, "short \u00e9\u4e2d\ud83d\ude00");
+    }
+
+    @Test
+    public void testUtf8SummaryDoesNotSplitSurrogatePairs() throws IOException {
+        assertSummary(encodeContent("a\u00e9\u4e2d\ud83d\ude00tail"), 4, "a\u00e9\u4e2d");
+    }
+
+    @Test
+    public void testGzipSummaryWhenBase64ErrorIsBeyondThePrefix() throws IOException {
+        byte[] content = new byte[64 * 1024];
+        new Random(0).nextBytes(content);
+        Arrays.fill(content, 0, 1500, (byte) 'x');
+        ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzip = new GZIPOutputStream(Base64.getEncoder().wrap(encoded))) {
+            gzip.write(content);
+        }
+        byte[] withInvalidSuffix = encoded.toByteArray();
+        withInvalidSuffix[withInvalidSuffix.length - 16] = '=';
+        assertSummary(withInvalidSuffix, 1500, "x".repeat(1500));
+    }
+
+    @Test
+    public void testRawSummaryWhenInvalidBase64EndingIsBeyondThePrefix() throws IOException {
+        String raw = "hello ".repeat(4000) + "A";
+        assertSummary(raw.getBytes(StandardCharsets.UTF_8), 1500, raw.substring(0, 1500));
+    }
+
+    @Test
+    public void testRawSummaryWhenBase64AlphabetFollowsPadding() throws IOException {
+        String raw = "YWJjZA== hello";
+        assertSummary(raw.getBytes(StandardCharsets.UTF_8), 1500, raw);
+    }
+
+    private void assertSummary(byte[] encodedContent, int size, String expected) throws IOException {
+        String dtUid = "email" + Constants.NULL + "bounded";
+        Key contentKey = new Key(row, colf, new Text(dtUid + Constants.NULL + "CONTENT"), new ColumnVisibility("ALL"), 1L);
+        List<Map.Entry<Key,Value>> contentSource = List.of(new AbstractMap.SimpleEntry<>(contentKey, new Value(encodedContent, false)));
+        givenOptions("CONTENT", size, true);
+        iterator.init(new SortedListKeyValueIterator(contentSource), options, env);
+        Key startKey = new Key(row, new Text(dtUid));
+        iterator.seek(new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false), Collections.emptyList(), false);
+        assertTrue(iterator.hasTop());
+        assertEquals("CONTENT: " + expected, iterator.getTopKey().getColumnQualifier().toString());
+        assertEquals(new Text("ALL"), iterator.getTopKey().getColumnVisibility());
+    }
+
+    private static byte[] encodeContent(String content) throws IOException {
+        ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzip = new GZIPOutputStream(Base64.getEncoder().wrap(encoded))) {
+            gzip.write(content.getBytes(StandardCharsets.UTF_8));
+        }
+        return encoded.toByteArray();
     }
 }

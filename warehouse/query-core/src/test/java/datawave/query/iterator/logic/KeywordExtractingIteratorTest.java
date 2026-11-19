@@ -337,4 +337,25 @@ public class KeywordExtractingIteratorTest extends EasyMockSupport {
         assertTrue(topKey.getColumnQualifier().toString().startsWith(dtUid));
         assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
     }
+
+    @Test
+    public void testContentIsLimitedBeforeKeywordExtraction() throws IOException {
+        String uid = "987.654.321";
+        String rowDtUid = row + "/email/" + uid;
+        String dtUid = "email" + Constants.NULL + uid;
+        givenOptions("CONTENT1", Map.of(rowDtUid, "ENGLISH"));
+        options.put(KeywordExtractor.MAX_CONTENT_CHARS, "300");
+
+        List<Map.Entry<String,VisibleContent>> orderedContent = List
+                        .of(new AbstractMap.SimpleEntry<>("CONTENT1", new VisibleContent("ALL", email987654321Content1.substring(0, 300))));
+        KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
+        initIterator();
+
+        Key startKey = new Key(row, Constants.D_COLUMN_FAMILY, new Text(dtUid + Constants.NULL));
+        Key endKey = new Key(row, Constants.D_COLUMN_FAMILY, new Text(dtUid + Constants.NULL + ALL));
+        iterator.seek(new Range(startKey, true, endKey, false), Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+        assertEquals(expectedKeywordExtractor.extractKeywords().toJson(), KeywordResults.deserialize(iterator.getTopValue().get()).toJson());
+    }
 }
