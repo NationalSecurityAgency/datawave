@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.AbstractMap;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
@@ -74,6 +73,6 @@ public class GroupingTransformTest {
         Key key = new Key("row", "dt\0uid-" + uid);
         Document document = new Document(key, true);
         document.put(field, new TypeAttribute<>(new LcNoDiacriticsType(value), key, true), true);
-        return new AbstractMap.SimpleEntry<>(key, document);
+        return Map.entry(key, document);
     }
 }

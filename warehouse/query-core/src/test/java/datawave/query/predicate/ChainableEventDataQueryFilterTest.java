@@ -3,7 +3,6 @@ package datawave.query.predicate;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.AbstractMap;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
@@ -46,7 +45,7 @@ public class ChainableEventDataQueryFilterTest {
         EventDataQueryFilter mockFilter2 = Mockito.mock(EventDataQueryFilter.class);
 
         Key key = new Key();
-        Map.Entry<Key,String> entry = new AbstractMap.SimpleEntry<>(key, "");
+        Map.Entry<Key,String> entry = Map.entry(key, "");
 
         Mockito.doReturn(true).when(mockFilter1).apply(entry);
         Mockito.doReturn(true).when(mockFilter2).apply(entry);
@@ -68,7 +67,7 @@ public class ChainableEventDataQueryFilterTest {
         EventDataQueryFilter mockFilter2 = Mockito.mock(EventDataQueryFilter.class);
 
         Key key = new Key();
-        Map.Entry<Key,String> entry = new AbstractMap.SimpleEntry<>(key, "");
+        Map.Entry<Key,String> entry = Map.entry(key, "");
 
         Mockito.doReturn(true).when(mockFilter1).apply(entry);
         Mockito.doReturn(false).when(mockFilter2).apply(entry);
@@ -90,7 +89,7 @@ public class ChainableEventDataQueryFilterTest {
         EventDataQueryFilter mockFilter2 = Mockito.mock(EventDataQueryFilter.class);
 
         Key key = new Key();
-        Map.Entry<Key,String> entry = new AbstractMap.SimpleEntry<>(key, "");
+        Map.Entry<Key,String> entry = Map.entry(key, "");
 
         Mockito.doReturn(false).when(mockFilter1).apply(entry);
 

@@ -2,7 +2,6 @@ package datawave.query.function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -126,7 +125,7 @@ public class IndexOnlyKeyToDocumentDataTest {
     }
 
     private Map.Entry<Key,Document> getEntry(Key documentKey) {
-        return new AbstractMap.SimpleEntry<>(documentKey, new Document());
+        return Map.entry(documentKey, new Document());
     }
 
     private Range getRange() {

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.file.Path;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
@@ -175,7 +174,7 @@ public abstract class IndexConversionUtils {
      *            the value
      */
     protected void expect(Key key, Value value) {
-        expected.add(new AbstractMap.SimpleEntry<>(key, value));
+        expected.add(Map.entry(key, value));
     }
 
     protected Key create(String row, String cf, String cq) {

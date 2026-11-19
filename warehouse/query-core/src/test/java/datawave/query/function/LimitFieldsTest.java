@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -129,7 +128,7 @@ public class LimitFieldsTest {
 
     private void drive() {
         LimitFields limitFields = new LimitFields(limitMap, null);
-        Map.Entry<Key,Document> input = new AbstractMap.SimpleEntry<>(key, document);
+        Map.Entry<Key,Document> input = Map.entry(key, document);
         Map.Entry<Key,Document> applied = limitFields.apply(input);
         result = applied.getValue();
     }

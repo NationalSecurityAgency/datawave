@@ -33,7 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1310,7 +1309,7 @@ public class ShardReindexMapperTest {
         Key eventLookupKey = new Key("row", "samplecsv" + '\u0000' + "1.2.3", "FIELDA" + '\u0000');
         Key eventLookupKeyEnd = new Key("row", "samplecsv" + '\u0000' + "1.2.3", "FIELDA" + '.' + '\uFFFF');
         Range expectedLookupRange = new Range(eventLookupKey, true, eventLookupKeyEnd, true);
-        expectScanner("shard", expectedLookupRange, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+        expectScanner("shard", expectedLookupRange, List.of(Map.entry(new Key(), new Value())).iterator());
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
@@ -1411,11 +1410,11 @@ public class ShardReindexMapperTest {
     @Test
     public void verifyRegExFilterWorksTest() throws IOException {
         List<Map.Entry<Key,Value>> data = new ArrayList();
-        data.add(new AbstractMap.SimpleEntry<>(new Key("a", "b", "c"), new Value()));
-        data.add(new AbstractMap.SimpleEntry<>(new Key("a", "b", "cc"), new Value()));
-        data.add(new AbstractMap.SimpleEntry<>(new Key("a", "b", "c" + '\u0000' + "df"), new Value()));
-        data.add(new AbstractMap.SimpleEntry<>(new Key("a", "b", "c" + '\u0000' + "DF"), new Value()));
-        data.add(new AbstractMap.SimpleEntry<>(new Key("a", "b", "c" + '\u0000' + " df"), new Value()));
+        data.add(Map.entry(new Key("a", "b", "c"), new Value()));
+        data.add(Map.entry(new Key("a", "b", "cc"), new Value()));
+        data.add(Map.entry(new Key("a", "b", "c" + '\u0000' + "df"), new Value()));
+        data.add(Map.entry(new Key("a", "b", "c" + '\u0000' + "DF"), new Value()));
+        data.add(Map.entry(new Key("a", "b", "c" + '\u0000' + " df"), new Value()));
         SortedListKeyValueIterator iterator = new SortedListKeyValueIterator(data);
         RegExFilter filter = new RegExFilter();
         Map<String,String> options = new HashMap<>();
@@ -1448,7 +1447,7 @@ public class ShardReindexMapperTest {
         Key start = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000');
         Key end = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0001');
         Range r = new Range(start, true, end, false);
-        expectScanner("shard", r, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+        expectScanner("shard", r, List.of(Map.entry(new Key(), new Value())).iterator());
         ArgumentCaptor<IteratorSetting> fieldECapture = ArgumentCaptor.forClass(IteratorSetting.class);
 
         expectMetadata("FIELDE_TOKEN", "i", "samplecsv", "20240216", 2L, fiKey.getTimestamp());
@@ -1535,7 +1534,7 @@ public class ShardReindexMapperTest {
         start = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0000');
         end = new Key("row", "tf", "samplecsv" + '\u0000' + "1.2.3" + '\u0001');
         r = new Range(start, true, end, false);
-        expectScanner("shard", r, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+        expectScanner("shard", r, List.of(Map.entry(new Key(), new Value())).iterator());
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
@@ -1682,7 +1681,7 @@ public class ShardReindexMapperTest {
 
         Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
         Range expectedLookupRange = new Range(riLookupKey, true, riLookupKey, true);
-        expectScanner("shardReverseIndex", expectedLookupRange, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+        expectScanner("shardReverseIndex", expectedLookupRange, List.of(Map.entry(new Key(), new Value())).iterator());
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
@@ -1717,7 +1716,7 @@ public class ShardReindexMapperTest {
 
         Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
         Range expectedLookupRange = new Range(riLookupKey, true, riLookupKey, true);
-        expectScanner("shardReverseIndex", expectedLookupRange, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+        expectScanner("shardReverseIndex", expectedLookupRange, List.of(Map.entry(new Key(), new Value())).iterator());
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);
@@ -1752,7 +1751,7 @@ public class ShardReindexMapperTest {
 
         Key riLookupKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
         Range expectedLookupRange = new Range(riLookupKey, true, riLookupKey, true);
-        expectScanner("shardReverseIndex", expectedLookupRange, List.of((Map.Entry<Key,Value>) new AbstractMap.SimpleEntry(new Key(), new Value())).iterator());
+        expectScanner("shardReverseIndex", expectedLookupRange, List.of(Map.entry(new Key(), new Value())).iterator());
 
         mapper.setAccumuloClient(mockClient);
         mapper.setup(context);

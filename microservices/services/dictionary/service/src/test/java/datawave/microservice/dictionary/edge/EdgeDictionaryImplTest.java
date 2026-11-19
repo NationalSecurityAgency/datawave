@@ -9,7 +9,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +85,7 @@ public class EdgeDictionaryImplTest {
         ArrayList<Map.Entry<Key,Value>> list = new ArrayList<>();
         for (Key key : edgeKeys) {
             for (Value value : edgeValue) {
-                list.add(new HashMap.SimpleEntry<>(key, value));
+                list.add(Map.entry(key, value));
             }
         }
         return list;

@@ -3,12 +3,12 @@ package datawave.query.index.lookup;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
@@ -125,7 +125,7 @@ public class TruncatedIndexIteratorTest {
         while (iter.hasTop()) {
             Key key = iter.getTopKey();
             Value value = iter.getTopValue();
-            results.add(new SimpleEntry<>(key, value));
+            results.add(Map.entry(key, value));
             iter.next();
         }
 
@@ -156,7 +156,7 @@ public class TruncatedIndexIteratorTest {
     }
 
     private void expect(Key key, Value value) {
-        expected.add(new SimpleEntry<>(key, value));
+        expected.add(Map.entry(key, value));
     }
 
     private Key createKey(String value, String field) {
