@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -26,7 +28,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +68,7 @@ public class FacetHandlerTest {
 
     private TaskAttemptContext ctx = null;
 
-    private final RawRecordContainer event = EasyMock.createMock(RawRecordContainer.class);
+    private final RawRecordContainer event = mock(RawRecordContainer.class);
     private ContentBaseIngestHelper helper;
     private ColumnVisibility colVis;
 
@@ -108,13 +109,12 @@ public class FacetHandlerTest {
     private void setupMocks() {
         try {
             long timestamp = Instant.parse("2020-04-01T08:00:00.0z").toEpochMilli();
-            EasyMock.expect(event.getVisibility()).andReturn(colVis).anyTimes();
-            EasyMock.expect(event.getDataType()).andReturn(TypeRegistry.getType(TEST_TYPE)).anyTimes();
-            EasyMock.expect(event.getId()).andReturn(TEST_UID).anyTimes();
-            EasyMock.expect(event.getDate()).andReturn(timestamp).anyTimes();
-            EasyMock.expect(event.getShardId()).andReturn(null).anyTimes();
-            EasyMock.expect(event.getRawFileName()).andReturn("dummy_filename.txt").anyTimes();
-            EasyMock.replay(event);
+            lenient().doReturn(colVis).when(event).getVisibility();
+            lenient().doReturn(TypeRegistry.getType(TEST_TYPE)).when(event).getDataType();
+            lenient().doReturn(TEST_UID).when(event).getId();
+            lenient().doReturn(timestamp).when(event).getDate();
+            lenient().doReturn(null).when(event).getShardId();
+            lenient().doReturn("dummy_filename.txt").when(event).getRawFileName();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

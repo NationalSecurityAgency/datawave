@@ -1,12 +1,12 @@
 package datawave.common.io;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.mock;
-import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,10 +17,9 @@ public class FilesTest {
 
     @Test
     public void testEnsureDirException() throws Exception {
-        File file = mock(File.class);
-        expect(file.exists()).andReturn(false);
-        expect(file.mkdirs()).andReturn(false);
-        replay(file);
+        File file = mock(File.class, "test-file");
+        doReturn(false).when(file).exists();
+        doReturn(false).when(file).mkdirs();
         assertThrows(IllegalStateException.class, () -> Files.ensureDir(file));
     }
 
@@ -37,58 +36,53 @@ public class FilesTest {
 
     @Test
     public void testCheckDirNoDir() throws Exception {
-        File file = mock(File.class);
-        expect(file.exists()).andReturn(false);
-        expect(file.mkdirs()).andReturn(false);
-        replay(file);
+        File file = mock(File.class, "test-file");
+        doReturn(false).when(file).exists();
+        doReturn(false).when(file).mkdirs();
         String err = Files.checkDir(file);
-        assertEquals(err, "Directory, 'EasyMock for class java.io.File' does not exist; and cannot be created");
+        assertEquals(err, "Directory, 'test-file' does not exist; and cannot be created");
     }
 
     @Test
     public void testCheckDirIsDirectory() throws Exception {
-        File file = mock(File.class);
-        expect(file.exists()).andReturn(true);
-        expect(file.isDirectory()).andReturn(false);
-        replay(file);
+        File file = mock(File.class, "test-file");
+        doReturn(true).when(file).exists();
+        doReturn(false).when(file).isDirectory();
         String err = Files.checkDir(file);
-        assertEquals(err, "File, 'EasyMock for class java.io.File' is not a directory.");
+        assertEquals(err, "File, 'test-file' is not a directory.");
     }
 
     @Test
     public void testCheckDirCanRead() throws Exception {
-        File file = mock(File.class);
-        expect(file.exists()).andReturn(true);
-        expect(file.isDirectory()).andReturn(true);
-        expect(file.canRead()).andReturn(false);
-        replay(file);
+        File file = mock(File.class, "test-file");
+        doReturn(true).when(file).exists();
+        doReturn(true).when(file).isDirectory();
+        doReturn(false).when(file).canRead();
         String err = Files.checkDir(file);
-        assertEquals(err, "Directory, 'EasyMock for class java.io.File' cannot be read.");
+        assertEquals(err, "Directory, 'test-file' cannot be read.");
     }
 
     @Test
     public void testCheckDirCanExecute() throws Exception {
-        File file = mock(File.class);
-        expect(file.exists()).andReturn(true);
-        expect(file.isDirectory()).andReturn(true);
-        expect(file.canRead()).andReturn(true);
-        expect(file.canExecute()).andReturn(false);
-        replay(file);
+        File file = mock(File.class, "test-file");
+        doReturn(true).when(file).exists();
+        doReturn(true).when(file).isDirectory();
+        doReturn(true).when(file).canRead();
+        doReturn(false).when(file).canExecute();
         String err = Files.checkDir(file);
-        assertEquals(err, "Directory contents for 'EasyMock for class java.io.File' cannot be listed.");
+        assertEquals(err, "Directory contents for 'test-file' cannot be listed.");
     }
 
     @Test
     public void testCheckDirCheckWrite() throws Exception {
-        File file = mock(File.class);
-        expect(file.exists()).andReturn(true);
-        expect(file.isDirectory()).andReturn(true);
-        expect(file.canRead()).andReturn(true);
-        expect(file.canExecute()).andReturn(true);
-        expect(file.canWrite()).andReturn(false);
-        replay(file);
+        File file = mock(File.class, "test-file");
+        doReturn(true).when(file).exists();
+        doReturn(true).when(file).isDirectory();
+        doReturn(true).when(file).canRead();
+        doReturn(true).when(file).canExecute();
+        doReturn(false).when(file).canWrite();
         String err = Files.checkDir(file, true);
-        assertEquals(err, "Directory, 'EasyMock for class java.io.File' cannot be written to.");
+        assertEquals(err, "Directory, 'test-file' cannot be written to.");
     }
 
     @Test
@@ -99,69 +93,62 @@ public class FilesTest {
 
     @Test
     public void testCheckFileExists() throws Exception {
-        File file = mock(File.class);
-        expect(file.exists()).andReturn(false);
-        replay(file);
+        File file = mock(File.class, "test-file");
+        doReturn(false).when(file).exists();
         String err = Files.checkFile(file, true);
-        assertEquals(err, "File, 'EasyMock for class java.io.File' does not exist.");
+        assertEquals(err, "File, 'test-file' does not exist.");
     }
 
     @Test
     public void testCheckFileIsNotDirectory() throws Exception {
-        File file = mock(File.class);
-        expect(file.exists()).andReturn(true);
-        expect(file.isDirectory()).andReturn(true);
-        replay(file);
+        File file = mock(File.class, "test-file");
+        doReturn(true).when(file).exists();
+        doReturn(true).when(file).isDirectory();
         String err = Files.checkFile(file, true);
-        assertEquals(err, "Directory, 'EasyMock for class java.io.File' is not a file.");
+        assertEquals(err, "Directory, 'test-file' is not a file.");
     }
 
     @Test
     public void testCheckFileCanRead() throws Exception {
-        File file = mock(File.class);
-        expect(file.exists()).andReturn(true);
-        expect(file.isDirectory()).andReturn(false);
-        expect(file.canRead()).andReturn(false);
-        replay(file);
+        File file = mock(File.class, "test-file");
+        doReturn(true).when(file).exists();
+        doReturn(false).when(file).isDirectory();
+        doReturn(false).when(file).canRead();
         String err = Files.checkFile(file, false);
-        assertEquals(err, "File, 'EasyMock for class java.io.File' cannot be read.");
+        assertEquals(err, "File, 'test-file' cannot be read.");
     }
 
     @Test
     public void testCheckFileWritable() throws Exception {
-        File file = mock(File.class);
-        expect(file.exists()).andReturn(true);
-        expect(file.isDirectory()).andReturn(false);
-        expect(file.canRead()).andReturn(true);
-        expect(file.canWrite()).andReturn(false);
-        replay(file);
+        File file = mock(File.class, "test-file");
+        doReturn(true).when(file).exists();
+        doReturn(false).when(file).isDirectory();
+        doReturn(true).when(file).canRead();
+        doReturn(false).when(file).canWrite();
         String err = Files.checkFile(file, true);
-        assertEquals(err, "File, 'EasyMock for class java.io.File' cannot be written to.");
+        assertEquals(err, "File, 'test-file' cannot be written to.");
     }
 
     @Test
     public void testEnsureMvIOException() throws Exception {
-        File src = mock(File.class);
-        File dest = mock(File.class);
-        File parent = mock(File.class);
-        expect(src.exists()).andReturn(true).anyTimes();
-        expect(src.isDirectory()).andReturn(false).anyTimes();
-        expect(src.canRead()).andReturn(true);
-        expect(src.renameTo(dest)).andReturn(true);
-        replay(src);
+        File src = mock(File.class, "test-file");
+        File dest = mock(File.class, "test-file");
+        File parent = mock(File.class, "test-file");
+        lenient().doReturn(true).when(src).exists();
+        lenient().doReturn(false).when(src).isDirectory();
+        doReturn(true).when(src).canRead();
+        doReturn(true).when(src).renameTo(dest);
 
-        expect(parent.exists()).andReturn(true);
-        expect(parent.isDirectory()).andReturn(true);
-        expect(parent.canRead()).andReturn(true);
-        expect(parent.canExecute()).andReturn(true);
-        expect(parent.canWrite()).andReturn(true);
-        replay(parent);
+        doReturn(true).when(parent).exists();
+        doReturn(true).when(parent).isDirectory();
+        doReturn(true).when(parent).canRead();
+        doReturn(true).when(parent).canExecute();
+        doReturn(true).when(parent).canWrite();
 
-        expect(dest.exists()).andReturn(true).anyTimes();
-        expect(dest.isDirectory()).andReturn(false);
-        expect(dest.getParentFile()).andReturn(parent);
-        expect(dest.getPath()).andReturn("").anyTimes();
-        replay(dest);
+        lenient().doReturn(true).when(dest).exists();
+        doReturn(false).when(dest).isDirectory();
+        doReturn(parent).when(dest).getParentFile();
+        lenient().doReturn("").when(dest).getPath();
 
         assertThrows(IOException.class, () -> Files.ensureMv(src, dest));
     }
@@ -185,46 +172,41 @@ public class FilesTest {
 
     @Test
     public void testMvNoOverwrite() throws Exception {
-        File src = mock(File.class);
-        File dest = mock(File.class);
-        expect(src.exists()).andReturn(true);
-        expect(src.isDirectory()).andReturn(false);
-        expect(src.canRead()).andReturn(true);
-        replay(src);
+        File src = mock(File.class, "test-file");
+        File dest = mock(File.class, "test-file");
+        doReturn(true).when(src).exists();
+        doReturn(false).when(src).isDirectory();
+        doReturn(true).when(src).canRead();
 
-        expect(dest.exists()).andReturn(true);
-        expect(dest.isDirectory()).andReturn(false);
-        expect(dest.canRead()).andReturn(true);
-        replay(dest);
+        doReturn(true).when(dest).exists();
+        doReturn(false).when(dest).isDirectory();
+        doReturn(true).when(dest).canRead();
 
         String ret = Files.mv(src, dest);
-        assertEquals(ret, "File, 'EasyMock for class java.io.File' already exists.");
+        assertEquals(ret, "File, 'test-file' already exists.");
     }
 
     @Test
     public void testMvNotDestExists() throws Exception {
-        File src = mock(File.class);
-        File dest = mock(File.class);
-        File parent = mock(File.class);
-        expect(src.exists()).andReturn(true).anyTimes();
-        expect(src.isDirectory()).andReturn(false).anyTimes();
-        expect(src.canRead()).andReturn(true);
-        expect(src.isFile()).andReturn(true);
-        expect(src.renameTo(dest)).andReturn(true);
-        replay(src);
+        File src = mock(File.class, "test-file");
+        File dest = mock(File.class, "test-file");
+        File parent = mock(File.class, "test-file");
+        lenient().doReturn(true).when(src).exists();
+        lenient().doReturn(false).when(src).isDirectory();
+        doReturn(true).when(src).canRead();
+        doReturn(true).when(src).isFile();
+        doReturn(true).when(src).renameTo(dest);
 
-        expect(parent.exists()).andReturn(true);
-        expect(parent.isDirectory()).andReturn(true);
-        expect(parent.canRead()).andReturn(true);
-        expect(parent.canExecute()).andReturn(true);
-        expect(parent.canWrite()).andReturn(true);
-        replay(parent);
+        doReturn(true).when(parent).exists();
+        doReturn(true).when(parent).isDirectory();
+        doReturn(true).when(parent).canRead();
+        doReturn(true).when(parent).canExecute();
+        doReturn(true).when(parent).canWrite();
 
-        expect(dest.exists()).andReturn(false).anyTimes();
-        expect(dest.isDirectory()).andReturn(false);
-        expect(dest.getParentFile()).andReturn(parent);
-        expect(dest.getPath()).andReturn("").anyTimes();
-        replay(dest);
+        lenient().doReturn(false).when(dest).exists();
+        doReturn(false).when(dest).isDirectory();
+        doReturn(parent).when(dest).getParentFile();
+        lenient().doReturn("").when(dest).getPath();
 
         String ret = Files.mv(src, dest, true);
         assertNull(ret);
@@ -232,61 +214,54 @@ public class FilesTest {
 
     @Test
     public void testMvDestExists() throws Exception {
-        File src = mock(File.class);
-        File dest = mock(File.class);
-        File parent = mock(File.class);
-        expect(src.exists()).andReturn(true).anyTimes();
-        expect(src.isDirectory()).andReturn(false).anyTimes();
-        expect(src.canRead()).andReturn(true);
-        expect(src.renameTo(dest)).andReturn(true);
-        replay(src);
+        File src = mock(File.class, "test-file");
+        File dest = mock(File.class, "test-file");
+        File parent = mock(File.class, "test-file");
+        lenient().doReturn(true).when(src).exists();
+        lenient().doReturn(false).when(src).isDirectory();
+        doReturn(true).when(src).canRead();
+        doReturn(true).when(src).renameTo(dest);
 
-        expect(parent.exists()).andReturn(true);
-        expect(parent.isDirectory()).andReturn(true);
-        expect(parent.canRead()).andReturn(true);
-        expect(parent.canExecute()).andReturn(true);
-        expect(parent.canWrite()).andReturn(true);
-        replay(parent);
+        doReturn(true).when(parent).exists();
+        doReturn(true).when(parent).isDirectory();
+        doReturn(true).when(parent).canRead();
+        doReturn(true).when(parent).canExecute();
+        doReturn(true).when(parent).canWrite();
 
-        expect(dest.exists()).andReturn(true).anyTimes();
-        expect(dest.isDirectory()).andReturn(false);
-        expect(dest.getParentFile()).andReturn(parent);
-        expect(dest.getPath()).andReturn("").anyTimes();
-        replay(dest);
+        lenient().doReturn(true).when(dest).exists();
+        doReturn(false).when(dest).isDirectory();
+        doReturn(parent).when(dest).getParentFile();
+        lenient().doReturn("").when(dest).getPath();
 
         String ret = Files.mv(src, dest);
-        assertEquals(ret, "File, 'EasyMock for class java.io.File' already exists.");
+        assertEquals(ret, "File, 'test-file' already exists.");
     }
 
     @Test
     public void testMvDestExistsOverwrite() throws Exception {
-        File src = mock(File.class);
-        File dest = mock(File.class);
-        File parent = mock(File.class);
-        expect(src.exists()).andReturn(true).anyTimes();
-        expect(src.isDirectory()).andReturn(false).anyTimes();
-        expect(src.canRead()).andReturn(true);
-        expect(src.isFile()).andReturn(true);
-        expect(src.renameTo(dest)).andReturn(true);
-        replay(src);
+        File src = mock(File.class, "test-file");
+        File dest = mock(File.class, "test-file");
+        File parent = mock(File.class, "test-file");
+        lenient().doReturn(true).when(src).exists();
+        lenient().doReturn(false).when(src).isDirectory();
+        doReturn(true).when(src).canRead();
+        doReturn(true).when(src).isFile();
+        doReturn(true).when(src).renameTo(dest);
 
-        expect(parent.exists()).andReturn(true);
-        expect(parent.isDirectory()).andReturn(true);
-        expect(parent.canRead()).andReturn(true);
-        expect(parent.canExecute()).andReturn(true);
-        expect(parent.canWrite()).andReturn(true);
-        replay(parent);
+        doReturn(true).when(parent).exists();
+        doReturn(true).when(parent).isDirectory();
+        doReturn(true).when(parent).canRead();
+        doReturn(true).when(parent).canExecute();
+        doReturn(true).when(parent).canWrite();
 
-        expect(dest.exists()).andReturn(true).once();
-        expect(dest.exists()).andReturn(true).once();
-        expect(dest.exists()).andReturn(false).once();
-        expect(dest.isDirectory()).andReturn(false).anyTimes();
-        expect(dest.canRead()).andReturn(true);
-        expect(dest.canWrite()).andReturn(true);
-        expect(dest.delete()).andReturn(true);
-        expect(dest.getParentFile()).andReturn(parent);
-        expect(dest.getPath()).andReturn("").anyTimes();
-        replay(dest);
+        doReturn(true, true, false).when(dest).exists();
+
+        lenient().doReturn(false).when(dest).isDirectory();
+        doReturn(true).when(dest).canRead();
+        doReturn(true).when(dest).canWrite();
+        doReturn(true).when(dest).delete();
+        doReturn(parent).when(dest).getParentFile();
+        lenient().doReturn("").when(dest).getPath();
 
         String ret = Files.mv(src, dest, true);
         assertNull(ret);

@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -38,7 +41,6 @@ import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
 import org.apache.accumulo.core.spi.balancer.data.TabletStatistics;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.hadoop.io.Text;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -79,7 +81,7 @@ public class ShardRendezvousHostBalancerTest {
             SortedMap<TabletServerId,TServerStatus> current = new TreeMap<>();
             for (TabletServerId tserver : tservers) {
                 // Currently the balancer only used the key set of this map. Place a strict moock that will fail if the values of the map are used.
-                current.put(tserver, EasyMock.strictMock(TServerStatus.class));
+                current.put(tserver, mock(TServerStatus.class));
             }
             return current;
         }
@@ -937,11 +939,9 @@ public class ShardRendezvousHostBalancerTest {
 
         @Override
         public Configuration getConfiguration(TableId tableId) {
-            Configuration mock = EasyMock.mock(ServiceEnvironment.Configuration.class);
-            EasyMock.expect(mock.get(EasyMock.anyString())).andAnswer(() -> tableProps.get((String) EasyMock.getCurrentArgument(0))).anyTimes();
-            EasyMock.expect(mock.getTableCustom(EasyMock.anyString())).andAnswer(() -> tableProps.get("table.custom." + EasyMock.getCurrentArgument(0)))
-                            .anyTimes();
-            EasyMock.replay(mock);
+            Configuration mock = mock(ServiceEnvironment.Configuration.class);
+            lenient().doAnswer(invocation -> tableProps.get((String) invocation.getArgument(0))).when(mock).get(anyString());
+            lenient().doAnswer(invocation -> tableProps.get("table.custom." + invocation.getArgument(0))).when(mock).getTableCustom(anyString());
             return mock;
         }
 

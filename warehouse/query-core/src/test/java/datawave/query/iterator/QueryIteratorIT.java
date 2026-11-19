@@ -24,6 +24,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.IOException;
 import java.net.URL;
@@ -47,8 +52,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.util.ConfigurationImpl;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -78,7 +81,7 @@ import datawave.query.util.TypeMetadata;
  * Integration tests for the QueryIterator
  *
  */
-public class QueryIteratorIT extends EasyMockSupport {
+public class QueryIteratorIT {
 
     @TempDir
     public Path temporaryFolder;
@@ -171,12 +174,12 @@ public class QueryIteratorIT extends EasyMockSupport {
         typeMetadata.put("INDEX_ONLY_FIELD2", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
         typeMetadata.put("INDEX_ONLY_FIELD3", DEFAULT_DATATYPE, "datawave.data.type.LcNoDiacriticsType");
 
-        iterEnv = createMock(IteratorEnvironment.class);
-        pluginEnv = createMock(PluginEnvironment.class);
-        EasyMock.expect(iterEnv.getConfig()).andReturn(DefaultConfiguration.getInstance()).anyTimes();
-        EasyMock.expect(iterEnv.getPluginEnv()).andReturn(pluginEnv).anyTimes();
-        EasyMock.expect(pluginEnv.getConfiguration()).andReturn(new ConfigurationImpl(DefaultConfiguration.getInstance())).anyTimes();
-        filter = createMock(EventDataQueryFilter.class);
+        iterEnv = mock(IteratorEnvironment.class);
+        pluginEnv = mock(PluginEnvironment.class);
+        lenient().doReturn(DefaultConfiguration.getInstance()).when(iterEnv).getConfig();
+        lenient().doReturn(pluginEnv).when(iterEnv).getPluginEnv();
+        lenient().doReturn(new ConfigurationImpl(DefaultConfiguration.getInstance())).when(pluginEnv).getConfiguration();
+        filter = mock(EventDataQueryFilter.class);
     }
 
     @AfterEach
@@ -1352,6 +1355,16 @@ public class QueryIteratorIT extends EasyMockSupport {
     protected void event_test(Range seekRange, String query, boolean miss, Map.Entry<Key,Map<String,List<String>>> hitOverride,
                     List<Map.Entry<Key,Value>> otherData, List<Map.Entry<Key,Map<String,List<String>>>> otherHits) throws IOException {
         event_test(seekRange, query, miss, hitOverride, otherData, otherHits, Collections.EMPTY_MAP);
+
+        if (filter != null && mockingDetails(filter).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(filter));
+        }
+        if (iterEnv != null && mockingDetails(iterEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(iterEnv));
+        }
+        if (pluginEnv != null && mockingDetails(pluginEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(pluginEnv));
+        }
     }
 
     /**
@@ -1380,11 +1393,7 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         options.putAll(additionalOptions);
 
-        replayAll();
-
         List<Map.Entry<Key,Document>> results = lookupTask.lookup(baseIterator, options, iterEnv, Collections.singletonList(seekRange));
-
-        verifyAll();
 
         List<Map.Entry<Key,Map<String,List<String>>>> hits = new ArrayList<>();
         if (miss) {
@@ -1398,6 +1407,16 @@ public class QueryIteratorIT extends EasyMockSupport {
         }
         hits.addAll(otherHits);
         eval(results, hits);
+
+        if (filter != null && mockingDetails(filter).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(filter));
+        }
+        if (iterEnv != null && mockingDetails(iterEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(iterEnv));
+        }
+        if (pluginEnv != null && mockingDetails(pluginEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(pluginEnv));
+        }
     }
 
     protected void groupingNotation_test(Range seekRange, String query, boolean miss, List<Map.Entry<Key,Value>> otherData,
@@ -1412,11 +1431,7 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         options.put(QUERY, query);
 
-        replayAll();
-
         List<Map.Entry<Key,Document>> results = lookupTask.lookup(baseIterator, options, iterEnv, Collections.singletonList(seekRange));
-
-        verifyAll();
 
         List<Map.Entry<Key,Map<String,List<String>>>> hits = new ArrayList<>();
         if (miss) {
@@ -1426,6 +1441,16 @@ public class QueryIteratorIT extends EasyMockSupport {
         }
 
         eval(results, hits);
+
+        if (filter != null && mockingDetails(filter).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(filter));
+        }
+        if (iterEnv != null && mockingDetails(iterEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(iterEnv));
+        }
+        if (pluginEnv != null && mockingDetails(pluginEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(pluginEnv));
+        }
     }
 
     /**
@@ -1451,11 +1476,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // none
         options.put(INDEX_ONLY_FIELDS, "");
 
-        replayAll();
-
         List<Map.Entry<Key,Document>> results = lookupTask.lookup(baseIterator, options, iterEnv, Collections.singletonList(seekRange));
-
-        verifyAll();
 
         List<Map.Entry<Key,Map<String,List<String>>>> hits = new ArrayList<>();
         if (miss) {
@@ -1465,6 +1486,16 @@ public class QueryIteratorIT extends EasyMockSupport {
         }
         hits.addAll(otherHits);
         eval(results, hits);
+
+        if (filter != null && mockingDetails(filter).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(filter));
+        }
+        if (iterEnv != null && mockingDetails(iterEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(iterEnv));
+        }
+        if (pluginEnv != null && mockingDetails(pluginEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(pluginEnv));
+        }
     }
 
     /**
@@ -1494,11 +1525,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // set because we have index only fields used
         options.put(CONTAINS_INDEX_ONLY_TERMS, "true");
 
-        replayAll();
-
         List<Map.Entry<Key,Document>> results = lookupTask.lookup(baseIterator, options, iterEnv, Collections.singletonList(seekRange));
-
-        verifyAll();
 
         List<Map.Entry<Key,Map<String,List<String>>>> hits = new ArrayList<>();
         if (miss) {
@@ -1512,6 +1539,16 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         hits.addAll(otherHits);
         eval(results, hits);
+
+        if (filter != null && mockingDetails(filter).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(filter));
+        }
+        if (iterEnv != null && mockingDetails(iterEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(iterEnv));
+        }
+        if (pluginEnv != null && mockingDetails(pluginEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(pluginEnv));
+        }
     }
 
     /**
@@ -1539,11 +1576,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // set to be the term frequency fields required for the query?
         options.put(TERM_FREQUENCY_FIELDS, "TF_FIELD0,TF_FIELD1,TF_FIELD2,TF_FIELD4");
 
-        replayAll();
-
         List<Map.Entry<Key,Document>> results = lookupTask.lookup(baseIterator, options, iterEnv, Collections.singletonList(seekRange));
-
-        verifyAll();
 
         List<Map.Entry<Key,Map<String,List<String>>>> hits = new ArrayList<>();
         if (hit != null) {
@@ -1552,6 +1585,16 @@ public class QueryIteratorIT extends EasyMockSupport {
 
         hits.addAll(otherHits);
         eval(results, hits);
+
+        if (filter != null && mockingDetails(filter).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(filter));
+        }
+        if (iterEnv != null && mockingDetails(iterEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(iterEnv));
+        }
+        if (pluginEnv != null && mockingDetails(pluginEnv).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(pluginEnv));
+        }
     }
 
     @Test

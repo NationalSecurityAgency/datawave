@@ -1,12 +1,17 @@
 package datawave.webservice.query.logic.filtered;
 
-import static org.easymock.EasyMock.anyLong;
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,10 +29,9 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.easymock.Capture;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
@@ -39,13 +43,13 @@ import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.AuthorizationException;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 
-public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
+public class DateRangeFilteredQueryLogicTest {
     private DateRangeFilteredQueryLogic logic;
     private QueryLogic delegate;
 
     @BeforeEach
     public void setup() {
-        delegate = createMock(QueryLogic.class);
+        delegate = mock(QueryLogic.class);
         logic = new DateRangeFilteredQueryLogic();
         logic.setDelegate(delegate);
     }
@@ -62,11 +66,9 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         settings.setBeginDate(getDate("20241210 000001"));
         settings.setEndDate(getDate("20241210 235958"));
 
-        Capture<QueryImpl> settingsCapture = Capture.newInstance();
+        ArgumentCaptor<QueryImpl> settingsCapture = ArgumentCaptor.forClass(QueryImpl.class);
 
-        expect(delegate.initialize(eq(null), capture(settingsCapture), eq(null))).andReturn(null);
-
-        replayAll();
+        doReturn(null).when(delegate).initialize(eq(null), settingsCapture.capture(), eq(null));
 
         logic.initialize(null, settings, null);
 
@@ -74,7 +76,11 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         assertEquals(settings.getBeginDate(), settingsCapture.getValue().getBeginDate());
         assertEquals(settings.getEndDate(), settingsCapture.getValue().getEndDate());
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(eq(null), settingsCapture.capture(), eq(null));
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
@@ -99,11 +105,9 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         c.set(2024, Calendar.DECEMBER, 31, 0, 0, 0);
         settings.setEndDate(c.getTime());
 
-        Capture<QueryImpl> implCapture = Capture.newInstance();
+        ArgumentCaptor<QueryImpl> implCapture = ArgumentCaptor.forClass(QueryImpl.class);
 
-        expect(delegate.initialize(eq(null), capture(implCapture), eq(null))).andReturn(null);
-
-        replayAll();
+        doReturn(null).when(delegate).initialize(eq(null), implCapture.capture(), eq(null));
 
         logic.initialize(null, settings, null);
 
@@ -113,14 +117,20 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         assertEquals(settings.getEndDate(), filter.getEndDate());
         assertEquals(settings.getEndDate(), implCapture.getValue().getEndDate());
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(eq(null), implCapture.capture(), eq(null));
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
     public void compositeQueryLogicDateStrippingTest() throws Exception {
-        QueryLogic delegate2 = createMock(QueryLogic.class);
-        TransformIterator transformIterator1 = createMock(TransformIterator.class);
-        TransformIterator transformIterator2 = createMock(TransformIterator.class);
+        lenient().doNothing().when(delegate).setPageProcessingStartTime(anyLong());
+        QueryLogic delegate2 = mock(QueryLogic.class);
+        lenient().doNothing().when(delegate2).setPageProcessingStartTime(anyLong());
+        TransformIterator transformIterator1 = mock(TransformIterator.class);
+        TransformIterator transformIterator2 = mock(TransformIterator.class);
 
         CompositeQueryLogic cql = new CompositeQueryLogicWithoutAuthChecks();
 
@@ -140,12 +150,12 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         settings.setEndDate(getDate("20241205 235959"));
         settings.setPagesize(100);
 
-        Capture<QueryImpl> logic1Settings = Capture.newInstance();
-        Capture<QueryImpl> logic1SettingsDupe1 = Capture.newInstance();
-        Capture<QueryImpl> logic1SettingsDupe2 = Capture.newInstance();
-        Capture<QueryImpl> logic2Settings = Capture.newInstance();
-        Capture<QueryImpl> logic2SettingsDupe1 = Capture.newInstance();
-        Capture<QueryImpl> logic2SettingsDupe2 = Capture.newInstance();
+        ArgumentCaptor<QueryImpl> logic1Settings = ArgumentCaptor.forClass(QueryImpl.class);
+        ArgumentCaptor<QueryImpl> logic1SettingsDupe1 = ArgumentCaptor.forClass(QueryImpl.class);
+        ArgumentCaptor<QueryImpl> logic1SettingsDupe2 = ArgumentCaptor.forClass(QueryImpl.class);
+        ArgumentCaptor<QueryImpl> logic2Settings = ArgumentCaptor.forClass(QueryImpl.class);
+        ArgumentCaptor<QueryImpl> logic2SettingsDupe1 = ArgumentCaptor.forClass(QueryImpl.class);
+        ArgumentCaptor<QueryImpl> logic2SettingsDupe2 = ArgumentCaptor.forClass(QueryImpl.class);
 
         GenericQueryConfiguration config1 = new GenericQueryConfiguration();
         config1.setBeginDate(getDate("20230101 010100"));
@@ -154,27 +164,23 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         config2.setBeginDate(getDate("20241205 000000"));
         config2.setEndDate(getDate("20241205 235959"));
 
-        expect(delegate.initialize(eq(null), capture(logic1Settings), eq(Collections.emptySet()))).andReturn(config1);
-        expect(delegate.getResultLimit(capture(logic1SettingsDupe1))).andReturn(100l);
-        delegate.setupQuery(config1);
-        expect(delegate.getTransformIterator(capture(logic1SettingsDupe2))).andReturn(transformIterator1);
-        // this one has no results
-        expect(transformIterator1.hasNext()).andReturn(false).anyTimes();
-        delegate.setPageProcessingStartTime(anyLong());
-        // setting of the page processing start time is in a separate thread, so may or may not actually see this call
-        expectLastCall().anyTimes();
+        doReturn(config1).when(delegate).initialize(eq(null), logic1Settings.capture(), eq(Collections.emptySet()));
+        doReturn(100l).when(delegate).getResultLimit(logic1SettingsDupe1.capture());
 
-        expect(delegate2.initialize(eq(null), capture(logic2Settings), eq(Collections.emptySet()))).andReturn(config2);
-        expect(delegate2.getResultLimit(capture(logic2SettingsDupe1))).andReturn(100l);
-        delegate2.setupQuery(config2);
-        expect(delegate2.getTransformIterator(capture(logic2SettingsDupe2))).andReturn(transformIterator2);
+        doReturn(transformIterator1).when(delegate).getTransformIterator(logic1SettingsDupe2.capture());
         // this one has no results
-        expect(transformIterator2.hasNext()).andReturn(false).anyTimes();
-        delegate2.setPageProcessingStartTime(anyLong());
-        // setting of the page processing start time is in a separate thread, so may or may not actually see this call
-        expectLastCall().anyTimes();
+        lenient().doReturn(false).when(transformIterator1).hasNext();
 
-        replayAll();
+        // setting of the page processing start time is in a separate thread, so may or may not actually see this call
+
+        doReturn(config2).when(delegate2).initialize(eq(null), logic2Settings.capture(), eq(Collections.emptySet()));
+        doReturn(100l).when(delegate2).getResultLimit(logic2SettingsDupe1.capture());
+
+        doReturn(transformIterator2).when(delegate2).getTransformIterator(logic2SettingsDupe2.capture());
+        // this one has no results
+        lenient().doReturn(false).when(transformIterator2).hasNext();
+
+        // setting of the page processing start time is in a separate thread, so may or may not actually see this call
 
         GenericQueryConfiguration initializedConfig = cql.initialize(null, settings, null);
 
@@ -188,7 +194,27 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         assertEquals(logic2SettingsDupe2.getValue(), logic2SettingsDupe1.getValue());
         assertEquals(logic1SettingsDupe2.getValue(), logic1SettingsDupe1.getValue());
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(eq(null), logic1Settings.capture(), eq(Collections.emptySet()));
+        verify(delegate, times(1)).getResultLimit(logic1SettingsDupe1.capture());
+        verify(delegate, times(1)).getTransformIterator(logic1SettingsDupe2.capture());
+        verify(delegate2, times(1)).initialize(eq(null), logic2Settings.capture(), eq(Collections.emptySet()));
+        verify(delegate2, times(1)).getResultLimit(logic2SettingsDupe1.capture());
+        verify(delegate2, times(1)).getTransformIterator(logic2SettingsDupe2.capture());
+        verify(delegate, times(1)).setupQuery(config1);
+        verify(delegate2, times(1)).setupQuery(config2);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
+        if (delegate2 != null && mockingDetails(delegate2).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate2));
+        }
+        if (transformIterator1 != null && mockingDetails(transformIterator1).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(transformIterator1));
+        }
+        if (transformIterator2 != null && mockingDetails(transformIterator2).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(transformIterator2));
+        }
     }
 
     @Test
@@ -230,7 +256,17 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         cql.setupQuery(genericQueryConfiguration);
         Iterator<CompositeQueryLogicTest.TestQueryResponse> itr = cql.getTransformIterator(settings);
 
-        assertTrue(verify(itr, expected));
+        assertTrue(verifyResults(itr, expected));
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
+        if (expected != null && mockingDetails(expected).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(expected));
+        }
+        if (itr != null && mockingDetails(itr).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(itr));
+        }
     }
 
     @Test
@@ -271,7 +307,17 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         cql.setupQuery(genericQueryConfiguration);
         Iterator<CompositeQueryLogicTest.TestQueryResponse> itr = cql.getTransformIterator(settings);
 
-        assertTrue(verify(itr, expected));
+        assertTrue(verifyResults(itr, expected));
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
+        if (expected != null && mockingDetails(expected).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(expected));
+        }
+        if (itr != null && mockingDetails(itr).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(itr));
+        }
     }
 
     @Test
@@ -312,10 +358,20 @@ public class DateRangeFilteredQueryLogicTest extends EasyMockSupport {
         cql.setupQuery(genericQueryConfiguration);
         Iterator<CompositeQueryLogicTest.TestQueryResponse> itr = cql.getTransformIterator(settings);
 
-        assertTrue(verify(itr, expected));
+        assertTrue(verifyResults(itr, expected));
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
+        if (expected != null && mockingDetails(expected).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(expected));
+        }
+        if (itr != null && mockingDetails(itr).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(itr));
+        }
     }
 
-    private boolean verify(Iterator<CompositeQueryLogicTest.TestQueryResponse> itr, List<String> expected) {
+    private boolean verifyResults(Iterator<CompositeQueryLogicTest.TestQueryResponse> itr, List<String> expected) {
         List<String> results = new ArrayList<>();
         while (itr.hasNext()) {
             CompositeQueryLogicTest.TestQueryResponse response = itr.next();

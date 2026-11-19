@@ -1,6 +1,7 @@
 package datawave.springframework.integration;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -9,7 +10,6 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -107,10 +107,10 @@ public class WiredQueryExecutorBeanTest {
         }
     }
 
-    private static SSLStores mockSSLStores = EasyMock.createMock(SSLStores.class);
-    private static DatawavePrincipal mockDatawavePrincipal = EasyMock.createMock(DatawavePrincipal.class);
+    private static SSLStores mockSSLStores = mock(SSLStores.class);
+    private static DatawavePrincipal mockDatawavePrincipal = mock(DatawavePrincipal.class);
 
-    private static RemoteEdgeDictionary mockRemoteEdgeDictionary = EasyMock.createMock(RemoteEdgeDictionary.class);
+    private static RemoteEdgeDictionary mockRemoteEdgeDictionary = mock(RemoteEdgeDictionary.class);
 
     public static class Producer {
         @Produces

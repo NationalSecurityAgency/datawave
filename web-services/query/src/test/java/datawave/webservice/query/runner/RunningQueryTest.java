@@ -1,15 +1,19 @@
 package datawave.webservice.query.runner;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -31,8 +35,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import com.google.common.collect.Sets;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -77,7 +79,7 @@ public class RunningQueryTest {
     private final AccumuloConnectionFactory.Priority connectionPriority = AccumuloConnectionFactory.Priority.NORMAL;
     private String methodAuths = "";
     private SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of("userDn", "issuerDn");
-    private final QueryLogic<?> logic = createMock(BaseQueryLogic.class);
+    private final QueryLogic<?> logic = mock(BaseQueryLogic.class);
 
     @BeforeEach
     public void setup() throws MalformedURLException, IllegalArgumentException, IllegalAccessException {
@@ -122,27 +124,39 @@ public class RunningQueryTest {
 
         // setup mock logic, handles the setConnection method
         SampleGenericQueryConfiguration config = new SampleGenericQueryConfiguration();
-        expect(logic.initialize(anyObject(), anyObject(), anyObject())).andReturn(config);
-        logic.setupQuery(config);
+        doReturn(config).when(logic).initialize(any(), any(), any());
+
         TransformIterator<?,?> iter = new TransformIterator<>();
-        expect(logic.getCollectQueryMetrics()).andReturn(Boolean.FALSE);
-        expect(logic.getTransformIterator(settings)).andReturn(iter);
-        expect(logic.isQueryLimiterEnabled()).andReturn(true).anyTimes();
-        expect(logic.isIntermediateEmptyPagesEnabled()).andReturn(false);
-        expect(logic.isUseSynchronousRunningQuery()).andReturn(false);
-        expect(logic.getResultLimit(settings)).andReturn(-1L);
-        expect(logic.getMaxResults()).andReturn(-1L);
-        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
-        expect(logic.getUserOperations()).andReturn(null);
-        replay(logic);
+        doReturn(Boolean.FALSE).when(logic).getCollectQueryMetrics();
+        doReturn(iter).when(logic).getTransformIterator(settings);
+        lenient().doReturn(true).when(logic).isQueryLimiterEnabled();
+        doReturn(false).when(logic).isIntermediateEmptyPagesEnabled();
+        doReturn(false).when(logic).isUseSynchronousRunningQuery();
+        doReturn(-1L).when(logic).getResultLimit(settings);
+        doReturn(-1L).when(logic).getMaxResults();
+
+        doReturn(null).when(logic).getUserOperations();
 
         RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
 
-        verify(logic);
+        verify(logic, times(1)).initialize(any(), any(), any());
+        verify(logic, times(1)).getCollectQueryMetrics();
+        verify(logic, times(1)).getTransformIterator(settings);
+        verify(logic, times(1)).isIntermediateEmptyPagesEnabled();
+        verify(logic, times(1)).isUseSynchronousRunningQuery();
+        verify(logic, times(1)).getResultLimit(settings);
+        verify(logic, times(1)).getMaxResults();
+        verify(logic, times(1)).getUserOperations();
+        verify(logic, times(1)).setupQuery(config);
+        verify(logic, times(1)).preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
 
         // extra tests to verify setConnection worked. Would rather mock and don't really like multiple asserts per test, but there is too much setup
         assertEquals(client, query.getClient());
         assertEquals(iter, query.getTransformIterator());
+
+        if (logic != null && mockingDetails(logic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(logic));
+        }
     }
 
     @Test
@@ -153,28 +167,42 @@ public class RunningQueryTest {
         InMemoryInstance instance = new InMemoryInstance("predictor test instance");
         try (AccumuloClient client = new InMemoryAccumuloClient("root", instance)) {
             SampleGenericQueryConfiguration config = new SampleGenericQueryConfiguration();
-            expect(logic.initialize(anyObject(), anyObject(), anyObject())).andReturn(config);
-            logic.setupQuery(config);
-            expect(logic.getCollectQueryMetrics()).andReturn(false);
-            expect(logic.getTransformIterator(settings)).andReturn(new TransformIterator<>());
-            expect(logic.isIntermediateEmptyPagesEnabled()).andReturn(false);
-            expect(logic.isUseSynchronousRunningQuery()).andReturn(false);
-            expect(logic.getResultLimit(settings)).andReturn(-1L);
-            expect(logic.getMaxResults()).andReturn(-1L);
-            logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
-            expect(logic.getUserOperations()).andReturn(null);
+            doReturn(config).when(logic).initialize(any(), any(), any());
 
-            QueryPredictor<BaseQueryMetric> predictor = createMock(QueryPredictor.class);
+            doReturn(false).when(logic).getCollectQueryMetrics();
+            doReturn(new TransformIterator<>()).when(logic).getTransformIterator(settings);
+            doReturn(false).when(logic).isIntermediateEmptyPagesEnabled();
+            doReturn(false).when(logic).isUseSynchronousRunningQuery();
+            doReturn(-1L).when(logic).getResultLimit(settings);
+            doReturn(-1L).when(logic).getMaxResults();
+
+            doReturn(null).when(logic).getUserOperations();
+
+            QueryPredictor<BaseQueryMetric> predictor = mock(QueryPredictor.class);
             Set<Prediction> predictions = Collections.singleton(new Prediction("runtime", 7));
-            expect(predictor.predict(anyObject())).andReturn(predictions);
-            replay(logic, predictor);
+            doReturn(predictions).when(predictor).predict(any());
 
             RunningQuery query = new RunningQuery(null, client, connectionPriority, logic, settings, methodAuths, principal,
                             new RunningQuery.RunningQueryTimingNoOp(), predictor, new QueryMetricFactoryImpl());
 
             assertSame(predictor, query.getPredictor());
             assertEquals(predictions, query.getMetric().getPredictions());
-            verify(logic, predictor);
+            verify(logic, times(1)).initialize(any(), any(), any());
+            verify(logic, times(1)).getCollectQueryMetrics();
+            verify(logic, times(1)).getTransformIterator(settings);
+            verify(logic, times(1)).isIntermediateEmptyPagesEnabled();
+            verify(logic, times(1)).isUseSynchronousRunningQuery();
+            verify(logic, times(1)).getResultLimit(settings);
+            verify(logic, times(1)).getMaxResults();
+            verify(logic, times(1)).getUserOperations();
+            verify(predictor, times(1)).predict(any());
+            verify(logic, times(1)).setupQuery(config);
+            verify(logic, times(1)).preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
+            verifyNoMoreInteractions(ignoreStubs(predictor));
+        }
+
+        if (logic != null && mockingDetails(logic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(logic));
         }
     }
 
@@ -184,13 +212,12 @@ public class RunningQueryTest {
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
 
-        expect(logic.getCollectQueryMetrics()).andReturn(false);
-        expect(logic.isIntermediateEmptyPagesEnabled()).andReturn(false);
-        expect(logic.getResultLimit(settings)).andReturn(-1L);
-        expect(logic.getMaxResults()).andReturn(-1L);
-        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(null));
-        expect(logic.getUserOperations()).andReturn(null);
-        replay(logic);
+        doReturn(false).when(logic).getCollectQueryMetrics();
+        doReturn(false).when(logic).isIntermediateEmptyPagesEnabled();
+        doReturn(-1L).when(logic).getResultLimit(settings);
+        doReturn(-1L).when(logic).getMaxResults();
+
+        doReturn(null).when(logic).getUserOperations();
 
         RunningQuery query = new RunningQuery(client, connectionPriority, logic, settings, methodAuths, principal, new QueryMetricFactoryImpl());
 
@@ -208,10 +235,9 @@ public class RunningQueryTest {
         auths[0] = "A";
         auths[1] = "C";
 
-        expect(logic.getCollectQueryMetrics()).andReturn(false);
-        logic.preInitialize(settings, AuthorizationsUtil.buildAuthorizations(Collections.singleton(Sets.newHashSet("A", "B", "C"))));
-        expect(logic.getUserOperations()).andReturn(null);
-        replay(logic);
+        doReturn(false).when(logic).getCollectQueryMetrics();
+
+        doReturn(null).when(logic).getUserOperations();
 
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList(auths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));

@@ -1,23 +1,27 @@
 package datawave.interceptor;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.lang.reflect.Method;
 
 import javax.interceptor.InvocationContext;
 
-import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import datawave.annotation.Required;
 
-@ExtendWith(EasyMockExtension.class)
-public class RequiredInterceptorTest extends EasyMockSupport {
+@ExtendWith(MockitoExtension.class)
+public class RequiredInterceptorTest {
 
     public static class TestClass {
         public void testMethod(@Required("param") String param) {}
@@ -40,72 +44,99 @@ public class RequiredInterceptorTest extends EasyMockSupport {
     public void testRequiredWithEmptyStringParameter() throws Exception {
         method = TestClass.class.getMethod("testMethod", String.class);
         // Empty String parameter
-        EasyMock.expect(ctx.getParameters()).andReturn(new String[] {""});
-        EasyMock.expect(ctx.getMethod()).andReturn(method);
-        EasyMock.expect(ctx.getMethod()).andReturn(method);
-        replayAll();
+        doReturn(new String[] {""}).when(ctx).getParameters();
+        doReturn(method, method).when(ctx).getMethod();
+
         assertThrows(IllegalArgumentException.class, () -> interceptor.checkRequiredParameters(ctx));
-        verifyAll();
+        verify(ctx, times(1)).getParameters();
+        verify(ctx, times(2)).getMethod();
+
+        if (ctx != null && mockingDetails(ctx).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(ctx));
+        }
     }
 
     @Test
     public void testRequiredWithNullStringParameter() throws Exception {
         method = TestClass.class.getMethod("testMethod", String.class);
         // Null String parameter
-        EasyMock.expect(ctx.getParameters()).andReturn(new String[] {null});
-        EasyMock.expect(ctx.getMethod()).andReturn(method);
-        EasyMock.expect(ctx.getMethod()).andReturn(method);
-        replayAll();
+        doReturn(new String[] {null}).when(ctx).getParameters();
+        doReturn(method, method).when(ctx).getMethod();
+
         assertThrows(IllegalArgumentException.class, () -> interceptor.checkRequiredParameters(ctx));
-        verifyAll();
+        verify(ctx, times(1)).getParameters();
+        verify(ctx, times(2)).getMethod();
+
+        if (ctx != null && mockingDetails(ctx).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(ctx));
+        }
     }
 
     @Test
     public void testRequiredWithStringParameter() throws Exception {
         method = TestClass.class.getMethod("testMethod", String.class);
         // String parameter
-        EasyMock.expect(ctx.getParameters()).andReturn(new String[] {"foo"});
-        EasyMock.expect(ctx.getMethod()).andReturn(method);
-        EasyMock.expect(ctx.proceed()).andReturn(null);
-        replayAll();
+        doReturn(new String[] {"foo"}).when(ctx).getParameters();
+        doReturn(method).when(ctx).getMethod();
+        doReturn(null).when(ctx).proceed();
         interceptor.checkRequiredParameters(ctx);
-        verifyAll();
+        verify(ctx, times(1)).getParameters();
+        verify(ctx, times(1)).getMethod();
+        verify(ctx, times(1)).proceed();
+
+        if (ctx != null && mockingDetails(ctx).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(ctx));
+        }
     }
 
     @Test
     public void testRequiredValidValuesWithInvalidValue() throws Exception {
         method = TestClass.class.getMethod("testValidValudesMethod", String.class);
         // String parameter
-        EasyMock.expect(ctx.getParameters()).andReturn(new String[] {"doh"});
-        EasyMock.expect(ctx.getMethod()).andReturn(method);
-        EasyMock.expect(ctx.getMethod()).andReturn(method);
-        replayAll();
+        doReturn(new String[] {"doh"}).when(ctx).getParameters();
+        doReturn(method, method).when(ctx).getMethod();
+
         assertThrows(IllegalArgumentException.class, () -> interceptor.checkRequiredParameters(ctx));
-        verifyAll();
+        verify(ctx, times(1)).getParameters();
+        verify(ctx, times(2)).getMethod();
+
+        if (ctx != null && mockingDetails(ctx).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(ctx));
+        }
     }
 
     @Test
     public void testRequiredValidValuesWithFirstValidValue() throws Exception {
         method = TestClass.class.getMethod("testValidValudesMethod", String.class);
         // String parameter
-        EasyMock.expect(ctx.getParameters()).andReturn(new String[] {"foo"});
-        EasyMock.expect(ctx.getMethod()).andReturn(method);
-        EasyMock.expect(ctx.proceed()).andReturn(null);
-        replayAll();
+        doReturn(new String[] {"foo"}).when(ctx).getParameters();
+        doReturn(method).when(ctx).getMethod();
+        doReturn(null).when(ctx).proceed();
         interceptor.checkRequiredParameters(ctx);
-        verifyAll();
+        verify(ctx, times(1)).getParameters();
+        verify(ctx, times(1)).getMethod();
+        verify(ctx, times(1)).proceed();
+
+        if (ctx != null && mockingDetails(ctx).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(ctx));
+        }
     }
 
     @Test
     public void testRequiredValidValuesWithSecondValidValue() throws Exception {
         method = TestClass.class.getMethod("testValidValudesMethod", String.class);
         // String parameter
-        EasyMock.expect(ctx.getParameters()).andReturn(new String[] {"bar"});
-        EasyMock.expect(ctx.getMethod()).andReturn(method);
-        EasyMock.expect(ctx.proceed()).andReturn(null);
-        replayAll();
+        doReturn(new String[] {"bar"}).when(ctx).getParameters();
+        doReturn(method).when(ctx).getMethod();
+        doReturn(null).when(ctx).proceed();
         interceptor.checkRequiredParameters(ctx);
-        verifyAll();
+        verify(ctx, times(1)).getParameters();
+        verify(ctx, times(1)).getMethod();
+        verify(ctx, times(1)).proceed();
+
+        if (ctx != null && mockingDetails(ctx).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(ctx));
+        }
     }
 
 }

@@ -1,12 +1,18 @@
 package datawave.query.tables;
 
 import static datawave.query.tables.RemoteTimeoutInterceptingQueryLogic.REMOTE_TIMEOUT_PLAN;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.Iterator;
 import java.util.List;
@@ -14,7 +20,6 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +30,7 @@ import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.microservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 
-public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
+public class RemoteTimeoutInterceptingQueryLogicTest {
     private RemoteTimeoutInterceptingQueryLogic logic;
     private BaseQueryLogic delegate;
 
@@ -36,7 +41,7 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
     @BeforeEach
     public void setup() {
-        delegate = createMock(BaseQueryLogic.class);
+        delegate = mock(BaseQueryLogic.class);
 
         logic = new RemoteTimeoutInterceptingQueryLogic();
         logic.setDelegate(delegate);
@@ -46,36 +51,38 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
     @Test
     public void defaultInitializeTest() throws Exception {
-        expect(delegate.initialize(client, settings, auths)).andThrow(new RemoteTimeoutQueryException());
-
-        replayAll();
+        doThrow(new RemoteTimeoutQueryException()).when(delegate).initialize(client, settings, auths);
 
         assertThrows(RemoteTimeoutQueryException.class, () -> logic.initialize(client, settings, auths));
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(client, settings, auths);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
     public void unsuppressedInitializeTest() throws Exception {
         logic.setSuppressTimeout(true);
 
-        expect(delegate.initialize(client, settings, auths)).andThrow(new QueryException());
-
-        replayAll();
+        doThrow(new QueryException()).when(delegate).initialize(client, settings, auths);
 
         assertThrows(QueryException.class, () -> logic.initialize(client, settings, auths));
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(client, settings, auths);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
     public void suppressInitializeTest() throws Exception {
         logic.setSuppressTimeout(true);
 
-        expect(delegate.initialize(client, settings, auths)).andThrow(new RemoteTimeoutQueryException());
-        expect(delegate.getConfig()).andReturn(new GenericQueryConfiguration());
-
-        replayAll();
+        doThrow(new RemoteTimeoutQueryException()).when(delegate).initialize(client, settings, auths);
+        doReturn(new GenericQueryConfiguration()).when(delegate).getConfig();
 
         GenericQueryConfiguration config = logic.initialize(client, settings, auths);
 
@@ -87,25 +94,32 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         // neither should this
         Iterator itr = logic.iterator();
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(client, settings, auths);
+        verify(delegate, times(1)).getConfig();
 
         assertFalse(itr.hasNext());
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
     public void defaultSetupTest() throws Exception {
         GenericQueryConfiguration config = new GenericQueryConfiguration();
 
-        expect(delegate.initialize(client, settings, auths)).andReturn(config);
-        delegate.setupQuery(config);
-        expectLastCall().andThrow(new RemoteTimeoutQueryException());
-
-        replayAll();
+        doReturn(config).when(delegate).initialize(client, settings, auths);
+        doThrow(new RemoteTimeoutQueryException()).when(delegate).setupQuery(config);
 
         logic.initialize(client, settings, auths);
         assertThrows(RemoteTimeoutQueryException.class, () -> logic.setupQuery(config));
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(client, settings, auths);
+        verify(delegate, times(1)).setupQuery(config);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
@@ -114,16 +128,18 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         GenericQueryConfiguration config = new GenericQueryConfiguration();
 
-        expect(delegate.initialize(client, settings, auths)).andReturn(config);
-        delegate.setupQuery(config);
-        expectLastCall().andThrow(new QueryException());
-
-        replayAll();
+        doReturn(config).when(delegate).initialize(client, settings, auths);
+        doThrow(new QueryException()).when(delegate).setupQuery(config);
 
         logic.initialize(client, settings, auths);
         assertThrows(QueryException.class, () -> logic.setupQuery(config));
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(client, settings, auths);
+        verify(delegate, times(1)).setupQuery(config);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
@@ -132,11 +148,8 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         GenericQueryConfiguration config = new GenericQueryConfiguration();
 
-        expect(delegate.initialize(client, settings, auths)).andReturn(config);
-        delegate.setupQuery(config);
-        expectLastCall().andThrow(new RemoteTimeoutQueryException("exception"));
-
-        replayAll();
+        doReturn(config).when(delegate).initialize(client, settings, auths);
+        doThrow(new RemoteTimeoutQueryException("exception")).when(delegate).setupQuery(config);
 
         logic.initialize(client, settings, auths);
         logic.setupQuery(config);
@@ -144,9 +157,14 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         // this should always be empty
         Iterator itr = logic.iterator();
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(client, settings, auths);
+        verify(delegate, times(1)).setupQuery(config);
 
         assertFalse(itr.hasNext());
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
@@ -155,11 +173,9 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         GenericQueryConfiguration config = new GenericQueryConfiguration();
 
-        expect(delegate.initialize(client, settings, auths)).andReturn(config);
-        delegate.setupQuery(config);
-        expect(delegate.iterator()).andReturn(itr);
+        doReturn(config).when(delegate).initialize(client, settings, auths);
 
-        replayAll();
+        doReturn(itr).when(delegate).iterator();
 
         logic.initialize(client, settings, auths);
         logic.setupQuery(config);
@@ -168,7 +184,13 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         assertThrows(RemoteTimeoutQueryRuntimeException.class, logicItr::hasNext);
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(client, settings, auths);
+        verify(delegate, times(1)).iterator();
+        verify(delegate, times(1)).setupQuery(config);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
@@ -177,11 +199,9 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         GenericQueryConfiguration config = new GenericQueryConfiguration();
 
-        expect(delegate.initialize(client, settings, auths)).andReturn(config);
-        delegate.setupQuery(config);
-        expect(delegate.iterator()).andReturn(itr);
+        doReturn(config).when(delegate).initialize(client, settings, auths);
 
-        replayAll();
+        doReturn(itr).when(delegate).iterator();
 
         logic.initialize(client, settings, auths);
         logic.setupQuery(config);
@@ -190,7 +210,13 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         assertThrows(RuntimeException.class, logicItr::hasNext);
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(client, settings, auths);
+        verify(delegate, times(1)).iterator();
+        verify(delegate, times(1)).setupQuery(config);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
@@ -201,11 +227,9 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         GenericQueryConfiguration config = new GenericQueryConfiguration();
 
-        expect(delegate.initialize(client, settings, auths)).andReturn(config);
-        delegate.setupQuery(config);
-        expect(delegate.iterator()).andReturn(itr);
+        doReturn(config).when(delegate).initialize(client, settings, auths);
 
-        replayAll();
+        doReturn(itr).when(delegate).iterator();
 
         logic.initialize(client, settings, auths);
         logic.setupQuery(config);
@@ -214,7 +238,13 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         assertFalse(logicItr.hasNext());
         assertFalse(logicItr.hasNext());
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(client, settings, auths);
+        verify(delegate, times(1)).iterator();
+        verify(delegate, times(1)).setupQuery(config);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
@@ -225,11 +255,9 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
 
         GenericQueryConfiguration config = new GenericQueryConfiguration();
 
-        expect(delegate.initialize(client, settings, auths)).andReturn(config);
-        delegate.setupQuery(config);
-        expect(delegate.iterator()).andReturn(itr);
+        doReturn(config).when(delegate).initialize(client, settings, auths);
 
-        replayAll();
+        doReturn(itr).when(delegate).iterator();
 
         logic.initialize(client, settings, auths);
         logic.setupQuery(config);
@@ -239,50 +267,64 @@ public class RemoteTimeoutInterceptingQueryLogicTest extends EasyMockSupport {
         logicItr.next();
         assertFalse(logicItr.hasNext());
 
-        verifyAll();
+        verify(delegate, times(1)).initialize(client, settings, auths);
+        verify(delegate, times(1)).iterator();
+        verify(delegate, times(1)).setupQuery(config);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
     public void defaultPlanTest() throws Exception {
-        expect(delegate.getPlan(client, settings, auths, false, false)).andThrow(new RemoteTimeoutQueryException("exception"));
-
-        replayAll();
+        doThrow(new RemoteTimeoutQueryException("exception")).when(delegate).getPlan(client, settings, auths, false, false);
 
         assertThrows(RemoteTimeoutQueryException.class, () -> logic.getPlan(client, settings, auths, false, false));
 
-        verifyAll();
+        verify(delegate, times(1)).getPlan(client, settings, auths, false, false);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
     public void suppressPlanTest() throws Exception {
         logic.setSuppressTimeout(true);
 
-        expect(delegate.getPlan(client, settings, auths, false, false)).andThrow(new RemoteTimeoutQueryException("exception"));
-
-        replayAll();
+        doThrow(new RemoteTimeoutQueryException("exception")).when(delegate).getPlan(client, settings, auths, false, false);
 
         String plan = logic.getPlan(client, settings, auths, false, false);
         assertEquals(REMOTE_TIMEOUT_PLAN, plan);
 
-        verifyAll();
+        verify(delegate, times(1)).getPlan(client, settings, auths, false, false);
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     @Test
     public void planSuppressDoesNotEffectQueryTest() throws Exception {
         logic.setSuppressTimeout(true);
 
-        expect(delegate.getPlan(client, settings, auths, false, false)).andThrow(new RemoteTimeoutQueryException("exception"));
-        expect(delegate.initialize(client, settings, auths)).andThrow(new RemoteTimeoutQueryException("second exception"));
-        expect(delegate.getConfig()).andReturn(new GenericQueryConfiguration());
-
-        replayAll();
+        doThrow(new RemoteTimeoutQueryException("exception")).when(delegate).getPlan(client, settings, auths, false, false);
+        doThrow(new RemoteTimeoutQueryException("second exception")).when(delegate).initialize(client, settings, auths);
+        doReturn(new GenericQueryConfiguration()).when(delegate).getConfig();
 
         String plan = logic.getPlan(client, settings, auths, false, false);
         assertEquals(REMOTE_TIMEOUT_PLAN, plan);
 
         logic.initialize(client, settings, auths);
 
-        verifyAll();
+        verify(delegate, times(1)).getPlan(client, settings, auths, false, false);
+        verify(delegate, times(1)).initialize(client, settings, auths);
+        verify(delegate, times(1)).getConfig();
+
+        if (delegate != null && mockingDetails(delegate).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(delegate));
+        }
     }
 
     private static class ExceptionThrowingIterator<T> implements Iterator<T> {

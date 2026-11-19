@@ -35,10 +35,6 @@
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.woodstox</groupId>
             <artifactId>woodstox-core</artifactId>
             <scope>provided</scope>
