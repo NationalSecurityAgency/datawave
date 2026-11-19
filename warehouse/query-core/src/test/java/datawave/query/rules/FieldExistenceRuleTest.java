@@ -2,28 +2,43 @@ package datawave.query.rules;
 
 import static datawave.query.Constants.ANY_FIELD;
 import static datawave.query.Constants.NO_FIELD;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
-import org.easymock.Mock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import datawave.microservice.query.Query;
 import datawave.query.util.MetadataHelper;
 import datawave.util.time.DateHelper;
 
-@ExtendWith(EasyMockExtension.class)
+@ExtendWith(MockitoExtension.class)
 public class FieldExistenceRuleTest extends ShardQueryRuleTest {
+
+    private final Map<List<?>,Integer> expectedCallCounts = new HashMap<>();
+    private final List<Executable> interactionChecks = new ArrayList<>();
 
     private static final String beginDate = "20201231";
     private static final String endDate = "20251231";
@@ -71,7 +86,14 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
         assertResult();
 
-        EasyMock.verify(settings, helper);
+        assertAll(interactionChecks);
+
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
+        if (settings != null && mockingDetails(settings).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(settings));
+        }
     }
 
     /**
@@ -89,7 +111,14 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
         assertResult();
 
-        EasyMock.verify(settings, helper);
+        assertAll(interactionChecks);
+
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
+        if (settings != null && mockingDetails(settings).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(settings));
+        }
     }
 
     /**
@@ -107,7 +136,14 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
         assertResult();
 
-        EasyMock.verify(settings, helper);
+        assertAll(interactionChecks);
+
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
+        if (settings != null && mockingDetails(settings).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(settings));
+        }
     }
 
     /**
@@ -126,7 +162,14 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
         assertResult();
 
-        EasyMock.verify(settings, helper);
+        assertAll(interactionChecks);
+
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
+        if (settings != null && mockingDetails(settings).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(settings));
+        }
     }
 
     /**
@@ -143,7 +186,14 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
         assertResult();
 
-        EasyMock.verify(settings, helper);
+        assertAll(interactionChecks);
+
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
+        if (settings != null && mockingDetails(settings).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(settings));
+        }
     }
 
     @Override
@@ -153,23 +203,31 @@ public class FieldExistenceRuleTest extends ShardQueryRuleTest {
 
     @Override
     protected ShardQueryRule getNewRule() {
-        EasyMock.expect(settings.getBeginDate()).andReturn(DateHelper.parse(beginDate)).anyTimes();
-        EasyMock.expect(settings.getEndDate()).andReturn(DateHelper.parse(endDate)).anyTimes();
+        lenient().doReturn(DateHelper.parse(beginDate)).when(settings).getBeginDate();
+        lenient().doReturn(DateHelper.parse(endDate)).when(settings).getEndDate();
         givenQuerySettings(settings);
 
         try {
-            EasyMock.expect(helper.getHiddenFields(Collections.emptySet())).andReturn(hiddenFields);
-            EasyMock.expect(helper.getAllFields(Collections.emptySet())).andReturn(existingFields);
+            doReturn(hiddenFields).when(helper).getHiddenFields(Collections.emptySet());
+            List<?> expectedCall1 = Arrays.asList(helper, "getHiddenFields", Collections.emptySet());
+            expectedCallCounts.merge(expectedCall1, 1, Integer::sum);
+            interactionChecks.add(() -> verify(helper, times(expectedCallCounts.get(expectedCall1))).getHiddenFields(Collections.emptySet()));
+            doReturn(existingFields).when(helper).getAllFields(Collections.emptySet());
+            List<?> expectedCall2 = Arrays.asList(helper, "getAllFields", Collections.emptySet());
+            expectedCallCounts.merge(expectedCall2, 1, Integer::sum);
+            interactionChecks.add(() -> verify(helper, times(expectedCallCounts.get(expectedCall2))).getAllFields(Collections.emptySet()));
         } catch (TableNotFoundException e) {
             throw new RuntimeException(e);
         }
 
         if (!foundFields.isEmpty()) {
-            EasyMock.expect(helper.getMissingFieldsInDateRange(foundFields, Collections.emptySet(), beginDate, endDate, specialFields))
-                            .andReturn(missingFields);
+            doReturn(missingFields).when(helper).getMissingFieldsInDateRange(foundFields, Collections.emptySet(), beginDate, endDate, specialFields);
+            List<?> expectedCall3 = Arrays.asList(helper, "getMissingFieldsInDateRange", foundFields, Collections.emptySet(), beginDate, endDate,
+                            specialFields);
+            expectedCallCounts.merge(expectedCall3, 1, Integer::sum);
+            interactionChecks.add(() -> verify(helper, times(expectedCallCounts.get(expectedCall3))).getMissingFieldsInDateRange(foundFields,
+                            Collections.emptySet(), beginDate, endDate, specialFields));
         }
-
-        EasyMock.replay(settings, helper);
 
         FieldExistenceRule rule = new FieldExistenceRule(ruleName);
         rule.setSpecialFields(specialFields);

@@ -6,6 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,8 +32,6 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +53,7 @@ import datawave.query.util.TypeMetadata;
 import datawave.query.util.TypeMetadataSerializer;
 import datawave.table.constants.TableName;
 
-public class VisitorFunctionTest extends EasyMockSupport {
+public class VisitorFunctionTest {
     private VisitorFunction function;
 
     private ShardQueryConfiguration config;
@@ -59,7 +62,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
     @BeforeEach
     public void setup() {
         config = new ShardQueryConfiguration();
-        helper = createMock(MetadataHelper.class);
+        helper = mock(MetadataHelper.class);
     }
 
     private void setupExpects() throws TableNotFoundException, IOException, URISyntaxException {
@@ -87,9 +90,9 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setIndexedFields(indexedFields);
         config.setDatatypeFilter(dataTypes);
         config.setIvaratorCacheDirConfigs(Collections.singletonList(new IvaratorCacheDirConfig(hdfsCacheURI.toString())));
-        EasyMock.expect(helper.getIndexedFields(dataTypes)).andReturn(indexedFields).anyTimes();
-        EasyMock.expect(helper.getIndexOnlyFields(dataTypes)).andReturn(indexedFields).anyTimes();
-        EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(Collections.emptySet()).anyTimes();
+        lenient().doReturn(indexedFields).when(helper).getIndexedFields(dataTypes);
+        lenient().doReturn(indexedFields).when(helper).getIndexOnlyFields(dataTypes);
+        lenient().doReturn(Collections.emptySet()).when(helper).getNonEventFields(dataTypes);
     }
 
     @Test
@@ -101,9 +104,9 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = createMock(Query.class);
+        Query mockQuery = mock(Query.class);
         config.setQuery(mockQuery);
-        EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
+        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
 
         // set thresholds
         config.setFinalMaxTermThreshold(2);
@@ -123,12 +126,15 @@ public class VisitorFunctionTest extends EasyMockSupport {
         // @formatter:on
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
 
-        replayAll();
-
         function = new VisitorFunction(config, helper);
         function.apply(chunk);
 
-        verifyAll();
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
+        if (mockQuery != null && mockingDetails(mockQuery).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockQuery));
+        }
     }
 
     @Test
@@ -139,10 +145,10 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = createMock(Query.class);
+        Query mockQuery = mock(Query.class);
         config.setQuery(mockQuery);
-        EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
-        EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
+        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
+        lenient().doReturn(mockQuery).when(mockQuery).duplicate("testQuery1");
 
         // set thresholds
         config.setFinalMaxTermThreshold(1);
@@ -169,12 +175,8 @@ public class VisitorFunctionTest extends EasyMockSupport {
 
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
 
-        replayAll();
-
         function = new VisitorFunction(config, helper);
         ScannerChunk updatedChunk = function.apply(chunk);
-
-        verifyAll();
 
         assertNotEquals(chunk, updatedChunk);
         String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
@@ -182,6 +184,13 @@ public class VisitorFunctionTest extends EasyMockSupport {
         assertTrue(updatedQuery.contains("_List_"), updatedQuery);
         assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
         assertTrue(updatedQuery.contains("values\":[\"a\",\"b\"]"), updatedQuery);
+
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
+        if (mockQuery != null && mockingDetails(mockQuery).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockQuery));
+        }
     }
 
     @Test
@@ -192,10 +201,10 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = createMock(Query.class);
+        Query mockQuery = mock(Query.class);
         config.setQuery(mockQuery);
-        EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
-        EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
+        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
+        lenient().doReturn(mockQuery).when(mockQuery).duplicate("testQuery1");
 
         // set thresholds
         config.setFinalMaxTermThreshold(10);
@@ -222,8 +231,6 @@ public class VisitorFunctionTest extends EasyMockSupport {
         // @formatter:on
         ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range("20210101_0", "20210101_0")), qd);
 
-        replayAll();
-
         function = new VisitorFunction(config, helper);
         try {
             function.apply(chunk);
@@ -231,12 +238,17 @@ public class VisitorFunctionTest extends EasyMockSupport {
             fail("Expected the ivarator threshold to pass");
         }
 
-        verifyAll();
-
         config.setMaxIvaratorTerms(1);
 
         function = new VisitorFunction(config, helper);
         assertThrows(DatawaveFatalQueryException.class, () -> function.apply(chunk));
+
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
+        if (mockQuery != null && mockingDetails(mockQuery).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockQuery));
+        }
     }
 
     @Test
@@ -247,11 +259,11 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = createMock(Query.class);
+        Query mockQuery = mock(Query.class);
         config.setQuery(mockQuery);
-        EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
-        EasyMock.expect(mockQuery.getQueryName()).andReturn("testQuery1").anyTimes();
-        EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
+        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
+        lenient().doReturn("testQuery1").when(mockQuery).getQueryName();
+        lenient().doReturn(mockQuery).when(mockQuery).duplicate("testQuery1");
 
         // set thresholds
         config.setFinalMaxTermThreshold(1);
@@ -277,8 +289,6 @@ public class VisitorFunctionTest extends EasyMockSupport {
         // @formatter:on
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
 
-        replayAll();
-
         function = new VisitorFunction(config, helper);
         assertThrows(DatawaveFatalQueryException.class, () -> function.apply(chunk));
     }
@@ -291,11 +301,11 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = createMock(Query.class);
+        Query mockQuery = mock(Query.class);
         config.setQuery(mockQuery);
-        EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
-        EasyMock.expect(mockQuery.getQueryName()).andReturn("testQuery1").anyTimes();
-        EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
+        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
+        lenient().doReturn("testQuery1").when(mockQuery).getQueryName();
+        lenient().doReturn(mockQuery).when(mockQuery).duplicate("testQuery1");
 
         // set thresholds
         config.setFinalMaxTermThreshold(5);
@@ -321,12 +331,8 @@ public class VisitorFunctionTest extends EasyMockSupport {
         // @formatter:on
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
 
-        replayAll();
-
         function = new VisitorFunction(config, helper);
         ScannerChunk updatedChunk = function.apply(chunk);
-
-        verifyAll();
 
         assertNotEquals(chunk, updatedChunk);
         String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
@@ -336,6 +342,13 @@ public class VisitorFunctionTest extends EasyMockSupport {
         assertTrue(updatedQuery.contains("values\":[\"a\",\"b\",\"c\",\"d\",\"e\"]"), updatedQuery);
         assertTrue(updatedQuery.contains("FIELD1 == 'x' || FIELD1 == 'y'"), updatedQuery);
         assertTrue(updatedQuery.contains("&& (field = 'FIELD2') && (params = '{\"values\":[\"a\",\"b\",\"c\",\"d\"]}')"), updatedQuery);
+
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
+        if (mockQuery != null && mockingDetails(mockQuery).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockQuery));
+        }
     }
 
     @Test
@@ -346,10 +359,10 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setBypassExecutabilityCheck(true);
         config.setSerializeQueryIterator(false);
 
-        Query mockQuery = createMock(Query.class);
+        Query mockQuery = mock(Query.class);
         config.setQuery(mockQuery);
-        EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
-        EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
+        lenient().doReturn(new UUID(0, 0)).when(mockQuery).getId();
+        lenient().doReturn(mockQuery).when(mockQuery).duplicate("testQuery1");
 
         // set thresholds
         config.setFinalMaxTermThreshold(1);
@@ -375,12 +388,8 @@ public class VisitorFunctionTest extends EasyMockSupport {
         // @formatter:on
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
 
-        replayAll();
-
         function = new VisitorFunction(config, helper);
         ScannerChunk updatedChunk = function.apply(chunk);
-
-        verifyAll();
 
         assertNotEquals(chunk, updatedChunk);
         String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
@@ -388,6 +397,13 @@ public class VisitorFunctionTest extends EasyMockSupport {
         assertTrue(updatedQuery.contains("_List_"), updatedQuery);
         assertTrue(updatedQuery.contains("field = 'FIELD1'"), updatedQuery);
         assertTrue(updatedQuery.contains("ranges\":[[\"(a\",\"z)\"]"), updatedQuery);
+
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
+        if (mockQuery != null && mockingDetails(mockQuery).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockQuery));
+        }
     }
 
     @Test

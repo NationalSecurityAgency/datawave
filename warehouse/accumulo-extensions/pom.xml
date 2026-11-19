@@ -30,6 +30,14 @@
             <artifactId>hadoop-client-runtime</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.woodstox</groupId>
             <artifactId>woodstox-core</artifactId>
             <scope>provided</scope>
@@ -38,11 +46,6 @@
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-start</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
     <profiles>

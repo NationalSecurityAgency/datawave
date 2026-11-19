@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -77,7 +78,6 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -759,18 +759,15 @@ public class BulkIngestMapFileLoaderTest {
 
     protected FileStatus createMockFileStatus() {
 
-        FileStatus mocked = EasyMock.createMock(FileStatus.class);
-        EasyMock.replay(mocked);
+        FileStatus mocked = mock(FileStatus.class);
 
         return mocked;
     }
 
     protected FileStatus createMockFileStatus(Path path) throws Exception {
 
-        FileStatus mocked = EasyMock.createMock(FileStatus.class);
-        EasyMock.expect(mocked.getPath()).andReturn(path);
-
-        EasyMock.replay(mocked);
+        FileStatus mocked = mock(FileStatus.class);
+        doReturn(path).when(mocked).getPath();
 
         return mocked;
     }

@@ -1,11 +1,17 @@
 package datawave.query.tables.ssdeep;
 
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,11 +19,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.easymock.Capture;
-import org.easymock.EasyMockSupport;
 import org.glassfish.jersey.internal.guava.Iterators;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import datawave.core.query.logic.QueryLogic;
 import datawave.microservice.query.Query;
@@ -25,7 +30,7 @@ import datawave.microservice.query.QueryImpl;
 import datawave.query.discovery.DiscoveredThing;
 import datawave.util.ssdeep.SSDeepHash;
 
-public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
+public class FullSSDeepDiscoveryChainStrategyTest {
     private AccumuloClient mockAccumulo;
     private QueryLogic mockLogic;
     private List<ScoredSSDeepPair> input;
@@ -34,10 +39,10 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
 
     @BeforeEach
     public void setup() {
-        mockAccumulo = createMock(AccumuloClient.class);
-        mockLogic = createMock(QueryLogic.class);
+        mockAccumulo = mock(AccumuloClient.class);
+        mockLogic = mock(QueryLogic.class);
 
-        expect(mockLogic.getLogicName()).andReturn("secondLogic").anyTimes();
+        lenient().doReturn("secondLogic").when(mockLogic).getLogicName();
 
         input = new ArrayList<>();
         input.add(new ScoredSSDeepPair(new SSDeepHash(3, "abc", "def"), new SSDeepHash(3, "asdf", "gfs"), Collections.emptySet(), 234));
@@ -49,32 +54,33 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
     public void noInputTest() throws Exception {
         FullSSDeepDiscoveryChainStrategy strategy = new FullSSDeepDiscoveryChainStrategy();
 
-        replayAll();
-
         Iterator<DiscoveredSSDeep> result = strategy.runChainedQuery(mockAccumulo, settings, null, Iterators.emptyIterator(), mockLogic);
 
-        verifyAll();
-
         assertFalse(result.hasNext());
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
     }
 
     @Test
     public void singleInputTest() throws Exception {
         FullSSDeepDiscoveryChainStrategy strategy = new FullSSDeepDiscoveryChainStrategy();
-        Capture<Query> intermediateSettings = Capture.newInstance();
-        DiscoveredThing thing = createMock(DiscoveredThing.class);
+        ArgumentCaptor<Query> intermediateSettings = ArgumentCaptor.forClass(Query.class);
+        DiscoveredThing thing = mock(DiscoveredThing.class);
 
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(null);
-        mockLogic.setupQuery(null);
-
-        expect(mockLogic.iterator()).andReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator());
-        expect(thing.getTerm()).andReturn("3:asdf:gfs");
-
-        replayAll();
+        doReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator()).when(mockLogic).iterator();
+        doReturn("3:asdf:gfs").when(thing).getTerm();
 
         Iterator<DiscoveredSSDeep> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
-        verifyAll();
+        verify(mockLogic, times(1)).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
+        verify(mockLogic, times(1)).iterator();
+        verify(thing, times(1)).getTerm();
+        verify(mockLogic, times(1)).setupQuery(null);
 
         assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfs\"", intermediateSettings.getValue().getQuery());
 
@@ -82,6 +88,16 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
         DiscoveredSSDeep next = result.next();
         assertEquals(234, next.getScoredSSDeepPair().getWeightedScore());
         assertFalse(result.hasNext());
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
+        if (thing != null && mockingDetails(thing).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(thing));
+        }
     }
 
     @Test
@@ -89,20 +105,18 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
         input.add(new ScoredSSDeepPair(new SSDeepHash(3, "def", "def"), new SSDeepHash(3, "asdf", "gfq"), Collections.emptySet(), 101));
 
         FullSSDeepDiscoveryChainStrategy strategy = new FullSSDeepDiscoveryChainStrategy();
-        Capture<Query> intermediateSettings = Capture.newInstance();
-        DiscoveredThing thing = createMock(DiscoveredThing.class);
+        ArgumentCaptor<Query> intermediateSettings = ArgumentCaptor.forClass(Query.class);
+        DiscoveredThing thing = mock(DiscoveredThing.class);
 
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(null);
-        mockLogic.setupQuery(null);
-
-        expect(mockLogic.iterator()).andReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator());
-        expect(thing.getTerm()).andReturn("3:asdf:gfs");
-
-        replayAll();
+        doReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator()).when(mockLogic).iterator();
+        doReturn("3:asdf:gfs").when(thing).getTerm();
 
         Iterator<DiscoveredSSDeep> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
-        verifyAll();
+        verify(mockLogic, times(1)).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
+        verify(mockLogic, times(1)).iterator();
+        verify(thing, times(1)).getTerm();
+        verify(mockLogic, times(1)).setupQuery(null);
 
         assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfs\" OR CHECKSUM_SSDEEP:\"3:asdf:gfq\"", intermediateSettings.getValue().getQuery());
 
@@ -110,6 +124,16 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
         DiscoveredSSDeep next = result.next();
         assertEquals(234, next.getScoredSSDeepPair().getWeightedScore());
         assertFalse(result.hasNext());
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
+        if (thing != null && mockingDetails(thing).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(thing));
+        }
     }
 
     @Test
@@ -119,22 +143,15 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
         FullSSDeepDiscoveryChainStrategy strategy = new FullSSDeepDiscoveryChainStrategy();
         strategy.setBatchSize(1);
 
-        Capture<Query> intermediateSettings = Capture.newInstance();
-        Capture<Query> intermediateSettings2 = Capture.newInstance();
-        DiscoveredThing thing = createMock(DiscoveredThing.class);
+        ArgumentCaptor<Query> intermediateSettings = ArgumentCaptor.forClass(Query.class);
+        DiscoveredThing thing = mock(DiscoveredThing.class);
 
         // first batch
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(null);
-        mockLogic.setupQuery(null);
-        expect(mockLogic.iterator()).andReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator());
-        expect(thing.getTerm()).andReturn("3:asdf:gfs");
+
+        doReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator(), Collections.emptyList().iterator()).when(mockLogic).iterator();
+        doReturn("3:asdf:gfs").when(thing).getTerm();
 
         // second batch
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings2), eq(null))).andReturn(null);
-        mockLogic.setupQuery(null);
-        expect(mockLogic.iterator()).andReturn(Collections.emptyList().iterator());
-
-        replayAll();
 
         Iterator<DiscoveredSSDeep> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
@@ -143,10 +160,23 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
         assertEquals(234, next.getScoredSSDeepPair().getWeightedScore());
         assertFalse(result.hasNext());
 
-        verifyAll();
+        verify(mockLogic, times(2)).iterator();
+        verify(thing, times(1)).getTerm();
+        verify(mockLogic, times(2)).setupQuery(null);
+        verify(mockLogic, times(2)).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
 
-        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfs\"", intermediateSettings.getValue().getQuery());
-        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfq\"", intermediateSettings2.getValue().getQuery());
+        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfs\"", intermediateSettings.getAllValues().get(0).getQuery());
+        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfq\"", intermediateSettings.getAllValues().get(1).getQuery());
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
+        if (thing != null && mockingDetails(thing).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(thing));
+        }
     }
 
     @Test
@@ -158,22 +188,15 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
         strategy.setBatchSize(1);
         strategy.setDedupe(true);
 
-        Capture<Query> intermediateSettings = Capture.newInstance();
-        Capture<Query> intermediateSettings2 = Capture.newInstance();
-        DiscoveredThing thing = createMock(DiscoveredThing.class);
+        ArgumentCaptor<Query> intermediateSettings = ArgumentCaptor.forClass(Query.class);
+        DiscoveredThing thing = mock(DiscoveredThing.class);
 
         // first batch
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(null);
-        mockLogic.setupQuery(null);
-        expect(mockLogic.iterator()).andReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator());
-        expect(thing.getTerm()).andReturn("3:asdf:gfs");
+
+        doReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator(), Collections.emptyList().iterator()).when(mockLogic).iterator();
+        doReturn("3:asdf:gfs").when(thing).getTerm();
 
         // second batch
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings2), eq(null))).andReturn(null);
-        mockLogic.setupQuery(null);
-        expect(mockLogic.iterator()).andReturn(Collections.emptyList().iterator());
-
-        replayAll();
 
         Iterator<DiscoveredSSDeep> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
@@ -182,10 +205,23 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
         assertEquals(234, next.getScoredSSDeepPair().getWeightedScore());
         assertFalse(result.hasNext());
 
-        verifyAll();
+        verify(mockLogic, times(2)).iterator();
+        verify(thing, times(1)).getTerm();
+        verify(mockLogic, times(2)).setupQuery(null);
+        verify(mockLogic, times(2)).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
 
-        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfs\"", intermediateSettings.getValue().getQuery());
-        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfq\"", intermediateSettings2.getValue().getQuery());
+        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfs\"", intermediateSettings.getAllValues().get(0).getQuery());
+        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfq\"", intermediateSettings.getAllValues().get(1).getQuery());
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
+        if (thing != null && mockingDetails(thing).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(thing));
+        }
     }
 
     @Test
@@ -197,29 +233,18 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
         strategy.setBatchSize(1);
         strategy.setDedupe(false);
 
-        Capture<Query> intermediateSettings = Capture.newInstance();
-        Capture<Query> intermediateSettings2 = Capture.newInstance();
-        Capture<Query> intermediateSettings3 = Capture.newInstance();
-        DiscoveredThing thing = createMock(DiscoveredThing.class);
+        ArgumentCaptor<Query> intermediateSettings = ArgumentCaptor.forClass(Query.class);
+        DiscoveredThing thing = mock(DiscoveredThing.class);
 
         // first batch
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(null);
-        mockLogic.setupQuery(null);
-        expect(mockLogic.iterator()).andReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator());
-        expect(thing.getTerm()).andReturn("3:asdf:gfs");
+
+        doReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator(), List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator(),
+                        Collections.emptyList().iterator()).when(mockLogic).iterator();
+        doReturn("3:asdf:gfs", "3:asdf:gfs").when(thing).getTerm();
 
         // second batch (dupe)
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings2), eq(null))).andReturn(null);
-        mockLogic.setupQuery(null);
-        expect(mockLogic.iterator()).andReturn(List.of(new DiscoveredSSDeep(input.get(0), thing)).iterator());
-        expect(thing.getTerm()).andReturn("3:asdf:gfs");
 
         // second batch
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings3), eq(null))).andReturn(null);
-        mockLogic.setupQuery(null);
-        expect(mockLogic.iterator()).andReturn(Collections.emptyList().iterator());
-
-        replayAll();
 
         Iterator<DiscoveredSSDeep> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
@@ -231,10 +256,23 @@ public class FullSSDeepDiscoveryChainStrategyTest extends EasyMockSupport {
         assertEquals(234, next.getScoredSSDeepPair().getWeightedScore());
         assertFalse(result.hasNext());
 
-        verifyAll();
+        verify(mockLogic, times(3)).iterator();
+        verify(thing, times(2)).getTerm();
+        verify(mockLogic, times(3)).setupQuery(null);
+        verify(mockLogic, times(3)).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
 
-        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfs\"", intermediateSettings.getValue().getQuery());
-        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfs\"", intermediateSettings2.getValue().getQuery());
-        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfq\"", intermediateSettings3.getValue().getQuery());
+        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfs\"", intermediateSettings.getAllValues().get(0).getQuery());
+        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfs\"", intermediateSettings.getAllValues().get(1).getQuery());
+        assertEquals("CHECKSUM_SSDEEP:\"3:asdf:gfq\"", intermediateSettings.getAllValues().get(2).getQuery());
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
+        if (thing != null && mockingDetails(thing).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(thing));
+        }
     }
 }

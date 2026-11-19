@@ -4,6 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -15,16 +23,12 @@ import java.util.Map.Entry;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.easymock.MockType;
-import org.easymock.TestSubject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -33,21 +37,20 @@ import datawave.core.common.result.ConnectionPoolProperties;
 import datawave.core.common.result.ConnectionPoolsProperties;
 import datawave.webservice.common.connection.WrappedAccumuloClient;
 
-@ExtendWith(EasyMockExtension.class)
-public class AccumuloConnectionFactoryTest extends EasyMockSupport {
+@ExtendWith(MockitoExtension.class)
+public class AccumuloConnectionFactoryTest {
 
-    @Mock(type = MockType.STRICT)
+    @Mock
     private AccumuloTableCache cache;
 
     private InMemoryInstance instance = new InMemoryInstance();
 
-    @TestSubject
-    private AccumuloConnectionFactoryImpl factory = createMockBuilder(AccumuloConnectionFactoryImpl.class).createStrictMock();
+    private AccumuloConnectionFactoryImpl factory = mock(AccumuloConnectionFactoryImpl.class, CALLS_REAL_METHODS);
 
-    @Mock(type = MockType.STRICT)
+    @Mock
     private WrappedAccumuloClient warehouseClient;
 
-    @Mock(type = MockType.STRICT)
+    @Mock
     private WrappedAccumuloClient metricsClient;
 
     @BeforeEach
@@ -105,49 +108,81 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
 
     @Test
     public void testGetConnection() throws Exception {
-        resetAll();
-        EasyMock.expect(cache.getInstance()).andReturn(instance);
-        replayAll();
+        doReturn(instance).when(cache).getInstance();
         AccumuloClient con = factory.getClient(null, null, AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
-        verifyAll();
+        verify(cache, times(1)).getInstance();
         assertNotNull(con);
         assertEquals(warehouseClient, ((WrappedAccumuloClient) con).getReal());
         assertNull(getField(con, "scannerClassLoaderContext"), "scannerClassLoaderContext was set when it shouldn't have been");
+
+        if (cache != null && mockingDetails(cache).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(cache));
+        }
+        if (metricsClient != null && mockingDetails(metricsClient).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(metricsClient));
+        }
+        if (warehouseClient != null && mockingDetails(warehouseClient).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(warehouseClient));
+        }
     }
 
     @Test
     public void testGetWarehouseConnection() throws Exception {
-        resetAll();
-        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
-        replayAll();
+        doReturn(new InMemoryInstance()).when(cache).getInstance();
         AccumuloClient con = factory.getClient(null, null, "WAREHOUSE", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
-        verifyAll();
+        verify(cache, times(1)).getInstance();
         assertNotNull(con);
         assertEquals(warehouseClient, ((WrappedAccumuloClient) con).getReal());
+
+        if (cache != null && mockingDetails(cache).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(cache));
+        }
+        if (metricsClient != null && mockingDetails(metricsClient).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(metricsClient));
+        }
+        if (warehouseClient != null && mockingDetails(warehouseClient).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(warehouseClient));
+        }
     }
 
     @Test
     public void testGetContextConnection() throws Exception {
         System.setProperty("dw.accumulo.classLoader.context", "alternateContext");
-        resetAll();
-        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
-        replayAll();
+        doReturn(new InMemoryInstance()).when(cache).getInstance();
         AccumuloClient con = factory.getClient(null, null, "WAREHOUSE", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
-        verifyAll();
+        verify(cache, times(1)).getInstance();
         assertNotNull(con);
         assertEquals(warehouseClient, ((WrappedAccumuloClient) con).getReal());
         assertEquals("alternateContext", getField(con, "scannerClassLoaderContext"));
+
+        if (cache != null && mockingDetails(cache).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(cache));
+        }
+        if (metricsClient != null && mockingDetails(metricsClient).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(metricsClient));
+        }
+        if (warehouseClient != null && mockingDetails(warehouseClient).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(warehouseClient));
+        }
     }
 
     @Test
     public void testGetMetricsConnection() throws Exception {
-        resetAll();
-        EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
-        replayAll();
+        doReturn(new InMemoryInstance()).when(cache).getInstance();
         AccumuloClient con = factory.getClient(null, null, "METRICS", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
-        verifyAll();
+        verify(cache, times(1)).getInstance();
         assertNotNull(con);
         assertEquals(metricsClient, ((WrappedAccumuloClient) con).getReal());
+
+        if (cache != null && mockingDetails(cache).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(cache));
+        }
+        if (metricsClient != null && mockingDetails(metricsClient).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(metricsClient));
+        }
+        if (warehouseClient != null && mockingDetails(warehouseClient).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(warehouseClient));
+        }
     }
 
     public static class MyAccumuloClientPoolFactory extends AccumuloClientPoolFactory {

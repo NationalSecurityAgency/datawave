@@ -2,6 +2,10 @@ package datawave.ingest.mapreduce.job.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 import java.util.Map;
 import java.util.TreeMap;
@@ -13,7 +17,6 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,10 +49,8 @@ public class MetricsTableConfigHelperTest {
         String table = MetricsConfiguration.getTable(conf);
 
         // Using mocks to force error during tops.getIteratorSetting()
-        TableOperations tops = EasyMock.createMock(TableOperations.class);
-        EasyMock.expect(tops.getIteratorSetting(EasyMock.anyString(), EasyMock.anyString(), EasyMock.anyObject(IteratorScope.class)))
-                        .andThrow(new AccumuloException(""));
-        EasyMock.replay(tops);
+        TableOperations tops = mock(TableOperations.class);
+        doThrow(new AccumuloException("")).when(tops).getIteratorSetting(anyString(), anyString(), nullable(IteratorScope.class));
 
         // run test
         configHelper.configure(tops);

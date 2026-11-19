@@ -5,6 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +38,6 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.ZooKeeper;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -218,15 +223,14 @@ public class TableSplitsCacheTest {
     }
 
     protected JobConf createMockJobConf() {
-        JobConf mocked = EasyMock.createMock(JobConf.class);
+        JobConf mocked = mock(JobConf.class);
 
-        EasyMock.expect(mocked.getTrimmed("fs.defaultFS", "file:///")).andReturn("file:///").anyTimes();
+        lenient().doReturn("file:///").when(mocked).getTrimmed("fs.defaultFS", "file:///");
 
-        mocked.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            String results = (String) EasyMock.getCurrentArguments()[1];
+            String key = (String) invocation.getArguments()[0];
+            String results = (String) invocation.getArguments()[1];
 
             if (mockConfiguration.containsKey(key)) {
 
@@ -234,13 +238,12 @@ public class TableSplitsCacheTest {
             }
 
             return results;
-        }).anyTimes();
+        }).when(mocked).get(nullable(String.class), nullable(String.class));
 
-        mocked.getLong(EasyMock.anyObject(String.class), EasyMock.anyLong());
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            long results = (Long) EasyMock.getCurrentArguments()[1];
+            String key = (String) invocation.getArguments()[0];
+            long results = (Long) invocation.getArguments()[1];
 
             if (mockConfiguration.containsKey(key)) {
 
@@ -255,20 +258,18 @@ public class TableSplitsCacheTest {
             }
 
             return results;
-        }).anyTimes();
+        }).when(mocked).getLong(nullable(String.class), anyLong());
 
-        mocked.get(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
-            String key = (String) EasyMock.getCurrentArguments()[0];
+            String key = (String) invocation.getArguments()[0];
 
             return mockConfiguration.get(key);
-        }).anyTimes();
+        }).when(mocked).get(nullable(String.class));
 
-        mocked.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
-        EasyMock.expectLastCall().andAnswer(() -> {
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            boolean results = (Boolean) EasyMock.getCurrentArguments()[1];
+        lenient().doAnswer(invocation -> {
+            String key = (String) invocation.getArguments()[0];
+            boolean results = (Boolean) invocation.getArguments()[1];
 
             if (mockConfiguration.containsKey(key)) {
 
@@ -283,13 +284,12 @@ public class TableSplitsCacheTest {
             }
 
             return results;
-        }).anyTimes();
+        }).when(mocked).getBoolean(nullable(String.class), anyBoolean());
 
-        mocked.getInt(EasyMock.anyObject(String.class), EasyMock.anyInt());
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            int results = (Integer) EasyMock.getCurrentArguments()[1];
+            String key = (String) invocation.getArguments()[0];
+            int results = (Integer) invocation.getArguments()[1];
 
             if (mockConfiguration.containsKey(key)) {
 
@@ -304,22 +304,20 @@ public class TableSplitsCacheTest {
             }
 
             return results;
-        }).anyTimes();
+        }).when(mocked).getInt(nullable(String.class), anyInt());
 
-        mocked.set(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            String value = (String) EasyMock.getCurrentArguments()[1];
+            String key = (String) invocation.getArguments()[0];
+            String value = (String) invocation.getArguments()[1];
 
             mockConfiguration.put(key, value);
 
             return null;
-        }).anyTimes();
+        }).when(mocked).set(nullable(String.class), nullable(String.class));
 
-        mocked.getStrings(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
-            String key = (String) EasyMock.getCurrentArguments()[0];
+        lenient().doAnswer(invocation -> {
+            String key = (String) invocation.getArguments()[0];
             String[] results = null;
 
             if (mockConfiguration.containsKey(key)) {
@@ -327,9 +325,7 @@ public class TableSplitsCacheTest {
             }
 
             return results;
-        }).anyTimes();
-
-        EasyMock.replay(mocked);
+        }).when(mocked).getStrings(nullable(String.class));
 
         return mocked;
     }

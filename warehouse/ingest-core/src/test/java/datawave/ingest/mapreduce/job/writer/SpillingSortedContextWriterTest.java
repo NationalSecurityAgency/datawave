@@ -1,11 +1,16 @@
 package datawave.ingest.mapreduce.job.writer;
 
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +25,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +34,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.util.accumulo.RFileUtil;
 
-public class SpillingSortedContextWriterTest extends EasyMockSupport {
+public class SpillingSortedContextWriterTest {
     private SpillingSortedContextWriter writer;
     private Configuration config;
     private File tmpDir;
@@ -43,9 +47,9 @@ public class SpillingSortedContextWriterTest extends EasyMockSupport {
         config = new Configuration();
         tmpDir = getTmpDir();
         context = new StandaloneTaskAttemptContext(config, new StandaloneStatusReporter());
-        outputContext = createMock(TaskInputOutputContext.class);
-        expect(outputContext.getTaskAttemptID()).andReturn(new TaskAttemptID()).anyTimes();
-        expect(outputContext.getConfiguration()).andReturn(config).anyTimes();
+        outputContext = mock(TaskInputOutputContext.class);
+        lenient().doReturn(new TaskAttemptID()).when(outputContext).getTaskAttemptID();
+        lenient().doReturn(config).when(outputContext).getConfiguration();
     }
 
     @AfterEach
@@ -209,16 +213,14 @@ public class SpillingSortedContextWriterTest extends EasyMockSupport {
         writer.write(bik, new Value(), context);
         writer.commit(context);
 
-        bik = new BulkIngestKey(new Text("testTable"), appleKey);
-        outputContext.write(eq(bik), isA(Value.class));
-        bik = new BulkIngestKey(new Text("testTable"), bananaKey);
-        outputContext.write(eq(bik), isA(Value.class));
-
-        replayAll();
-
         writer.cleanup(outputContext);
 
-        verifyAll();
+        verify(outputContext).write(eq(new BulkIngestKey(new Text("testTable"), appleKey)), isA(Value.class));
+        verify(outputContext).write(eq(new BulkIngestKey(new Text("testTable"), bananaKey)), isA(Value.class));
+
+        if (outputContext != null && mockingDetails(outputContext).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(outputContext));
+        }
     }
 
     @Test

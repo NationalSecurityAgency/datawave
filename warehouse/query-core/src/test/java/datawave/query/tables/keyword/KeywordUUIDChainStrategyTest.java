@@ -1,14 +1,19 @@
 package datawave.query.tables.keyword;
 
 import static datawave.query.tables.keyword.KeywordUUIDChainStrategy.CATEGORY_PARAMETER;
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.newCapture;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,10 +28,9 @@ import java.util.Set;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-import org.easymock.Capture;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import datawave.data.type.NoOpType;
 import datawave.microservice.query.Query;
@@ -43,7 +47,7 @@ import datawave.util.keyword.KeywordResults;
 import datawave.util.keyword.TagCloudInput;
 import datawave.util.keyword.TagCloudPartition;
 
-public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
+public class KeywordUUIDChainStrategyTest {
 
     private AccumuloClient mockAccumulo;
     private KeywordQueryLogic mockLogic;
@@ -54,12 +58,12 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
     @BeforeEach
     public void setup() throws Exception {
-        mockAccumulo = createMock(AccumuloClient.class);
-        mockLogic = createMock(KeywordQueryLogic.class);
-        mockConfig = createMock(KeywordQueryConfiguration.class);
-        // mockState = createMock(KeywordQueryState.class);
+        mockAccumulo = mock(AccumuloClient.class);
+        mockLogic = mock(KeywordQueryLogic.class);
+        mockConfig = mock(KeywordQueryConfiguration.class);
+        // mockState = mock(KeywordQueryState.class);
 
-        expect(mockLogic.getLogicName()).andReturn("secondLogic").anyTimes();
+        lenient().doReturn("secondLogic").when(mockLogic).getLogicName();
 
         settings = new QueryImpl();
     }
@@ -100,13 +104,19 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
 
-        replayAll();
-
         Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
-        verifyAll();
-
         assertFalse(result.hasNext());
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockConfig != null && mockingDetails(mockConfig).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockConfig));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
     }
 
     @Test
@@ -122,17 +132,17 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
                         .of(createKeywordResults("20250412", "test", "-cvy0gj.tlf59s.-duxzua", "ENGLISH", "PAGE_ID:12345", "CONTENT", "PUBLIC", results));
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
-        Capture<Query> intermediateSettings = Capture.newInstance();
+        ArgumentCaptor<Query> intermediateSettings = ArgumentCaptor.forClass(Query.class);
 
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
-        mockLogic.setupQuery(eq(mockConfig));
-        expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+        doReturn(mockConfig).when(mockLogic).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
 
-        replayAll();
+        doReturn(intermediateInput.iterator()).when(mockLogic).iterator();
 
         Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
-        verifyAll();
+        verify(mockLogic, times(1)).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
+        verify(mockLogic, times(1)).iterator();
+        verify(mockLogic, times(1)).setupQuery(eq(mockConfig));
 
         assertEquals("DOCUMENT:20250412/test/-cvy0gj.tlf59s.-duxzua!PAGE_ID:12345%LANGUAGE:ENGLISH", intermediateSettings.getValue().getQuery());
 
@@ -150,6 +160,16 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         assertNotNull(keywordResults.getKeywords().get("cat"));
 
         assertFalse(result.hasNext());
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockConfig != null && mockingDetails(mockConfig).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockConfig));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
     }
 
     @Test
@@ -174,17 +194,17 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         );
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
-        Capture<Query> intermediateSettings = Capture.newInstance();
+        ArgumentCaptor<Query> intermediateSettings = ArgumentCaptor.forClass(Query.class);
 
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
-        mockLogic.setupQuery(eq(mockConfig));
-        expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+        doReturn(mockConfig).when(mockLogic).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
 
-        replayAll();
+        doReturn(intermediateInput.iterator()).when(mockLogic).iterator();
 
         Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
-        verifyAll();
+        verify(mockLogic, times(1)).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
+        verify(mockLogic, times(1)).iterator();
+        verify(mockLogic, times(1)).setupQuery(eq(mockConfig));
 
         assertEquals("DOCUMENT:20250412/test/-cvy0gj.tlf59s.-duxzua!PAGE_ID:12345%LANGUAGE:ENGLISH DOCUMENT:20250412/test/-cvy0gj.tlf59s.-duxzub!PAGE_ID:12346%LANGUAGE:NONE",
                         intermediateSettings.getValue().getQuery());
@@ -215,6 +235,16 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
             assertEquals("PUBLIC", keywordResults.getVisibility());
             assertNotNull(keywordResults.getKeywords().get("bird"));
         }
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockConfig != null && mockingDetails(mockConfig).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockConfig));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
     }
 
     @Test
@@ -239,18 +269,18 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         );
 
         KeywordUUIDChainStrategy strategy = new KeywordUUIDChainStrategy();
-        Capture<Query> intermediateSettings = Capture.newInstance();
+        ArgumentCaptor<Query> intermediateSettings = ArgumentCaptor.forClass(Query.class);
 
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
-        mockLogic.setupQuery(eq(mockConfig));
-        expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+        doReturn(mockConfig).when(mockLogic).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
 
-        replayAll();
+        doReturn(intermediateInput.iterator()).when(mockLogic).iterator();
 
         strategy.setBatchSize(1);
         Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
-        verifyAll();
+        verify(mockLogic, times(1)).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
+        verify(mockLogic, times(1)).iterator();
+        verify(mockLogic, times(1)).setupQuery(eq(mockConfig));
 
         assertEquals("DOCUMENT:20250412/test/-cvy0gj.tlf59s.-duxzua!PAGE_ID:12345%LANGUAGE:ENGLISH", intermediateSettings.getValue().getQuery());
 
@@ -277,6 +307,16 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
             assertEquals("ENGLISH", keywordResults.getLanguage());
             assertNotNull(keywordResults.getKeywords().get("bird"));
         }
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockConfig != null && mockingDetails(mockConfig).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockConfig));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
     }
 
     @Test
@@ -299,21 +339,21 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         fieldedExtractor.setCategory("external");
         strategy.setExtractors(List.of(fieldedExtractor));
 
-        Capture<Query> intermediateSettings = Capture.newInstance();
+        ArgumentCaptor<Query> intermediateSettings = ArgumentCaptor.forClass(Query.class);
 
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
-        mockLogic.setupQuery(eq(mockConfig));
-        expect(mockLogic.iterator()).andReturn(intermediateInput.iterator()).once();
+        doReturn(mockConfig).when(mockLogic).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
 
-        Capture<List<Entry<Key,Value>>> externalData = newCapture();
-        Capture<Set<TagCloudInputTransformer<?>>> transformers = newCapture();
-        mockLogic.setExternalData(capture(externalData), capture(transformers));
+        doReturn(intermediateInput.iterator()).when(mockLogic).iterator();
 
-        replayAll();
+        ArgumentCaptor<List<Entry<Key,Value>>> externalData = ArgumentCaptor.forClass((Class) List.class);
+        ArgumentCaptor<Set<TagCloudInputTransformer<?>>> transformers = ArgumentCaptor.forClass((Class) Set.class);
 
         Iterator<Entry<Key,Value>> result = strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
-        verifyAll();
+        verify(mockLogic, times(1)).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
+        verify(mockLogic, times(1)).iterator();
+        verify(mockLogic, times(1)).setupQuery(eq(mockConfig));
+        verify(mockLogic, times(1)).setExternalData(externalData.capture(), transformers.capture());
 
         assertEquals("DOCUMENT:20250412/test/-cvy0gj.tlf59s.-duxzua!PAGE_ID:12345%LANGUAGE:ENGLISH", intermediateSettings.getValue().getQuery());
 
@@ -352,6 +392,16 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         assertEquals(2, tagCloudInput.getEntities().size());
         Map<String,Double> expectedEntites = Map.of("x", 1d, "y", 1d);
         assertEquals(expectedEntites, tagCloudInput.getEntities());
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockConfig != null && mockingDetails(mockConfig).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockConfig));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
     }
 
     @Test
@@ -370,23 +420,23 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         fieldedExtractor2.setCategory("external");
 
         strategy.setExtractors(List.of(fieldedExtractor, fieldedExtractor2));
-        Capture<List<Entry<Key,Value>>> externalData = newCapture();
-        Capture<Set<TagCloudInputTransformer<?>>> transformers = newCapture();
-        mockLogic.setExternalData(capture(externalData), capture(transformers));
+        ArgumentCaptor<List<Entry<Key,Value>>> externalData = ArgumentCaptor.forClass((Class) List.class);
+        ArgumentCaptor<Set<TagCloudInputTransformer<?>>> transformers = ArgumentCaptor.forClass((Class) Set.class);
 
-        Capture<Query> intermediateSettings = Capture.newInstance();
-        expect(mockLogic.initialize(eq(mockAccumulo), capture(intermediateSettings), eq(null))).andReturn(mockConfig).once();
-        mockLogic.setupQuery(eq(mockConfig));
+        ArgumentCaptor<Query> intermediateSettings = ArgumentCaptor.forClass(Query.class);
+        doReturn(mockConfig).when(mockLogic).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
+
         // this response is meaningless here
         List<Entry<Key,Value>> responseData = new ArrayList<>();
-        expect(mockLogic.iterator()).andReturn(responseData.iterator());
-
-        replayAll();
+        doReturn(responseData.iterator()).when(mockLogic).iterator();
 
         // because the internals are all mocked the output isn't valuable
         strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
-        verifyAll();
+        verify(mockLogic, times(1)).initialize(eq(mockAccumulo), intermediateSettings.capture(), eq(null));
+        verify(mockLogic, times(1)).iterator();
+        verify(mockLogic, times(1)).setExternalData(externalData.capture(), transformers.capture());
+        verify(mockLogic, times(1)).setupQuery(eq(mockConfig));
 
         // look at the captures to verify the right things were passed in
         Set<TagCloudInputTransformer<?>> capturedTransformers = transformers.getValue();
@@ -425,6 +475,16 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
         assertEquals(2, tagCloudInput.getEntities().size());
         expectedEntites = Map.of("xx", 1d, "yy", 1d);
         assertEquals(expectedEntites, tagCloudInput.getEntities());
+
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockConfig != null && mockingDetails(mockConfig).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockConfig));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
     }
 
     @Test
@@ -442,11 +502,17 @@ public class KeywordUUIDChainStrategyTest extends EasyMockSupport {
 
         // the important part here is that there is no external data set on the mockLogic, if there is nothing extracted nothing, should be passed
 
-        replayAll();
-
         // because the internals are all mocked the output isn't valuable
         strategy.runChainedQuery(mockAccumulo, settings, null, input.iterator(), mockLogic);
 
-        verifyAll();
+        if (mockAccumulo != null && mockingDetails(mockAccumulo).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockAccumulo));
+        }
+        if (mockConfig != null && mockingDetails(mockConfig).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockConfig));
+        }
+        if (mockLogic != null && mockingDetails(mockLogic).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockLogic));
+        }
     }
 }

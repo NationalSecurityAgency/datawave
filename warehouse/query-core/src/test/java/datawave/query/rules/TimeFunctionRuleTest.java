@@ -1,8 +1,10 @@
 package datawave.query.rules;
 
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+
 import java.util.Set;
 
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -42,10 +44,9 @@ class TimeFunctionRuleTest extends ShardQueryRuleTest {
         givenMetadataHelper(new MockMetadataHelper());
 
         // Set up a mock TypeMetadata that will return the date type for the fields in the time function.
-        TypeMetadata typeMetadata = EasyMock.mock(TypeMetadata.class);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("DATE1")).andReturn(DATE_TYPE);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("DATE2")).andReturn(DATE_TYPE);
-        EasyMock.replay(typeMetadata);
+        TypeMetadata typeMetadata = mock(TypeMetadata.class);
+        doReturn(DATE_TYPE).when(typeMetadata).getNormalizerNamesForField("DATE1");
+        doReturn(DATE_TYPE).when(typeMetadata).getNormalizerNamesForField("DATE2");
         givenTypeMetadata(typeMetadata);
 
         // Do not expect any messages.
@@ -61,10 +62,9 @@ class TimeFunctionRuleTest extends ShardQueryRuleTest {
         givenMetadataHelper(new MockMetadataHelper());
 
         // Set up a mock TypeMetadata that will return non-date types for the fields in the time function.
-        TypeMetadata typeMetadata = EasyMock.mock(TypeMetadata.class);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("DATE1")).andReturn(DATE_TYPE);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("NON_DATE2")).andReturn(LC_NO_DIACRITICS_TYPE);
-        EasyMock.replay(typeMetadata);
+        TypeMetadata typeMetadata = mock(TypeMetadata.class);
+        doReturn(DATE_TYPE).when(typeMetadata).getNormalizerNamesForField("DATE1");
+        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("NON_DATE2");
         givenTypeMetadata(typeMetadata);
 
         expectMessage("Function #TIME_FUNCTION (filter:timeFunction) found with fields that are not date types: NON_DATE2");
@@ -81,10 +81,9 @@ class TimeFunctionRuleTest extends ShardQueryRuleTest {
         givenMetadataHelper(new MockMetadataHelper());
 
         // Set up a mock TypeMetadata that will return non-date types for the fields in the time function.
-        TypeMetadata typeMetadata = EasyMock.mock(TypeMetadata.class);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("NON_DATE1")).andReturn(LC_NO_DIACRITICS_TYPE);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("NON_DATE2")).andReturn(LC_NO_DIACRITICS_TYPE);
-        EasyMock.replay(typeMetadata);
+        TypeMetadata typeMetadata = mock(TypeMetadata.class);
+        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("NON_DATE1");
+        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("NON_DATE2");
         givenTypeMetadata(typeMetadata);
 
         expectMessage("Function #TIME_FUNCTION (filter:timeFunction) found with fields that are not date types: NON_DATE1, NON_DATE2");
@@ -101,13 +100,12 @@ class TimeFunctionRuleTest extends ShardQueryRuleTest {
         givenMetadataHelper(new MockMetadataHelper());
 
         // Set up a mock TypeMetadata that will return non-date types for the fields in the time function.
-        TypeMetadata typeMetadata = EasyMock.mock(TypeMetadata.class);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("DATE1")).andReturn(DATE_TYPE);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("DATE2")).andReturn(DATE_TYPE).times(2);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("NON_DATE1")).andReturn(LC_NO_DIACRITICS_TYPE);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("NON_DATE2")).andReturn(LC_NO_DIACRITICS_TYPE);
-        EasyMock.expect(typeMetadata.getNormalizerNamesForField("NON_DATE3")).andReturn(LC_NO_DIACRITICS_TYPE);
-        EasyMock.replay(typeMetadata);
+        TypeMetadata typeMetadata = mock(TypeMetadata.class);
+        doReturn(DATE_TYPE).when(typeMetadata).getNormalizerNamesForField("DATE1");
+        doReturn(DATE_TYPE).when(typeMetadata).getNormalizerNamesForField("DATE2");
+        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("NON_DATE1");
+        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("NON_DATE2");
+        doReturn(LC_NO_DIACRITICS_TYPE).when(typeMetadata).getNormalizerNamesForField("NON_DATE3");
         givenTypeMetadata(typeMetadata);
 
         expectMessage("Function #TIME_FUNCTION (filter:timeFunction) found with fields that are not date types: NON_DATE1, NON_DATE2, NON_DATE3");

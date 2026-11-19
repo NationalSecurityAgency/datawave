@@ -2,6 +2,8 @@ package datawave.ingest.table.volumeChoosers;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,15 +16,13 @@ import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
 import org.apache.hadoop.io.Text;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(EasyMockExtension.class)
-public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSupport {
+@ExtendWith(MockitoExtension.class)
+public class ShardedTableDateBasedTieredVolumeChooserTest {
     Set<String> options = new HashSet<>();
     {
         options.add("newData1");
@@ -306,26 +306,18 @@ public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSuppor
     }
 
     private void setupMock(Map<Long,String> tiers, String shardId) {
-        resetAll();
         Optional<TableId> tableOptional = Optional.of(tableId);
-        EasyMock.expect(env.getTable()).andReturn(tableOptional).once();
-        EasyMock.expect(env.getChooserScope()).andReturn(VolumeChooserEnvironment.Scope.TABLE).times(1);
-        EasyMock.expect(env.getTable()).andReturn(tableOptional).anyTimes();
-        EasyMock.expect(env.getServiceEnv()).andReturn(serviceEnvironment).anyTimes();
-        EasyMock.expect(serviceEnvironment.getConfiguration(tableId)).andReturn(configuration).anyTimes();
-        EasyMock.expect(configuration.getTableCustom("volume.tier.names"))
-                        .andReturn(tiers.keySet().stream().map(s -> "tier" + s).collect(Collectors.joining(","))).once();
+        lenient().doReturn(VolumeChooserEnvironment.Scope.TABLE).when(env).getChooserScope();
+        lenient().doReturn(tableOptional).when(env).getTable();
+        lenient().doReturn(serviceEnvironment).when(env).getServiceEnv();
+        lenient().doReturn(configuration).when(serviceEnvironment).getConfiguration(tableId);
+        doReturn(tiers.keySet().stream().map(s -> "tier" + s).collect(Collectors.joining(","))).when(configuration).getTableCustom("volume.tier.names");
         for (Map.Entry<Long,String> tier : tiers.entrySet()) {
-            EasyMock.expect(configuration.getTableCustom("volume.tiered.tier" + tier.getKey() + ".volumes")).andReturn(tier.getValue()).once();
-            EasyMock.expect(configuration.getTableCustom("volume.tiered.tier" + tier.getKey() + ".days.back")).andReturn(String.valueOf(tier.getKey()))
-                            .anyTimes();
+            lenient().doReturn(tier.getValue()).when(configuration).getTableCustom("volume.tiered.tier" + tier.getKey() + ".volumes");
+            lenient().doReturn(String.valueOf(tier.getKey())).when(configuration).getTableCustom("volume.tiered.tier" + tier.getKey() + ".days.back");
         }
         if (shardId != null) {
-            EasyMock.expect(env.getEndRow()).andReturn(new Text(shardId)).once();
-        } else {
-            EasyMock.expect(env.getEndRow()).andReturn(null).once();
-
+            lenient().doReturn(new Text(shardId), null).when(env).getEndRow();
         }
-        replayAll();
     }
 }

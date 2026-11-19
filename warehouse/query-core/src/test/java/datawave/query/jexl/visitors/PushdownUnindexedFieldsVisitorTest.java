@@ -11,14 +11,13 @@ import java.util.stream.Stream;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import datawave.query.jexl.JexlASTHelper;
 
-public class PushdownUnindexedFieldsVisitorTest extends EasyMockSupport {
+public class PushdownUnindexedFieldsVisitorTest {
 
     public static Stream<Arguments> testCases() {
         // @formatter:off
@@ -100,12 +99,9 @@ public class PushdownUnindexedFieldsVisitorTest extends EasyMockSupport {
     public void testPushdown(String testName, String baseQueryPlan, String expectedUnindexedPushdown, Set<String> unindexedFields) throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery(baseQueryPlan);
 
-        replayAll();
-
         JexlNode result = PushdownUnindexedFieldsVisitor.pushdownPredicates(query, new HashSet<>(unindexedFields));
         assertEquals(expectedUnindexedPushdown, JexlStringBuildingVisitor.buildQuery(result));
 
-        verifyAll();
     }
 
 }

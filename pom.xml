@@ -98,7 +98,6 @@
         <version.datawave.query-metric-api>4.1.7</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.dnsjava>3.6.3</version.dnsjava>
-        <version.easymock>5.2.0</version.easymock>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
         <version.geoserver>2.26.3</version.geoserver>
         <version.geotools>28.1</version.geotools>
@@ -1468,18 +1467,6 @@
                 <version>${version.awaitility}</version>
                 <!-- Not recommended for production code. -->
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.easymock</groupId>
-                <artifactId>easymock</artifactId>
-                <version>${version.easymock}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>cglib</groupId>
-                        <artifactId>cglib-nodep</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.arquillian.container</groupId>

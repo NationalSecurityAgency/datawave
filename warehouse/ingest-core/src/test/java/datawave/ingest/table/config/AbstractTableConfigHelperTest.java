@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +27,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -64,7 +66,7 @@ public class AbstractTableConfigHelperTest {
 
         protected Logger createMockLogger() {
 
-            Logger log = EasyMock.createMock(Logger.class);
+            Logger log = mock(Logger.class);
 
             if (null == debugMessages) {
 
@@ -76,27 +78,23 @@ public class AbstractTableConfigHelperTest {
                 infoMessages = new ArrayList<>();
             }
 
-            log.debug(EasyMock.anyObject(String.class));
-            EasyMock.expectLastCall().andAnswer(() -> {
+            lenient().doAnswer(invocation -> {
 
-                String msg = (String) EasyMock.getCurrentArguments()[0];
+                String msg = (String) invocation.getArguments()[0];
 
                 debugMessages.add(msg);
 
                 return null;
-            }).anyTimes();
+            }).when(log).debug(nullable(String.class));
 
-            log.info(EasyMock.anyObject(String.class));
-            EasyMock.expectLastCall().andAnswer(() -> {
+            lenient().doAnswer(invocation -> {
 
-                String msg = (String) EasyMock.getCurrentArguments()[0];
+                String msg = (String) invocation.getArguments()[0];
 
                 infoMessages.add(msg);
 
                 return null;
-            }).anyTimes();
-
-            EasyMock.replay(log);
+            }).when(log).info(nullable(String.class));
 
             return log;
         }
@@ -514,14 +512,13 @@ public class AbstractTableConfigHelperTest {
             }
         }
 
-        TableOperations mock = EasyMock.createMock(TableOperations.class);
+        TableOperations mock = mock(TableOperations.class);
 
-        mock.getProperties(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
             AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED = true;
 
-            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            String tableNameParameter = (String) invocation.getArguments()[0];
 
             if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
 
@@ -534,14 +531,13 @@ public class AbstractTableConfigHelperTest {
             }
 
             return tableProperties.entrySet();
-        }).anyTimes();
+        }).when(mock).getProperties(nullable(String.class));
 
-        mock.setProperty(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
             AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = true;
 
-            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            String tableNameParameter = (String) invocation.getArguments()[0];
 
             if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
 
@@ -553,19 +549,18 @@ public class AbstractTableConfigHelperTest {
                 throw new AccumuloSecurityException(AbstractTableConfigHelperTest.USER, SecurityErrorCode.PERMISSION_DENIED);
             }
 
-            String name = (String) EasyMock.getCurrentArguments()[1];
-            String value = (String) EasyMock.getCurrentArguments()[2];
+            String name = (String) invocation.getArguments()[1];
+            String value = (String) invocation.getArguments()[2];
 
             tableProperties.put(name, value);
             return null;
-        }).anyTimes();
+        }).when(mock).setProperty(nullable(String.class), nullable(String.class), nullable(String.class));
 
-        mock.getLocalityGroups(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
             AbstractTableConfigHelperTest.ARE_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
 
-            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            String tableNameParameter = (String) invocation.getArguments()[0];
 
             if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
 
@@ -578,16 +573,15 @@ public class AbstractTableConfigHelperTest {
             }
 
             return localityGroups;
-        }).anyTimes();
+        }).when(mock).getLocalityGroups(nullable(String.class));
 
         Map<String,Set<Text>> groups = new HashMap<>();
 
-        mock.setLocalityGroups(EasyMock.anyObject(String.class), EasyMock.anyObject(groups.getClass()));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
             AbstractTableConfigHelperTest.SET_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
 
-            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            String tableNameParameter = (String) invocation.getArguments()[0];
 
             if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
 
@@ -604,15 +598,14 @@ public class AbstractTableConfigHelperTest {
                 throw new AccumuloException(AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
 
-            Map<String,Set<Text>> groups1 = (Map<String,Set<Text>>) EasyMock.getCurrentArguments()[1];
+            Map<String,Set<Text>> groups1 = (Map<String,Set<Text>>) invocation.getArguments()[1];
 
             localityGroups.putAll(groups1);
 
             return null;
-        }).anyTimes();
+        }).when(mock).setLocalityGroups(nullable(String.class), nullable(groups.getClass()));
 
         // prepare it for use...
-        EasyMock.replay(mock);
 
         return mock;
     }

@@ -1,11 +1,18 @@
 package datawave.query.jexl.lookups;
 
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -33,7 +40,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -51,7 +57,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.table.constants.TableName;
 import datawave.util.time.DateHelper;
 
-public class BoundedRangeIndexLookupTest extends EasyMockSupport {
+public class BoundedRangeIndexLookupTest {
 
     @TempDir
     static File temporaryFolder;
@@ -107,7 +113,7 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
 
         // large lookup
         largeConfig = new ShardQueryConfiguration();
-        largeScannerFactory = createMock(ScannerFactory.class);
+        largeScannerFactory = mock(ScannerFactory.class);
 
         monitor = ScanMonitor.of(25_000, "test", null);
     }
@@ -386,9 +392,8 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         SortedListKeyValueIterator itr = new SortedListKeyValueIterator(src);
         LocalBatchScanner scanner = new LocalBatchScanner(itr, true);
         // add expects for the scanner factory
-        expect(largeScannerFactory.newScanner(eq("shardIndex"), isA(Set.class), eq(1), isA(QueryImpl.class), eq("shardIndex"))).andAnswer(() -> scanner);
-        expect(largeScannerFactory.close(scanner)).andReturn(true);
-        replayAll();
+        doAnswer(invocation -> scanner).when(largeScannerFactory).newScanner(eq("shardIndex"), isA(Set.class), eq(1), isA(QueryImpl.class), eq("shardIndex"));
+        doReturn(true).when(largeScannerFactory).close(scanner);
         largeLookup.submit();
         IndexLookupMap map = largeLookup.lookup();
         // verify we went over all the data even though the threshold was lower than this
@@ -401,6 +406,11 @@ public class BoundedRangeIndexLookupTest extends EasyMockSupport {
         } else {
             assertTrue(map.isEmpty());
         }
-        verifyAll();
+        verify(largeScannerFactory, times(1)).newScanner(eq("shardIndex"), isA(Set.class), eq(1), isA(QueryImpl.class), eq("shardIndex"));
+        verify(largeScannerFactory, times(1)).close(scanner);
+
+        if (largeScannerFactory != null && mockingDetails(largeScannerFactory).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(largeScannerFactory));
+        }
     }
 }

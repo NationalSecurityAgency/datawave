@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -11,15 +15,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
-import org.easymock.EasyMockSupport;
-import org.easymock.IMocksControl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -35,8 +37,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.ProtocolResolver;
 import org.springframework.core.io.Resource;
 
-@ExtendWith(EasyMockExtension.class)
-class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
+class ThreadSafeClassPathXmlApplicationContextTest {
 
     private ConfigurableApplicationContext delegateContext;
     private ReadWriteLock readWriteLock;
@@ -47,13 +48,11 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
 
     @BeforeEach
     void setUp() {
-        // Create the mocks with a strict control so that the order of method calls between the different mocks is tested when we verify the mock calls.
-        IMocksControl mockMaker = createStrictControl();
-
-        delegateContext = mockMaker.createMock(ConfigurableApplicationContext.class);
-        readWriteLock = mockMaker.mock(ReadWriteLock.class);
-        readLock = mockMaker.createMock(Lock.class);
-        writeLock = mockMaker.createMock(Lock.class);
+        // Verify lock acquisition, delegation, and release together with Mockito InOrder.
+        delegateContext = mock(ConfigurableApplicationContext.class);
+        readWriteLock = mock(ReadWriteLock.class);
+        readLock = mock(Lock.class);
+        writeLock = mock(Lock.class);
 
         threadSafeContext = new ThreadSafeClassPathXmlApplicationContext(delegateContext, readWriteLock);
     }
@@ -63,7 +62,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testSetId() {
-        assertExecutedWithWriteLock(() -> delegateContext.setId("id"), () -> threadSafeContext.setId("id"));
+        assertExecutedWithWriteLock(delegate -> delegate.setId("id"), () -> threadSafeContext.setId("id"));
     }
 
     /**
@@ -71,8 +70,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeanFactory() {
-        ConfigurableListableBeanFactory expected = EasyMock.mock(ConfigurableListableBeanFactory.class);
-        assertExecutedWithReadLock(delegateContext::getBeanFactory, threadSafeContext::getBeanFactory, expected);
+        ConfigurableListableBeanFactory expected = mock(ConfigurableListableBeanFactory.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBeanFactory(), threadSafeContext::getBeanFactory, expected);
     }
 
     /**
@@ -80,7 +79,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetId() {
-        assertExecutedWithReadLock(delegateContext::getId, threadSafeContext::getId, "id");
+        assertExecutedWithReadLock(delegate -> delegate.getId(), threadSafeContext::getId, "id");
     }
 
     /**
@@ -88,7 +87,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetApplicationName() {
-        assertExecutedWithReadLock(delegateContext::getApplicationName, threadSafeContext::getApplicationName, "name");
+        assertExecutedWithReadLock(delegate -> delegate.getApplicationName(), threadSafeContext::getApplicationName, "name");
     }
 
     /**
@@ -96,7 +95,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetDisplayName() {
-        assertExecutedWithReadLock(delegateContext::getDisplayName, threadSafeContext::getDisplayName, "name");
+        assertExecutedWithReadLock(delegate -> delegate.getDisplayName(), threadSafeContext::getDisplayName, "name");
     }
 
     /**
@@ -104,8 +103,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetParent() {
-        ApplicationContext expected = EasyMock.mock(ApplicationContext.class);
-        assertExecutedWithReadLock(delegateContext::getParent, threadSafeContext::getParent, expected);
+        ApplicationContext expected = mock(ApplicationContext.class);
+        assertExecutedWithReadLock(delegate -> delegate.getParent(), threadSafeContext::getParent, expected);
     }
 
     /**
@@ -113,8 +112,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetEnvironment() {
-        ConfigurableEnvironment expected = EasyMock.mock(ConfigurableEnvironment.class);
-        assertExecutedWithReadLock(delegateContext::getEnvironment, threadSafeContext::getEnvironment, expected);
+        ConfigurableEnvironment expected = mock(ConfigurableEnvironment.class);
+        assertExecutedWithReadLock(delegate -> delegate.getEnvironment(), threadSafeContext::getEnvironment, expected);
     }
 
     /**
@@ -122,8 +121,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testSetEnvironment() {
-        ConfigurableEnvironment environment = EasyMock.mock(ConfigurableEnvironment.class);
-        assertExecutedWithWriteLock(() -> delegateContext.setEnvironment(environment), () -> threadSafeContext.setEnvironment(environment));
+        ConfigurableEnvironment environment = mock(ConfigurableEnvironment.class);
+        assertExecutedWithWriteLock(delegate -> delegate.setEnvironment(environment), () -> threadSafeContext.setEnvironment(environment));
     }
 
     /**
@@ -131,8 +130,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetAutowireCapableBeanFactory() {
-        AutowireCapableBeanFactory beanFactory = EasyMock.mock(AutowireCapableBeanFactory.class);
-        assertExecutedWithReadLock(delegateContext::getAutowireCapableBeanFactory, threadSafeContext::getAutowireCapableBeanFactory, beanFactory);
+        AutowireCapableBeanFactory beanFactory = mock(AutowireCapableBeanFactory.class);
+        assertExecutedWithReadLock(delegate -> delegate.getAutowireCapableBeanFactory(), threadSafeContext::getAutowireCapableBeanFactory, beanFactory);
     }
 
     /**
@@ -141,7 +140,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetStartupDate() {
         long expected = 1L;
-        assertExecutedWithReadLock(delegateContext::getStartupDate, threadSafeContext::getStartupDate, expected);
+        assertExecutedWithReadLock(delegate -> delegate.getStartupDate(), threadSafeContext::getStartupDate, expected);
     }
 
     /**
@@ -149,8 +148,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testPublishEventGivenApplicationEvent() {
-        ApplicationEvent event = EasyMock.mock(ApplicationEvent.class);
-        assertExecutedWithWriteLock(() -> delegateContext.publishEvent(event), () -> threadSafeContext.publishEvent(event));
+        ApplicationEvent event = mock(ApplicationEvent.class);
+        assertExecutedWithWriteLock(delegate -> delegate.publishEvent(event), () -> threadSafeContext.publishEvent(event));
     }
 
     /**
@@ -158,8 +157,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testPublishEventGivenObject() {
-        Object event = EasyMock.mock(Object.class);
-        assertExecutedWithWriteLock(() -> delegateContext.publishEvent(event), () -> threadSafeContext.publishEvent(event));
+        Object event = mock(Object.class);
+        assertExecutedWithWriteLock(delegate -> delegate.publishEvent(event), () -> threadSafeContext.publishEvent(event));
     }
 
     /**
@@ -167,8 +166,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testSetParent() {
-        ApplicationContext context = EasyMock.mock(ApplicationContext.class);
-        assertExecutedWithWriteLock(() -> delegateContext.setParent(context), () -> threadSafeContext.setParent(context));
+        ApplicationContext context = mock(ApplicationContext.class);
+        assertExecutedWithWriteLock(delegate -> delegate.setParent(context), () -> threadSafeContext.setParent(context));
     }
 
     /**
@@ -177,8 +176,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testAddBeanFactoryPostProcessor() {
-        BeanFactoryPostProcessor processor = EasyMock.mock(BeanFactoryPostProcessor.class);
-        assertExecutedWithWriteLock(() -> delegateContext.addBeanFactoryPostProcessor(processor),
+        BeanFactoryPostProcessor processor = mock(BeanFactoryPostProcessor.class);
+        assertExecutedWithWriteLock(delegate -> delegate.addBeanFactoryPostProcessor(processor),
                         () -> threadSafeContext.addBeanFactoryPostProcessor(processor));
     }
 
@@ -187,8 +186,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void addApplicationListener() {
-        ApplicationListener<?> listener = EasyMock.mock(ApplicationListener.class);
-        assertExecutedWithWriteLock(() -> delegateContext.addApplicationListener(listener), () -> threadSafeContext.addApplicationListener(listener));
+        ApplicationListener<?> listener = mock(ApplicationListener.class);
+        assertExecutedWithWriteLock(delegate -> delegate.addApplicationListener(listener), () -> threadSafeContext.addApplicationListener(listener));
     }
 
     /**
@@ -196,8 +195,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testAddProtocolResolver() {
-        ProtocolResolver protocolResolver = EasyMock.mock(ProtocolResolver.class);
-        assertExecutedWithWriteLock(() -> delegateContext.addProtocolResolver(protocolResolver), () -> threadSafeContext.addProtocolResolver(protocolResolver));
+        ProtocolResolver protocolResolver = mock(ProtocolResolver.class);
+        assertExecutedWithWriteLock(delegate -> delegate.addProtocolResolver(protocolResolver), () -> threadSafeContext.addProtocolResolver(protocolResolver));
     }
 
     /**
@@ -205,7 +204,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testRefresh() {
-        assertExecutedWithWriteLock(delegateContext::refresh, threadSafeContext::refresh);
+        assertExecutedWithWriteLock(delegate -> delegate.refresh(), threadSafeContext::refresh);
     }
 
     /**
@@ -213,7 +212,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testRegisterShutdownHook() {
-        assertExecutedWithWriteLock(delegateContext::registerShutdownHook, threadSafeContext::registerShutdownHook);
+        assertExecutedWithWriteLock(delegate -> delegate.registerShutdownHook(), threadSafeContext::registerShutdownHook);
     }
 
     /**
@@ -221,7 +220,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testClose() {
-        assertExecutedWithWriteLock(delegateContext::close, threadSafeContext::close);
+        assertExecutedWithWriteLock(delegate -> delegate.close(), threadSafeContext::close);
     }
 
     /**
@@ -229,7 +228,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testIsActive() {
-        assertExecutedWithReadLock(delegateContext::isActive, threadSafeContext::isActive, true);
+        assertExecutedWithReadLock(delegate -> delegate.isActive(), threadSafeContext::isActive, true);
     }
 
     /**
@@ -237,8 +236,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeanGivenName() {
-        Object expected = EasyMock.mock(Object.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBean("beanName"), () -> threadSafeContext.getBean("beanName"), expected);
+        Object expected = mock(Object.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBean("beanName"), () -> threadSafeContext.getBean("beanName"), expected);
     }
 
     /**
@@ -246,9 +245,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeanBeanGivenNameAndClass() {
-        Object expected = EasyMock.mock(Object.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBean("beanName", Object.class), () -> threadSafeContext.getBean("beanName", Object.class),
-                        expected);
+        Object expected = mock(Object.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBean("beanName", Object.class), () -> threadSafeContext.getBean("beanName", Object.class), expected);
     }
 
     /**
@@ -256,8 +254,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeanGivenClass() {
-        Object expected = EasyMock.mock(Object.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBean(Object.class), () -> threadSafeContext.getBean(Object.class), expected);
+        Object expected = mock(Object.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBean(Object.class), () -> threadSafeContext.getBean(Object.class), expected);
     }
 
     /**
@@ -265,8 +263,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeanGivenNameAndVarArg() {
-        Object expected = EasyMock.mock(Object.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBean("beanName", "arg1", "arg2"), () -> threadSafeContext.getBean("beanName", "arg1", "arg2"),
+        Object expected = mock(Object.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBean("beanName", "arg1", "arg2"), () -> threadSafeContext.getBean("beanName", "arg1", "arg2"),
                         expected);
     }
 
@@ -275,8 +273,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testBeanGivenClassAndVarArg() {
-        Object expected = EasyMock.mock(Object.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBean(Object.class, "arg1", "arg2"), () -> threadSafeContext.getBean(Object.class, "arg1", "arg2"),
+        Object expected = mock(Object.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBean(Object.class, "arg1", "arg2"), () -> threadSafeContext.getBean(Object.class, "arg1", "arg2"),
                         expected);
     }
 
@@ -285,8 +283,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeanProviderGivenClass() {
-        ObjectProvider<?> expected = EasyMock.mock(ObjectProvider.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBeanProvider(Object.class), () -> threadSafeContext.getBeanProvider(Object.class), expected);
+        ObjectProvider<?> expected = mock(ObjectProvider.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBeanProvider(Object.class), () -> threadSafeContext.getBeanProvider(Object.class), expected);
     }
 
     /**
@@ -294,9 +292,9 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeanProviderGivenResolvableType() {
-        ObjectProvider<?> expected = EasyMock.mock(ObjectProvider.class);
-        ResolvableType resolvableType = EasyMock.mock(ResolvableType.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBeanProvider(resolvableType), () -> threadSafeContext.getBeanProvider(resolvableType), expected);
+        ObjectProvider<?> expected = mock(ObjectProvider.class);
+        ResolvableType resolvableType = mock(ResolvableType.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBeanProvider(resolvableType), () -> threadSafeContext.getBeanProvider(resolvableType), expected);
     }
 
     /**
@@ -304,7 +302,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testContainsBean() {
-        assertExecutedWithReadLock(() -> delegateContext.containsBean("beanName"), () -> threadSafeContext.containsBean("beanName"), true);
+        assertExecutedWithReadLock(delegate -> delegate.containsBean("beanName"), () -> threadSafeContext.containsBean("beanName"), true);
     }
 
     /**
@@ -312,7 +310,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testIsSingleton() {
-        assertExecutedWithReadLock(() -> delegateContext.isSingleton("beanName"), () -> threadSafeContext.isSingleton("beanName"), true);
+        assertExecutedWithReadLock(delegate -> delegate.isSingleton("beanName"), () -> threadSafeContext.isSingleton("beanName"), true);
     }
 
     /**
@@ -320,7 +318,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testIsPrototype() {
-        assertExecutedWithReadLock(() -> delegateContext.isPrototype("beanName"), () -> threadSafeContext.isPrototype("beanName"), false);
+        assertExecutedWithReadLock(delegate -> delegate.isPrototype("beanName"), () -> threadSafeContext.isPrototype("beanName"), false);
     }
 
     /**
@@ -328,8 +326,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testIsTypeMatchGivenNameAndResolvableType() {
-        ResolvableType resolvableType = EasyMock.mock(ResolvableType.class);
-        assertExecutedWithReadLock(() -> delegateContext.isTypeMatch("beanName", resolvableType),
+        ResolvableType resolvableType = mock(ResolvableType.class);
+        assertExecutedWithReadLock(delegate -> delegate.isTypeMatch("beanName", resolvableType),
                         () -> threadSafeContext.isTypeMatch("beanName", resolvableType), true);
     }
 
@@ -338,7 +336,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testIsTypeMatchGivenNameAndClass() {
-        assertExecutedWithReadLock(() -> delegateContext.isTypeMatch("beanName", Object.class), () -> threadSafeContext.isTypeMatch("beanName", Object.class),
+        assertExecutedWithReadLock(delegate -> delegate.isTypeMatch("beanName", Object.class), () -> threadSafeContext.isTypeMatch("beanName", Object.class),
                         true);
     }
 
@@ -348,7 +346,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetTypeGivenName() {
         Class<?> expected = Object.class;
-        assertExecutedWithReadLock(() -> delegateContext.getType("beanName"), () -> threadSafeContext.getType("beanName"), expected);
+        assertExecutedWithReadLock(delegate -> delegate.getType("beanName"), () -> threadSafeContext.getType("beanName"), expected);
     }
 
     /**
@@ -357,7 +355,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetTypeGivenNameAndAllowFactoryInit() {
         Class<?> expected = Object.class;
-        assertExecutedWithReadLock(() -> delegateContext.getType("beanName", true), () -> threadSafeContext.getType("beanName", true), expected);
+        assertExecutedWithReadLock(delegate -> delegate.getType("beanName", true), () -> threadSafeContext.getType("beanName", true), expected);
     }
 
     /**
@@ -366,7 +364,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetAliases() {
         String[] expected = {"alias1", "alias2"};
-        assertExecutedWithReadLock(() -> delegateContext.getAliases("beanName"), () -> threadSafeContext.getAliases("beanName"), expected);
+        assertExecutedWithReadLock(delegate -> delegate.getAliases("beanName"), () -> threadSafeContext.getAliases("beanName"), expected);
     }
 
     /**
@@ -374,7 +372,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testContainsBeanDefinition() {
-        assertExecutedWithReadLock(() -> delegateContext.containsBeanDefinition("beanName"), () -> threadSafeContext.containsBeanDefinition("beanName"), true);
+        assertExecutedWithReadLock(delegate -> delegate.containsBeanDefinition("beanName"), () -> threadSafeContext.containsBeanDefinition("beanName"), true);
     }
 
     /**
@@ -382,7 +380,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeanDefinitionCount() {
-        assertExecutedWithReadLock(delegateContext::getBeanDefinitionCount, threadSafeContext::getBeanDefinitionCount, 5);
+        assertExecutedWithReadLock(delegate -> delegate.getBeanDefinitionCount(), threadSafeContext::getBeanDefinitionCount, 5);
     }
 
     /**
@@ -391,7 +389,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetBeanDefinitionNames() {
         String[] expected = {"bean1", "bean2"};
-        assertExecutedWithReadLock(delegateContext::getBeanDefinitionNames, threadSafeContext::getBeanDefinitionNames, expected);
+        assertExecutedWithReadLock(delegate -> delegate.getBeanDefinitionNames(), threadSafeContext::getBeanDefinitionNames, expected);
     }
 
     /**
@@ -400,8 +398,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetBeanNamesForResolvableType() {
         String[] expected = {"bean1", "bean2"};
-        ResolvableType resolvableType = EasyMock.mock(ResolvableType.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBeanNamesForType(resolvableType), () -> threadSafeContext.getBeanNamesForType(resolvableType),
+        ResolvableType resolvableType = mock(ResolvableType.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBeanNamesForType(resolvableType), () -> threadSafeContext.getBeanNamesForType(resolvableType),
                         expected);
     }
 
@@ -411,8 +409,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetBeanNamesForClassType() {
         String[] expected = {"bean1", "bean2"};
-        assertExecutedWithReadLock(() -> delegateContext.getBeanNamesForType(Object.class), () -> threadSafeContext.getBeanNamesForType(Object.class),
-                        expected);
+        assertExecutedWithReadLock(delegate -> delegate.getBeanNamesForType(Object.class), () -> threadSafeContext.getBeanNamesForType(Object.class), expected);
     }
 
     /**
@@ -421,7 +418,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetBeanNamesForClassTypeWithOptions() {
         String[] expected = {"bean1", "bean2"};
-        assertExecutedWithReadLock(() -> delegateContext.getBeanNamesForType(Object.class, true, false),
+        assertExecutedWithReadLock(delegate -> delegate.getBeanNamesForType(Object.class, true, false),
                         () -> threadSafeContext.getBeanNamesForType(Object.class, true, false), expected);
     }
 
@@ -432,8 +429,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetBeanNamesForResolvableTypeWithOptions() {
         String[] expected = {"bean1", "bean2"};
-        ResolvableType resolvableType = EasyMock.mock(ResolvableType.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBeanNamesForType(resolvableType, true, false),
+        ResolvableType resolvableType = mock(ResolvableType.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBeanNamesForType(resolvableType, true, false),
                         () -> threadSafeContext.getBeanNamesForType(resolvableType, true, false), expected);
     }
 
@@ -442,8 +439,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeansOfType() {
-        Map<String,Object> expected = EasyMock.mock(Map.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBeansOfType(Object.class), () -> threadSafeContext.getBeansOfType(Object.class), expected);
+        Map<String,Object> expected = mock(Map.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBeansOfType(Object.class), () -> threadSafeContext.getBeansOfType(Object.class), expected);
     }
 
     /**
@@ -451,8 +448,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeansOfTypeWithOptions() {
-        Map<String,Object> expected = EasyMock.mock(Map.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBeansOfType(Object.class, true, false),
+        Map<String,Object> expected = mock(Map.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBeansOfType(Object.class, true, false),
                         () -> threadSafeContext.getBeansOfType(Object.class, true, false), expected);
     }
 
@@ -462,7 +459,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetBeanNamesForAnnotation() {
         String[] expected = {"bean1", "bean2"};
-        assertExecutedWithReadLock(() -> delegateContext.getBeanNamesForAnnotation(Annotation.class),
+        assertExecutedWithReadLock(delegate -> delegate.getBeanNamesForAnnotation(Annotation.class),
                         () -> threadSafeContext.getBeanNamesForAnnotation(Annotation.class), expected);
     }
 
@@ -471,8 +468,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetBeansWithAnnotation() {
-        Map<String,Object> expected = EasyMock.mock(Map.class);
-        assertExecutedWithReadLock(() -> delegateContext.getBeansWithAnnotation(Annotation.class),
+        Map<String,Object> expected = mock(Map.class);
+        assertExecutedWithReadLock(delegate -> delegate.getBeansWithAnnotation(Annotation.class),
                         () -> threadSafeContext.getBeansWithAnnotation(Annotation.class), expected);
     }
 
@@ -481,8 +478,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testFindAnnotationOnBean() {
-        Annotation expected = EasyMock.mock(Annotation.class);
-        assertExecutedWithReadLock(() -> delegateContext.findAnnotationOnBean("beanName", Annotation.class),
+        Annotation expected = mock(Annotation.class);
+        assertExecutedWithReadLock(delegate -> delegate.findAnnotationOnBean("beanName", Annotation.class),
                         () -> threadSafeContext.findAnnotationOnBean("beanName", Annotation.class), expected);
     }
 
@@ -491,8 +488,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetParentBeanFactory() {
-        BeanFactory expected = EasyMock.mock(BeanFactory.class);
-        assertExecutedWithReadLock(delegateContext::getParentBeanFactory, threadSafeContext::getParentBeanFactory, expected);
+        BeanFactory expected = mock(BeanFactory.class);
+        assertExecutedWithReadLock(delegate -> delegate.getParentBeanFactory(), threadSafeContext::getParentBeanFactory, expected);
     }
 
     /**
@@ -500,7 +497,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testContainsLocalBean() {
-        assertExecutedWithReadLock(() -> delegateContext.containsLocalBean("beanName"), () -> threadSafeContext.containsLocalBean("beanName"), true);
+        assertExecutedWithReadLock(delegate -> delegate.containsLocalBean("beanName"), () -> threadSafeContext.containsLocalBean("beanName"), true);
     }
 
     /**
@@ -509,7 +506,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetMessageGivenCodeAndArgsAndDefaultAndLocale() {
         String expected = "message";
-        assertExecutedWithReadLock(() -> delegateContext.getMessage("code", null, "default", Locale.ENGLISH),
+        assertExecutedWithReadLock(delegate -> delegate.getMessage("code", null, "default", Locale.ENGLISH),
                         () -> threadSafeContext.getMessage("code", null, "default", Locale.ENGLISH), expected);
     }
 
@@ -519,7 +516,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetMessageGivenCodeAndArgsAndLocale() {
         String expected = "message";
-        assertExecutedWithReadLock(() -> delegateContext.getMessage("code", new Object[] {"arg1"}, Locale.ENGLISH),
+        assertExecutedWithReadLock(delegate -> delegate.getMessage("code", new Object[] {"arg1"}, Locale.ENGLISH),
                         () -> threadSafeContext.getMessage("code", new Object[] {"arg1"}, Locale.ENGLISH), expected);
     }
 
@@ -528,9 +525,9 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetMessageByResolvableAndLocale() {
-        MessageSourceResolvable resolvable = EasyMock.mock(MessageSourceResolvable.class);
+        MessageSourceResolvable resolvable = mock(MessageSourceResolvable.class);
         String expected = "message";
-        assertExecutedWithReadLock(() -> delegateContext.getMessage(resolvable, Locale.ENGLISH), () -> threadSafeContext.getMessage(resolvable, Locale.ENGLISH),
+        assertExecutedWithReadLock(delegate -> delegate.getMessage(resolvable, Locale.ENGLISH), () -> threadSafeContext.getMessage(resolvable, Locale.ENGLISH),
                         expected);
     }
 
@@ -539,10 +536,10 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetResources() {
-        Resource[] expected = {EasyMock.mock(Resource.class)};
-        assertExecutedWithReadLock(() -> {
+        Resource[] expected = {mock(Resource.class)};
+        assertExecutedWithReadLock(delegate -> {
             try {
-                return delegateContext.getResources("locationPattern");
+                return delegate.getResources("locationPattern");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -556,20 +553,23 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
     @Test
     void testGetResourcesWithException() throws IOException {
         // Expect the read lock to be obtained.
-        expectReadLocked();
+        doReturn(readLock).when(readWriteLock).readLock();
 
         // Expect the delegate method to be called and throw an IOException.
-        EasyMock.expect(delegateContext.getResources("locationPattern")).andThrow(new IOException("test exception"));
+        doThrow(new IOException("test exception")).when(delegateContext).getResources("locationPattern");
 
         // Expect the read lock to be unlocked.
-        expectReadUnlocked();
-
-        replayAll();
 
         // Call the method under test and assert that it throws a RuntimeException.
         Exception exception = assertThrows(RuntimeException.class, () -> threadSafeContext.getResources("locationPattern"));
 
-        verifyAll();
+        InOrder order = inOrder(readWriteLock, readLock, delegateContext);
+        order.verify(readWriteLock).readLock();
+        order.verify(readLock).lock();
+        order.verify(delegateContext).getResources("locationPattern");
+        order.verify(readWriteLock).readLock();
+        order.verify(readLock).unlock();
+        order.verifyNoMoreInteractions();
 
         // Assert the exception is not suppressed and the cause is the original exception.
         Throwable cause = exception.getCause();
@@ -582,7 +582,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testStart() {
-        assertExecutedWithWriteLock(delegateContext::start, threadSafeContext::start);
+        assertExecutedWithWriteLock(delegate -> delegate.start(), threadSafeContext::start);
     }
 
     /**
@@ -590,7 +590,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testStop() {
-        assertExecutedWithWriteLock(delegateContext::stop, threadSafeContext::stop);
+        assertExecutedWithWriteLock(delegate -> delegate.stop(), threadSafeContext::stop);
     }
 
     /**
@@ -598,7 +598,7 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testIsRunning() {
-        assertExecutedWithReadLock(delegateContext::isRunning, threadSafeContext::isRunning, true);
+        assertExecutedWithReadLock(delegate -> delegate.isRunning(), threadSafeContext::isRunning, true);
     }
 
     /**
@@ -606,8 +606,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetClassLoader() {
-        ClassLoader expected = EasyMock.mock(ClassLoader.class);
-        assertExecutedWithReadLock(delegateContext::getClassLoader, threadSafeContext::getClassLoader, expected);
+        ClassLoader expected = mock(ClassLoader.class);
+        assertExecutedWithReadLock(delegate -> delegate.getClassLoader(), threadSafeContext::getClassLoader, expected);
     }
 
     /**
@@ -615,8 +615,8 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      */
     @Test
     void testGetResource() {
-        Resource expected = EasyMock.mock(Resource.class);
-        assertExecutedWithReadLock(() -> delegateContext.getResource("location"), () -> threadSafeContext.getResource("location"), expected);
+        Resource expected = mock(Resource.class);
+        assertExecutedWithReadLock(delegate -> delegate.getResource("location"), () -> threadSafeContext.getResource("location"), expected);
     }
 
     /**
@@ -627,70 +627,45 @@ class ThreadSafeClassPathXmlApplicationContextTest extends EasyMockSupport {
      * @param methodUnderTest
      *            the method under test
      */
-    private void assertExecutedWithWriteLock(Runnable delegateMethod, Runnable methodUnderTest) {
-        // Expect the write lock to be obtained.
-        expectWriteLocked();
+    private void assertExecutedWithWriteLock(Consumer<ConfigurableApplicationContext> delegateMethod, Runnable methodUnderTest) {
+        doReturn(writeLock).when(readWriteLock).writeLock();
 
-        // Expect the delegate method to be called.
-        delegateMethod.run();
-
-        // Expected the write lock to be unlocked.
-        expectWriteUnlocked();
-
-        replayAll();
         methodUnderTest.run();
 
-        // Verify the order of method calls and that the write lock was obtained and released.
-        verifyAll();
+        InOrder order = inOrder(readWriteLock, writeLock, delegateContext);
+        order.verify(readWriteLock).writeLock();
+        order.verify(writeLock).lock();
+        delegateMethod.accept(order.verify(delegateContext));
+        order.verify(readWriteLock).writeLock();
+        order.verify(writeLock).unlock();
+        order.verifyNoMoreInteractions();
     }
 
     /**
-     * Assert that the given delegate method is executed with a read lock and that the method under test returns the expected value.
+     * Assert that delegation occurs after acquiring the read lock and before releasing it.
      *
      * @param delegateMethod
-     *            the delegate method that should execute within a read lock
+     *            the delegate method to stub and verify
      * @param methodUnderTest
      *            the method under test
      * @param expected
-     *            the expected result of the delegate method
+     *            the expected result
      * @param <T>
-     *            the type of the expected result
+     *            the result type
      */
-    private <T> void assertExecutedWithReadLock(Supplier<T> delegateMethod, Supplier<T> methodUnderTest, T expected) {
-        // Expect the read lock to be obtained.
-        expectReadLocked();
+    private <T> void assertExecutedWithReadLock(Function<ConfigurableApplicationContext,T> delegateMethod, Supplier<T> methodUnderTest, T expected) {
+        doReturn(readLock).when(readWriteLock).readLock();
+        delegateMethod.apply(doReturn(expected).when(delegateContext));
 
-        // Expect the delegate method to be called and return the expected value.
-        EasyMock.expect(delegateMethod.get()).andReturn(expected);
-
-        // Expected the read lock to be unlocked.
-        expectReadUnlocked();
-
-        replayAll();
         T actual = methodUnderTest.get();
         assertSame(expected, actual);
 
-        // Verify the order of method calls and that the read lock was obtained and released.
-        verifyAll();
-    }
-
-    private void expectReadLocked() {
-        EasyMock.expect(readWriteLock.readLock()).andReturn(readLock);
-        readLock.lock();
-    }
-
-    private void expectReadUnlocked() {
-        EasyMock.expect(readWriteLock.readLock()).andReturn(readLock);
-        readLock.unlock();
-    }
-
-    private void expectWriteLocked() {
-        EasyMock.expect(readWriteLock.writeLock()).andReturn(writeLock);
-        writeLock.lock();
-    }
-
-    private void expectWriteUnlocked() {
-        EasyMock.expect(readWriteLock.writeLock()).andReturn(writeLock);
-        writeLock.unlock();
+        InOrder order = inOrder(readWriteLock, readLock, delegateContext);
+        order.verify(readWriteLock).readLock();
+        order.verify(readLock).lock();
+        delegateMethod.apply(order.verify(delegateContext));
+        order.verify(readWriteLock).readLock();
+        order.verify(readLock).unlock();
+        order.verifyNoMoreInteractions();
     }
 }

@@ -1,12 +1,15 @@
 package datawave.query.planner;
 
-import static org.easymock.EasyMock.mock;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -79,12 +82,15 @@ public class ThreadedRangeBundlerTest {
 
         // Expect a call to iterator.close().
         ThreadedRangeBundlerIterator iterator = mock(ThreadedRangeBundlerIterator.class);
-        iterator.close();
-        replay(iterator);
+
         setIterator(bundler, iterator);
 
         bundler.close();
-        verify(iterator);
+        verify(iterator, times(1)).close();
+
+        if (iterator != null && mockingDetails(iterator).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(iterator));
+        }
     }
 
     private void setIterator(final ThreadedRangeBundler bundler, final ThreadedRangeBundlerIterator iterator)
