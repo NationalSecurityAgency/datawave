@@ -15,19 +15,24 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.easymock.EasyMockExtension;
@@ -269,6 +274,89 @@ public class ContentSummaryIteratorTest extends EasyMockSupport {
     }
 
     @Test
+    public void testOnlyReadsHighestPriorityViewWhenItSortsFirst() throws IOException {
+        assertSelectedViews("A,B,Z", List.of("A", "B", "Z"), List.of("A"), List.of("A"));
+    }
+
+    @Test
+    public void testLaterHigherPriorityViewsReplaceEarlierCandidates() throws IOException {
+        assertSelectedViews("Z,B,A", List.of("A", "B", "Z"), List.of("Z"), List.of("A", "B", "Z"));
+    }
+
+    @Test
+    public void testBestFallbackReplacesEarlierCandidateWhenHigherPriorityIsMissing() throws IOException {
+        assertSelectedViews("MISSING,B,A", List.of("A", "B", "Z"), List.of("B"), List.of("A", "B"));
+    }
+
+    @Test
+    public void testHighestPriorityWildcardReadsAllItsViews() throws IOException {
+        assertSelectedViews("B*,A,Z", List.of("A", "B1", "B2", "Z"), List.of("B1", "B2"), List.of("A", "B1", "B2"));
+    }
+
+    @Test
+    public void testFallbackWildcardReadsAllItsViews() throws IOException {
+        assertSelectedViews("MISSING,B*,A,Z", List.of("A", "B1", "B2", "Z"), List.of("B1", "B2"), List.of("A", "B1", "B2"));
+    }
+
+    @Test
+    public void testHigherPriorityExactViewExcludesLowerPriorityWildcardViews() throws IOException {
+        assertSelectedViews("B,B*", List.of("B", "B1", "B2"), List.of("B"), List.of("B"));
+    }
+
+    @Test
+    public void testHigherPriorityWildcardIncludesLowerPriorityExactView() throws IOException {
+        assertSelectedViews("*,B", List.of("A", "B", "Z"), List.of("A", "B", "Z"), List.of("A", "B", "Z"));
+    }
+
+    @Test
+    public void testHigherPriorityWildcardExcludesOtherWildcardMatches() throws IOException {
+        assertSelectedViews("B*,*", List.of("A", "B1", "B2", "Z"), List.of("B1", "B2"), List.of("A", "B1", "B2"));
+    }
+
+    @Test
+    public void testHigherPriorityWildcardReplacesAllEarlierWildcardPrefixes() throws IOException {
+        assertSelectedViews("Z*,A*", List.of("A1", "A2", "Z1", "Z2"), List.of("Z1", "Z2"), List.of("A1", "A2", "Z1", "Z2"));
+    }
+
+    @Test
+    public void testNoMatchingViewReadsNoValues() throws IOException {
+        assertSelectedViews("MISSING", List.of("A", "B"), Collections.emptyList(), Collections.emptyList());
+    }
+
+    @Test
+    public void testSelectionUsesSummaryCreatorsCaseSensitiveMatching() throws IOException {
+        assertSelectedViews("a,B", List.of("A", "B"), List.of("B"), List.of("B"));
+    }
+
+    @Test
+    public void testPrioritySelectionResetsBetweenDocumentsAndPreservesRangeEnd() throws IOException {
+        TrackingSource contentSource = new TrackingSource(List.of(contentEntry("first", "B"), contentEntry("first", "Z"), contentEntry("second", "A"),
+                        contentEntry("second", "B"), contentEntry("third", "A")));
+        givenOptions("A,B", 100, true);
+        iterator.init(contentSource, options, env);
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "first"));
+        Key endKey = new Key(row, new Text("email" + Constants.NULL + "second"));
+        iterator.seek(new Range(startKey, true, endKey.followingKey(PartialKey.ROW_COLFAM), false), Collections.emptyList(), false);
+
+        assertTrue(iterator.hasTop());
+        assertEquals("email" + Constants.NULL + "first", iterator.getTopKey().getColumnFamily().toString());
+        assertEquals("B: B content", iterator.getTopKey().getColumnQualifier().toString());
+
+        iterator.next();
+        assertTrue(iterator.hasTop());
+        assertEquals("email" + Constants.NULL + "second", iterator.getTopKey().getColumnFamily().toString());
+        assertEquals("A: A content", iterator.getTopKey().getColumnQualifier().toString());
+
+        iterator.next();
+        assertFalse(iterator.hasTop());
+        assertEquals(List.of("B", "A"), contentSource.viewsRead);
+        assertEquals(1, contentSource.seekCount);
+        assertEquals(List.of("email" + Constants.NULL + "first" + Constants.NULL + "B", "email" + Constants.NULL + "first" + Constants.NULL + "Z",
+                        "email" + Constants.NULL + "second" + Constants.NULL + "A", "email" + Constants.NULL + "second" + Constants.NULL + "B"),
+                        contentSource.keysAdvanced);
+    }
+
+    @Test
     public void testBoundedSummaryOfSmallValueWithLargeExpansion() throws IOException {
         ByteArrayOutputStream encoded = new ByteArrayOutputStream();
         byte[] block = new byte[8192];
@@ -319,6 +407,68 @@ public class ContentSummaryIteratorTest extends EasyMockSupport {
     public void testRawSummaryWhenBase64AlphabetFollowsPadding() throws IOException {
         String raw = "YWJjZA== hello";
         assertSummary(raw.getBytes(StandardCharsets.UTF_8), 1500, raw);
+    }
+
+    private void assertSelectedViews(String viewOrder, List<String> availableViews, List<String> expectedSummaryViews, List<String> expectedViewsRead)
+                    throws IOException {
+        List<Map.Entry<Key,Value>> entries = new ArrayList<>();
+        for (String view : availableViews) {
+            entries.add(contentEntry("priority", view));
+        }
+        TrackingSource contentSource = new TrackingSource(entries);
+        givenOptions(viewOrder, 100, true);
+        iterator.init(contentSource, options, env);
+        Key startKey = new Key(row, new Text("email" + Constants.NULL + "priority"));
+        iterator.seek(new Range(startKey, true, startKey.followingKey(PartialKey.ROW_COLFAM), false), Collections.emptyList(), false);
+
+        if (expectedSummaryViews.isEmpty()) {
+            assertFalse(iterator.hasTop());
+        } else {
+            assertTrue(iterator.hasTop());
+            String[] expectedSummaries = expectedSummaryViews.stream().map(view -> view + ": " + view + " content").toArray(String[]::new);
+            assertEquals(Set.of(expectedSummaries), Set.of(iterator.getTopKey().getColumnQualifier().toString().split("\n")));
+            assertEquals(new Text("ALL"), iterator.getTopKey().getColumnVisibility());
+            iterator.next();
+            assertFalse(iterator.hasTop());
+        }
+        assertEquals(expectedViewsRead, contentSource.viewsRead);
+        assertEquals(1, contentSource.seekCount);
+        assertEquals(entries.stream().sorted(Map.Entry.comparingByKey()).map(entry -> entry.getKey().getColumnQualifier().toString())
+                        .collect(Collectors.toList()), contentSource.keysAdvanced);
+    }
+
+    private static Map.Entry<Key,Value> contentEntry(String uid, String view) throws IOException {
+        Key key = new Key(row, colf, new Text("email" + Constants.NULL + uid + Constants.NULL + view), new ColumnVisibility("ALL"), 1L);
+        return new AbstractMap.SimpleEntry<>(key, new Value(encodeContent(view + " content")));
+    }
+
+    private static class TrackingSource extends WrappingIterator {
+        private final List<String> viewsRead = new ArrayList<>();
+        private final List<String> keysAdvanced = new ArrayList<>();
+        private int seekCount;
+
+        private TrackingSource(List<Map.Entry<Key,Value>> entries) {
+            setSource(new SortedListKeyValueIterator(entries));
+        }
+
+        @Override
+        public Value getTopValue() {
+            String qualifier = getTopKey().getColumnQualifier().toString();
+            viewsRead.add(qualifier.substring(qualifier.lastIndexOf(Constants.NULL) + 1));
+            return super.getTopValue();
+        }
+
+        @Override
+        public void next() throws IOException {
+            keysAdvanced.add(getTopKey().getColumnQualifier().toString());
+            super.next();
+        }
+
+        @Override
+        public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+            seekCount++;
+            super.seek(range, columnFamilies, inclusive);
+        }
     }
 
     private void assertSummary(byte[] encodedContent, int size, String expected) throws IOException {
