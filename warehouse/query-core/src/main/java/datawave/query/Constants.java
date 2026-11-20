@@ -9,9 +9,9 @@ import datawave.query.jexl.functions.ContentFunctions;
 import datawave.table.constants.QueryConstants;
 
 /**
- * {@link #NULL} is deprecated, please use {@link QueryConstants#NULL}
+ * {@link #NULL} is deprecated, please use {@link QueryConstants#NULL_BYTE_STR}
  * <p>
- * {@link #MAX_UNICODE_STRING} is deprecated, please use {@link QueryConstants#MAX_UNICODE_STRING}
+ * {@link #MAX_UNICODE_STRING} is deprecated, please use {@link QueryConstants#MAX_UNICODE_STR}
  */
 public class Constants {
 

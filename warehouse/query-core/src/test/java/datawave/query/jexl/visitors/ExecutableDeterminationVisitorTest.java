@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
@@ -27,6 +28,8 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import datawave.query.config.ShardQueryConfiguration;
@@ -58,6 +61,7 @@ public class ExecutableDeterminationVisitorTest {
         HashSet<String> indexOnlyFields = new HashSet<>();
         indexOnlyFields.add("INDEXONLYFIELD");
 
+        lenient().doReturn(false).when(config).isAllowIndexOnlyNullChecks();
         lenient().doReturn(indexedFields).when(config).getIndexedFields();
         lenient().doReturn(indexOnlyFields).when(helper).getIndexOnlyFields(null);
 
@@ -81,176 +85,6 @@ public class ExecutableDeterminationVisitorTest {
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
         assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
         assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
-
-        if (config != null && mockingDetails(config).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(config));
-        }
-        if (helper != null && mockingDetails(helper).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(helper));
-        }
-    }
-
-    @Test
-    public void testIndexOnlyEqNull() throws ParseException, TableNotFoundException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("INDEXONLYFIELD == null");
-
-        HashSet indexedFields = new HashSet();
-        indexedFields.add("INDEXONLYFIELD");
-
-        HashSet<String> indexOnlyFields = new HashSet<>();
-        indexOnlyFields.add("INDEXONLYFIELD");
-
-        lenient().doReturn(indexedFields).when(config).getIndexedFields();
-        lenient().doReturn(indexOnlyFields).when(helper).getIndexOnlyFields(null);
-
-        LinkedList<String> output = new LinkedList<>();
-
-        boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        assertFalse(executable);
-        assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
-
-        output.clear();
-        boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        assertFalse(fiExecutable);
-        assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
-
-        output.clear();
-        ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, state);
-        assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
-
-        output.clear();
-        ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
-        assertEquals("Summary: ERROR:[INDEXONLYFIELD == null]", output.get(0));
-
-        if (config != null && mockingDetails(config).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(config));
-        }
-        if (helper != null && mockingDetails(helper).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(helper));
-        }
-    }
-
-    @Test
-    public void testIndexOnlyNeNull() throws ParseException, TableNotFoundException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("INDEXONLYFIELD != null");
-
-        LinkedList<String> output = new LinkedList<>();
-
-        HashSet indexedFields = new HashSet();
-        indexedFields.add("INDEXONLYFIELD");
-
-        HashSet<String> indexOnlyFields = new HashSet<>();
-        indexOnlyFields.add("INDEXONLYFIELD");
-
-        lenient().doReturn(indexedFields).when(config).getIndexedFields();
-        lenient().doReturn(indexOnlyFields).when(helper).getIndexOnlyFields(null);
-
-        boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        assertFalse(executable);
-        assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
-
-        output.clear();
-        boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        assertFalse(fiExecutable);
-        assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
-
-        output.clear();
-        ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, state);
-        assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
-
-        output.clear();
-        ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        assertEquals(ExecutableDeterminationVisitor.STATE.ERROR, fiState);
-        assertEquals("Summary: ERROR:[INDEXONLYFIELD != null]", output.get(0));
-
-        if (config != null && mockingDetails(config).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(config));
-        }
-        if (helper != null && mockingDetails(helper).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(helper));
-        }
-    }
-
-    @Test
-    public void testIndexedEqNull() throws ParseException, TableNotFoundException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("INDEXEDFIELD == null");
-
-        LinkedList<String> output = new LinkedList<>();
-
-        HashSet indexedFields = new HashSet();
-        indexedFields.add("INDEXONLYFIELD");
-        indexedFields.add("INDEXEDFIELD");
-
-        HashSet<String> indexOnlyFields = new HashSet<>();
-        indexOnlyFields.add("INDEXONLYFIELD");
-
-        lenient().doReturn(indexedFields).when(config).getIndexedFields();
-        lenient().doReturn(indexOnlyFields).when(helper).getIndexOnlyFields(null);
-
-        boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        assertFalse(executable);
-        assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
-
-        output.clear();
-        boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        assertFalse(fiExecutable);
-        assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
-
-        output.clear();
-        ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, state);
-        assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
-
-        output.clear();
-        ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, fiState);
-        assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD == null]", output.get(0));
-
-        if (config != null && mockingDetails(config).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(config));
-        }
-        if (helper != null && mockingDetails(helper).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(helper));
-        }
-    }
-
-    @Test
-    public void testIndexedNeNull() throws ParseException, TableNotFoundException {
-        ASTJexlScript query = JexlASTHelper.parseJexlQuery("INDEXEDFIELD != null");
-
-        LinkedList<String> output = new LinkedList<>();
-
-        HashSet indexedFields = new HashSet();
-        indexedFields.add("INDEXONLYFIELD");
-        indexedFields.add("INDEXEDFIELD");
-
-        HashSet<String> indexOnlyFields = new HashSet<>();
-        indexOnlyFields.add("INDEXONLYFIELD");
-
-        lenient().doReturn(indexedFields).when(config).getIndexedFields();
-        lenient().doReturn(indexOnlyFields).when(helper).getIndexOnlyFields(null);
-
-        boolean executable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, output);
-        assertFalse(executable);
-        assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
-
-        output.clear();
-        boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
-        assertFalse(fiExecutable);
-        assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
-
-        output.clear();
-        ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
-        assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, state);
-        assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
-
-        output.clear();
-        ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
-        assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, fiState);
-        assertEquals("Summary: NON_EXECUTABLE:[INDEXEDFIELD != null]", output.get(0));
 
         if (config != null && mockingDetails(config).isMock()) {
             verifyNoMoreInteractions(ignoreStubs(config));
@@ -750,5 +584,277 @@ public class ExecutableDeterminationVisitorTest {
         JexlNode query = QueryPropertyMarker.create(JexlASTHelper.parseJexlQuery("FOO == FOO2"), EVALUATION_ONLY);
         assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, ExecutableDeterminationVisitor.getState(query, config, helper, output));
         assertEquals("Summary: NON_EXECUTABLE:[AndNode( delayed/eval only predicate )]", output.get(0));
+    }
+
+    private static final Set<String> indexedFields = Set.of("FOO", "BAR", "INDEX_ONLY_FIELD", "INDEX_ONLY_FIELD2");
+    private static final Set<String> indexOnlyFields = Set.of("INDEX_ONLY_FIELD", "INDEX_ONLY_FIELD2");
+
+    @DisplayName("When a query includes a null check against a index-only field")
+    @Nested
+    class IndexOnlyNullCheckTests {
+
+        private boolean allowIndexOnlyNullChecks;
+
+        private ExecutableDeterminationVisitor.STATE expectedState;
+
+        private String expectedReason;
+
+        @BeforeEach
+        void setUp() {
+            this.allowIndexOnlyNullChecks = false;
+            this.expectedState = null;
+            this.expectedReason = null;
+        }
+
+        @DisplayName("And index-only null checks are forbidden")
+        @Nested
+        class Forbidden {
+
+            @Test
+            public void testNegatedEqNullWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null]");
+                test("FOO == 'bar' && !(INDEX_ONLY_FIELD == null)");
+            }
+
+            @Test
+            public void testEqNullWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null]");
+                test("FOO == 'bar' && INDEX_ONLY_FIELD == null");
+            }
+
+            @Test
+            public void testNeNullWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD != null]");
+                test("FOO == 'bar' && INDEX_ONLY_FIELD != null");
+            }
+
+            @Test
+            public void testMultipleNullTermsWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null, INDEX_ONLY_FIELD2 == null]");
+                test("FOO == 'bar' && INDEX_ONLY_FIELD == null && !(INDEX_ONLY_FIELD2 == null)");
+            }
+
+            @Test
+            public void testEqNullWithoutAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null]");
+                test("INDEX_ONLY_FIELD == null");
+            }
+
+            @Test
+            public void testNeNullWithoutAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD != null]");
+                test("INDEX_ONLY_FIELD != null");
+            }
+
+            @Test
+            public void testOnlyNullTerms() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null, INDEX_ONLY_FIELD2 != null]");
+                test("INDEX_ONLY_FIELD == null && INDEX_ONLY_FIELD2 != null");
+            }
+
+            @Test
+            public void testEqNullUnderOr() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null]");
+                test("FOO == 'bar' || INDEX_ONLY_FIELD == null");
+            }
+
+            @Test
+            public void testNonNullIndexOnlyErrorUnchanged() throws Exception {
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD !~ 'ba.*']");
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                test("FOO == 'bar' && INDEX_ONLY_FIELD !~ 'ba.*'");
+            }
+
+            @Test
+            public void testOrOfNullTermsWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null, INDEX_ONLY_FIELD2 != null]");
+                test("FOO == 'bar' && (INDEX_ONLY_FIELD == null || INDEX_ONLY_FIELD2 != null)");
+            }
+
+            @Test
+            public void testNestedAndOfNullTermsWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null, INDEX_ONLY_FIELD2 == null]");
+                test("FOO == 'bar' && ((_Lenient_ = true) && (INDEX_ONLY_FIELD == null && INDEX_ONLY_FIELD2 == null))");
+            }
+        }
+
+        @DisplayName("And index-only null checks are allowed")
+        @Nested
+        class Allowed {
+
+            @BeforeEach
+            void setUp() {
+                allowIndexOnlyNullChecks = true;
+            }
+
+            @Test
+            public void testNegatedEqNullWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.EXECUTABLE);
+                expectReason("Summary: EXECUTABLE:[FOO == 'bar']");
+                test("FOO == 'bar' && !(INDEX_ONLY_FIELD == null)");
+            }
+
+            @Test
+            public void testEqNullWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.EXECUTABLE);
+                expectReason("Summary: EXECUTABLE:[FOO == 'bar']");
+                test("FOO == 'bar' && INDEX_ONLY_FIELD == null");
+            }
+
+            @Test
+            public void testNeNullWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.EXECUTABLE);
+                expectReason("Summary: EXECUTABLE:[FOO == 'bar']");
+                test("FOO == 'bar' && INDEX_ONLY_FIELD != null");
+            }
+
+            @Test
+            public void testMultipleNullTermsWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.EXECUTABLE);
+                expectReason("Summary: EXECUTABLE:[FOO == 'bar']");
+                test("FOO == 'bar' && INDEX_ONLY_FIELD == null && !(INDEX_ONLY_FIELD2 == null)");
+            }
+
+            @Test
+            public void testEqNullWithoutAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null]");
+                // No executable anchor term, the null term cannot be evaluated against the field index.
+                test("INDEX_ONLY_FIELD == null");
+            }
+
+            @Test
+            public void testNeNullWithoutAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD != null]");
+                // No executable anchor term, the null term cannot be evaluated against the field index.
+                test("INDEX_ONLY_FIELD != null");
+            }
+
+            @Test
+            public void testOnlyNullTerms() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null, INDEX_ONLY_FIELD2 != null]");
+                test("INDEX_ONLY_FIELD == null && INDEX_ONLY_FIELD2 != null");
+            }
+
+            @Test
+            public void testEqNullUnderOr() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null]");
+                test("FOO == 'bar' || INDEX_ONLY_FIELD == null");
+            }
+
+            @Test
+            public void testNonNullIndexOnlyErrorUnchanged() throws Exception {
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD !~ 'ba.*']");
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                // Only null terms are affected by the flag.
+                test("FOO == 'bar' && INDEX_ONLY_FIELD !~ 'ba.*'");
+            }
+
+            @Test
+            public void testOrOfNullTermsWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.EXECUTABLE);
+                expectReason("Summary: EXECUTABLE:[FOO == 'bar']");
+                test("FOO == 'bar' && (INDEX_ONLY_FIELD == null || INDEX_ONLY_FIELD2 != null)");
+            }
+
+            @Test
+            public void testOrOfNullTermsWithoutAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null, INDEX_ONLY_FIELD2 != null]");
+                test("INDEX_ONLY_FIELD == null || INDEX_ONLY_FIELD2 != null");
+            }
+
+            @Test
+            public void testOrOfPartialAndNullTermWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.EXECUTABLE);
+                expectReason("Summary: EXECUTABLE:[FOO == 'bar']");
+                test("FOO == 'bar' && ((FOO == 'a' && (FOO == 'b' || UNINDEXED == 'x')) || INDEX_ONLY_FIELD == null)");
+            }
+
+            @Test
+            public void testOrOfNullTermAndErrorWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD !~ 'ba.*', INDEX_ONLY_FIELD2 == null]");
+                // An ERROR in the sub-expression takes priority over the anchor.
+                test("FOO == 'bar' && (INDEX_ONLY_FIELD2 == null || INDEX_ONLY_FIELD !~ 'ba.*')");
+            }
+
+            @Test
+            public void testNestedAndOfNullTermsWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.EXECUTABLE);
+                expectReason("Summary: EXECUTABLE:[FOO == 'bar']");
+                // The marker keeps the inner AND from being flattened into the outer AND.
+                test("FOO == 'bar' && ((_Lenient_ = true) && (INDEX_ONLY_FIELD == null && INDEX_ONLY_FIELD2 == null))");
+            }
+
+            @Test
+            public void testNestedAndOfPartialAndNullTermWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.EXECUTABLE);
+                expectReason("Summary: EXECUTABLE:[FOO == 'bar']");
+                test("FOO == 'bar' && ((_Lenient_ = true) && ((FOO == 'a' || UNINDEXED == 'x') && INDEX_ONLY_FIELD == null))");
+            }
+
+            @Test
+            public void testNestedAndOfPartialAndNullTermWithoutAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD == null]");
+                test("((_Lenient_ = true) && ((FOO == 'a' || UNINDEXED == 'x') && INDEX_ONLY_FIELD == null))");
+            }
+
+            @Test
+            public void testNestedAndOfNullTermAndErrorWithAnchor() throws Exception {
+                expectState(ExecutableDeterminationVisitor.STATE.ERROR);
+                expectReason("Summary: ERROR:[INDEX_ONLY_FIELD !~ 'ba.*', INDEX_ONLY_FIELD2 == null]");
+                // An ERROR in the sub-expression takes priority over the anchor.
+                test("FOO == 'bar' && ((_Lenient_ = true) && (INDEX_ONLY_FIELD2 == null && INDEX_ONLY_FIELD !~ 'ba.*'))");
+            }
+        }
+
+        private void expectState(ExecutableDeterminationVisitor.STATE state) {
+            this.expectedState = state;
+        }
+
+        private void expectReason(String reason) {
+            this.expectedReason = reason;
+        }
+
+        private void test(String query) throws Exception {
+            lenient().doReturn(null).when(config).getDatatypeFilter();
+            lenient().doReturn(allowIndexOnlyNullChecks).when(config).isAllowIndexOnlyNullChecks();
+            lenient().doReturn(indexedFields).when(config).getIndexedFields();
+            lenient().doReturn(indexOnlyFields).when(helper).getIndexOnlyFields(null);
+
+            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+
+            LinkedList<String> debugOutput = new LinkedList<>();
+            ExecutableDeterminationVisitor.STATE actualState = ExecutableDeterminationVisitor.getState(script, config, helper, debugOutput);
+
+            assertEquals(expectedState, actualState, "Incorrect global index state");
+            assertEquals(expectedReason, debugOutput.get(0), "Incorrect global index reason");
+
+            debugOutput.clear();
+            assertEquals(expectedState, ExecutableDeterminationVisitor.getState(script, config, helper, true, debugOutput), "Incorrect field index state");
+            assertEquals(expectedReason, debugOutput.get(0), "Incorrect field index reason");
+
+            if (config != null && mockingDetails(config).isMock()) {
+                verifyNoMoreInteractions(ignoreStubs(config));
+            }
+            if (helper != null && mockingDetails(helper).isMock()) {
+                verifyNoMoreInteractions(ignoreStubs(helper));
+            }
+        }
     }
 }

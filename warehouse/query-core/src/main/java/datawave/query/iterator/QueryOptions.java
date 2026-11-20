@@ -290,6 +290,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String TERM_COUNTS = "term.counts";
     public static final String CARDINALITY_THRESHOLD = "cardinality.threshold";
 
+    public static final String ALLOW_INDEX_ONLY_NULL_CHECKS = "allow.index.only.null.checks";
+
     public static final Object LOCK = new Object();
 
     protected Map<String,String> options;
@@ -459,6 +461,11 @@ public class QueryOptions implements OptionDescriber {
 
     protected String summaryFieldname;
 
+    /**
+     * Whether to handle null/not null checks against index-only fields.
+     */
+    protected boolean allowIndexOnlyNullChecks;
+
     // off by default, controls when to issue a seek
     private int fiFieldSeek = -1;
     private int fiNextSeek = -1;
@@ -601,6 +608,7 @@ public class QueryOptions implements OptionDescriber {
         this.fieldCounts = other.fieldCounts;
         this.termCounts = other.termCounts;
         this.cardinality = other.cardinality;
+        this.allowIndexOnlyNullChecks = other.allowIndexOnlyNullChecks;
     }
 
     public String getQuery() {
@@ -1335,6 +1343,14 @@ public class QueryOptions implements OptionDescriber {
         this.summaryFieldname = summaryFieldname;
     }
 
+    public boolean isAllowIndexOnlyNullChecks() {
+        return allowIndexOnlyNullChecks;
+    }
+
+    public void setAllowIndexOnlyNullChecks(boolean allowIndexOnlyNullChecks) {
+        this.allowIndexOnlyNullChecks = allowIndexOnlyNullChecks;
+    }
+
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -1443,6 +1459,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
         options.put(FIELD_COUNTS, "Map of field counts from the global index");
         options.put(TERM_COUNTS, "Map of term counts from the global index");
+        options.put(ALLOW_INDEX_ONLY_NULL_CHECKS, "Whether to allow null checks against index-only fields in queries.");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
 
@@ -1933,6 +1950,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(SORTED_UIDS)) {
             this.sortedUIDs = Boolean.parseBoolean(options.get(SORTED_UIDS));
+        }
+
+        if (options.containsKey(ALLOW_INDEX_ONLY_NULL_CHECKS)) {
+            this.allowIndexOnlyNullChecks = Boolean.parseBoolean(options.get(ALLOW_INDEX_ONLY_NULL_CHECKS));
         }
 
         if (options.containsKey(DEBUG_MULTITHREADED_SOURCES)) {
