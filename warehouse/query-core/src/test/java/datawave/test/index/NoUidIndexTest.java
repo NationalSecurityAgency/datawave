@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
-import datawave.test.MacTestUtil;
+import datawave.test.framework.util.MacTestUtil;
 
 /**
  * Prototypical example of how these tests operate. Typical flow is

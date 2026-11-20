@@ -62,7 +62,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.query.util.TestIndexTableNames;
 import datawave.table.constants.TableName;
-import datawave.test.MacTestUtil;
+import datawave.test.framework.util.MacTestUtil;
 
 /**
  * A suite of tests that validate timeout-based index expansion. Other index expansion tests verify threshold based expansion.
