@@ -364,18 +364,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         // if we got interrupted, then just return false
                         return false;
                     }
-                    if (resultsThreadException != null) {
-                        if (resultsThreadException instanceof RuntimeException) {
-                            throw (RuntimeException) resultsThreadException;
-                        } else {
-                            throw new RuntimeException(resultsThreadException);
-                        }
-                    }
+                    throwIfResultsWorkerFailed();
                     if (running.get() && (hasNext.get() == 0)) {
                         throw new TimeoutException("hasNext timed out");
                     }
                 }
                 if (hasNext.get() == 0) {
+                    // The worker may already have failed and exited between page requests, so we may not have waited.
+                    throwIfResultsWorkerFailed();
                     log.debug("hasNext returned false.  No more results");
                     return false;
                 } else {
@@ -389,6 +385,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             } else {
                 return false;
             }
+        }
+    }
+
+    private void throwIfResultsWorkerFailed() {
+        Exception failure = resultsThreadException;
+        if (failure instanceof RuntimeException) {
+            throw (RuntimeException) failure;
+        }
+        if (failure != null) {
+            throw new RuntimeException(failure);
         }
     }
 

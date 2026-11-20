@@ -14,6 +14,7 @@ import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -30,11 +31,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
@@ -42,6 +51,7 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
@@ -62,6 +72,7 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnProperties;
 import datawave.webservice.query.logic.TestQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
+import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.result.BaseQueryResponse;
 
 public class RunningQueryTest {
@@ -110,6 +121,85 @@ public class RunningQueryTest {
         URLClassLoader urlClassloader = new URLClassLoader(urlsArray, currentClassLoader);
         Thread.currentThread().setContextClassLoader(urlClassloader);
 
+    }
+
+    enum WorkerExit {
+        EXHAUSTED, TRANSFORM_FAILURE, ITERATOR_FAILURE
+    }
+
+    @ParameterizedTest(name = "worker exit after partial page: {0}")
+    @EnumSource(WorkerExit.class)
+    @Timeout(15)
+    @SuppressWarnings("unchecked")
+    void differentiatesWorkerFailureFromExhaustionBetweenPages(WorkerExit workerExit) throws Exception {
+        CountDownLatch releaseWorker = new CountDownLatch(1);
+        IllegalStateException transformFailure = new IllegalStateException("transform failed between pages");
+        RuntimeException iteratorFailure = new RuntimeException("underlying iterator failed between pages");
+        DefaultEvent intermediate = new DefaultEvent();
+        intermediate.setIntermediateResult(true);
+        Iterator<DefaultEvent> input = mock(Iterator.class);
+        // DatawaveTransformIterator probes the input again after transforming the intermediate event.
+        when(input.hasNext()).thenReturn(true, true).thenAnswer(invocation -> {
+            releaseWorker.await();
+            return workerExit != WorkerExit.EXHAUSTED;
+        });
+        switch (workerExit) {
+            case ITERATOR_FAILURE:
+                when(input.next()).thenReturn(intermediate).thenThrow(iteratorFailure);
+                break;
+            case TRANSFORM_FAILURE:
+                when(input.next()).thenReturn(intermediate, new DefaultEvent());
+                break;
+            case EXHAUSTED:
+                when(input.next()).thenReturn(intermediate);
+                break;
+        }
+        Transformer<DefaultEvent,DefaultEvent> transformer = event -> {
+            if (event != intermediate) {
+                throw transformFailure;
+            }
+            return event;
+        };
+        TransformIterator<DefaultEvent,DefaultEvent> iterator = new DatawaveTransformIterator<>(input, transformer);
+
+        QueryLogic<?> workerLogic = mock(QueryLogic.class);
+        when(workerLogic.initialize(any(), any(), any())).thenReturn(new SampleGenericQueryConfiguration());
+        when(workerLogic.getTransformIterator(settings)).thenReturn(iterator);
+        when(workerLogic.isIntermediateEmptyPagesEnabled()).thenReturn(true);
+        when(workerLogic.getMaxPageSize()).thenReturn(10);
+        when(workerLogic.getMaxWork()).thenReturn(-1L);
+        when(workerLogic.getMaxResults()).thenReturn(-1L);
+        when(workerLogic.getResultLimit(settings)).thenReturn(-1L);
+
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try (AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance("worker failure test"))) {
+            RunningQuery query = new RunningQuery(null, client, connectionPriority, workerLogic, settings, methodAuths, principal, null, null,
+                            new QueryMetricFactoryImpl());
+            query.setExecutor(executor);
+            // The intermediate result ends the page; no page deadline or sleep is involved.
+            ResultsPage partial = query.next();
+            assertEquals(ResultsPage.Status.PARTIAL, partial.getStatus());
+            assertTrue(partial.getResults().isEmpty());
+            releaseWorker.countDown();
+            // A queued task proves the results worker exited before the next request starts.
+            executor.submit(() -> {}).get(5, TimeUnit.SECONDS);
+            switch (workerExit) {
+                case TRANSFORM_FAILURE:
+                    assertSame(transformFailure, assertThrows(IllegalStateException.class, query::next));
+                    break;
+                case ITERATOR_FAILURE:
+                    assertSame(iteratorFailure, assertThrows(RuntimeException.class, query::next));
+                    break;
+                case EXHAUSTED:
+                    assertEquals(ResultsPage.Status.NONE, query.next().getStatus());
+                    break;
+            }
+        } finally {
+            releaseWorker.countDown();
+            executor.shutdownNow();
+        }
     }
 
     @SuppressWarnings("unchecked")
