@@ -425,10 +425,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         return null;
                     }
                     if (running.get() && (gotNext.get() == 0)) {
+                        throwIfResultsWorkerFailed();
                         throw new TimeoutException("gotNext timed out");
                     }
                 }
-                return resultsThreadQueue.poll();
+                Object result = resultsThreadQueue.poll();
+                if (result == null) {
+                    // The worker can fail in next() after advertising an item, without ever queuing it.
+                    throwIfResultsWorkerFailed();
+                }
+                return result;
             }
         } else {
             Object o = iter.next();
