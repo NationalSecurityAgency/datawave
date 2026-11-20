@@ -5,11 +5,14 @@ import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.google.common.hash.Hashing;
+
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 import datawave.annotation.protobuf.v1.SegmentValue;
+import datawave.annotation.protobuf.v1.VectorPayload;
 import datawave.annotation.util.Validator;
 
 /**
@@ -61,8 +64,24 @@ public class AnnotationValidators {
 
     // ------ segment data validation ------ //
 
+    private static final Validator<VectorPayload> vectorPayloadValidator = Validator.<VectorPayload>create()
+            .addCheck(v -> v.getFormat() == VectorPayload.Format.ARROW_FILE, "Vector format must be ARROW_FILE")
+            .addCheck(v -> !v.getData().isEmpty(), "Vector data must not be empty")
+            .addCheck(v -> !v.getShapeList().isEmpty() && v.getShapeList().stream().allMatch(d -> d > 0), "Vector shape must contain positive dimensions")
+            .addCheck(v -> v.getElementType() == VectorPayload.ElementType.FLOAT16 || v.getElementType() == VectorPayload.ElementType.FLOAT32,
+                    "Vector element type must be FLOAT16 or FLOAT32")
+            .addCheck(v -> StringUtils.isNotBlank(v.getFieldName()), "Vector field name must not be blank")
+            .addCheck(v -> StringUtils.isNotBlank(v.getModality()), "Vector modality must not be blank")
+            .addCheck(VectorPayload::hasNormalized, "Vector normalized flag must be specified")
+            .addCheck(v -> StringUtils.isNotBlank(v.getEmbeddingSpaceId()), "Vector embedding space id must not be blank")
+            .addCheck(v -> v.getSha256().isEmpty() || v.getSha256().equalsIgnoreCase(Hashing.sha256().hashBytes(v.getData().toByteArray()).toString()),
+                    "Vector sha256 must match vector data when supplied");
+
     private static final Validator<SegmentValue> segmentValueValidator = Validator.<SegmentValue>create()
-            .addCheck(v -> StringUtils.isNotBlank(v.getValue()), "Segment value must not be blank");
+            .addCheck(v -> v.hasValue() != v.hasVector(), "Segment value must contain exactly one scalar value or vector")
+            .addCheck(v -> v.hasVector() || StringUtils.isNotBlank(v.getValue()), "Segment value must not be blank")
+            .addMemberValidator(v -> v.hasVector() ? Collections.singletonList(v.getVector()) : Collections.emptyList(),
+                    vectorPayloadValidator, "in vector payload validation");
 
     // base validation case.
     private static final Validator<Segment> baseSegmentValidator = Validator.<Segment>create().addCheck(Segment::hasBoundary, "Segment must have a boundary")

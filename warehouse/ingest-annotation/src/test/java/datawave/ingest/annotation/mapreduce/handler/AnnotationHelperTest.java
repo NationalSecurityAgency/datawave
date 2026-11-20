@@ -8,9 +8,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.AbstractMap;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,14 +26,21 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.protobuf.util.JsonFormat;
 
 import datawave.annotation.data.AnnotationWriteException;
+import datawave.annotation.data.v1.AccumuloAnnotationSerializer;
+import datawave.annotation.data.v1.AccumuloAnnotationSourceSerializer;
 import datawave.annotation.protobuf.v1.Annotation;
+import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
+import datawave.annotation.util.v1.AnnotationJsonUtils;
 import datawave.data.hash.UID;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -206,6 +217,82 @@ public class AnnotationHelperTest {
         // the first segment value should be protobuf that can be parsed by Segment class
         Segment segment = Segment.parseFrom(bulkKeys.get(expectedKey).stream().findFirst().get().get());
         assertEquals("testSegmentId1", segment.getSegmentHash(), "BulkIngestKey structure could potentially change as annotation-core library gets updated.");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testInlineVectorInBulkAndStreamingIngest(boolean ignoreUnknownFields) throws Exception {
+        conf.setBoolean("annotation.ignore.unknown.fields", ignoreUnknownFields);
+        annotationHelper = new AnnotationHelper(conf);
+        Annotation input = readUpstreamEmbedding();
+        byte[] json = readUpstreamEmbeddingJson();
+        RawRecordContainer event = embeddingEvent();
+
+        Multimap<BulkIngestKey,Value> bulk = annotationHelper.processBulk(json, event, HashMultimap.create());
+        annotationHelper.process(event, contextWriter, ctx, statusReporter, event.getId(), event.getVisibility().flatten(),
+                        event.getShardId().getBytes(StandardCharsets.UTF_8), json);
+        contextWriter.commit(ctx);
+        assertEquals(new HashSet<>(bulk.entries()), new HashSet<>(contextWriter.getCache().entries()));
+        assertTrue(bulk.keySet().stream().anyMatch(k -> k.getTableName().equals(new Text("datawave.annotationSource"))));
+
+        Annotation restored = new AccumuloAnnotationSerializer().deserialize(
+                        bulk.entries().stream().filter(e -> e.getKey().getTableName().equals(new Text("datawave.annotation"))).<Map.Entry<Key,Value>> map(
+                                        e -> new AbstractMap.SimpleImmutableEntry<>(e.getKey().getKey(), e.getValue())).iterator());
+        AnnotationSource restoredSource = new AccumuloAnnotationSourceSerializer().deserialize(
+                        bulk.entries().stream().filter(e -> e.getKey().getTableName().equals(new Text("datawave.annotationSource"))).<Map.Entry<Key,Value>> map(
+                                        e -> new AbstractMap.SimpleImmutableEntry<>(e.getKey().getKey(), e.getValue())).iterator());
+        assertEquals(input.getSegmentsList(), restored.getSegmentsList());
+        assertEquals(input.getSource().getAnalyticSourceHash(), restored.getAnalyticSourceHash());
+        assertEquals(input.getSource().getAnalyticSourceHash(), restoredSource.getAnalyticSourceHash());
+        assertEquals(input.getSource().getAnalyticHash(), restoredSource.getAnalyticHash());
+        assertEquals("myannotation", restored.getDataType());
+        assertEquals("a.b.c", restored.getUid());
+        assertEquals("20251107_1", restored.getShard());
+        assertEquals("TEST_VISIBILITY", restored.getMetadataOrThrow("visibility"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"sha256", "modality", "embeddingSpaceId"})
+    public void testInvalidVectorFailsBeforeStreamingWrites(String field) throws Exception {
+        conf.setBoolean("annotation.ignore.unknown.fields", false);
+        annotationHelper = new AnnotationHelper(conf);
+        Annotation.Builder invalid = readUpstreamEmbedding().toBuilder();
+        if (field.equals("sha256")) {
+            invalid.getSegmentsBuilder(0).getValuesBuilder(0).getVectorBuilder().setSha256("0".repeat(64));
+        } else {
+            invalid.getSegmentsBuilder(0).getValuesBuilder(0).getVectorBuilder()
+                            .clearField(invalid.getSegments(0).getValues(0).getVector().getDescriptorForType().findFieldByName(field));
+        }
+        byte[] json = AnnotationJsonUtils.getPrinter().print(invalid.build()).getBytes(StandardCharsets.UTF_8);
+        RawRecordContainer event = embeddingEvent();
+
+        assertThrows(AnnotationWriteException.class, () -> annotationHelper.processBulk(json, event, HashMultimap.create()));
+        assertThrows(AnnotationWriteException.class, () -> annotationHelper.process(event, contextWriter, ctx, statusReporter, event.getId(),
+                        event.getVisibility().flatten(), event.getShardId().getBytes(StandardCharsets.UTF_8), json));
+        contextWriter.commit(ctx);
+        assertTrue(contextWriter.getCache().isEmpty());
+    }
+
+    private static Annotation readUpstreamEmbedding() throws IOException {
+        Annotation.Builder builder = Annotation.newBuilder();
+        JsonFormat.parser().merge(new String(readUpstreamEmbeddingJson(), StandardCharsets.UTF_8), builder);
+        return builder.build();
+    }
+
+    private static byte[] readUpstreamEmbeddingJson() throws IOException {
+        try (InputStream stream = AnnotationHelperTest.class.getResourceAsStream("/input/upstreamEmbeddingAnnotation.json")) {
+            return stream.readAllBytes();
+        }
+    }
+
+    private static RawRecordContainer embeddingEvent() throws ParseException {
+        RawRecordContainer event = new EventWithShardId("20251107_1");
+        event.setDataType(TypeRegistry.getType("annotation"));
+        event.setTimestamp(new SimpleDateFormat("yyyyMMdd").parse("20251107").getTime());
+        event.setVisibility(new ColumnVisibility("TEST_VISIBILITY"));
+        event.setId(UID.parse("a.b.c"));
+        event.setRawData(new byte[0]);
+        return event;
     }
 
     @Test

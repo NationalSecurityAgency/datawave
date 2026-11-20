@@ -31,7 +31,18 @@ public interface SegmentValueOrBuilder extends
 
     /**
      * <pre>
-     * e.g., label
+     * e.g., label; exactly one of value or vector must be present.
+     * </pre>
+     *
+     * <code>string value = 2;</code>
+     *
+     * @return Whether the value field is set.
+     */
+    boolean hasValue();
+
+    /**
+     * <pre>
+     * e.g., label; exactly one of value or vector must be present.
      * </pre>
      *
      * <code>string value = 2;</code>
@@ -42,7 +53,7 @@ public interface SegmentValueOrBuilder extends
 
     /**
      * <pre>
-     * e.g., label
+     * e.g., label; exactly one of value or vector must be present.
      * </pre>
      *
      * <code>string value = 2;</code>
@@ -125,4 +136,23 @@ public interface SegmentValueOrBuilder extends
      */
 
     java.lang.String getExtensionOrThrow(java.lang.String key);
+
+    /**
+     * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+     *
+     * @return Whether the vector field is set.
+     */
+    boolean hasVector();
+
+    /**
+     * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+     *
+     * @return The vector.
+     */
+    datawave.annotation.protobuf.v1.VectorPayload getVector();
+
+    /**
+     * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+     */
+    datawave.annotation.protobuf.v1.VectorPayloadOrBuilder getVectorOrBuilder();
 }
