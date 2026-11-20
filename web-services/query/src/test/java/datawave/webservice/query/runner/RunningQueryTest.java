@@ -1,11 +1,13 @@
 package datawave.webservice.query.runner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.ignoreStubs;
 import static org.mockito.Mockito.lenient;
@@ -35,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.Transformer;
@@ -57,6 +60,8 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResponseEnricher;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
+import datawave.core.query.logic.composite.CompositeQueryLogicResults;
+import datawave.core.query.logic.composite.CompositeQueryLogicTransformer;
 import datawave.core.query.predict.QueryPredictor;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.Query;
@@ -73,6 +78,7 @@ import datawave.security.util.DnProperties;
 import datawave.webservice.query.logic.TestQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 import datawave.webservice.query.result.event.DefaultEvent;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.result.BaseQueryResponse;
 
 public class RunningQueryTest {
@@ -200,6 +206,271 @@ public class RunningQueryTest {
             releaseWorker.countDown();
             executor.shutdownNow();
         }
+    }
+
+    enum NextOutcome {
+        EXHAUSTED, ITERATOR_FAILURE, TRANSFORM_FAILURE
+    }
+
+    @ParameterizedTest(name = "plain TransformIterator after the partial page: {0}")
+    @EnumSource(NextOutcome.class)
+    @Timeout(15)
+    @SuppressWarnings("unchecked")
+    void distinguishesNextFailureAfterHasNextFromExhaustion(NextOutcome outcome) throws Exception {
+        assertNull(settings.getUncaughtExceptionHandler(), "Exercise RunningQuery's own worker failure handling");
+        CountDownLatch releaseWorker = new CountDownLatch(1);
+        RuntimeException failure = new RuntimeException("failed after hasNext returned true");
+        DefaultEvent intermediate = new DefaultEvent();
+        intermediate.setIntermediateResult(true);
+        Iterator<DefaultEvent> input = mock(Iterator.class);
+        when(input.hasNext()).thenReturn(true).thenAnswer(invocation -> {
+            releaseWorker.await();
+            return outcome != NextOutcome.EXHAUSTED;
+        });
+        switch (outcome) {
+            case ITERATOR_FAILURE:
+                when(input.next()).thenReturn(intermediate).thenThrow(failure);
+                break;
+            case TRANSFORM_FAILURE:
+                when(input.next()).thenReturn(intermediate, new DefaultEvent());
+                break;
+            case EXHAUSTED:
+                when(input.next()).thenReturn(intermediate);
+                break;
+        }
+        // Unlike DatawaveTransformIterator, the plain iterator does not fetch or transform during hasNext().
+        TransformIterator<DefaultEvent,DefaultEvent> iterator = new TransformIterator<>(input, event -> {
+            if (event != intermediate) {
+                throw failure;
+            }
+            return event;
+        });
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try (AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance("worker next failure test"))) {
+            RunningQuery query = createAsyncQuery(client, executor, iterator);
+            ResultsPage<?> firstPage = query.next();
+            assertEquals(ResultsPage.Status.PARTIAL, firstPage.getStatus());
+            assertTrue(firstPage.getResults().isEmpty());
+
+            releaseWorker.countDown();
+            // The queued task cannot run until the worker either exhausts the input or fails in next().
+            executor.submit(() -> {}).get(5, TimeUnit.SECONDS);
+            if (outcome == NextOutcome.EXHAUSTED) {
+                assertEquals(ResultsPage.Status.NONE, query.next().getStatus());
+            } else {
+                assertSame(failure, assertThrows(RuntimeException.class, query::next));
+            }
+        } finally {
+            releaseWorker.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    @Timeout(15)
+    void reportsCompositeChildFailureAfterHasNextAdvertisesResult() throws Exception {
+        assertNull(settings.getUncaughtExceptionHandler());
+        CountDownLatch readingSecondResult = new CountDownLatch(1);
+        CountDownLatch childFailureReported = new CountDownLatch(1);
+        RuntimeException failure = new IllegalStateException("composite child query failed");
+        CompositeQueryLogicResults results = new CompositeQueryLogicResults(mock(CompositeQueryLogic.class), 2, 1, TimeUnit.SECONDS);
+        DefaultEvent intermediate = new DefaultEvent();
+        intermediate.setIntermediateResult(true);
+        results.add(intermediate);
+        results.add(new DefaultEvent());
+
+        // Use the same iterator and pass-through transformer as the non-checkpointable composite query path.
+        TransformIterator<Object,Object> iterator = new TransformIterator<>(results.iterator(), new CompositeQueryLogicTransformer<>(List.of())) {
+            private int nextCalls;
+
+            @Override
+            public Object next() {
+                if (++nextCalls == 2) {
+                    // RunningQuery has already observed hasNext() and incremented its counter. Let the child fail before the real next().
+                    readingSecondResult.countDown();
+                    try {
+                        childFailureReported.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrupted waiting for the child failure", e);
+                    }
+                }
+                return super.next();
+            }
+        };
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try (AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance("composite next failure test"))) {
+            RunningQuery query = createAsyncQuery(client, executor, iterator);
+            ResultsPage<?> firstPage = query.next();
+            assertEquals(ResultsPage.Status.PARTIAL, firstPage.getStatus());
+            assertTrue(firstPage.getResults().isEmpty());
+
+            assertTrue(readingSecondResult.await(5, TimeUnit.SECONDS));
+            assertEquals(0, results.size(), "Composite hasNext() should have taken the second result from its queue");
+            results.uncaughtException(Thread.currentThread(), failure);
+            childFailureReported.countDown();
+            executor.submit(() -> {}).get(5, TimeUnit.SECONDS);
+
+            assertSame(failure, assertThrows(RuntimeException.class, query::next));
+        } finally {
+            childFailureReported.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    @Timeout(15)
+    @SuppressWarnings("unchecked")
+    void reportsNextFailureWhilePageWaitsForTheAdvertisedResult() throws Exception {
+        CountDownLatch readingSecondResult = new CountDownLatch(1);
+        CountDownLatch waitingForResult = new CountDownLatch(1);
+        AtomicBoolean readingSecondPage = new AtomicBoolean();
+        RuntimeException failure = new RuntimeException("worker failed while the page was waiting");
+        DefaultEvent intermediate = new DefaultEvent();
+        intermediate.setIntermediateResult(true);
+        Iterator<DefaultEvent> input = mock(Iterator.class);
+        when(input.hasNext()).thenReturn(true);
+        when(input.next()).thenReturn(intermediate).thenAnswer(invocation -> {
+            readingSecondResult.countDown();
+            waitingForResult.await();
+            throw failure;
+        });
+        TransformIterator<DefaultEvent,DefaultEvent> iterator = new TransformIterator<>(input, event -> event);
+        RunningQuery.RunningQueryTiming timing = new RunningQuery.RunningQueryTimingNoOp() {
+            @Override
+            public long getPageShortCircuitTimeoutMs() {
+                if (readingSecondPage.get()) {
+                    // The advertised result keeps hasNext() from waiting. Only getNext() asks for this deadline on page two.
+                    waitingForResult.countDown();
+                }
+                return super.getPageShortCircuitTimeoutMs();
+            }
+        };
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try (AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance("worker failure during wait"))) {
+            RunningQuery query = createAsyncQuery(client, executor, iterator, timing);
+            assertEquals(ResultsPage.Status.PARTIAL, query.next().getStatus());
+            assertTrue(readingSecondResult.await(5, TimeUnit.SECONDS));
+            readingSecondPage.set(true);
+
+            assertSame(failure, assertThrows(RuntimeException.class, query::next));
+            assertEquals(0, waitingForResult.getCount());
+        } finally {
+            waitingForResult.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    @Timeout(15)
+    @SuppressWarnings("unchecked")
+    void prefersRecordedNextFailureOverWaitTimeout() throws Exception {
+        CountDownLatch releaseRead = new CountDownLatch(1);
+        CountDownLatch failureRecorded = new CountDownLatch(1);
+        CountDownLatch releaseHandler = new CountDownLatch(1);
+        AtomicBoolean expiredDeadline = new AtomicBoolean();
+        RuntimeException failure = new RuntimeException("worker failed before the wait deadline");
+        QueryUncaughtExceptionHandler handler = mock(QueryUncaughtExceptionHandler.class);
+        doAnswer(invocation -> {
+            // RunningQuery records the failure before calling the handler. Keep the worker in that call so running remains true.
+            failureRecorded.countDown();
+            releaseHandler.await();
+            return null;
+        }).when(handler).uncaughtException(any(), any());
+        // The mock does not expose the failure to the request thread through getUncaughtException().
+        settings.setUncaughtExceptionHandler(handler);
+
+        DefaultEvent intermediate = new DefaultEvent();
+        intermediate.setIntermediateResult(true);
+        Iterator<DefaultEvent> input = mock(Iterator.class);
+        when(input.hasNext()).thenReturn(true);
+        when(input.next()).thenReturn(intermediate).thenAnswer(invocation -> {
+            releaseRead.await();
+            throw failure;
+        });
+        TransformIterator<DefaultEvent,DefaultEvent> iterator = new TransformIterator<>(input, event -> event);
+        RunningQuery.RunningQueryTiming timing = new RunningQuery.RunningQueryTimingNoOp() {
+            @Override
+            public long getPageShortCircuitTimeoutMs() {
+                return expiredDeadline.get() ? 0 : super.getPageShortCircuitTimeoutMs();
+            }
+        };
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try (AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance("recorded failure at wait deadline"))) {
+            RunningQuery query = createAsyncQuery(client, executor, iterator, timing);
+            assertEquals(ResultsPage.Status.PARTIAL, query.next().getStatus());
+            releaseRead.countDown();
+            assertTrue(failureRecorded.await(5, TimeUnit.SECONDS));
+            expiredDeadline.set(true);
+
+            assertSame(failure, assertThrows(RuntimeException.class, query::next));
+        } finally {
+            releaseRead.countDown();
+            releaseHandler.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    @Timeout(15)
+    @SuppressWarnings("unchecked")
+    void returnsQueuedResultBeforeReportingSubsequentNextFailure() throws Exception {
+        settings.setPagesize(1);
+        CountDownLatch releaseWorker = new CountDownLatch(1);
+        RuntimeException failure = new RuntimeException("worker failed after queuing a result");
+        DefaultEvent intermediate = new DefaultEvent();
+        intermediate.setIntermediateResult(true);
+        DefaultEvent queued = new DefaultEvent();
+        Iterator<DefaultEvent> input = mock(Iterator.class);
+        when(input.hasNext()).thenReturn(true).thenAnswer(invocation -> {
+            releaseWorker.await();
+            return true;
+        });
+        when(input.next()).thenReturn(intermediate, queued).thenThrow(failure);
+        TransformIterator<DefaultEvent,DefaultEvent> iterator = new TransformIterator<>(input, event -> event);
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try (AccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance("worker failure with queued result"))) {
+            RunningQuery query = createAsyncQuery(client, executor, iterator);
+            assertEquals(ResultsPage.Status.PARTIAL, query.next().getStatus());
+            releaseWorker.countDown();
+            // Wait until the worker has both published the queued result and recorded the failure on the following item.
+            executor.submit(() -> {}).get(5, TimeUnit.SECONDS);
+
+            ResultsPage<?> resultPage = query.next();
+            assertEquals(1, resultPage.getResults().size());
+            assertSame(queued, resultPage.getResults().get(0));
+            assertSame(failure, assertThrows(RuntimeException.class, query::next));
+        } finally {
+            releaseWorker.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    private RunningQuery createAsyncQuery(AccumuloClient client, ExecutorService executor, TransformIterator<?,?> iterator) throws Exception {
+        return createAsyncQuery(client, executor, iterator, null);
+    }
+
+    private RunningQuery createAsyncQuery(AccumuloClient client, ExecutorService executor, TransformIterator<?,?> iterator,
+                    RunningQuery.RunningQueryTiming timing) throws Exception {
+        QueryLogic<?> workerLogic = mock(QueryLogic.class);
+        when(workerLogic.initialize(any(), any(), any())).thenReturn(new SampleGenericQueryConfiguration());
+        doReturn(iterator).when(workerLogic).getTransformIterator(settings);
+        when(workerLogic.isIntermediateEmptyPagesEnabled()).thenReturn(true);
+        when(workerLogic.getMaxPageSize()).thenReturn(10);
+        when(workerLogic.getMaxWork()).thenReturn(-1L);
+        when(workerLogic.getMaxResults()).thenReturn(-1L);
+        when(workerLogic.getResultLimit(settings)).thenReturn(-1L);
+        DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, null, null, 0L);
+        DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
+        RunningQuery query = new RunningQuery(null, client, connectionPriority, workerLogic, settings, methodAuths, principal, timing, null,
+                        new QueryMetricFactoryImpl());
+        query.setExecutor(executor);
+        return query;
     }
 
     @SuppressWarnings("unchecked")
