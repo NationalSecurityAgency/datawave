@@ -1,19 +1,19 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Level;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-import datawave.common.test.logging.TestLogCollector;
+import datawave.common.test.logging.TestLogCollectorJUnit5;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.function.JexlEvaluation;
@@ -25,8 +25,8 @@ import datawave.query.util.Tuple3;
 
 public class QueryPruningVisitorTest {
 
-    @Rule
-    public TestLogCollector logCollector = new TestLogCollector.Builder().with(QueryPruningVisitor.class, Level.DEBUG).build();
+    @RegisterExtension
+    public TestLogCollectorJUnit5 logCollector = new TestLogCollectorJUnit5.Builder().with(QueryPruningVisitor.class, Level.DEBUG).build();
 
     private final ASTValidator validator = new ASTValidator();
 
@@ -256,7 +256,7 @@ public class QueryPruningVisitorTest {
         assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(reduced));
         assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
 
-        assertEquals(logCollector.getMessages().size() + "", 3, logCollector.getMessages().size());
+        assertEquals(3, logCollector.getMessages().size(), logCollector.getMessages().size() + "");
         assertEquals("Pruning (_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z' to false",
                         logCollector.getMessages().get(0));
         assertEquals("Pruning ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') from ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') || FIELD2 == 'z'",

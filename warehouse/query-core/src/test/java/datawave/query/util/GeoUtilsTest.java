@@ -1,6 +1,8 @@
 package datawave.query.util;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
@@ -11,8 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.io.WKTReader;
@@ -29,7 +30,7 @@ public class GeoUtilsTest {
         long numOptimizedIndices = GeoUtils.generateOptimizedIndexRanges(geom, 32).stream()
                         .map(r -> GeoUtils.indexToPosition(r[1]) - GeoUtils.indexToPosition(r[0])).reduce(0L, Long::sum);
 
-        Assert.assertTrue(numOptimizedIndices < numUnoptimizedIndices);
+        assertTrue(numOptimizedIndices < numUnoptimizedIndices);
     }
 
     @Test
@@ -39,7 +40,7 @@ public class GeoUtilsTest {
 
         List<String[]> optimizedRanges = GeoUtils.generateOptimizedIndexRanges(geom, 32);
 
-        Assert.assertEquals(1, optimizedRanges.size());
+        assertEquals(1, optimizedRanges.size());
     }
 
     @Test
@@ -52,7 +53,7 @@ public class GeoUtilsTest {
         long numOptimizedIndices = GeoUtils.generateOptimizedIndexRanges(geom, 32).stream()
                         .map(r -> GeoUtils.indexToPosition(r[1]) - GeoUtils.indexToPosition(r[0])).reduce(0L, Long::sum);
 
-        Assert.assertTrue(numOptimizedIndices < numUnoptimizedIndices);
+        assertTrue(numOptimizedIndices < numUnoptimizedIndices);
     }
 
     @Test
@@ -65,7 +66,7 @@ public class GeoUtilsTest {
         long numOptimizedIndices = GeoUtils.generateOptimizedIndexRanges(geom, 32).stream()
                         .map(r -> GeoUtils.indexToPosition(r[1]) - GeoUtils.indexToPosition(r[0])).reduce(0L, Long::sum);
 
-        Assert.assertTrue(numOptimizedIndices < numUnoptimizedIndices);
+        assertTrue(numOptimizedIndices < numUnoptimizedIndices);
     }
 
     @Test
@@ -76,47 +77,47 @@ public class GeoUtilsTest {
 
         List<long[]> decodedRanges = GeoUtils.decodePositionRange(beginPosition, endPosition);
 
-        Assert.assertEquals(18, decodedRanges.size());
+        assertEquals(18, decodedRanges.size());
 
         Geometry decodedGeometry = new GeometryCollection(
                         decodedRanges.stream().map(r -> GeoUtils.positionRangeToGeometry(r[0], r[1])).toArray(Geometry[]::new), GeoUtils.gf).union();
 
-        Assert.assertTrue(geometry.equalsTopo(decodedGeometry));
+        assertTrue(geometry.equalsTopo(decodedGeometry));
     }
 
     @Test
     public void latLonToIndexTest() {
-        Assert.assertEquals("121000..0000000000", GeoUtils.latLonToIndex(20, 20));
+        assertEquals("121000..0000000000", GeoUtils.latLonToIndex(20, 20));
     }
 
     @Test
     public void indexToPositionTest() {
-        Assert.assertEquals(1210000000000000L, GeoUtils.indexToPosition("121000..0000000000"));
+        assertEquals(1210000000000000L, GeoUtils.indexToPosition("121000..0000000000"));
     }
 
     @Test
     public void positionToIndex() {
-        Assert.assertEquals("121000..0000000000", GeoUtils.positionToIndex(1210000000000000L));
+        assertEquals("121000..0000000000", GeoUtils.positionToIndex(1210000000000000L));
     }
 
     @Test
     public void latLonToPosition() {
-        Assert.assertEquals(1210000000000000L, GeoUtils.latLonToPosition(20, 20));
+        assertEquals(1210000000000000L, GeoUtils.latLonToPosition(20, 20));
     }
 
     @Test
     public void positionToLatLonTest() {
-        Assert.assertArrayEquals(new double[] {20.0, 20.0}, GeoUtils.positionToLatLon(1210000000000000L), 0.0000000001);
+        assertArrayEquals(new double[] {20.0, 20.0}, GeoUtils.positionToLatLon(1210000000000000L), 0.0000000001);
     }
 
     @Test
     public void positionToGeometry() {
-        Assert.assertEquals("POLYGON ((20 20, 20.00001 20, 20.00001 20.00001, 20 20.00001, 20 20))", GeoUtils.positionToGeometry(1210000000000000L).toText());
+        assertEquals("POLYGON ((20 20, 20.00001 20, 20.00001 20.00001, 20 20.00001, 20 20))", GeoUtils.positionToGeometry(1210000000000000L).toText());
     }
 
     @Test
     public void indexToGeometry() {
-        Assert.assertEquals("POLYGON ((20 20, 20.00001 20, 20.00001 20.00001, 20 20.00001, 20 20))", GeoUtils.indexToGeometry("121000...0000000000").toText());
+        assertEquals("POLYGON ((20 20, 20.00001 20, 20.00001 20.00001, 20 20.00001, 20 20))", GeoUtils.indexToGeometry("121000...0000000000").toText());
     }
 
     @Test

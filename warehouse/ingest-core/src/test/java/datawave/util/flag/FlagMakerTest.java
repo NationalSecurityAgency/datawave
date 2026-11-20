@@ -1,8 +1,9 @@
 package datawave.util.flag;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -25,9 +26,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +51,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
 
     // private FlagMakerConfig fmc;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         fmc = ConfigUtil.getXmlObject(FlagMakerConfig.class, TEST_CONFIG);
         File f = new File(fmc.getBaseHDFSDir());
@@ -167,7 +167,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         fmc.setSetFlagFileTimestamp(true);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+        assertEquals(2, f.listFiles().length, "Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()));
         // ensure the flag files have appropriate dates
         for (File file : f.listFiles()) {
             if (file.getName().endsWith(".flag")) {
@@ -188,7 +188,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         fmc.setSetFlagFileTimestamp(false);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+        assertEquals(2, f.listFiles().length, "Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()));
 
         // ensure the flag files have appropriate dates
         for (File file : f.listFiles()) {
@@ -211,7 +211,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         fmc.setUseFolderTimestamp(true);
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+        assertEquals(2, f.listFiles().length, "Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()));
 
         // ensure the flag files have appropriate dates
         for (File file : f.listFiles()) {
@@ -243,7 +243,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
                 expectedFlagCount++;
             }
         }
-        assertEquals("Unexpected number of flag files with size " + expectedMax, (total / expectedMax), expectedFlagCount);
+        assertEquals((total / expectedMax), expectedFlagCount, "Unexpected number of flag files with size " + expectedMax);
     }
 
     /**
@@ -262,7 +262,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         instance.processFlags();
 
         // should have made 2 flag files
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+        assertEquals(2, f.listFiles().length, "Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()));
 
         fmc.setFlagCountThreshold(2);
         for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
@@ -274,14 +274,14 @@ public class FlagMakerTest extends AbstractFlagConfig {
             instance.processFlags();
 
             // should have not make anymore flag files despite timeout of 0 ms
-            assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+            assertEquals(2, f.listFiles().length, "Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()));
         }
 
         range = createTestFiles(2, 1);
         instance.processFlags();
 
         // should have made one more flag file
-        assertEquals("Incorrect files.  Expected 3 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 3, f.listFiles().length);
+        assertEquals(3, f.listFiles().length, "Incorrect files.  Expected 3 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()));
     }
 
     @Test
@@ -316,7 +316,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         // Expect up to total/5 files, however as soon as we have less than maxFlags (i.e. 20) files left we leave the loop.
         // Reason being that maxFlags dictates how many files must be available to create a flag file unless the timeout is reached.
         // In this case the timeout is not reached so we stop before processing all of the files.
-        assertEquals("Unexpected number of flag files with size 5", (total / 5) - (19 / 5), expectedFlagCount);
+        assertEquals((total / 5) - (19 / 5), expectedFlagCount, "Unexpected number of flag files with size 5");
     }
 
     /**
@@ -342,7 +342,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         for (Collection<InputFile> flagFileList : flagFileLists) {
             long nextTime = 0;
             for (InputFile file : flagFileList) {
-                assertTrue("Found file out of expected order", file.getTimestamp() > lastTime);
+                assertTrue(file.getTimestamp() > lastTime, "Found file out of expected order");
                 nextTime = Math.max(nextTime, file.getTimestamp());
             }
             lastTime = nextTime;
@@ -368,12 +368,12 @@ public class FlagMakerTest extends AbstractFlagConfig {
         };
         instance.processFlags();
         // should have made 2 flag files
-        assertEquals("Incorrect file lists: " + flagFileLists, 2, flagFileLists.size());
+        assertEquals(2, flagFileLists.size(), "Incorrect file lists: " + flagFileLists);
         long lastTime = Long.MAX_VALUE;
         for (Collection<InputFile> flagFileList : flagFileLists) {
             long nextTime = Long.MAX_VALUE;
             for (InputFile file : flagFileList) {
-                assertTrue("Found file out of expected order", file.getTimestamp() < lastTime);
+                assertTrue(file.getTimestamp() < lastTime, "Found file out of expected order");
                 nextTime = Math.min(nextTime, file.getTimestamp());
             }
             lastTime = nextTime;
@@ -395,7 +395,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         FlagMaker instance = new TestWrappedFlagMaker(fmc);
         instance.processFlags();
         File[] flags = f.listFiles(pathname -> pathname.toString().endsWith("flag"));
-        assertEquals("Incorrect number of flags: " + Arrays.toString(flags), 5, flags.length);
+        assertEquals(5, flags.length, "Incorrect number of flags: " + Arrays.toString(flags));
         HashSet<Long> buckets = new HashSet<>();
         DateUtils du = new DateUtils();
         for (File file : flags) {
@@ -403,7 +403,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
                 String[] files = r.readLine().split(" ")[1].split(",");
 
                 // 10 inputs per flag file
-                assertEquals("Incorrect number of files: " + Arrays.toString(files), 10, files.length);
+                assertEquals(10, files.length, "Incorrect number of files: " + Arrays.toString(files));
                 Map<String,Integer> folderCounts = new HashMap<>();
                 Map<String,Integer> dateCounts = new HashMap<>();
                 for (String string : files) {
@@ -424,7 +424,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
                     assertEquals(2, dateCounts.get(date).intValue());
                 }
                 // 2 from each folder for each day
-                assertEquals("Incorrect number of buckets: " + buckets, 5, buckets.size());
+                assertEquals(5, buckets.size(), "Incorrect number of buckets: " + buckets);
                 buckets.clear();
             }
         }
@@ -452,7 +452,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         cfg.setFileListMarker(INVALID_MARKER);
         try {
             FlagMaker instance = new TestWrappedFlagMaker(fmc);
-            Assert.fail("invalid marker expected");
+            fail("invalid marker expected");
         } catch (IllegalArgumentException ie) {
             // expected
         }
@@ -476,7 +476,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
                 assertTrue(range.containsLong(file.lastModified()));
             }
         }
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+        assertEquals(2, f.listFiles().length, "Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()));
     }
 
     /**
@@ -500,7 +500,7 @@ public class FlagMakerTest extends AbstractFlagConfig {
         FlagDataTypeConfig cfg = cfgs.get(0);
         cfg.setFileListMarker(FLAG_MARKER);
 
-        assertTrue("Should be 10 InputFiles", inFiles != null && inFiles.size() == 10);
+        assertTrue(inFiles != null && inFiles.size() == 10, "Should be 10 InputFiles");
         FlagMetrics metrics = new FlagMetrics(instance.getHadoopFS(), fc.isCollectMetrics());
         File flag = instance.write(inFiles, fc, FLAG_DIR + "/testflagwriter", metrics);
         flag.deleteOnExit();
@@ -515,9 +515,9 @@ public class FlagMakerTest extends AbstractFlagConfig {
             expected.append('\n').append(inFile.getFlagged().toUri());
         }
 
-        Assert.assertEquals(expected.length(), b.length());
+        assertEquals(expected.length(), b.length());
         for (int n = 0; n < b.length(); n++) {
-            Assert.assertEquals("flag file char mismatch at char #" + n, expected.charAt(n), b.charAt(n));
+            assertEquals(expected.charAt(n), b.charAt(n), "flag file char mismatch at char #" + n);
         }
     }
 

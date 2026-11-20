@@ -3,9 +3,10 @@ package datawave.query.iterator.logic;
 import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.END_OFFSET;
 import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.FIELD_NAME;
 import static datawave.query.iterator.logic.TermFrequencyExcerptIterator.Configuration.START_OFFSET;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -23,14 +24,12 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -41,8 +40,8 @@ import datawave.query.Constants;
 import datawave.query.iterator.SortedListKeyValueIterator;
 import datawave.table.constants.ColumnFamilyConstants;
 
-@RunWith(EasyMockRunner.class)
-public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
+@ExtendWith(MockitoExtension.class)
+public class TermFrequencyExcerptIteratorTest {
 
     private static final Text row = new Text("20220115_1");
     private static final Text colf = ColumnFamilyConstants.TERM_FREQUENCY_TEXT;
@@ -53,7 +52,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     private final Map<String,String> options = new HashMap<>();
     private final TermFrequencyExcerptIterator iterator = new TermFrequencyExcerptIterator();
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         givenData("email", "123.456.789", "BODY", "the quick brown fox jumped over the lazy dog ");
         givenData("email", "123.456.789", "CONTENT", "there is no greater divide in fandoms than that between star wars and star trek fans");
@@ -131,7 +130,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
         return map;
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         options.clear();
     }
@@ -261,7 +260,7 @@ public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {
     public void testStartOffsetGreaterThanEndOffset() {
         givenOptions("BODY", 10, 1);
 
-        Assert.assertThrows("End offset must be greater than start offset", IllegalArgumentException.class, () -> iterator.validateOptions(options));
+        assertThrows(IllegalArgumentException.class, () -> iterator.validateOptions(options), "End offset must be greater than start offset");
     }
 
     @Test

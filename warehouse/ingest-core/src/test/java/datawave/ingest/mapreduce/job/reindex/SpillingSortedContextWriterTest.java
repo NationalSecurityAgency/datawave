@@ -1,11 +1,23 @@
 package datawave.ingest.mapreduce.job.reindex;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -16,11 +28,9 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.hadoop.mapreduce.TaskType;
-import org.easymock.EasyMock;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
@@ -31,30 +41,30 @@ public class SpillingSortedContextWriterTest {
     private Configuration conf;
     private SpillingSortedContextWriter spillingSortedContextWriter;
 
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir
+    Path folder;
 
-    @Before
+    @BeforeEach
     public void setup() {
         conf = new Configuration();
         spillingSortedContextWriter = new SpillingSortedContextWriter();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setup_noWorkDir_Test() throws IOException, InterruptedException {
-        spillingSortedContextWriter.setup(conf, false);
+        assertThrows(IllegalStateException.class, () -> spillingSortedContextWriter.setup(conf, false));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void setup_workDirNotADirTest() throws IOException, InterruptedException {
-        File workDir = folder.newFile("workDir");
+        File workDir = Files.createFile(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
-        spillingSortedContextWriter.setup(conf, false);
+        assertThrows(IllegalStateException.class, () -> spillingSortedContextWriter.setup(conf, false));
     }
 
     @Test
     public void setupTest() throws IOException, InterruptedException {
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
         spillingSortedContextWriter.setup(conf, false);
     }
@@ -69,7 +79,7 @@ public class SpillingSortedContextWriterTest {
     @Test
     public void write_singleNoWriteTest() throws IOException, InterruptedException {
         StandaloneTaskAttemptContext context = new StandaloneTaskAttemptContext(conf, new StandaloneStatusReporter());
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
         spillingSortedContextWriter.setup(conf, false);
 
@@ -83,7 +93,7 @@ public class SpillingSortedContextWriterTest {
     @Test
     public void write_singleWriteTest() throws IOException, InterruptedException {
         StandaloneTaskAttemptContext context = new StandaloneTaskAttemptContext(conf, new StandaloneStatusReporter());
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
         spillingSortedContextWriter.setup(conf, false);
 
@@ -110,39 +120,36 @@ public class SpillingSortedContextWriterTest {
 
     @Test
     public void cleanup_flushTest() throws IOException, InterruptedException {
-        TaskInputOutputContext mockContext = EasyMock.createMock(TaskInputOutputContext.class);
-        File workDir = folder.newFolder("workDir");
+        TaskInputOutputContext mockContext = mock(TaskInputOutputContext.class);
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
 
-        EasyMock.expect(mockContext.getTaskAttemptID()).andReturn(new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 1), 1)).anyTimes();
-        EasyMock.expect(mockContext.getConfiguration()).andReturn(conf).anyTimes();
-        mockContext.write(new BulkIngestKey(new Text("myTable"), new Key()), new Value());
-
-        EasyMock.replay(mockContext);
+        lenient().doReturn(new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 1), 1)).when(mockContext).getTaskAttemptID();
+        lenient().doReturn(conf).when(mockContext).getConfiguration();
 
         spillingSortedContextWriter.setup(conf, false);
         spillingSortedContextWriter.write(new BulkIngestKey(new Text("myTable"), new Key()), new Value(), mockContext);
         spillingSortedContextWriter.cleanup(mockContext);
 
-        EasyMock.verify(mockContext);
+        verify(mockContext, times(1)).write(new BulkIngestKey(new Text("myTable"), new Key()), new Value());
 
         // verify that nothing is left behind
         File targetOutput = new File(workDir, "myTable/" + mockContext.getTaskAttemptID());
         assertFalse(targetOutput.exists());
+
+        if (mockContext != null && mockingDetails(mockContext).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockContext));
+        }
     }
 
     @Test
     public void cleanup_duplicateKeySquashedTest() throws IOException, InterruptedException {
-        TaskInputOutputContext mockContext = EasyMock.createMock(TaskInputOutputContext.class);
-        File workDir = folder.newFolder("workDir");
+        TaskInputOutputContext mockContext = mock(TaskInputOutputContext.class);
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
 
-        EasyMock.expect(mockContext.getTaskAttemptID()).andReturn(new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 1), 1)).anyTimes();
-        EasyMock.expect(mockContext.getConfiguration()).andReturn(conf).anyTimes();
-        mockContext.write(EasyMock.eq(new BulkIngestKey(new Text("myTable"), new Key("setA"))), EasyMock.isA(Value.class));
-        EasyMock.expectLastCall().times(1);
-
-        EasyMock.replay(mockContext);
+        lenient().doReturn(new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 1), 1)).when(mockContext).getTaskAttemptID();
+        lenient().doReturn(conf).when(mockContext).getConfiguration();
 
         spillingSortedContextWriter.setup(conf, false);
         spillingSortedContextWriter.write(new BulkIngestKey(new Text("myTable"), new Key("setA")), new Value(), mockContext);
@@ -152,23 +159,21 @@ public class SpillingSortedContextWriterTest {
         spillingSortedContextWriter.write(new BulkIngestKey(new Text("myTable"), new Key("setA")), new Value(), mockContext);
         spillingSortedContextWriter.cleanup(mockContext);
 
-        EasyMock.verify(mockContext);
+        verify(mockContext, times(1)).write(eq(new BulkIngestKey(new Text("myTable"), new Key("setA"))), isA(Value.class));
+
+        if (mockContext != null && mockingDetails(mockContext).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockContext));
+        }
     }
 
     @Test
     public void cleanup_mergeOfKeysTest() throws IOException, InterruptedException {
-        TaskInputOutputContext mockContext = EasyMock.createMock(TaskInputOutputContext.class);
-        File workDir = folder.newFolder("workDir");
+        TaskInputOutputContext mockContext = mock(TaskInputOutputContext.class);
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
 
-        EasyMock.expect(mockContext.getTaskAttemptID()).andReturn(new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 1), 1)).anyTimes();
-        EasyMock.expect(mockContext.getConfiguration()).andReturn(conf).anyTimes();
-        mockContext.write(EasyMock.eq(new BulkIngestKey(new Text("myTable"), new Key("setA"))), EasyMock.isA(Value.class));
-        EasyMock.expectLastCall().times(5);
-        mockContext.write(EasyMock.eq(new BulkIngestKey(new Text("myTable"), new Key("setB"))), EasyMock.isA(Value.class));
-        EasyMock.expectLastCall().times(3);
-
-        EasyMock.replay(mockContext);
+        lenient().doReturn(new TaskAttemptID(new TaskID(new JobID(), TaskType.MAP, 1), 1)).when(mockContext).getTaskAttemptID();
+        lenient().doReturn(conf).when(mockContext).getConfiguration();
 
         spillingSortedContextWriter.setup(conf, false);
         spillingSortedContextWriter.write(new BulkIngestKey(new Text("myTable"), new Key("setA")), new Value("a"), mockContext);
@@ -183,17 +188,22 @@ public class SpillingSortedContextWriterTest {
         spillingSortedContextWriter.write(new BulkIngestKey(new Text("myTable"), new Key("setB")), new Value("3"), mockContext);
         spillingSortedContextWriter.cleanup(mockContext);
 
-        EasyMock.verify(mockContext);
+        verify(mockContext, times(5)).write(eq(new BulkIngestKey(new Text("myTable"), new Key("setA"))), isA(Value.class));
+        verify(mockContext, times(3)).write(eq(new BulkIngestKey(new Text("myTable"), new Key("setB"))), isA(Value.class));
 
         // verify that nothing is left behind
         File targetOutput = new File(workDir, "myTable/" + mockContext.getTaskAttemptID());
         assertFalse(targetOutput.exists());
+
+        if (mockContext != null && mockingDetails(mockContext).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockContext));
+        }
     }
 
     @Test
     public void cleanup_emptyTest() throws IOException, InterruptedException {
         StandaloneTaskAttemptContext context = new StandaloneTaskAttemptContext(conf, new StandaloneStatusReporter());
-        File workDir = folder.newFolder("workDir");
+        File workDir = Files.createDirectory(folder.resolve("workDir")).toFile();
         conf.set(SpillingSortedContextWriter.WORK_DIR, workDir.getAbsolutePath());
         spillingSortedContextWriter.setup(conf, false);
 

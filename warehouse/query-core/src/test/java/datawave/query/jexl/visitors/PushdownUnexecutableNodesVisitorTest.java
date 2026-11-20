@@ -1,6 +1,11 @@
 package datawave.query.jexl.visitors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -10,8 +15,6 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -21,7 +24,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MetadataHelper;
 
-public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
+public class PushdownUnexecutableNodesVisitorTest {
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
 
@@ -214,10 +217,10 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
 
     @BeforeEach
     public void setup() throws TableNotFoundException {
-        config = createMock(ShardQueryConfiguration.class);
-        helper = createMock(MetadataHelper.class);
+        config = mock(ShardQueryConfiguration.class);
+        helper = mock(MetadataHelper.class);
 
-        EasyMock.expect(config.getDatatypeFilter()).andReturn(null).anyTimes();
+        lenient().doReturn(null).when(config).getDatatypeFilter();
 
         indexedFields = new HashSet();
         indexedFields.add("INDEX_ONLY_FIELD");
@@ -231,9 +234,9 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
         nonEventFields.add("INDEX_ONLY_FIELD");
         nonEventFields.add("TF_FIELD");
 
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(indexOnlyFields).anyTimes();
-        EasyMock.expect(helper.getNonEventFields(null)).andReturn(nonEventFields).anyTimes();
+        lenient().doReturn(indexedFields).when(config).getIndexedFields();
+        lenient().doReturn(indexOnlyFields).when(helper).getIndexOnlyFields(null);
+        lenient().doReturn(nonEventFields).when(helper).getNonEventFields(null);
     }
 
     @ParameterizedTest(name = "{0}")
@@ -244,15 +247,18 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                     String expectedFieldIndexPushdown) throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery(baseQuery);
 
-        replayAll();
-
         // global index
         assertEquals(expectedPreGlobalState, ExecutableDeterminationVisitor.getState(query, config, helper, false));
         JexlNode result = PushdownUnexecutableNodesVisitor.pushdownPredicates(query, false, config, indexedFields, indexOnlyFields, nonEventFields, helper);
         assertEquals(expectedGlobalIndexPushdown, JexlStringBuildingVisitor.buildQuery(result));
         assertEquals(expectedPostGlobalState, ExecutableDeterminationVisitor.getState(result, config, helper, false));
 
-        verifyAll();
+        if (config != null && mockingDetails(config).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(config));
+        }
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
     }
 
     @ParameterizedTest(name = "{0}")
@@ -263,14 +269,17 @@ public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {
                     String expectedFieldIndexPushdown) throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery(baseQuery);
 
-        replayAll();
-
         // field index
         assertEquals(expectedPreFieldState, ExecutableDeterminationVisitor.getState(query, config, helper, true));
         JexlNode result = PushdownUnexecutableNodesVisitor.pushdownPredicates(query, true, config, indexedFields, indexOnlyFields, nonEventFields, helper);
         assertEquals(expectedFieldIndexPushdown, JexlStringBuildingVisitor.buildQuery(result));
         assertEquals(expectedPostFieldState, ExecutableDeterminationVisitor.getState(result, config, helper, true));
 
-        verifyAll();
+        if (config != null && mockingDetails(config).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(config));
+        }
+        if (helper != null && mockingDetails(helper).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(helper));
+        }
     }
 }

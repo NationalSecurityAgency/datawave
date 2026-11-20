@@ -1,14 +1,15 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 
@@ -17,7 +18,7 @@ public class QueryPatternsVisitorTest {
     private String query;
     private final Set<String> expected = new HashSet<>();
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         query = null;
         expected.clear();
@@ -94,6 +95,6 @@ public class QueryPatternsVisitorTest {
     private void assertResults() throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Set<String> patterns = QueryPatternsVisitor.findPatterns(script);
-        Assert.assertEquals(expected, patterns);
+        assertEquals(expected, patterns);
     }
 }

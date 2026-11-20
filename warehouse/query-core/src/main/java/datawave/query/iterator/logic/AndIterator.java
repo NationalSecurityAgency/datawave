@@ -222,8 +222,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             throw new IllegalStateException("evaluationContext must be set prior to calling next");
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": next will return " + next + " ; heads at " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": next will return " + next + " ; heads at " + includeHeads.keySet());
         }
 
         prev = next;
@@ -334,8 +334,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             next = null;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": next returning " + prev + "; cached next is " + next + " ; heads at " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": next returning " + prev + "; cached next is " + next + " ; heads at " + includeHeads.keySet());
         }
 
         return prev;
@@ -455,8 +455,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             throw new IllegalStateException("Tried to call move when already at or beyond move point: topkey=" + prev + ", movekey=" + minimum);
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": moving to " + minimum);
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": moving to " + minimum);
         }
 
         // test if the cached next is already beyond the minimum
@@ -508,8 +508,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * @return a sorted map
      */
     private TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": advancing to " + key + ": " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": advancing to " + key + ": " + includeHeads.keySet());
         }
 
         boolean seenException = false;
@@ -541,7 +541,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                     highest = transform;
                 }
             } catch (WaitWindowOverrunException wwoe) {
-                log.debug(id + ": AndIterator.advanceIterators() passing through WaitWindowOverrunException: " + wwoe.getMessage());
+                log.trace(id + ": AndIterator.advanceIterators() passing through WaitWindowOverrunException: " + wwoe.getMessage());
                 throw wwoe;
             } catch (IterationInterruptedException ie) {
                 // allow the QueryIterator to handle these exceptions
@@ -564,8 +564,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             throw new DatawaveFatalQueryException("Exception in underlying iterator was destructive");
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": advanced to " + key + ": " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": advanced to " + key + ": " + includeHeads.keySet());
         }
 
         return includeHeads;
@@ -582,8 +582,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
      * @return a sorted map
      */
     private TreeMultimap<T,NestedIterator<T>> moveIterators(T key, T to) {
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": moving iterators for " + key + " to " + to + ": " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": moving iterators for " + key + " to " + to + ": " + includeHeads.keySet());
         }
         transforms.remove(key);
         for (NestedIterator<T> itr : includeHeads.removeAll(key)) {
@@ -600,15 +600,15 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 }
             }
         }
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": moved iterators for " + key + " to " + to + ": " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": moved iterators for " + key + " to " + to + ": " + includeHeads.keySet());
         }
         return includeHeads;
     }
 
     private TreeMultimap<T,NestedIterator<T>> moveIterators(SortedSet<T> toMove, T to) {
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": moving iterators for " + toMove + " to " + to + ": " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": moving iterators for " + toMove + " to " + to + ": " + includeHeads.keySet());
         }
         T highest = null;
 
@@ -637,8 +637,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T> {
             }
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug(id + ": moved iterators for " + toMove + " to " + to + ": " + includeHeads.keySet());
+        if (log.isTraceEnabled()) {
+            log.trace(id + ": moved iterators for " + toMove + " to " + to + ": " + includeHeads.keySet());
         }
         return includeHeads;
     }

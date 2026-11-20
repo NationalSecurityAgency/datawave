@@ -1,5 +1,8 @@
 package datawave.query.testframework;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -17,7 +20,6 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
@@ -101,7 +103,7 @@ public class BooksDataManager extends AbstractDataManager {
      *            uri of CSV file
      */
     public void loadGroupingData(final URI file) {
-        Assert.assertFalse("datatype has already been configured(" + this.datatype + ")", this.rawData.containsKey(this.datatype));
+        assertFalse(this.rawData.containsKey(this.datatype), "datatype has already been configured(" + this.datatype + ")");
 
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloClient, this.cfgData.getDateField(), this.fieldIndex,
@@ -132,7 +134,7 @@ public class BooksDataManager extends AbstractDataManager {
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
         // ignore
         log.error("noop condition - use loadTestData method");
-        Assert.fail("method not supported for books data manager");
+        fail("method not supported for books data manager");
     }
 
     /**

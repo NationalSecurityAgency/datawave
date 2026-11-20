@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public abstract class BufferedFileBackedRewritableSortedMapTest<K,V> extends BufferedFileBackedSortedMapTest<K,V> {
 

@@ -1,5 +1,7 @@
 package datawave.ingest.csv;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import java.io.IOException;
 import java.util.Objects;
 
@@ -9,9 +11,8 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +45,7 @@ public class NormalizedContentInterfaceTest {
     private Configuration conf;
     private FileSplit split;
 
-    @Before
+    @BeforeEach
     public void setup() {
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource(CONFIG_FILE));
@@ -213,7 +214,7 @@ public class NormalizedContentInterfaceTest {
             logDiffs(expectedToActualDiff);
         }
 
-        Assert.assertFalse("The actual normalized results do not mach expected results.", !actualToExpectedDiff.isEmpty() || !expectedToActualDiff.isEmpty());
+        assertFalse(!actualToExpectedDiff.isEmpty() || !expectedToActualDiff.isEmpty(), "The actual normalized results do not mach expected results.");
     }
 
     private void logDiffs(Multimap<String,NormalizedContentInterface> diff) {

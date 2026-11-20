@@ -803,11 +803,14 @@ public class FederatedAnnotationReaderTest {
     @Nested
     @DisplayName("Async timeout behavior tests")
     class AsyncTimeoutTests {
+        // Allow a fast DAO to be scheduled even when the build worker is busy.
+        private static final long DAO_TIMEOUT_MILLIS = 1_000;
 
         @Test
         @DisplayName("Should skip slow DAO results that exceed timeout")
         void testSlowDaoTimesOut() {
             ExecutorService executor = Executors.newFixedThreadPool(3);
+            CountDownLatch releaseSlowDao = new CountDownLatch(1);
             try {
                 Map<String,AnnotationReader> localDaos = new HashMap<>();
                 AnnotationReader slowDao = mock(AnnotationReader.class);
@@ -818,7 +821,7 @@ public class FederatedAnnotationReaderTest {
 
                 when(slowDao.getAnnotationSource(analyticHash)).thenAnswer(invocation -> {
                     try {
-                        Thread.sleep(200);
+                        releaseSlowDao.await();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
@@ -829,12 +832,13 @@ public class FederatedAnnotationReaderTest {
                 localDaos.put("slow", slowDao);
                 localDaos.put("fast", fastDao);
 
-                FederatedAnnotationReader timeoutReader = new FederatedAnnotationReader(localDaos, executor, 25);
+                FederatedAnnotationReader timeoutReader = new FederatedAnnotationReader(localDaos, executor, DAO_TIMEOUT_MILLIS);
                 Optional<AnnotationSource> result = timeoutReader.getAnnotationSource(analyticHash);
 
                 assertTrue(result.isPresent());
                 assertEquals(fastSource, result.get());
             } finally {
+                releaseSlowDao.countDown();
                 executor.shutdownNow();
                 try {
                     executor.awaitTermination(1, TimeUnit.SECONDS);
@@ -855,6 +859,7 @@ public class FederatedAnnotationReaderTest {
         void testTimedOutDaoCallIsCancelled() throws InterruptedException {
             ExecutorService executor = Executors.newFixedThreadPool(2);
             CountDownLatch interrupted = new CountDownLatch(1);
+            CountDownLatch releaseHungDao = new CountDownLatch(1);
             try {
                 Map<String,AnnotationReader> localDaos = new HashMap<>();
                 AnnotationReader hungDao = mock(AnnotationReader.class);
@@ -865,8 +870,7 @@ public class FederatedAnnotationReaderTest {
 
                 when(hungDao.getAnnotationSource(analyticHash)).thenAnswer(invocation -> {
                     try {
-                        // block far longer than the configured timeout; only an actual interrupt should end this early.
-                        Thread.sleep(10_000);
+                        releaseHungDao.await();
                     } catch (InterruptedException e) {
                         interrupted.countDown();
                         Thread.currentThread().interrupt();
@@ -878,14 +882,15 @@ public class FederatedAnnotationReaderTest {
                 localDaos.put("hung", hungDao);
                 localDaos.put("fast", fastDao);
 
-                FederatedAnnotationReader timeoutReader = new FederatedAnnotationReader(localDaos, executor, 25);
+                FederatedAnnotationReader timeoutReader = new FederatedAnnotationReader(localDaos, executor, DAO_TIMEOUT_MILLIS);
                 Optional<AnnotationSource> result = timeoutReader.getAnnotationSource(analyticHash);
 
                 assertTrue(result.isPresent());
                 assertEquals(fastSource, result.get());
-                // the hung DAO's thread should be interrupted well before its own 10s sleep would otherwise complete
+                // The blocked DAO must be interrupted before the test releases it.
                 assertTrue(interrupted.await(2, TimeUnit.SECONDS), "expected the timed-out DAO call to be cancelled/interrupted");
             } finally {
+                releaseHungDao.countDown();
                 executor.shutdownNow();
                 try {
                     executor.awaitTermination(1, TimeUnit.SECONDS);

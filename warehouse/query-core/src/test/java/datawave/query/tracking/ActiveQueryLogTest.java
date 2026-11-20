@@ -1,8 +1,9 @@
 package datawave.query.tracking;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,8 +15,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
@@ -154,8 +154,8 @@ public class ActiveQueryLogTest {
             ActiveQuery activeQuery = ActiveQueryLog.getInstance().get(e.getKey());
             QueryTask queryTask = e.getValue();
             ActiveQuerySnapshot snapshot = activeQuery.snapshot();
-            Assert.assertEquals(queryTask.numSeeks, snapshot.getNumCalls(ActiveQuery.CallType.SEEK));
-            Assert.assertEquals(queryTask.numNexts, snapshot.getNumCalls(ActiveQuery.CallType.NEXT));
+            assertEquals(queryTask.numSeeks, snapshot.getNumCalls(ActiveQuery.CallType.SEEK));
+            assertEquals(queryTask.numNexts, snapshot.getNumCalls(ActiveQuery.CallType.NEXT));
         }
     }
 }

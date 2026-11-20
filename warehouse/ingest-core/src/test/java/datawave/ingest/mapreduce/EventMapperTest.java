@@ -1,13 +1,18 @@
 package datawave.ingest.mapreduce;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.anyString;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -19,12 +24,12 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
-import org.easymock.EasyMockRule;
-import org.easymock.Mock;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -42,10 +47,8 @@ import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
 import datawave.ingest.mapreduce.job.metrics.TestEventCountMetricsReceiver;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 
+@ExtendWith(MockitoExtension.class)
 public class EventMapperTest {
-
-    @Rule
-    public EasyMockRule easyMockRule = new EasyMockRule(this);
 
     @Mock
     private Mapper.Context mapContext;
@@ -55,8 +58,9 @@ public class EventMapperTest {
     private SimpleRawRecord errorRecord;
     private EventMapper<LongWritable,RawRecordContainer,BulkIngestKey,Value> eventMapper;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
+        lenient().doNothing().when(mapContext).progress();
         long eventTime = System.currentTimeMillis();
 
         eventMapper = new EventMapper<>();
@@ -95,31 +99,30 @@ public class EventMapperTest {
         errorRecord.addError("EVENT_DATE_MISSING");
         errorRecord.setFatalError(true);
 
-        expect(mapContext.getConfiguration()).andReturn(conf).anyTimes();
-
-        mapContext.progress();
-        expectLastCall().anyTimes();
+        lenient().doReturn(conf).when(mapContext).getConfiguration();
 
         TestContextWriter<BulkIngestKey,Value> testContextWriter = new TestContextWriter<>();
-        mapContext.write(anyObject(BulkIngestKey.class), anyObject(Value.class));
-        expectLastCall().andDelegateTo(testContextWriter).anyTimes();
+        lenient().doAnswer(delegatesTo(testContextWriter)).when(mapContext).write(nullable(BulkIngestKey.class), nullable(Value.class));
 
-        expect(mapContext.getInputSplit()).andReturn(null);
-        expect(mapContext.getMapOutputValueClass()).andReturn(null);
+        doReturn(null).when(mapContext).getInputSplit();
+        doReturn(null).when(mapContext).getMapOutputValueClass();
 
         TaskAttemptID id = new TaskAttemptID();
-        expect(mapContext.getTaskAttemptID()).andReturn(id).anyTimes();
+        lenient().doReturn(id).when(mapContext).getTaskAttemptID();
 
         StandaloneTaskAttemptContext<?,?,?,?> standaloneContext = new StandaloneTaskAttemptContext<>(conf, new StandaloneStatusReporter());
-        expect(mapContext.getCounter(anyObject())).andDelegateTo(standaloneContext).anyTimes();
-        expect(mapContext.getCounter(anyString(), anyString())).andDelegateTo(standaloneContext).anyTimes();
+        lenient().doAnswer(delegatesTo(standaloneContext)).when(mapContext).getCounter(any());
+        lenient().doAnswer(delegatesTo(standaloneContext)).when(mapContext).getCounter(anyString(), anyString());
 
-        replay(mapContext);
     }
 
-    @After
+    @AfterEach
     public void checkMock() {
-        verify(mapContext);
+        verify(mapContext).getInputSplit();
+        verify(mapContext).getMapOutputValueClass();
+        if (mapContext != null && mockingDetails(mapContext).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mapContext));
+        }
     }
 
     @Test
@@ -313,12 +316,14 @@ public class EventMapperTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFailedPredicates() throws IOException, InterruptedException {
         try {
             conf.set("file." + EventMapper.RECORD_PREDICATES, CantConfigureEventPredicate.class.getName());
-            eventMapper.setup(mapContext);
-            eventMapper.map(new LongWritable(1), record, mapContext);
+            assertThrows(IllegalArgumentException.class, () -> {
+                eventMapper.setup(mapContext);
+                eventMapper.map(new LongWritable(1), record, mapContext);
+            });
         } finally {
             TestPredicate.reset();
         }

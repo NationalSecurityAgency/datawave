@@ -492,8 +492,8 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     }
 
     @Override
-    public boolean isLongRunningQuery() {
-        return discoveryDelegate.isLongRunningQuery();
+    public boolean isIntermediateEmptyPagesEnabled() {
+        return discoveryDelegate.isIntermediateEmptyPagesEnabled();
     }
 
     @Override

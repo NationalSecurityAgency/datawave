@@ -3,6 +3,9 @@ package datawave.query.jexl.visitors;
 import static datawave.query.Constants.ANY_FIELD;
 import static datawave.query.Constants.NO_FIELD;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -11,18 +14,17 @@ import java.util.Set;
 
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockExtension;
-import org.easymock.Mock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.util.time.DateHelper;
 
-@ExtendWith(EasyMockExtension.class)
+@ExtendWith(MockitoExtension.class)
 public class FieldMissingFromDateRangeVisitorTest {
 
     private static final String beginDate = "20201231";
@@ -37,11 +39,12 @@ public class FieldMissingFromDateRangeVisitorTest {
     private final Set<String> dataTypes = new HashSet<>();
     private final Set<String> expectedImmaterialFields = new LinkedHashSet<>();
 
-    private boolean helperMocked = false;
+    private Set<String> expectedFoundFields;
 
     @AfterEach
     void tearDown() {
         this.query = null;
+        this.expectedFoundFields = null;
         this.dataTypes.clear();
         this.expectedImmaterialFields.clear();
     }
@@ -249,12 +252,13 @@ public class FieldMissingFromDateRangeVisitorTest {
         Set<String> actualImmaterialFields = FieldMissingFromDateRangeVisitor.getNonIngestedFields(this.helper, script, dataTypes, specialFields,
                         DateHelper.parse(beginDate), DateHelper.parse(endDate));
 
-        if (helperMocked) {
-            // If the helper function was mocked, verify that the arguments to the function matched what we expected.
-            EasyMock.verify(this.helper);
+        if (expectedFoundFields != null) {
+            verify(helper).getMissingFieldsInDateRange(expectedFoundFields, dataTypes, beginDate, endDate, specialFields);
         }
 
         assertThat(actualImmaterialFields).isEqualTo(expectedImmaterialFields);
+
+        verifyNoMoreInteractions(helper);
     }
 
     private void givenQuery(String query) {
@@ -262,9 +266,8 @@ public class FieldMissingFromDateRangeVisitorTest {
     }
 
     private void expectHelperToBeCalled(Set<String> foundFields, Set<String> missingFields) {
-        EasyMock.expect(this.helper.getMissingFieldsInDateRange(foundFields, dataTypes, beginDate, endDate, specialFields)).andReturn(missingFields);
-        EasyMock.replay(this.helper);
-        helperMocked = true;
+        doReturn(missingFields).when(this.helper).getMissingFieldsInDateRange(foundFields, dataTypes, beginDate, endDate, specialFields);
+        expectedFoundFields = foundFields;
     }
 
     private void givenDataTypes(String... dataTypes) {

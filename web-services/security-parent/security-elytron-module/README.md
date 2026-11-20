@@ -37,14 +37,13 @@ This workflow description assumes that a security domain has been configured to:
   - Use the default permissions mapper provided by Wildfly.
 
 1. An incoming request is received and sent to `DatawaveHttpAuthenticationMechanism.evaluateRequest(HttpServerRequest)`.
-2. If configured, the session scope for the request is examined for a previously cached identity. If one is found, we authorize using that identity. (Step 5, but using the cached identity's principal instead of a principal decoded from evidence).
-3. If an identity is not cached, we extract a piece of DatawaveEvidence (JWT, trusted headers, PKI cert) identifying the user from the HttpServerRequest.
-4. The Evidence is verified. This triggers the following:
+2. We extract a piece of DatawaveEvidence (JWT, trusted headers, PKI cert) identifying the user from the HttpServerRequest.
+3. The Evidence is verified. This triggers the following:
    1. The Evidence is passed to `DatawaveEvidenceDecoder.getPrincipal(Evidence)` to obtain a DatawavePrincipal. This DatawavePrincipal is set as the Evidence's decoded principal.
    2. The DatawavePrincipal is passed to `DatawaveSecurityRealm.getRealmIdentity(Principal)` to obtain a RealmIdentity.
    3. Roles are extracted from the DatawavePrincipal and mapped to an Attributes that will be part of the AuthorizationIdentity returned from the RealmIdentity.
    4. The Evidence is passed to the RealmIdentity's `verifyEvidence(Evidence)`. If this returns false, i.e., fails verification, the user cannot be authorized, and login fails.
-5. If verification succeeds, we then attempt to authorize the request using the DatawaveEvidence's decoded principal, which will be a DatawavePrincipal. This triggers the following:
+4. If verification succeeds, we then attempt to authorize the request using the DatawaveEvidence's decoded principal, which will be a DatawavePrincipal. This triggers the following:
    1. The RealmIdentity associated with the DatawavePrincipal is obtained from the security realm.
    2. The AuthorizationIdentity from the RealmIdentity is passed to `DatawaveRoleDecoder.decodeRoles(AuthorizationIdentity)` to obtain a set of Roles for the user.
    3. If a non-empty role set was returned, the user is granted LoginPermission and BatchPermissions by the default permissions mapper, and login succeeds. If an empty role set is returned, login fails.
@@ -59,9 +58,6 @@ One of the limitations of implementing custom Wildfly Elytron components is that
 /system-property=dw.security.ejb.provider.jndi:add(value=java:global/datawave-ws-deploy-application-${project.version}-compose/gov.nsa.datawave.webservices-datawave-ws-security-${project.version}/SecurityEJBProviderImpl)
 ```
 The elytron module can then access EJBs created by the Datawave deployment through the EJB provider.
-
-### Request Session Identity Caching
-The DatawaveHttpAuthenticationMechanism can be configured to cache an identity in the request's session, and to change the session ID via the configuration properties `enableRestoreIdentity` and `enableSessionIdChange`. These options are enabled by default.
 
 ### JWT and Trusted Header Authentication
 JSON Web Token (JWT) and trusted header authentication is disabled by default, unless enabled in the DatawaveEvidenceDecoder configuration via the properties `jwtEnabled` and `trustedHeaderEnabled`. The header that the mechanism will extract a trusted subject DN from will be loaded in priority from:

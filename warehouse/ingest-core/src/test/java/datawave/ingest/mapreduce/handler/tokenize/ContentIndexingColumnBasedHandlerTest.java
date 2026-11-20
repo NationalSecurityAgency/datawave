@@ -1,5 +1,9 @@
 package datawave.ingest.mapreduce.handler.tokenize;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
@@ -18,11 +22,9 @@ import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.lucene.analysis.Analyzer;
-import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -97,7 +99,7 @@ public class ContentIndexingColumnBasedHandlerTest {
     private static final Multimap<String,NormalizedContentInterface> listExpectedAlphanumReverse = HashMultimap.create();
     private static final Multimap<String,Pair<String,Integer>> listExpectedAlphanumTfValues = HashMultimap.create();
 
-    private RawRecordContainer event = EasyMock.createMock(RawRecordContainer.class);
+    private RawRecordContainer event = mock(RawRecordContainer.class);
     private TestContentBaseIngestHelper helper;
     private ColumnVisibility colVis;
 
@@ -133,7 +135,7 @@ public class ContentIndexingColumnBasedHandlerTest {
         }
     };
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
 
         conf = new Configuration();
@@ -158,17 +160,16 @@ public class ContentIndexingColumnBasedHandlerTest {
 
     private void setupMocks() {
         try {
-            EasyMock.expect(event.getVisibility()).andReturn(colVis).anyTimes();
-            EasyMock.expect(event.getDataType()).andReturn(TypeRegistry.getType(TEST_TYPE)).anyTimes();
-            EasyMock.expect(event.getId()).andReturn(uid).anyTimes();
-            EasyMock.expect(event.getTimestamp()).andReturn(CURRENT_TIME).anyTimes();
-            EasyMock.replay(event);
+            lenient().doReturn(colVis).when(event).getVisibility();
+            lenient().doReturn(TypeRegistry.getType(TEST_TYPE)).when(event).getDataType();
+            lenient().doReturn(uid).when(event).getId();
+            lenient().doReturn(CURRENT_TIME).when(event).getTimestamp();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpExpectedResults() {
         SetExpectedMap(ALPHANUM_LIST + TOKEN_DESIGNATOR, tokenizeAlphanumResults, tokenizeAlphanumReverseResults, tokenizedExpectedFields,
                         tokenizedExpectedIndex, tokenizedExpectedReverse, tokenizedExpectedTfValues);
@@ -378,13 +379,12 @@ public class ContentIndexingColumnBasedHandlerTest {
             handler.indexListEntries(field, true, true, null);
         }
 
-        Assert.assertTrue(
-                        "Actual fields results do not match expected.\n Expected: " + expectedFields.toString() + "\nActual: " + handler.getFields().toString(),
-                        equalNciMaps(expectedFields, handler.getFields()));
-        Assert.assertTrue("Actual index results do not match expected\n Expected: " + expectedIndex.toString() + "\nActual: " + handler.getIndex().toString(),
-                        equalNciMaps(expectedIndex, handler.getIndex()));
-        Assert.assertTrue("Actual reverse results do not match expected\n Expected: " + expectedReverse.toString() + "\nActual: "
-                        + handler.getReverse().toString(), equalNciMaps(expectedReverse, handler.getReverse()));
+        assertTrue(equalNciMaps(expectedFields, handler.getFields()), "Actual fields results do not match expected.\n Expected: " + expectedFields.toString()
+                        + "\nActual: " + handler.getFields().toString());
+        assertTrue(equalNciMaps(expectedIndex, handler.getIndex()),
+                        "Actual index results do not match expected\n Expected: " + expectedIndex.toString() + "\nActual: " + handler.getIndex().toString());
+        assertTrue(equalNciMaps(expectedReverse, handler.getReverse()), "Actual reverse results do not match expected\n Expected: " + expectedReverse.toString()
+                        + "\nActual: " + handler.getReverse().toString());
 
         // test t entries
         handler.shardId = SHARD_ID.getBytes();
@@ -395,11 +395,11 @@ public class ContentIndexingColumnBasedHandlerTest {
 
         StringBuilder errorMessage = new StringBuilder();
         boolean found = assertExpectedTfRecords(expectedTfValues, tfEntries, errorMessage);
-        Assert.assertTrue(errorMessage.toString() + "\nActual" + tfEntries.toString(), found);
+        assertTrue(found, errorMessage.toString() + "\nActual" + tfEntries.toString());
 
         errorMessage = new StringBuilder();
         found = assertExpectedCountTfRecord(expectedTfValues, tfEntries, errorMessage);
-        Assert.assertTrue(errorMessage.toString() + "\nActual" + tfEntries.toString(), found);
+        assertTrue(found, errorMessage.toString() + "\nActual" + tfEntries.toString());
     }
 
     private boolean assertExpectedTfRecords(Multimap<String,Pair<String,Integer>> expectedTfValues, Multimap<BulkIngestKey,Value> tfEntries,

@@ -1,14 +1,21 @@
 package datawave.query.predicate;
 
 import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.ignoreStubs;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -22,9 +29,8 @@ import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
-import org.easymock.EasyMockSupport;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
@@ -39,7 +45,7 @@ import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
 
-public class TLDEventDataFilterTest extends EasyMockSupport {
+public class TLDEventDataFilterTest {
     private TLDEventDataFilter filter;
     private ASTJexlScript mockScript;
     private TypeMetadata mockTypeMetadata;
@@ -48,10 +54,10 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
     private final MockDateIndexHelper helper2 = new MockDateIndexHelper();
     private final ShardQueryConfiguration config = new ShardQueryConfiguration();
 
-    @Before
+    @BeforeEach
     public void setup() {
-        mockScript = createMock(ASTJexlScript.class);
-        mockTypeMetadata = createMock(TypeMetadata.class);
+        mockScript = mock(ASTJexlScript.class);
+        mockTypeMetadata = mock(TypeMetadata.class);
 
         String lcNoDiacritics = LcNoDiacriticsType.class.getName();
         String number = NumberType.class.getName();
@@ -67,10 +73,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void getCurrentField_standardTest() {
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         // expected key structure
         Key key = new Key("row", "column", "FIELD" + Constants.NULL_BYTE_STRING + "value");
@@ -80,15 +84,20 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         assertEquals("FIELD", field);
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void getCurrentField_groupingTest() {
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         // expected key structure
         Key key = new Key("row", "column", "FIELD.part_1.part_2.part_3" + Constants.NULL_BYTE_STRING + "value");
@@ -98,15 +107,20 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         assertEquals("FIELD", field);
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void getCurrentField_fiTest() {
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         // expected key structure
         Key key = new Key("row", "fi" + Constants.NULL + "FIELD", "value" + Constants.NULL + "datatype" + Constants.NULL + "123.345.456");
@@ -116,15 +130,20 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         assertEquals("FIELD", field);
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void getCurrentField_fiGroupingTest() {
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         // expected key structure
         Key key = new Key("row", "fi" + Constants.NULL + "FIELD.name", "value" + Constants.NULL + "datatype" + Constants.NULL + "123.345.456");
@@ -134,15 +153,20 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         assertEquals("FIELD", field);
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void getCurrentField_tfTest() {
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         // expected key structure
         Key key = new Key("row", "tf", "datatype" + Constants.NULL + "123.234.345" + Constants.NULL + "value" + Constants.NULL + "FIELD");
@@ -152,14 +176,20 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         assertEquals("FIELD", field);
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void getCurrentField_tfGroupingTest() {
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         // expected key structure
         Key key = new Key("row", "tf", "datatype" + Constants.NULL + "123.234.345" + Constants.NULL + "value" + Constants.NULL + "FIELD.name");
@@ -169,17 +199,22 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
         assertEquals("FIELD", field);
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void keep_emptyMapTest() {
         Map<String,Integer> fieldLimits = Collections.emptyMap();
 
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         // expected key structure
         Key key = new Key("row", "column", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
@@ -190,7 +225,14 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertTrue(filter.keep(key));
         assertNull(filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false));
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
@@ -202,8 +244,6 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         disallowlist.add("FIELD3");
 
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FIELD2 == 'bar'");
-
-        replayAll();
 
         // expected key structure
         Key key = new Key("row", "datatype" + Constants.NULL + "123.345.456", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
@@ -229,7 +269,12 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // now fails
         assertFalse(filter.keep(key));
 
-        verifyAll();
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
@@ -237,10 +282,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Map<String,Integer> fieldLimits = new HashMap<>(1);
         fieldLimits.put("FIELD1", 1);
 
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         Key key1 = new Key("row", "column", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "FIELD2" + Constants.NULL_BYTE_STRING + "value");
@@ -287,7 +330,14 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertTrue(filter.keep(key2));
         assertNull(filter.transform(key2));
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
@@ -295,10 +345,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Map<String,Integer> fieldLimits = new HashMap<>(1);
         fieldLimits.put("FIELD1", 1);
 
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         Key key1 = new Key("row", "column", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(mockScript, new AttributeFactory(mockTypeMetadata));
@@ -327,15 +375,20 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertEquals(seekRange.getStartKey().getColumnQualifier().toString(), "FIELD1" + "\u0001");
         assertTrue(seekRange.isStartKeyInclusive());
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void getParseInfo_isRootTest() {
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         // expected key structure
         Key key = new Key("row", "datatype" + Constants.NULL + "123.234.345", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
@@ -402,15 +455,20 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         assertEquals("FIELD1", info.getField());
         assertTrue(info.isRoot());
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void setDocumentClearParseInfoTest() {
-        expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
-        expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
-
-        replayAll();
+        lenient().doReturn(0).when(mockScript).jjtGetNumChildren();
+        doReturn(null).when(mockScript).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
 
         // expected key structure
         Key key1 = new Key("row", "datatype" + Constants.NULL + "123.234.345", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
@@ -431,16 +489,21 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         filter.startNewDocument(key2);
         assertTrue(filter.getParseInfo(key2).isRoot());
 
-        verifyAll();
+        verify(mockScript, times(1)).jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""));
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void apply_acceptSuperRejectTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
 
-        expect(mockTypeMetadata.getTypeMetadata("FOO", "datatype")).andReturn(Collections.emptyList());
-
-        replayAll();
+        doReturn(Collections.emptyList()).when(mockTypeMetadata).getTypeMetadata("FOO", "datatype");
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(query, new AttributeFactory(mockTypeMetadata));
         filter = new TLDEventDataFilter(query, Collections.singleton("FOO"), expressionFilters, null, null, -1, 1);
@@ -450,19 +513,24 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         boolean tldResult = filter.apply(new AbstractMap.SimpleEntry<>(key1, null));
         boolean result = filter.apply(new AbstractMap.SimpleEntry<>(key2, null));
 
-        verifyAll();
+        verify(mockTypeMetadata, times(1)).getTypeMetadata("FOO", "datatype");
 
         assertTrue(tldResult);
         assertFalse(result);
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void apply_acceptSuperRejectChildTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
 
-        expect(mockTypeMetadata.getTypeMetadata("FOO", "datatype")).andReturn(Collections.emptyList());
-
-        replayAll();
+        doReturn(Collections.emptyList()).when(mockTypeMetadata).getTypeMetadata("FOO", "datatype");
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(query, new AttributeFactory(mockTypeMetadata));
         filter = new TLDEventDataFilter(query, Collections.singleton("FOO"), expressionFilters, null, null, -1, 1);
@@ -475,9 +543,16 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Key child = new Key("row", "datatype" + Constants.NULL + "123.234.345.11", "FOO" + Constants.NULL_BYTE_STRING + "baz");
         boolean result = filter.apply(new AbstractMap.SimpleEntry<>(child, null));
 
-        verifyAll();
+        verify(mockTypeMetadata, times(1)).getTypeMetadata("FOO", "datatype");
 
         assertFalse(result);
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
@@ -571,9 +646,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Set<String> nonEventFields = new HashSet<>();
         nonEventFields.add("FIELD2");
 
-        expect(mockTypeMetadata.getTypeMetadata("FIELD2", "datatype")).andReturn(Collections.emptyList()).anyTimes();
-
-        replayAll();
+        lenient().doReturn(Collections.emptyList()).when(mockTypeMetadata).getTypeMetadata("FIELD2", "datatype");
 
         // disallowlisted tld key to initialize doc
         Key rootKey = new Key("row", "datatype" + Constants.NULL + "123.345.456", "FIELD3" + Constants.NULL_BYTE_STRING + "value");
@@ -590,15 +663,18 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // test the key, would normally have been rejected, but as a child with a non-event that matches it should be kept
         assertTrue(filter.keep(key));
 
-        verifyAll();
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
     public void apply_acceptGroupingFields() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("grouping:matchesInGroup(FOO, 'bar')");
-        expect(mockTypeMetadata.getTypeMetadata("FOO", "datatype")).andReturn(Collections.emptyList()).anyTimes();
-
-        replayAll();
+        lenient().doReturn(Collections.emptyList()).when(mockTypeMetadata).getTypeMetadata("FOO", "datatype");
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(query, new AttributeFactory(mockTypeMetadata));
         filter = new TLDEventDataFilter(query, Collections.singleton("FOO"), expressionFilters, null, null, -1, -1);
@@ -613,12 +689,17 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         boolean result3 = filter.apply(new AbstractMap.SimpleEntry<>(key3, null));
         boolean result4 = filter.apply(new AbstractMap.SimpleEntry<>(key4, null));
 
-        verifyAll();
-
         assertTrue(result1);
         assertFalse(result2);
         assertFalse(result3);
         assertTrue(result4);
+
+        if (mockScript != null && mockingDetails(mockScript).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockScript));
+        }
+        if (mockTypeMetadata != null && mockingDetails(mockTypeMetadata).isMock()) {
+            verifyNoMoreInteractions(ignoreStubs(mockTypeMetadata));
+        }
     }
 
     @Test
@@ -626,8 +707,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         String query = "content:phrase(FOO, termOffsetMap, 'bar', 'baz') && FOO == 'bar' && FOO == 'baz' && Foo2 == 'bad'";
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
 
-        expect(mockTypeMetadata.getTypeMetadata("FOO", "datatype")).andReturn(Collections.emptyList()).anyTimes();
-        replayAll();
+        lenient().doReturn(Collections.emptyList()).when(mockTypeMetadata).getTypeMetadata("FOO", "datatype");
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, new AttributeFactory(mockTypeMetadata));
         filter = new TLDEventDataFilter(script, Set.of("FOO", "FOO2"), expressionFilters, null, null, -1, -1);
@@ -642,8 +722,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         String query = "FOO == 'bar' && FOO2 == 'value3'";
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
 
-        expect(mockTypeMetadata.getTypeMetadata("FOO2", "datatype")).andReturn(Collections.emptyList()).anyTimes();
-        replayAll();
+        lenient().doReturn(Collections.emptyList()).when(mockTypeMetadata).getTypeMetadata("FOO2", "datatype");
 
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, new AttributeFactory(mockTypeMetadata));
         filter = new TLDEventDataFilter(script, Set.of("FOO", "FOO2"), expressionFilters, null, null, 1, 1);

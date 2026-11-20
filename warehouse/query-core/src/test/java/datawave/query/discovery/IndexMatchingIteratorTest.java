@@ -3,7 +3,7 @@ package datawave.query.discovery;
 import static datawave.query.discovery.IndexMatchingIterator.CONF;
 import static datawave.query.discovery.IndexMatchingIterator.REVERSE_INDEX;
 import static datawave.query.discovery.IndexMatchingIterator.gson;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -15,8 +15,8 @@ import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.javatuples.Pair;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -32,7 +32,7 @@ public class IndexMatchingIteratorTest {
     static ImmutableSortedMap<Key,Value> reverseData2;
     static Value blank;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         blank = new Value(new byte[0]);
         terms = Sets.newHashSet(Pair.with("firetruck", "vehicle"), Pair.with("ruddy duck", "bird"), Pair.with("ruddy duck", "unidentified flying object"),

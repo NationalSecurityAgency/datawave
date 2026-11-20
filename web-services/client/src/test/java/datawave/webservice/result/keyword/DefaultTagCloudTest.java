@@ -1,6 +1,6 @@
 package datawave.webservice.result.keyword;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -9,7 +9,7 @@ import java.util.Collections;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import datawave.marking.AccessExpressionMarkings;
 

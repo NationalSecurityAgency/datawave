@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -15,8 +15,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Multimap;
 
@@ -41,7 +41,7 @@ public class MetricsServiceTest {
 
     private Map<String,String> labels;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         conf = MetricsTestData.loadDefaultTestConfig();
 
@@ -84,7 +84,7 @@ public class MetricsServiceTest {
 
         Multimap<BulkIngestKey,Value> pairs = contextWriter.getWritten();
 
-        assertTrue("Expected no metrics to be written due to missing dataType", pairs.isEmpty());
+        assertTrue(pairs.isEmpty(), "Expected no metrics to be written due to missing dataType");
     }
 
     @Test

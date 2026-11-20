@@ -8,10 +8,16 @@
         <relativePath>../../../microservice-service-parent/pom.xml</relativePath>
     </parent>
     <artifactId>annotation-messaging</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <description>Shared Spring messaging support for DATAWAVE annotation protobuf messages</description>
+    <scm>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/NationalSecurityAgency/datawave</url>
+    </scm>
     <properties>
-        <version.datawave>8.1.0</version.datawave>
+        <version.datawave.annotation-api>1.0.0</version.datawave.annotation-api>
         <version.protobuf-java>3.16.3</version.protobuf-java>
     </properties>
     <dependencies>
@@ -21,9 +27,9 @@
             <version>${version.protobuf-java}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>datawave-core-annotation</artifactId>
-            <version>${version.datawave}</version>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>annotation-api</artifactId>
+            <version>${version.datawave.annotation-api}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -39,4 +45,16 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>github-datawave</id>
+            <url>https://maven.pkg.github.com/NationalSecurityAgency/datawave</url>
+        </repository>
+    </repositories>
 </project>

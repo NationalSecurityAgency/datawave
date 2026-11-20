@@ -2,9 +2,9 @@ package datawave.query.index.lookup;
 
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
 import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -26,10 +26,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -65,7 +64,7 @@ public class RangeStreamTest {
     private static AccumuloClient client;
     private ShardQueryConfiguration config;
 
-    @BeforeClass
+    @BeforeAll
     public static void setupAccumulo() throws Exception {
 
         final String SHARD_INDEX = "shardIndex";
@@ -418,7 +417,7 @@ public class RangeStreamTest {
         bw.close();
     }
 
-    @Before
+    @BeforeEach
     public void setupTest() {
         config = new ShardQueryConfiguration();
         config.setClient(client);
@@ -445,10 +444,10 @@ public class RangeStreamTest {
         Set<Range> expectedRanges = Sets.newHashSet(makeTestRange("20190314", "datatype1\u0000234"), makeTestRange("20190314", "datatype1\u0000345"));
         for (QueryPlan queryPlan : getRangeStream(helper).streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range from expected ranges: " + range.toString(), expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range), "Tried to remove unexpected range from expected ranges: " + range.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -472,10 +471,10 @@ public class RangeStreamTest {
         Set<Range> expectedRanges = Sets.newHashSet(makeShardedRange("20190314_1"));
         for (QueryPlan queryPlan : getRangeStream(helper).streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges, expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range), "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges);
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges, expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges);
     }
 
     public void testShardAndDaysHints(String originalQuery) throws Exception {
@@ -501,10 +500,10 @@ public class RangeStreamTest {
 
         for (QueryPlan queryPlan : getRangeStream(helper).streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges, expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range), "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges);
             }
         }
-        assertTrue(expectedRanges.size() + " expected ranges not found in query plan: " + expectedRanges, expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), expectedRanges.size() + " expected ranges not found in query plan: " + expectedRanges);
     }
 
     @Test
@@ -567,11 +566,11 @@ public class RangeStreamTest {
 
             // verify the range
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges, expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range), "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges);
             }
         }
 
-        assertTrue(expectedRanges.size() + " expected ranges not found in query plan: " + expectedRanges, expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), expectedRanges.size() + " expected ranges not found in query plan: " + expectedRanges);
     }
 
     @Test
@@ -598,11 +597,11 @@ public class RangeStreamTest {
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3);
         for (QueryPlan queryPlan : getRangeStream(helper).streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -632,11 +631,11 @@ public class RangeStreamTest {
         rangeStream.setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -666,11 +665,11 @@ public class RangeStreamTest {
         RangeStream rangeStream = getRangeStream(helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -763,11 +762,11 @@ public class RangeStreamTest {
         RangeStream rangeStream = getRangeStream(helper);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -816,11 +815,11 @@ public class RangeStreamTest {
         RangeStream rangeStream = getRangeStream(helper);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -874,11 +873,11 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             assertEquals("FOO == 'bag'", JexlStringBuildingVisitor.buildQuery(queryPlan.getQueryTree()));
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -906,11 +905,11 @@ public class RangeStreamTest {
         RangeStream rangeStream = getRangeStream(helper);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -937,11 +936,11 @@ public class RangeStreamTest {
         RangeStream rangeStream = getRangeStream(helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -968,11 +967,11 @@ public class RangeStreamTest {
         RangeStream rangeStream = getRangeStream(helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -999,11 +998,11 @@ public class RangeStreamTest {
         RangeStream rangeStream = getRangeStream(helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -1030,11 +1029,11 @@ public class RangeStreamTest {
         RangeStream rangeStream = getRangeStream(helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -1061,11 +1060,11 @@ public class RangeStreamTest {
         RangeStream rangeStream = getRangeStream(helper).setLimitScanners(true);
         for (QueryPlan queryPlan : rangeStream.streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     /**
@@ -1106,11 +1105,11 @@ public class RangeStreamTest {
         while (iter.hasNext()) {
             QueryPlan queryPlan = iter.next();
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     @Test
@@ -1221,10 +1220,10 @@ public class RangeStreamTest {
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
         for (QueryPlan queryPlan : queryPlans) {
             for (Range range : queryPlan.getRanges()) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges, expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range), "Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges);
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges, expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges);
     }
 
     @Test
@@ -1235,7 +1234,7 @@ public class RangeStreamTest {
         config.setEndDate(sdf.parse("20200202 040000"));
         List<Tuple2<String,IndexInfo>> fullFieldIndexScanList = RangeStream.createFullFieldIndexScanList(config, null);
 
-        Assert.assertEquals(2, fullFieldIndexScanList.size());
+        assertEquals(2, fullFieldIndexScanList.size());
     }
 
     // (A && B)
@@ -1274,11 +1273,11 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : queryPlans) {
             Iterable<Range> ranges = queryPlan.getRanges();
             for (Range range : ranges) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     // (A && (B || C))
@@ -1316,11 +1315,11 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : queryPlans) {
             Iterable<Range> ranges = queryPlan.getRanges();
             for (Range range : ranges) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     // A && (B || C)
@@ -1360,11 +1359,11 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : queryPlans) {
             Iterable<Range> ranges = queryPlan.getRanges();
             for (Range range : ranges) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     // A || (B && C)
@@ -1407,11 +1406,11 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : queryPlans) {
             Iterable<Range> ranges = queryPlan.getRanges();
             for (Range range : ranges) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     // (A && B) || (C && D)
@@ -1451,11 +1450,11 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : queryPlans) {
             Iterable<Range> ranges = queryPlan.getRanges();
             for (Range range : ranges) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     // (A || B) && (C || D)
@@ -1496,11 +1495,11 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : queryPlans) {
             Iterable<Range> ranges = queryPlan.getRanges();
             for (Range range : ranges) {
-                assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
-                                expectedRanges.remove(range));
+                assertTrue(expectedRanges.remove(range),
+                                "Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString());
             }
         }
-        assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+        assertTrue(expectedRanges.isEmpty(), "Expected ranges not found in query plan: " + expectedRanges.toString());
     }
 
     // A && B when A term is day ranges and B term is a single shard range within the last day.

@@ -1,5 +1,12 @@
 package datawave.ingest.table.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,11 +21,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
@@ -41,7 +46,7 @@ public class MetadataTableConfigHelperTest {
 
     protected List<String> debugMessages = null;
     protected List<String> infoMessages = null;
-    protected Map<String,String> configuration = null;
+    protected Configuration configuration = null;
     public Map<String,String> tableProperties;
     public Map<String,Set<Text>> localityGroups;
 
@@ -51,14 +56,13 @@ public class MetadataTableConfigHelperTest {
         tableProperties = new HashMap<>();
         localityGroups = new HashMap<>();
 
-        TableOperations mock = EasyMock.createMock(TableOperations.class);
+        TableOperations mock = mock(TableOperations.class);
 
-        mock.getProperties(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
             AbstractTableConfigHelperTest.GET_PROPERTIES_CALLED = true;
 
-            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            String tableNameParameter = (String) invocation.getArguments()[0];
 
             if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
 
@@ -66,33 +70,31 @@ public class MetadataTableConfigHelperTest {
             }
 
             return tableProperties.entrySet();
-        }).anyTimes();
+        }).when(mock).getProperties(nullable(String.class));
 
-        mock.setProperty(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
             AbstractTableConfigHelperTest.SET_PROPERTIES_CALLED = true;
 
-            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            String tableNameParameter = (String) invocation.getArguments()[0];
 
             if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
 
                 throw new TableNotFoundException(null, tableNameParameter, MetadataTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
 
-            String name = (String) EasyMock.getCurrentArguments()[1];
-            String value = (String) EasyMock.getCurrentArguments()[2];
+            String name = (String) invocation.getArguments()[1];
+            String value = (String) invocation.getArguments()[2];
 
             tableProperties.put(name, value);
             return null;
-        }).anyTimes();
+        }).when(mock).setProperty(nullable(String.class), nullable(String.class), nullable(String.class));
 
-        mock.getLocalityGroups(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
             AbstractTableConfigHelperTest.ARE_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
 
-            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            String tableNameParameter = (String) invocation.getArguments()[0];
 
             if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
 
@@ -100,84 +102,43 @@ public class MetadataTableConfigHelperTest {
             }
 
             return localityGroups;
-        }).anyTimes();
+        }).when(mock).getLocalityGroups(nullable(String.class));
 
         Map<String,Set<Text>> groups = new HashMap<>();
 
-        mock.setLocalityGroups(EasyMock.anyObject(String.class), EasyMock.anyObject(groups.getClass()));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
             AbstractTableConfigHelperTest.SET_LOCALITY_GROUPS_CONFIGURED_CALLED = true;
 
-            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+            String tableNameParameter = (String) invocation.getArguments()[0];
 
             if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
 
                 throw new TableNotFoundException(null, tableNameParameter, MetadataTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
             }
 
-            Map<String,Set<Text>> groups1 = (Map<String,Set<Text>>) EasyMock.getCurrentArguments()[1];
+            Map<String,Set<Text>> groups1 = (Map<String,Set<Text>>) invocation.getArguments()[1];
 
             localityGroups.putAll(groups1);
 
             return null;
-        }).anyTimes();
+        }).when(mock).setLocalityGroups(nullable(String.class), nullable(groups.getClass()));
 
         // prepare it for use...
-        EasyMock.replay(mock);
 
         return mock;
     }
 
-    public Configuration createMockConfiguration() {
-
-        if (null == configuration) {
-
-            configuration = new HashMap<>();
+    public Configuration createConfiguration() {
+        if (configuration == null) {
+            configuration = new Configuration(false);
         }
-
-        Configuration mock = EasyMock.createMock(Configuration.class);
-
-        mock.get(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
-
-            String results = null;
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            String defaultValue = (String) EasyMock.getCurrentArguments()[1];
-
-            if (configuration.containsKey(key)) {
-
-                results = configuration.get(key);
-            } else {
-
-                results = defaultValue;
-            }
-
-            return results;
-        }).anyTimes();
-
-        mock.getBoolean(EasyMock.anyObject(String.class), EasyMock.anyBoolean());
-        EasyMock.expectLastCall().andAnswer(() -> {
-
-            String key = (String) EasyMock.getCurrentArguments()[0];
-            boolean results = (Boolean) EasyMock.getCurrentArguments()[1];
-
-            if (configuration.containsKey(key)) {
-
-                results = Boolean.parseBoolean(configuration.get(key));
-            }
-
-            return results;
-        }).anyTimes();
-
-        EasyMock.replay(mock);
-
-        return mock;
+        return configuration;
     }
 
     protected Logger createMockLogger() {
 
-        Logger log = EasyMock.createMock(Logger.class);
+        Logger log = mock(Logger.class);
 
         if (null == debugMessages) {
 
@@ -189,32 +150,28 @@ public class MetadataTableConfigHelperTest {
             infoMessages = new ArrayList<>();
         }
 
-        log.debug(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
-            String msg = (String) EasyMock.getCurrentArguments()[0];
+            String msg = (String) invocation.getArguments()[0];
 
             debugMessages.add(msg);
 
             return null;
-        }).anyTimes();
+        }).when(log).debug(nullable(String.class));
 
-        log.info(EasyMock.anyObject(String.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
+        lenient().doAnswer(invocation -> {
 
-            String msg = (String) EasyMock.getCurrentArguments()[0];
+            String msg = (String) invocation.getArguments()[0];
 
             infoMessages.add(msg);
 
             return null;
-        }).anyTimes();
-
-        EasyMock.replay(log);
+        }).when(log).info(nullable(String.class));
 
         return log;
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         Level desiredLevel = Level.ALL;
 
@@ -223,7 +180,7 @@ public class MetadataTableConfigHelperTest {
         log.setLevel(desiredLevel);
     }
 
-    @After
+    @AfterEach
     public void teardown() {
 
         MetadataTableConfigHelperTest.logger.setLevel(MetadataTableConfigHelperTest.testDriverLevel);
@@ -238,7 +195,7 @@ public class MetadataTableConfigHelperTest {
 
             WrappedMetadataTableConfigHelper uut = new WrappedMetadataTableConfigHelper();
 
-            Configuration config = this.createMockConfiguration();
+            Configuration config = this.createConfiguration();
             Logger log = this.createMockLogger();
 
             uut.setup(MetadataTableConfigHelperTest.TABLE_NAME, config, log);
@@ -247,8 +204,8 @@ public class MetadataTableConfigHelperTest {
 
             String msg = iae.getMessage();
 
-            Assert.assertTrue("MetadataTableConfigHelper.setup threw the expected exception, but the message was not the expected message.",
-                            msg.startsWith("No Such Table: "));
+            assertTrue(msg.startsWith("No Such Table: "),
+                            "MetadataTableConfigHelper.setup threw the expected exception, but the message was not the expected message.");
         } finally {
 
             MetadataTableConfigHelperTest.logger.info("MetadataTableConfigHelperTest.testSetupNothingDefinedInConfiguration completed.");
@@ -265,15 +222,15 @@ public class MetadataTableConfigHelperTest {
 
             WrappedMetadataTableConfigHelper uut = new WrappedMetadataTableConfigHelper();
 
-            Configuration config = this.createMockConfiguration();
+            Configuration config = this.createConfiguration();
             Logger log = this.createMockLogger();
 
-            this.configuration.put(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
 
             uut.setup(MetadataTableConfigHelperTest.TABLE_NAME, config, log);
 
-            Assert.assertEquals("MetadataTableConfigHelper.setup incorrectly identified the TableName", MetadataTableConfigHelperTest.TABLE_NAME,
-                            uut.exposeTableName());
+            assertEquals(MetadataTableConfigHelperTest.TABLE_NAME, uut.exposeTableName(),
+                            "MetadataTableConfigHelper.setup incorrectly identified the TableName");
 
         } finally {
 
@@ -290,10 +247,10 @@ public class MetadataTableConfigHelperTest {
 
             WrappedMetadataTableConfigHelper uut = new WrappedMetadataTableConfigHelper();
 
-            Configuration config = this.createMockConfiguration();
+            Configuration config = this.createConfiguration();
             Logger log = this.createMockLogger();
 
-            this.configuration.put(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
             try {
 
                 uut.setup(MetadataTableConfigHelperTest.BAD_TABLE_NAME, config, log);
@@ -302,8 +259,8 @@ public class MetadataTableConfigHelperTest {
 
                 String msg = iae.getMessage();
 
-                Assert.assertTrue("MetadataTableConfigHelper.setup threw the expected exception, but the message was not the expected message.",
-                                msg.startsWith("No Such Table: "));
+                assertTrue(msg.startsWith("No Such Table: "),
+                                "MetadataTableConfigHelper.setup threw the expected exception, but the message was not the expected message.");
             }
 
         } finally {
@@ -326,7 +283,7 @@ public class MetadataTableConfigHelperTest {
 
             uut.configure(tops);
 
-            Assert.assertTrue("MetadataTableConfigHelper.configure incorrectly populated the Table Properties.", this.tableProperties.isEmpty());
+            assertTrue(this.tableProperties.isEmpty(), "MetadataTableConfigHelper.configure incorrectly populated the Table Properties.");
 
         } finally {
 
@@ -341,47 +298,45 @@ public class MetadataTableConfigHelperTest {
 
         try {
 
-            Configuration config = createMockConfiguration();
+            Configuration config = createConfiguration();
             Logger log = createMockLogger();
             TableOperations tops = mockUpTableOperations();
 
             WrappedMetadataTableConfigHelper uut = new WrappedMetadataTableConfigHelper();
 
-            this.configuration.put(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
 
             this.tableProperties.clear();
             this.localityGroups.clear();
 
             uut.setup(MetadataTableConfigHelperTest.TABLE_NAME, config, log);
 
-            Assert.assertEquals("MetadataTableConfigHelper.setup incorrectly identified the TableName", MetadataTableConfigHelperTest.TABLE_NAME,
-                            uut.exposeTableName());
+            assertEquals(MetadataTableConfigHelperTest.TABLE_NAME, uut.exposeTableName(),
+                            "MetadataTableConfigHelper.setup incorrectly identified the TableName");
 
             uut.configure(tops);
 
-            Assert.assertFalse("MetadataTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
-                            this.tableProperties.isEmpty());
-            Assert.assertTrue("MetadataTableConfigHelper.configureShardTable caused the the Locality Groups collection to be populated.",
-                            this.localityGroups.isEmpty());
+            assertFalse(this.tableProperties.isEmpty(), "MetadataTableConfigHelper.configureShardTable failed to populate the Table Properties collection.");
+            assertTrue(this.localityGroups.isEmpty(),
+                            "MetadataTableConfigHelper.configureShardTable caused the the Locality Groups collection to be populated.");
 
             uut = new WrappedMetadataTableConfigHelper();
 
-            this.configuration.put(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
+            this.configuration.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, MetadataTableConfigHelperTest.TABLE_NAME);
 
             this.tableProperties.clear();
             this.localityGroups.clear();
 
             uut.setup(MetadataTableConfigHelperTest.TABLE_NAME, config, log);
 
-            Assert.assertEquals("MetadataTableConfigHelper.setup incorrectly identified the TableName", MetadataTableConfigHelperTest.TABLE_NAME,
-                            uut.exposeTableName());
+            assertEquals(MetadataTableConfigHelperTest.TABLE_NAME, uut.exposeTableName(),
+                            "MetadataTableConfigHelper.setup incorrectly identified the TableName");
 
             uut.configure(tops);
 
-            Assert.assertFalse("MetadataTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
-                            this.tableProperties.isEmpty());
-            Assert.assertTrue("MetadataTableConfigHelper.configureShardTable caused the the Locality Groups collection to be populated.",
-                            this.localityGroups.isEmpty());
+            assertFalse(this.tableProperties.isEmpty(), "MetadataTableConfigHelper.configureShardTable failed to populate the Table Properties collection.");
+            assertTrue(this.localityGroups.isEmpty(),
+                            "MetadataTableConfigHelper.configureShardTable caused the the Locality Groups collection to be populated.");
 
         } finally {
 

@@ -21,6 +21,13 @@ on:
           - microservices/microservice-service-parent
           - microservices/services/accumulo/api
           - microservices/services/accumulo/service
+          - microservices/services/annotation
+          - microservices/services/annotation/api
+          - microservices/services/annotation/messaging
+          - microservices/services/annotation/service
+          - microservices/services/annotation-cache
+          - microservices/services/annotation-cache/api
+          - microservices/services/annotation-cache/service
           - microservices/services/audit/api
           - microservices/services/audit/service
           - microservices/services/authorization/api
@@ -55,6 +62,11 @@ on:
         required: true
         default: "RC1"
         description: "Modifier to add to version (e. g. 1.0.0-RC1)."
+      pomOnly:
+        required: false
+        default: false
+        type: boolean
+        description: "Release only the selected POM, without building, changing, or deploying its modules. Requires pom packaging."
       bumpDownstream:
         required: false
         default: false
@@ -72,6 +84,11 @@ on:
         required: false
         type: string
         default: "RC1"
+      pomOnly:
+        required: false
+        default: false
+        type: boolean
+        description: "Release only the selected POM, without building, changing, or deploying its modules. Requires pom packaging."
       bumpDownstream:
         required: false
         type: boolean
@@ -82,6 +99,9 @@ on:
         default: ""
         description: "Branch to release from. When empty, uses the triggering ref. Set by the cascade workflow for non-final releases."
 env:
+  # Controlled flags: intentionally split into Maven arguments in shell steps.
+  MAVEN_PROJECT_ARGS: ${{ inputs.pomOnly && '--non-recursive' || '' }}
+  MAVEN_VERSION_ARGS: ${{ inputs.pomOnly && '-DprocessFromLocalAggregationRoot=false -DprocessParent=false -DprocessDependencies=false -DprocessPlugins=false -DupdateMatchingVersions=false' || '' }}
   JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
   MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true -XX:ThreadStackSize=1m -Daether.connector.basic.threads=8 -Daether.metadataResolver.threads=8 -Daether.syncContext.named.time=480"
@@ -106,6 +126,25 @@ jobs:
 
     - name: Fast-forward to branch tip
       run: git pull --ff-only
+
+    - name: Validate POM-only release
+      if: ${{ inputs.pomOnly }}
+      env:
+        PROJECT_TO_RELEASE: ${{ inputs.projectToRelease }}
+      run: |
+        python3 <<'PYEOF'
+        import os
+        from pathlib import Path
+        from xml.etree import ElementTree as ET
+
+        pom = Path(os.environ['PROJECT_TO_RELEASE']) / 'pom.xml'
+        root = ET.parse(pom).getroot()
+        ns = {'m': 'http://maven.apache.org/POM/4.0.0'}
+        packaging = root.findtext('m:packaging', default='jar', namespaces=ns).strip()
+        if packaging != 'pom':
+            raise SystemExit(f'POM-only release requires pom packaging: {pom} has {packaging}')
+        print(f'Releasing only {pom}; child modules will not be released.')
+        PYEOF
 
     - name: Configure Maven Settings
       run: |
@@ -177,7 +216,7 @@ jobs:
         RULES_EOF
 
         cd "${{ inputs.projectToRelease }}"
-        mvn --batch-mode --no-transfer-progress \
+        mvn $MAVEN_PROJECT_ARGS --batch-mode --no-transfer-progress \
             versions:update-parent versions:update-properties \
             -DallowSnapshots=false \
             -DallowMajorUpdates=false \
@@ -196,10 +235,10 @@ jobs:
       id: version
       run: |
         cd "${{ inputs.projectToRelease }}"
-        RAW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout) || \
-                      mvn help:evaluate -Dexpression=project.version -DforceStdout
-        ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout) || \
-                      mvn help:evaluate -Dexpression=project.artifactId -DforceStdout
+        RAW_VERSION=$(mvn $MAVEN_PROJECT_ARGS help:evaluate -Dexpression=project.version -q -DforceStdout) || \
+                      mvn $MAVEN_PROJECT_ARGS help:evaluate -Dexpression=project.version -DforceStdout
+        ARTIFACT_ID=$(mvn $MAVEN_PROJECT_ARGS help:evaluate -Dexpression=project.artifactId -q -DforceStdout) || \
+                      mvn $MAVEN_PROJECT_ARGS help:evaluate -Dexpression=project.artifactId -DforceStdout
         BASE_VERSION=${RAW_VERSION%-SNAPSHOT}
 
         if [ "${{ inputs.finalRelease }}" = "true" ]; then
@@ -236,7 +275,7 @@ jobs:
         cd "${{ inputs.projectToRelease }}"
         git config user.email "datawave@github.com"
         git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
-        mvn --batch-mode versions:set \
+        mvn $MAVEN_PROJECT_ARGS --batch-mode versions:set $MAVEN_VERSION_ARGS \
             -DnewVersion="${{ steps.version.outputs.NEXT_DEV_VERSION }}" \
             -DgenerateBackupPoms=false
         cd "$GITHUB_WORKSPACE"
@@ -254,9 +293,10 @@ jobs:
         #Github actions bot user id + user.login. See https://api.github.com/users/github-actions%5Bbot%5D
         git config user.email "datawave@github.com"
         git config user.name "${{ secrets.GHCR_WRITE_USER_NAME }}"
-        mvn \
+        # Both the outer reactor and the forked prepare/perform builds must be non-recursive.
+        mvn $MAVEN_PROJECT_ARGS \
         --batch-mode release:prepare release:perform \
-        -Dmaven.release.arguments="-DpushChanges=true \
+        -Dmaven.release.arguments="$MAVEN_PROJECT_ARGS -DpushChanges=true \
         -DskipTests -DskipFormat -DskipSpotbugs \
         -Denforcer.skip=true -Dcheckstyle.skip=true \
         -Ddocker-release -Dmicroservice-docker" \

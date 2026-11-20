@@ -1,7 +1,7 @@
 package datawave.query.testframework;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,7 +41,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.log4j.Logger;
-import org.junit.rules.ExternalResource;
 
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -55,10 +54,10 @@ import datawave.query.RebuildingScannerTestHelper;
 /**
  * JUnit 4 rule for loading Accumulo test data.
  *
- * @deprecated Use {@link AccumuloSetupJUnit5} for Jupiter tests.
+ * @deprecated Use {@link AccumuloSetupExtension} for Jupiter tests.
  */
 @Deprecated
-public class AccumuloSetup extends ExternalResource {
+public class AccumuloSetup {
 
     private static final Logger log = Logger.getLogger(AccumuloSetup.class);
 
@@ -86,7 +85,6 @@ public class AccumuloSetup extends ExternalResource {
         this.assureTempFolderDeletion = assureTempFolderDeletion;
     }
 
-    @Override
     protected void before() throws Throwable {
         createTempFolder();
     }
@@ -99,7 +97,6 @@ public class AccumuloSetup extends ExternalResource {
         }
     }
 
-    @Override
     protected void after() {
         deleteTempFolder();
     }
@@ -218,8 +215,8 @@ public class AccumuloSetup extends ExternalResource {
         log.debug("------------- loadTables -------------");
 
         if (this.fileFormat != FileType.GROUPING) {
-            assertFalse("shard ids have not been specified", this.shardIds.isEmpty());
-            assertFalse("data types have not been specified", this.dataTypes.isEmpty());
+            assertFalse(this.shardIds.isEmpty(), "shard ids have not been specified");
+            assertFalse(this.dataTypes.isEmpty(), "data types have not been specified");
         }
 
         final AccumuloClient client = tableHelper.client;
