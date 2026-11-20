@@ -3,7 +3,7 @@ package datawave.query.function;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.AbstractMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.accumulo.core.data.Key;
@@ -65,6 +65,6 @@ public class KeyToFieldNameTest {
     }
 
     private Entry<Key,Value> getEntry(Key k) {
-        return new AbstractMap.SimpleEntry<>(k, value);
+        return Map.entry(k, value);
     }
 }

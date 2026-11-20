@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -85,7 +84,7 @@ public class KeywordExtractingIteratorTest {
         b64s.close();
         bos.close();
         Value value = new Value(bos.toByteArray());
-        Map.Entry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
+        Map.Entry<Key,Value> entry = Map.entry(key, value);
         source.add(entry);
     }
 
@@ -176,8 +175,7 @@ public class KeywordExtractingIteratorTest {
         languagemap.put(rowDtUid, "ENGLISH");
         givenOptions(String.join(Constants.COMMA, viewNames), languagemap);
 
-        List<Map.Entry<String,VisibleContent>> orderedContent = List
-                        .of(new AbstractMap.SimpleEntry<>("CONTENT1", new VisibleContent("ALL", email987654321Content1)));
+        List<Map.Entry<String,VisibleContent>> orderedContent = List.of(Map.entry("CONTENT1", new VisibleContent("ALL", email987654321Content1)));
         KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
 
         initIterator();
@@ -211,8 +209,7 @@ public class KeywordExtractingIteratorTest {
         languagemap.put(rowDtUid, "ENGLISH");
         givenOptions(String.join(Constants.COMMA, viewNames), languagemap);
 
-        List<Map.Entry<String,VisibleContent>> orderedContent = List
-                        .of(new AbstractMap.SimpleEntry<>("CONTENT1", new VisibleContent("ALL", email987654321Content1)));
+        List<Map.Entry<String,VisibleContent>> orderedContent = List.of(Map.entry("CONTENT1", new VisibleContent("ALL", email987654321Content1)));
         KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
 
         initIterator();
@@ -247,8 +244,7 @@ public class KeywordExtractingIteratorTest {
         languagemap.put(rowDtUid, "ENGLISH");
         givenOptions(String.join(Constants.COMMA, viewNames), languagemap);
 
-        List<Map.Entry<String,VisibleContent>> orderedContent = List
-                        .of(new AbstractMap.SimpleEntry<>("CONTENT1", new VisibleContent("ALL", email987654321Content1)));
+        List<Map.Entry<String,VisibleContent>> orderedContent = List.of(Map.entry("CONTENT1", new VisibleContent("ALL", email987654321Content1)));
         KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
 
         initIterator();
@@ -282,8 +278,7 @@ public class KeywordExtractingIteratorTest {
         languagemap.put(rowDtUid, "ENGLISH");
         givenOptions(String.join(Constants.COMMA, viewNames), languagemap);
 
-        List<Map.Entry<String,VisibleContent>> orderedContent = List
-                        .of(new AbstractMap.SimpleEntry<>("CONTENT2", new VisibleContent("ALL", email987654321Content2)));
+        List<Map.Entry<String,VisibleContent>> orderedContent = List.of(Map.entry("CONTENT2", new VisibleContent("ALL", email987654321Content2)));
         KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
 
         initIterator();
@@ -316,8 +311,7 @@ public class KeywordExtractingIteratorTest {
         languagemap.put(rowDtUid, "ENGLISH");
         options.put(DOCUMENT_LANGUAGES, new Gson().toJson(languagemap));
 
-        List<Map.Entry<String,VisibleContent>> orderedContent = List
-                        .of(new AbstractMap.SimpleEntry<>("CONTENT", new VisibleContent("ALL", pdf111222333Content)));
+        List<Map.Entry<String,VisibleContent>> orderedContent = List.of(Map.entry("CONTENT", new VisibleContent("ALL", pdf111222333Content)));
         KeywordExtractor expectedKeywordExtractor = new KeywordExtractor(rowDtUid, orderedContent, "ENGLISH", options);
 
         initIterator();

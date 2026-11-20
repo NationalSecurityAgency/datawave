@@ -3,7 +3,6 @@ package datawave.query.transformer;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -71,7 +70,7 @@ public class DocumentTransformerTest {
     }
 
     private Map.Entry<Key,Value> createEntry() {
-        Map.Entry<Key,Document> entry = new SimpleEntry<>(documentKey, document);
+        Map.Entry<Key,Document> entry = Map.entry(documentKey, document);
         return serializer.apply(entry);
     }
 

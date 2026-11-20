@@ -3,11 +3,11 @@ package datawave.test.index;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -225,7 +225,7 @@ class TruncatedIndexConversionIteratorTest implements IndexConversionTests {
     }
 
     public void expect(Key k, Value v) {
-        expected.add(new SimpleEntry<>(k, v));
+        expected.add(Map.entry(k, v));
     }
 
     private void assertResults() {
@@ -239,7 +239,7 @@ class TruncatedIndexConversionIteratorTest implements IndexConversionTests {
             while (iter.hasTop()) {
                 Key k = iter.getTopKey();
                 Value v = iter.getTopValue();
-                results.add(new SimpleEntry<>(k, v));
+                results.add(Map.entry(k, v));
                 iter.next();
             }
 
@@ -266,7 +266,7 @@ class TruncatedIndexConversionIteratorTest implements IndexConversionTests {
             while (iter.hasTop()) {
                 Key k = iter.getTopKey();
                 Value v = iter.getTopValue();
-                results.add(new SimpleEntry<>(k, v));
+                results.add(Map.entry(k, v));
                 iter.next();
             }
 

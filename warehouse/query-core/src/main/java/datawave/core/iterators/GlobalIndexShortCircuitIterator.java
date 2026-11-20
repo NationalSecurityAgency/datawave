@@ -1,7 +1,6 @@
 package datawave.core.iterators;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -355,9 +354,9 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                     this.ranges.add(shardDatatypeRange);
 
                     // Track that we already added a range for this shard+datatype
-                    shardDatatypeRanges.add(new AbstractMap.SimpleEntry<>(shard.toString(), datatype));
+                    shardDatatypeRanges.add(Map.entry(shard.toString(), datatype));
                 } else {
-                    if (shardDatatypeRanges.contains(new AbstractMap.SimpleEntry<>(shard.toString(), datatype))) {
+                    if (shardDatatypeRanges.contains(Map.entry(shard.toString(), datatype))) {
                         if (log.isTraceEnabled()) {
                             log.trace("Do not need to add event-specific ranges, have already added a range for this shard and datatype");
                         }

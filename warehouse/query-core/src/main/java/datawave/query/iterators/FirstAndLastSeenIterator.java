@@ -1,7 +1,6 @@
 package datawave.query.iterators;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -138,7 +137,7 @@ public class FirstAndLastSeenIterator implements SortedKeyValueIterator<Key,Valu
         lastSeenKey = currentKey;
     }
 
-    private AbstractMap.SimpleEntry constructResult(Key firstSeenKey, Key lastSeenKey) {
+    private Map.Entry<Key,Value> constructResult(Key firstSeenKey, Key lastSeenKey) {
         if (null == firstSeenKey) {
             return null; // no data for range
         }
@@ -146,7 +145,7 @@ public class FirstAndLastSeenIterator implements SortedKeyValueIterator<Key,Valu
         String lastSeenDate = extractDateFromKey(lastSeenKey);
         Key resultKey = createResultKey(lastSeenKey, lastSeenDate);
         Value resultValue = constructValueForResult(firstSeenDate, lastSeenDate);
-        return new AbstractMap.SimpleEntry(resultKey, resultValue);
+        return Map.entry(resultKey, resultValue);
     }
 
     String extractDateFromKey(Key lastKey) {

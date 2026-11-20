@@ -1,7 +1,6 @@
 package datawave.query.common.grouping;
 
 import java.math.BigDecimal;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1981,7 +1980,7 @@ public class DocumentGrouperTest {
     }
 
     private void executeGrouping() {
-        Map.Entry<Key,Document> keyDocumentEntry = new AbstractMap.SimpleEntry<>(key, this.document);
+        Map.Entry<Key,Document> keyDocumentEntry = Map.entry(key, this.document);
         DocumentGrouper.group(keyDocumentEntry, this.groupFields, this.groups);
     }
 

@@ -13,7 +13,6 @@ import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.DEFINE
 import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -610,7 +609,7 @@ public class MapReduceQueryManagementService implements MapReduceQueryRequestHan
             // update the file status to reflect a relative file path
             fileStatus.setPath(getRelativeFilePath(filesystem.getFileStatus(resultsPath), fileStatus));
 
-            return new AbstractMap.SimpleEntry<>(fileStatus, getFileInputStream(resultFile));
+            return Map.entry(fileStatus, getFileInputStream(resultFile));
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {

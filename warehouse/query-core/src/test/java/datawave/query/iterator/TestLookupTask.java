@@ -74,7 +74,7 @@ public class TestLookupTask<T extends QueryIterator> {
                 while (this.iterator.hasTop()) {
                     Document document = deserializeAndFilterDocument(this.iterator.getTopValue());
                     if (document.getDictionary().size() > 0) {
-                        results.add(new AbstractMap.SimpleEntry(this.iterator.getTopKey(), document));
+                        results.add(Map.entry(this.iterator.getTopKey(), document));
                     } else {
                         log.trace("Filtering out invalid document");
                     }

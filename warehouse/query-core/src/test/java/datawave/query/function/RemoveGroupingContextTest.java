@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +37,7 @@ public class RemoveGroupingContextTest {
         d.consumeRawData(new Key("20250512_3"), Set.of(new Key()), map.entrySet().iterator(), typeMetadata, compositeMetadata, true, true, null, false);
 
         RemoveGroupingContext removeGroupingContext = new RemoveGroupingContext();
-        removeGroupingContext.apply(new AbstractMap.SimpleEntry<>(new Key(), d));
+        removeGroupingContext.apply(Map.entry(new Key(), d));
 
         // fields + RECORD_ID
         assertEquals(4, d.getDictionary().size());

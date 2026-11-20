@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.file.Files;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -147,16 +146,16 @@ public class IvaratorReloadTest {
 
     public void setupKeyValues() {
         Key eventKey1 = new Key("20000105_0", "MixedGeo\0-2xav59.x0c0q3.-yac0vs", "POINT\0POINT (2 3)");
-        sourceList.add(new AbstractMap.SimpleEntry<>(eventKey1, new Value()));
+        sourceList.add(Map.entry(eventKey1, new Value()));
 
         Key eventKey2 = new Key("20000105_0", "MixedGeo\0-2xav59.x0c0q3.-yac0vz", "POINT\0POINT (0 1)");
-        sourceList.add(new AbstractMap.SimpleEntry<>(eventKey2, new Value()));
+        sourceList.add(Map.entry(eventKey2, new Value()));
 
         Key fiKey1 = new Key("20000105_0", "fi\0POINT", "1f1bfaa80000000000\0MixedGeo\0-2xav59.x0c0q3.-yac0vs");
-        sourceList.add(new AbstractMap.SimpleEntry<>(fiKey1, new Value()));
+        sourceList.add(Map.entry(fiKey1, new Value()));
 
         Key fiKey2 = new Key("20000105_0", "fi\0POINT", "1f240557ffffffffff\0MixedGeo\0-2xav59.x0c0q3.-yac0vz");
-        sourceList.add(new AbstractMap.SimpleEntry<>(fiKey2, new Value()));
+        sourceList.add(Map.entry(fiKey2, new Value()));
     }
 
     private class IvaratorDirState {

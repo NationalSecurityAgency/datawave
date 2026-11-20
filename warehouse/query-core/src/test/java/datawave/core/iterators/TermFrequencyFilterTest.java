@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -436,14 +435,14 @@ public class TermFrequencyFilterTest {
     public SortedListKeyValueIterator buildSourceWithNullValues() {
         List<Map.Entry<Key,Value>> baseSource = new ArrayList<>();
 
-        baseSource.add(new SimpleEntry<>(getTfKey(ROW, DT, "123.345.456", "FIELD_A", "value_a"), new Value()));
-        baseSource.add(new SimpleEntry<>(getTfKey(ROW, DT, "123.345.456", "FIELD_A", "value_b"), new Value()));
-        baseSource.add(new SimpleEntry<>(getTfKey(ROW, DT, "123.345.456", "FIELD_A", "value_c"), new Value()));
-        baseSource.add(new SimpleEntry<>(getTfKey(ROW, DT, "123.345.456", "FIELD_A", "val\0ue_d"), new Value()));
-        baseSource.add(new SimpleEntry<>(getTfKey(ROW, DT, "123.345.456.1", "FIELD_A", "value_a"), new Value()));
-        baseSource.add(new SimpleEntry<>(getTfKey(ROW, DT, "123.345.456.1", "FIELD_A", "value_b"), new Value()));
-        baseSource.add(new SimpleEntry<>(getTfKey(ROW, DT, "123.345.456.1", "FIELD_A", "val\0ue_c"), new Value()));
-        baseSource.add(new SimpleEntry<>(getTfKey(ROW, DT, "123.345.456.1", "FIELD_A", "value_d"), new Value()));
+        baseSource.add(Map.entry(getTfKey(ROW, DT, "123.345.456", "FIELD_A", "value_a"), new Value()));
+        baseSource.add(Map.entry(getTfKey(ROW, DT, "123.345.456", "FIELD_A", "value_b"), new Value()));
+        baseSource.add(Map.entry(getTfKey(ROW, DT, "123.345.456", "FIELD_A", "value_c"), new Value()));
+        baseSource.add(Map.entry(getTfKey(ROW, DT, "123.345.456", "FIELD_A", "val\0ue_d"), new Value()));
+        baseSource.add(Map.entry(getTfKey(ROW, DT, "123.345.456.1", "FIELD_A", "value_a"), new Value()));
+        baseSource.add(Map.entry(getTfKey(ROW, DT, "123.345.456.1", "FIELD_A", "value_b"), new Value()));
+        baseSource.add(Map.entry(getTfKey(ROW, DT, "123.345.456.1", "FIELD_A", "val\0ue_c"), new Value()));
+        baseSource.add(Map.entry(getTfKey(ROW, DT, "123.345.456.1", "FIELD_A", "value_d"), new Value()));
 
         return new SortedListKeyValueIterator(baseSource);
     }

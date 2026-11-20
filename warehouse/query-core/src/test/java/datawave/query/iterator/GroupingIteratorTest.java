@@ -3,7 +3,6 @@ package datawave.query.iterator;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -73,7 +72,7 @@ public class GroupingIteratorTest {
     private Map.Entry<Key,Document> getDocumentEntry() {
         Key key = new Key("row", "dt\0uid-" + uidCount++);
         Document document = getDocument(key);
-        return new AbstractMap.SimpleEntry<>(key, document);
+        return Map.entry(key, document);
     }
 
     private Document getDocument(Key docKey) {

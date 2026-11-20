@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -54,15 +53,15 @@ public class TermFrequencyIndexIteratorTest {
     @BeforeEach
     public void setup() throws ParseException {
         List<Map.Entry<Key,Value>> baseSource = new ArrayList<>();
-        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456", "FOO", "bar"), new Value()));
-        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456", "FOO", "baz"), new Value()));
-        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.1", "FOO", "buf"), new Value()));
-        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.1", "FOO", "buz"), new Value()));
-        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.2", "FOO", "alf"), new Value()));
-        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.2", "FOO", "arm"), new Value()));
-        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.2", "FOOT", "armfoot"), new Value()));
-        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.3", "AFOO", "alfa"), new Value()));
-        baseSource.add(new AbstractMap.SimpleEntry(getTfKey("row", "type1", "123.345.456.3", "ZFOO", "alfz"), new Value()));
+        baseSource.add(Map.entry(getTfKey("row", "type1", "123.345.456", "FOO", "bar"), new Value()));
+        baseSource.add(Map.entry(getTfKey("row", "type1", "123.345.456", "FOO", "baz"), new Value()));
+        baseSource.add(Map.entry(getTfKey("row", "type1", "123.345.456.1", "FOO", "buf"), new Value()));
+        baseSource.add(Map.entry(getTfKey("row", "type1", "123.345.456.1", "FOO", "buz"), new Value()));
+        baseSource.add(Map.entry(getTfKey("row", "type1", "123.345.456.2", "FOO", "alf"), new Value()));
+        baseSource.add(Map.entry(getTfKey("row", "type1", "123.345.456.2", "FOO", "arm"), new Value()));
+        baseSource.add(Map.entry(getTfKey("row", "type1", "123.345.456.2", "FOOT", "armfoot"), new Value()));
+        baseSource.add(Map.entry(getTfKey("row", "type1", "123.345.456.3", "AFOO", "alfa"), new Value()));
+        baseSource.add(Map.entry(getTfKey("row", "type1", "123.345.456.3", "ZFOO", "alfz"), new Value()));
 
         source = new SortedListKeyValueIterator(baseSource);
 
@@ -464,7 +463,7 @@ public class TermFrequencyIndexIteratorTest {
         for (int i = 0; i < 10; i++) { // 'i' takes the place of the event uid
             for (int j = 0; j < 100; j++) { // 'j' increments the value
                 // add TF key, cq = datatype \0 I \0 valueJ \0 FIELD
-                data.add(new AbstractMap.SimpleEntry<>(new Key(row, tf, cqSuffix + (i + 1) + '\u0000' + cqPrefix + (j + 1) + "\0FOO"), value));
+                data.add(Map.entry(new Key(row, tf, cqSuffix + (i + 1) + '\u0000' + cqPrefix + (j + 1) + "\0FOO"), value));
             }
         }
         return new SortedListKeyValueIterator(data);

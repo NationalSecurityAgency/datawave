@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -191,7 +190,7 @@ class IndexFieldHoleTest {
             expected.put("wiki", 2L);
             expected.put("maze", 3L);
 
-            HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(new AbstractMap.SimpleEntry<>("NAME", "20200110"));
+            HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(Map.entry("NAME", "20200110"));
 
             assertEquals(expected, actual);
         }
@@ -215,7 +214,7 @@ class IndexFieldHoleTest {
             expected.put("wiki", 15L);
             expected.put("maze", 55L);
 
-            HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(new AbstractMap.SimpleEntry<>("NAME", "20200102"));
+            HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(Map.entry("NAME", "20200102"));
 
             assertEquals(expected, actual);
         }
@@ -245,7 +244,7 @@ class IndexFieldHoleTest {
             expected.put("wiki", 15L);
             expected.put("maze", 55L);
 
-            HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(new AbstractMap.SimpleEntry<>("NAME", "20200102"));
+            HashMap<String,Long> actual = helper.getCountsByFieldInDayWithTypes(Map.entry("NAME", "20200102"));
 
             assertEquals(expected, actual);
         }

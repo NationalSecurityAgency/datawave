@@ -1,6 +1,5 @@
 package datawave.ingest.mapreduce.job.util;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -123,7 +122,7 @@ public class AccumuloUtil {
                 if (currentRow == null || !currentRow.equals(nextRow)) {
                     if (files != null) {
                         String split = currentRow.toString().substring(currentRow.toString().indexOf(';') + 1);
-                        metadataFiles.add(new AbstractMap.SimpleEntry<>(split, files));
+                        metadataFiles.add(Map.entry(split, files));
                     }
                     currentRow = nextRow;
                     files = new ArrayList<>();
@@ -142,7 +141,7 @@ public class AccumuloUtil {
                 if (splitIndex != -1) {
                     split = fullRow.substring(splitIndex + 1);
                 }
-                metadataFiles.add(new AbstractMap.SimpleEntry<>(split, files));
+                metadataFiles.add(Map.entry(split, files));
             }
         } catch (AccumuloException | AccumuloSecurityException e) {
             throw new RuntimeException("Failed to scan metadata table " + accumuloMetadataTable + " for table " + tableName, e);

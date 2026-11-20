@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.AbstractMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -89,7 +88,7 @@ public class EventDataQueryFieldFilterTest {
 
     private Map.Entry<Key,String> createEntry(String field) {
         Key key = new Key("row", "datatype\u0000uid", field + "\u0000value");
-        return new AbstractMap.SimpleEntry<>(key, "");
+        return Map.entry(key, "");
     }
 
     private void assertSeekRangeStartKey(Range range, Key expected) {

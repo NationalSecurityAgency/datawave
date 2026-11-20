@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -743,12 +742,12 @@ public class MetadataHelperTableTest {
     // test the 'getCountsByFieldInDayWithTypes' method that accepts an 'Entry<String, String>' as an argument
     @Test
     public void testGetCountsByFieldInDayWithTypesViaEntry() throws Exception {
-        Entry<String,String> entry = new AbstractMap.SimpleEntry<>("SHAPE", "20240301");
+        Entry<String,String> entry = Map.entry("SHAPE", "20240301");
         Map<String,Long> map = helper.getCountsByFieldInDayWithTypes(entry);
         Map<String,Long> expected = Collections.singletonMap("datatype-a", 23L);
         assertEquals(expected, map);
 
-        entry = new AbstractMap.SimpleEntry<>("DEFINITION", "20240305");
+        entry = Map.entry("DEFINITION", "20240305");
         map = helper.getCountsByFieldInDayWithTypes(entry);
         expected = new HashMap<>();
         expected.put("datatype-a", 99L);

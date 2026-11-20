@@ -156,7 +156,7 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
             }
 
             String field = JexlASTHelper.deconstructIdentifier(eventKeyParser.getField(), includeGroupingContext);
-            Entry<Key,String> from = new AbstractMap.SimpleEntry<>(key, field);
+            Entry<Key,String> from = Map.entry(key, field);
             Iterable<Map.Entry<String,Attribute<?>>> elements = valueToAttributes.apply(from);
             elements.forEach(entry -> d.put(entry.getKey(), entry.getValue()));
         }
@@ -186,6 +186,7 @@ public class DocumentIterator extends DocumentIteratorOptions implements SortedK
             // reduce to keepers
             d.reduceToKeep();
 
+            // Index-only and term-frequency fragments can populate the document without an event key.
             Map.Entry<Key,Document> entry = new AbstractMap.SimpleEntry<>(key, d);
             Map.Entry<Key,Value> result = serializer.apply(entry);
             tk = result.getKey();
