@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import datawave.query.jexl.JexlASTHelper;
 
-public class NullCheckOnlyFieldsVisitorTest {
+public class NullCheckFieldsVisitorTest {
 
     /**
      * Verify we find no fields in a query with no null checks.
@@ -53,7 +53,7 @@ public class NullCheckOnlyFieldsVisitorTest {
     }
 
     /**
-     * Verify we find all fields in multiple cases of null-only checks.
+     * Verify we find all fields in multiple null checks.
      */
     @Test
     public void testMultipleNullChecks() throws ParseException {
@@ -61,32 +61,32 @@ public class NullCheckOnlyFieldsVisitorTest {
     }
 
     /**
-     * Verify we do not find a field if it is used in a null check and also in a value term.
+     * Verify we find a field if it is used in a null check and also in a value term.
      */
     @Test
     public void testFieldAlsoUsedInValueTerm() throws ParseException {
-        test("FOO == 'bar' && FIELD == null && FIELD != 'x'", Set.of());
-        test("FOO == 'bar' && !(FIELD == null) || FIELD == 'x'", Set.of());
+        test("FOO == 'bar' && FIELD == null && FIELD != 'x'", Set.of("FIELD"));
+        test("FOO == 'bar' && !(FIELD == null) || FIELD == 'x'", Set.of("FIELD"));
     }
 
     /**
-     * Verify we do not find a field if it is used in a null check and also in a function.
+     * Verify we find a field if it is used in a null check and also in a function.
      */
     @Test
     public void testFieldAlsoUsedInFunction() throws ParseException {
-        test("FOO == 'bar' && FIELD == null && filter:includeRegex(FIELD, 'x.*')", Set.of());
+        test("FOO == 'bar' && FIELD == null && filter:includeRegex(FIELD, 'x.*')", Set.of("FIELD"));
     }
 
     /**
-     * Verify we do not find a field if it is used in a null check and also in a regex match.
+     * Verify we find a field if it is used in a null check and also in a regex match.
      */
     @Test
     public void testFieldAlsoUsedInRegex() throws ParseException {
-        test("FOO == 'bar' && FIELD == null && FIELD =~ 'x.*'", Set.of());
+        test("FOO == 'bar' && FIELD == null && FIELD =~ 'x.*'", Set.of("FIELD"));
     }
 
     /**
-     * Verify we find a field if it is used only in a null check has identifier escaping.
+     * Verify we find a field used in a null check that has identifier escaping.
      */
     @Test
     public void testIdentifierEscaping() throws ParseException {
@@ -124,11 +124,11 @@ public class NullCheckOnlyFieldsVisitorTest {
 
     private void test(String query, Set<String> expected) throws ParseException {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        assertEquals(expected, NullCheckOnlyFieldsVisitor.getFields(node));
+        assertEquals(expected, NullCheckFieldsVisitor.getFields(node, null));
     }
 
     private void test(String query, Set<String> fieldsOfInterest, Set<String> expected) throws ParseException {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
-        assertEquals(expected, NullCheckOnlyFieldsVisitor.getFields(node, fieldsOfInterest));
+        assertEquals(expected, NullCheckFieldsVisitor.getFields(node, fieldsOfInterest));
     }
 }

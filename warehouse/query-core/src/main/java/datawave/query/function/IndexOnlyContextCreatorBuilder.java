@@ -100,11 +100,11 @@ public class IndexOnlyContextCreatorBuilder {
     }
 
     /**
-     * Set the index-only fields that the query references only in null checks. These fields are not added to the context as empty values when absent from the
-     * document.
+     * Set the index-only fields that the query references in null checks. These fields are not added to the context as empty values when they have no field
+     * index entry for the document.
      *
      * @param fields
-     *            the fields referenced only in null checks
+     *            the fields referenced in null checks
      */
     public IndexOnlyContextCreatorBuilder setIndexOnlyNullCheckFields(Collection<String> fields) {
         this.indexOnlyNullCheckFields = fields;

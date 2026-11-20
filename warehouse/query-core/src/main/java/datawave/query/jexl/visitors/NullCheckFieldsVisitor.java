@@ -16,48 +16,33 @@ import com.google.common.base.Preconditions;
 import datawave.query.jexl.JexlASTHelper;
 
 /**
- * Finds the fields that a query references only in null checks, i.e. {@code FIELD == null}, {@code FIELD != null} or {@code !(FIELD == null)}. A field that is
- * referenced anywhere else in the query, such as in a value comparison, regex, or function, is not returned.
+ * Finds all fields that a query references in null checks, i.e. {@code FIELD == null}, {@code FIELD != null} or {@code !(FIELD == null)}. A field is returned
+ * even if it is also referenced elsewhere in the query, such as in a value comparison, regex, or function.
  */
-public class NullCheckOnlyFieldsVisitor extends BaseVisitor {
+public class NullCheckFieldsVisitor extends BaseVisitor {
 
     private final Set<String> nullCheckFields = new HashSet<>();
-    private final Set<String> otherFields = new HashSet<>();
 
     /**
-     * Get the fields that the query references only in null checks that are also in the given collection of fields of interest.
+     * Get the fields that the query references in null checks that are also in the given collection of fields of interest, regardless of whether the query
+     * references them elsewhere.
      *
      * @param node
      *            a query
      * @param fieldsOfInterest
-     *            only fields in this collection that the query references only in null checks will be returned. No filtering will occur if the given collection
-     *            is null or empty
-     * @return the fields referenced only in null checks
-     */
-    public static Set<String> getFields(JexlNode node, Collection<String> fieldsOfInterest) {
-        Set<String> fields = getFields(node);
-        if (fieldsOfInterest != null && !fieldsOfInterest.isEmpty() && !fields.isEmpty()) {
-            fields.retainAll(fieldsOfInterest);
-        }
-        return fields;
-    }
-
-    /**
-     * Get the fields that the query references only in null checks.
-     *
-     * @param node
-     *            a query
-     * @return the fields referenced only in null checks
+     *            only fields in this collection will be returned. No filtering will occur if the given collection is null or empty
+     * @return the fields referenced in null checks
      * @throws NullPointerException
      *             if the given query node is null
      */
-    public static Set<String> getFields(JexlNode node) {
+    public static Set<String> getFields(JexlNode node, Collection<String> fieldsOfInterest) {
         Preconditions.checkNotNull(node, "node must not be null");
-        NullCheckOnlyFieldsVisitor visitor = new NullCheckOnlyFieldsVisitor();
+        NullCheckFieldsVisitor visitor = new NullCheckFieldsVisitor();
         node.jjtAccept(visitor, null);
-        Set<String> fields = new HashSet<>(visitor.nullCheckFields);
-        fields.removeAll(visitor.otherFields);
-        return fields;
+        if (fieldsOfInterest != null && !fieldsOfInterest.isEmpty() && !visitor.nullCheckFields.isEmpty()) {
+            visitor.nullCheckFields.retainAll(fieldsOfInterest);
+        }
+        return visitor.nullCheckFields;
     }
 
     @Override
@@ -68,12 +53,6 @@ public class NullCheckOnlyFieldsVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTNENode node, Object data) {
         return visitComparison(node, data);
-    }
-
-    @Override
-    public Object visit(ASTIdentifier node, Object data) {
-        otherFields.add(JexlASTHelper.deconstructIdentifier(node));
-        return data;
     }
 
     private Object visitComparison(JexlNode node, Object data) {

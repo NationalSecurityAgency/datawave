@@ -314,6 +314,26 @@ public class IndexOnlyNullCheckTLDIT extends AbstractQueryTest {
         planAndExecuteQuery();
     }
 
+    @Test
+    public void nullOrValueSameField() throws Exception {
+        givenFlag(true);
+        givenDate(ingest.getDate());
+        givenQuery("FOO == 'value-a' && (INDEX_ONLY == null || INDEX_ONLY == 'zzzzzzz')");
+        disableQueryPlanAssertion();
+        expectUUIDs(Set.of("uid-1", "uid-2"));
+        planAndExecuteQuery();
+    }
+
+    @Test
+    public void reviewNullOrNormalTerm() throws Exception {
+        givenFlag(true);
+        givenDate(ingest.getDate());
+        givenQuery("FOO == 'value-a' && (INDEX_ONLY == null || UUID == 'uid-2')");
+        disableQueryPlanAssertion();
+        expectUUIDs(Set.of("uid-1", "uid-2"));
+        planAndExecuteQuery();
+    }
+
     private void givenFlag(boolean enabled) {
         logic.getConfig().setAllowIndexOnlyNullChecks(enabled);
     }

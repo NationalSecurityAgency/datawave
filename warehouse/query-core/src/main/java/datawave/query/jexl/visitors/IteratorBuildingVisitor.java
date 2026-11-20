@@ -744,7 +744,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * @throws DatawaveFatalQueryException
      *             if null index-only fields are not allowed
      */
-    protected IndexOnlyFieldPresenceFilter buildNullIndexOnlyFieldFilter(String field) {
+    public IndexOnlyFieldPresenceFilter buildNullIndexOnlyFieldFilter(String field) {
         if (!this.allowIndexOnlyNullChecks) {
             throw nullIndexOnlyFieldException(field);
         }
