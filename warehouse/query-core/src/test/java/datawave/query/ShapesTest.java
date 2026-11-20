@@ -60,7 +60,7 @@ import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.ShapesIngest;
 import datawave.query.util.TestIndexTableNames;
 import datawave.table.constants.TableName;
-import datawave.test.MacTestUtil;
+import datawave.test.framework.util.MacTestUtil;
 
 /**
  * A set of tests that emphasize the influence of datatypes on query planning and execution

@@ -46,7 +46,7 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
 import datawave.table.constants.TableName;
-import datawave.test.MacTestUtil;
+import datawave.test.framework.util.MacTestUtil;
 
 /**
  * This class contains all boilerplate code to support declarative style tests

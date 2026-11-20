@@ -17,7 +17,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.junit.jupiter.api.Test;
 
-import datawave.test.MacTestUtil;
+import datawave.test.framework.util.MacTestUtil;
 
 public class TruncatedIndexTest extends IndexConversionUtils implements IndexConversionTests {
 

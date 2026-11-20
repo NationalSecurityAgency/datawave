@@ -73,6 +73,23 @@ public class MacTestUtil {
     }
 
     /**
+     * Flush all buffered entries in the table to files and wait for the flush to finish. The table's minor-compaction iterators run during this operation.
+     *
+     * @param tops
+     *            the {@link TableOperations}
+     * @param tableName
+     *            the table to flush
+     */
+    public static void flushTable(TableOperations tops, String tableName) {
+        try {
+            tops.flush(tableName, null, null, true);
+            log.info("flushed table: {}", tableName);
+        } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException e) {
+            throw new RuntimeException("Failed to flush table: " + tableName, e);
+        }
+    }
+
+    /**
      * Compact the given table
      *
      * @param tops

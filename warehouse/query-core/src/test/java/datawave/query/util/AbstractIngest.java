@@ -39,7 +39,7 @@ import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.table.hash.UID;
-import datawave.test.MacTestUtil;
+import datawave.test.framework.util.MacTestUtil;
 import datawave.util.time.DateHelper;
 
 /**

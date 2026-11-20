@@ -34,7 +34,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.table.constants.TableName;
-import datawave.test.MacTestUtil;
+import datawave.test.framework.util.MacTestUtil;
 import datawave.util.time.DateHelper;
 
 /**
