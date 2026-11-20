@@ -4,6 +4,7 @@ import static datawave.security.realm.AttributeConstants.ATTRIBUTE_PRIMARY_USER_
 import static datawave.security.realm.AttributeConstants.ATTRIBUTE_PROXIED_USER_KEYS;
 import static datawave.security.realm.AttributeConstants.ATTRIBUTE_TERMINAL_SERVER_ROLES;
 import static datawave.security.realm.AttributeConstants.ATTRIBUTE_USERNAME;
+import static datawave.security.realm.AttributeConstants.ROLE_ACCESS_DENIED;
 import static datawave.security.realm.AttributeConstants.ROLE_AUTHORIZED_PROXIED_SERVER;
 import static datawave.security.realm.AttributeConstants.ROLE_AUTHORIZED_QUERY_SERVER;
 import static datawave.security.realm.AttributeConstants.ROLE_AUTHORIZED_SERVER;
@@ -54,6 +55,8 @@ public class DatawaveRoleDecoder implements RoleDecoder {
                     ROLE_AUTHORIZED_SERVER,
                     ROLE_AUTHORIZED_QUERY_SERVER);
     // @formatter:on
+
+    public static final String defaultAccessDeniedRole = ROLE_ACCESS_DENIED;
 
     /**
      * The configuration for this {@link RoleDecoder}. This will be overridden if configuration properties are passed in from Wildfly via
@@ -195,8 +198,10 @@ public class DatawaveRoleDecoder implements RoleDecoder {
 
             // Parse the access denied role.
             String accessDeniedRoleOption = map.get(OPTION_ACCESS_DENIED_ROLE);
-            String accessDeniedRole = null;
-            if (accessDeniedRoleOption != null && !accessDeniedRoleOption.isBlank()) {
+            String accessDeniedRole;
+            if (StringUtils.isBlank(accessDeniedRoleOption)) {
+                accessDeniedRole = defaultAccessDeniedRole;
+            } else {
                 accessDeniedRole = accessDeniedRoleOption.trim();
             }
 

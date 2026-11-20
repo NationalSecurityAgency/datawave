@@ -1,8 +1,6 @@
 package datawave.security.realm;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
@@ -24,8 +22,7 @@ class DatawaveRoleDecoderConfigTest {
 
         assertThat(config.getRequiredRoles()).containsExactlyInAnyOrderElementsOf(DatawaveRoleDecoder.defaultRequiredRoles);
         assertThat(config.getTerminalServerRoles()).containsExactlyInAnyOrderElementsOf(DatawaveRoleDecoder.defaultTerminalServerRoles);
-        assertFalse(config.hasAccessDeniedRole());
-        assertNull(config.getAccessDeniedRole());
+        assertThat(config.getAccessDeniedRole()).contains(DatawaveRoleDecoder.defaultAccessDeniedRole);
     }
 
     /**
