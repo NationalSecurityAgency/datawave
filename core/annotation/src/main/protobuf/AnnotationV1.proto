@@ -15,12 +15,38 @@ enum BoundaryType {
 
 message Point { int32 x = 1; int32 y = 2; string label = 3; } // annotations on a point
 
+// Inline serialized embedding, compatible with the upstream VectorPayload JSON.
+message VectorPayload {
+    enum Format {
+        FORMAT_UNSPECIFIED = 0;
+        ARROW_FILE = 1;
+    }
+
+    enum ElementType {
+        ELEMENT_TYPE_UNSPECIFIED = 0;
+        FLOAT16 = 1;
+        FLOAT32 = 2;
+    }
+
+    Format format = 1;
+    bytes data = 2;
+    repeated int32 shape = 3;
+    ElementType elementType = 4;
+    string fieldName = 5;
+    optional bool normalized = 6; // false is distinct from not specified.
+    string sha256 = 7; // optional checksum of the serialized data.
+    map<string, string> metadata = 8;
+    string modality = 9;
+    string embeddingSpaceId = 10; // identifies the space in which vectors can be compared.
+}
+
 // segment value, e.g. a label, confidence and source
 message SegmentValue {
     string valueHash = 1; // the 32-bit value hash used for grouping.
-    string value = 2; // e.g., label
+    optional string value = 2; // e.g., label; exactly one of value or vector must be present.
     optional float score = 3; // e.g., confidence
     map<string,string> extension = 4; // type-specific data
+    VectorPayload vector = 5;
 }
 
 message SegmentBoundary {

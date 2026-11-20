@@ -7,10 +7,12 @@ import static datawave.annotation.test.v1.AnnotationTestDataUtil.generateTestAnn
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,6 +24,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
@@ -42,9 +45,15 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.protobuf.util.JsonFormat;
+
+import datawave.annotation.data.AccumuloAnnotationUtil;
 import datawave.annotation.protobuf.v1.Annotation;
 import datawave.annotation.protobuf.v1.AnnotationSource;
 import datawave.annotation.protobuf.v1.Segment;
@@ -62,6 +71,7 @@ public class AnnotationDataAccessTest {
     private static MiniAccumuloCluster mac;
     private static AccumuloClient client;
     private static final String auths = "PUBLIC";
+    private static final String SOURCE_AUTH = "EMBEDDING_SOURCE";
     private static final Set<Authorizations> accumuloAuthorizations = Set.of(new Authorizations(auths));
     // the object under test
     private AnnotationDataAccess dao;
@@ -90,7 +100,7 @@ public class AnnotationDataAccessTest {
         tableOperations.create(ANNOTATION_SOURCE_TABLE_NAME);
 
         SecurityOperations securityOperations = client.securityOperations();
-        securityOperations.changeUserAuthorizations("root", new Authorizations(auths));
+        securityOperations.changeUserAuthorizations("root", new Authorizations(auths, SOURCE_AUTH));
 
         List<Annotation> manyAnnotations = AnnotationTestDataUtil.generateManyTestAnnotations();
         List<AnnotationSource> manyAnnotationSources = AnnotationTestDataUtil.generateManyTestAnnotationSources();
@@ -131,6 +141,87 @@ public class AnnotationDataAccessTest {
         assertEquals(1, annotation.size());
         Annotation resultAnnotation = annotation.stream().findFirst().orElse(EMPTY);
         assertAnnotationsEqual(expectedAnnotation, resultAnnotation);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"upstream-embedding-f16.json,FLOAT16,0D5A3770", "upstream-embedding-f32.json,FLOAT32,0D5A3770"})
+    public void testUpstreamVectorRetrievalAndVisibility(String filename, String elementType, String valueHash) throws Exception {
+        Annotation.Builder input = Annotation.newBuilder();
+        try (InputStream stream = getClass().getResourceAsStream("/embedding/" + filename)) {
+            assertNotNull(stream, filename);
+            JsonFormat.parser().merge(new String(stream.readAllBytes(), StandardCharsets.UTF_8), input);
+        }
+        // Add a metadata control without changing the fixture's bytes or supplied hashes.
+        input.getSegmentsBuilder(0).getValuesBuilder(0).getVectorBuilder().putMetadata("retrieval", filename);
+        Annotation context = generateTestAnnotation();
+        AnnotationSource source = input.getSource().toBuilder().putAllMetadata(context.getSource().getMetadataMap())
+                        .putMetadata("visibility", auths + "&" + SOURCE_AUTH).build();
+        Annotation prepared = AnnotationUtils.injectAnnotationHash(input.setShard(context.getShard()).setDataType(context.getDataType())
+                        .setUid("upstream." + elementType + ".vector").putAllMetadata(context.getMetadataMap()).setSource(source)
+                        .setAnalyticSourceHash(source.getAnalyticSourceHash()).build());
+
+        // Persist the ingest representation directly, preserving producer-supplied identities.
+        try (BatchWriter writer = client.createBatchWriter(ANNOTATION_TABLE_NAME)) {
+            writer.addMutation(AccumuloAnnotationUtil.mutationAdapter(new AccumuloAnnotationSerializer().serialize(prepared), false));
+        }
+        try (BatchWriter writer = client.createBatchWriter(ANNOTATION_SOURCE_TABLE_NAME)) {
+            writer.addMutation(AccumuloAnnotationUtil.mutationAdapter(new AccumuloAnnotationSourceSerializer().serialize(source), false));
+        }
+
+        Annotation restored = dao
+                        .getAnnotation(prepared.getShard(), prepared.getDataType(), prepared.getUid(), prepared.getAnnotationType(), prepared.getAnnotationId())
+                        .orElseThrow();
+        assertEquals(prepared.getSegmentsList(), restored.getSegmentsList());
+        assertEquals(prepared.getDocumentId(), restored.getDocumentId());
+        assertEquals(prepared.getAnalyticSourceHash(), restored.getAnalyticSourceHash());
+        assertEquals(valueHash, restored.getSegments(0).getValues(0).getValueHash());
+        assertTrue(restored.getSegments(0).getValues(0).getVector().hasNormalized());
+        assertFalse(restored.getSegments(0).getValues(0).getVector().getNormalized());
+        assertFalse(restored.hasSource());
+        assertEquals(restored, dao.getAnnotation(prepared.getShard(), prepared.getDataType(), prepared.getUid(), prepared.getAnnotationId()).orElseThrow());
+        assertEquals(List.of(restored), new ArrayList<>(dao.getAnnotations(prepared.getShard(), prepared.getDataType(), prepared.getUid())));
+        assertEquals(List.of(restored), new ArrayList<>(
+                        dao.getAnnotationsForType(prepared.getShard(), prepared.getDataType(), prepared.getUid(), prepared.getAnnotationType())));
+        assertTrue(dao.getAnnotationSource(source.getAnalyticSourceHash()).isEmpty());
+
+        AnnotationDataAccess fullyAuthorized = new AnnotationDataAccess(client, Set.of(new Authorizations(auths, SOURCE_AUTH)), ANNOTATION_TABLE_NAME,
+                        ANNOTATION_SOURCE_TABLE_NAME, new AccumuloAnnotationSerializer(), new AccumuloAnnotationSourceSerializer());
+        AnnotationSource restoredSource = fullyAuthorized.getAnnotationSource(restored.getAnalyticSourceHash()).orElseThrow();
+        assertEquals(source, restoredSource);
+        assertEquals(prepared, AnnotationUtils.injectAnnotationSource(restored, restoredSource));
+
+        AnnotationDataAccess unauthorized = new AnnotationDataAccess(client, Set.of(Authorizations.EMPTY), ANNOTATION_TABLE_NAME, ANNOTATION_SOURCE_TABLE_NAME,
+                        new AccumuloAnnotationSerializer(), new AccumuloAnnotationSourceSerializer());
+        assertTrue(unauthorized
+                        .getAnnotation(prepared.getShard(), prepared.getDataType(), prepared.getUid(), prepared.getAnnotationType(), prepared.getAnnotationId())
+                        .isEmpty());
+        assertTrue(unauthorized.getAnnotation(prepared.getShard(), prepared.getDataType(), prepared.getUid(), prepared.getAnnotationId()).isEmpty());
+        assertTrue(unauthorized.getAnnotations(prepared.getShard(), prepared.getDataType(), prepared.getUid()).isEmpty());
+        assertTrue(unauthorized.getAnnotationsForType(prepared.getShard(), prepared.getDataType(), prepared.getUid(), prepared.getAnnotationType()).isEmpty());
+        assertTrue(unauthorized.getAnnotationSource(source.getAnalyticSourceHash()).isEmpty());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"upstream-embedding-f16.json", "upstream-embedding-f32.json"})
+    public void testAddVectorPreservesProducerIdentity(String filename) throws Exception {
+        Annotation.Builder input = Annotation.newBuilder();
+        try (InputStream stream = getClass().getResourceAsStream("/embedding/" + filename)) {
+            assertNotNull(stream, filename);
+            JsonFormat.parser().merge(new String(stream.readAllBytes(), StandardCharsets.UTF_8), input);
+        }
+        SegmentValue producerValue = input.getSegments(0).getValues(0);
+        Annotation context = generateTestAnnotation();
+        input.clearAnnotationId().setShard(context.getShard()).setDataType(context.getDataType())
+                        .setUid("dao." + producerValue.getVector().getElementType().name() + ".vector").putAllMetadata(context.getMetadataMap())
+                        .setAnalyticSourceHash(input.getSource().getAnalyticSourceHash());
+        input.getSourceBuilder().putAllMetadata(context.getSource().getMetadataMap());
+        input.getSegmentsBuilderList().forEach(Segment.Builder::clearSegmentHash);
+
+        Annotation added = dao.addAnnotation(input.build()).orElseThrow();
+        assertEquals(producerValue, added.getSegments(0).getValues(0));
+        Annotation restored = dao.getAnnotation(added.getShard(), added.getDataType(), added.getUid(), added.getAnnotationType(), added.getAnnotationId())
+                        .orElseThrow();
+        assertEquals(added.toBuilder().clearSource().build(), restored);
     }
 
     @Test
