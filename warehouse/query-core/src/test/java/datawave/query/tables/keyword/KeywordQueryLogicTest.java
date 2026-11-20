@@ -1,5 +1,6 @@
 package datawave.query.tables.keyword;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -219,6 +220,50 @@ public class KeywordQueryLogicTest {
         assertEquals("ENGLISH", threeLanguage);
         assertEquals("UNKNOWN", fourLanguage);
         assertNull(fiveLanguage);
+    }
+
+    @Test
+    public void testSimilarityThresholdUsesConfiguredValueWithoutOverride() throws Exception {
+        KeywordQueryLogic logic = initializeWithSimilarityThreshold(0.75, null);
+        assertEquals(0.75, logic.getConfig().getState().getMaxSimilarityThreshold());
+    }
+
+    @Test
+    public void testSimilarityThresholdConfigurationRejectsInvalidValues() {
+        for (double invalid : List.of(-0.1, 1.1, Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY)) {
+            assertThrows(IllegalArgumentException.class, () -> keywordQueryLogic.setMaxSimilarityThreshold(invalid), String.valueOf(invalid));
+        }
+    }
+
+    @Test
+    public void testSimilarityThresholdUsesValidQueryOverride() throws Exception {
+        KeywordQueryLogic logic = initializeWithSimilarityThreshold(0.75, "0.5");
+        assertEquals(0.5, logic.getConfig().getState().getMaxSimilarityThreshold());
+    }
+
+    @Test
+    public void testInvalidSimilarityThresholdOverridesRetainConfiguredValue() {
+        for (String invalid : List.of("-0.1", "1.1", "NaN", "Infinity", "-Infinity", "not-a-number")) {
+            assertEquals(0.75, assertDoesNotThrow(() -> initializeWithSimilarityThreshold(0.75, invalid)).getConfig().getState().getMaxSimilarityThreshold(),
+                            invalid);
+        }
+    }
+
+    private KeywordQueryLogic initializeWithSimilarityThreshold(double configuredThreshold, String queryOverride) throws Exception {
+        KeywordQueryLogic logic = new KeywordQueryLogic();
+        logic.setMarkingFunctions(markingFunctions);
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        logic.setMaxSimilarityThreshold(configuredThreshold);
+
+        Query settings = new QueryImpl();
+        settings.setQuery("event:20241218_0/sampleCsv/1.2.3");
+        settings.setQueryAuthorizations("A");
+        if (queryOverride != null) {
+            settings.addParameter(KeywordQueryLogic.TAG_CLOUD_SIM_MAX, queryOverride);
+        }
+
+        logic.initialize(mock(AccumuloClient.class), settings, Set.of(new Authorizations("A")));
+        return logic;
     }
 
     @Test
