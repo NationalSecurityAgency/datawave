@@ -21,6 +21,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.locationtech.jts.geom.Envelope;
 
 import datawave.data.normalizer.AbstractGeometryNormalizer;
@@ -89,6 +91,26 @@ public class GeoWaveFunctionsDescriptorTest {
         JexlNode indexQuery = descriptor.getIndexQuery(config, helper, null, null);
 
         assertTrue(buildAccumuloRanges(indexQuery) > 0);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"datawave.data.type.GeometryType", "datawave.data.type.PointType"})
+    public void testThinPolygonUsesConfiguredSplitLimit(String fieldType) throws Exception {
+        String query = "geowave:intersects(GEO_FIELD, 'POLYGON((0 12.34, 0.00000000001 12.34, 0.00000000001 22.34, 0 22.34, 0 12.34))')";
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setGeometryMaxExpansion(2);
+        config.setPointMaxExpansion(3);
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.addField("GEO_FIELD", fieldType);
+        JexlArgumentDescriptor descriptor = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(find(JexlASTHelper.parseJexlQuery(query)));
+
+        JexlNode indexQuery = descriptor.getIndexQuery(config, helper, null, null);
+
+        int rangeCount = buildAccumuloRanges(indexQuery);
+        assertTrue(rangeCount > 0);
+        // Pruning examines fewer than 4 * threshold + 1 cells per input range at each tier.
+        int maxExpansion = fieldType.endsWith("GeometryType") ? config.getGeometryMaxExpansion() : config.getPointMaxExpansion();
+        assertTrue(rangeCount <= 32 * maxExpansion * (4 * config.getGeoWaveRangeSplitThreshold() + 1) * maxExpansion);
     }
 
     private int buildAccumuloRanges(JexlNode node) {

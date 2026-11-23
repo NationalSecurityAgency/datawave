@@ -67,11 +67,13 @@ public class GeoWaveUtils {
      * @param maxRangeOverlap
      *            the maximum amount of overlap a range is allowed to have compared to the envelope of the query geometry - expressed as a double between 0 and
      *            1.
+     * @param maxRangeSplit
+     *            the maximum number of splits per retained range; values less than one leave the range unsplit
      * @return a list of optimized byte array ranges
      */
     public static List<ByteArrayRange> optimizeByteArrayRanges(Geometry queryGeometry, List<ByteArrayRange> byteArrayRanges, int rangeSplitThreshold,
-                    double maxRangeOverlap) {
-        return optimizeByteArrayRanges(queryGeometry, byteArrayRanges, rangeSplitThreshold, maxRangeOverlap, null);
+                    double maxRangeOverlap, int maxRangeSplit) {
+        return optimizeByteArrayRanges(queryGeometry, byteArrayRanges, rangeSplitThreshold, maxRangeOverlap, maxRangeSplit, null);
     }
 
     /**
@@ -88,18 +90,20 @@ public class GeoWaveUtils {
      * @param maxRangeOverlap
      *            the maximum amount of overlap a range is allowed to have compared to the envelope of the query geometry - expressed as a double between 0 and
      *            1.
+     * @param maxRangeSplit
+     *            the maximum number of splits per retained range; values less than one leave the range unsplit
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
      * @return a list of optimized byte array ranges
      */
     public static List<ByteArrayRange> optimizeByteArrayRanges(Geometry queryGeometry, List<ByteArrayRange> byteArrayRanges, int rangeSplitThreshold,
-                    double maxRangeOverlap, ByteBuffer longBuffer) {
+                    double maxRangeOverlap, int maxRangeSplit, ByteBuffer longBuffer) {
         longBuffer = initLongBuffer(longBuffer);
 
         List<ByteArrayRange> optimizedRanges = new ArrayList<>();
         for (ByteArrayRange byteArrayRange : byteArrayRanges) {
             if (!Arrays.equals(byteArrayRange.getStart(), byteArrayRange.getEnd())) {
-                optimizedRanges.addAll(optimizeByteArrayRange(queryGeometry, byteArrayRange, rangeSplitThreshold, maxRangeOverlap, longBuffer));
+                optimizedRanges.addAll(optimizeByteArrayRange(queryGeometry, byteArrayRange, rangeSplitThreshold, maxRangeOverlap, maxRangeSplit, longBuffer));
             } else {
                 optimizedRanges.add(byteArrayRange);
             }
@@ -121,11 +125,13 @@ public class GeoWaveUtils {
      * @param maxRangeOverlap
      *            the maximum amount of overlap a range is allowed to have compared to the envelope of the query geometry - expressed as a double between 0 and
      *            1.
+     * @param maxRangeSplit
+     *            the maximum number of splits per retained range; values less than one leave the range unsplit
      * @return a list of optimized byte array ranges
      */
     public static List<ByteArrayRange> optimizeByteArrayRange(Geometry queryGeometry, ByteArrayRange byteArrayRange, int rangeSplitThreshold,
-                    double maxRangeOverlap) {
-        return optimizeByteArrayRange(queryGeometry, byteArrayRange, rangeSplitThreshold, maxRangeOverlap, null);
+                    double maxRangeOverlap, int maxRangeSplit) {
+        return optimizeByteArrayRange(queryGeometry, byteArrayRange, rangeSplitThreshold, maxRangeOverlap, maxRangeSplit, null);
     }
 
     /**
@@ -142,12 +148,14 @@ public class GeoWaveUtils {
      * @param maxRangeOverlap
      *            the maximum amount of overlap a range is allowed to have compared to the envelope of the query geometry - expressed as a double between 0 and
      *            1.
+     * @param maxRangeSplit
+     *            the maximum number of splits per retained range; values less than one leave the range unsplit
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
      * @return a list of optimized byte array ranges
      */
     public static List<ByteArrayRange> optimizeByteArrayRange(Geometry queryGeometry, ByteArrayRange byteArrayRange, int rangeSplitThreshold,
-                    double maxRangeOverlap, ByteBuffer longBuffer) {
+                    double maxRangeOverlap, int maxRangeSplit, ByteBuffer longBuffer) {
         GeometryFactory gf = new GeometryFactory();
         List<ByteArrayRange> byteArrayRanges = new ArrayList<>();
 
@@ -230,7 +238,7 @@ public class GeoWaveUtils {
                 if (byteArrayRanges.size() > 1)
                     byteArrayRanges = mergeContiguousRanges(byteArrayRanges, longBuffer);
                 if (!byteArrayRanges.isEmpty())
-                    byteArrayRanges = splitLargeRanges(byteArrayRanges, queryGeometry, maxRangeOverlap, longBuffer);
+                    byteArrayRanges = splitLargeRanges(byteArrayRanges, queryGeometry, maxRangeOverlap, maxRangeSplit, longBuffer);
             }
         }
 
@@ -307,7 +315,7 @@ public class GeoWaveUtils {
     }
 
     /**
-     * Splits ranges whose area overlaps more than maxRangeOverlap of the area of the queryGeometry envelope.
+     * Splits ranges whose area overlaps more than maxRangeOverlap of the area of the queryGeometry envelope, subject to a limit on splits per input range.
      *
      * @param byteArrayRanges
      *            the list of ranges to split
@@ -315,14 +323,17 @@ public class GeoWaveUtils {
      *            the original query geometry
      * @param maxRangeOverlap
      *            the maximum percentage overlap allowed for a range compared to the envelope of the original query geometry
-     * @return a list of ranges, each of which overlaps less than maxRangeOverlap of the original query geometry
+     * @param maxRangeSplit
+     *            the maximum number of splits per input range; values less than one leave the range unsplit
+     * @return a list of ranges preserving the input coverage; the overlap target may be exceeded when the split limit is reached
      */
-    public static List<ByteArrayRange> splitLargeRanges(List<ByteArrayRange> byteArrayRanges, Geometry queryGeometry, double maxRangeOverlap) {
-        return splitLargeRanges(byteArrayRanges, queryGeometry, maxRangeOverlap, null);
+    public static List<ByteArrayRange> splitLargeRanges(List<ByteArrayRange> byteArrayRanges, Geometry queryGeometry, double maxRangeOverlap,
+                    int maxRangeSplit) {
+        return splitLargeRanges(byteArrayRanges, queryGeometry, maxRangeOverlap, maxRangeSplit, null);
     }
 
     /**
-     * Splits ranges whose area overlaps more than maxRangeOverlap of the area of the queryGeometry envelope.
+     * Splits ranges whose area overlaps more than maxRangeOverlap of the area of the queryGeometry envelope, subject to a limit on splits per input range.
      *
      * @param byteArrayRanges
      *            the list of ranges to split
@@ -330,11 +341,13 @@ public class GeoWaveUtils {
      *            the original query geometry
      * @param maxRangeOverlap
      *            the maximum percentage overlap allowed for a range compared to the envelope of the original query geometry
+     * @param maxRangeSplit
+     *            the maximum number of splits per input range; values less than one leave the range unsplit
      * @param longBuffer
      *            a reusable byte buffer of Long.BYTES length
-     * @return a list of ranges, each of which overlaps less than maxRangeOverlap of the original query geometry
+     * @return a list of ranges preserving the input coverage; the overlap target may be exceeded when the split limit is reached
      */
-    public static List<ByteArrayRange> splitLargeRanges(List<ByteArrayRange> byteArrayRanges, Geometry queryGeometry, double maxRangeOverlap,
+    public static List<ByteArrayRange> splitLargeRanges(List<ByteArrayRange> byteArrayRanges, Geometry queryGeometry, double maxRangeOverlap, int maxRangeSplit,
                     ByteBuffer longBuffer) {
         longBuffer = initLongBuffer(longBuffer);
 
@@ -351,7 +364,7 @@ public class GeoWaveUtils {
             if (maxRangeArea > 0 && rangeGeometry.getArea() > maxRangeArea) {
                 // Bounds are inclusive, and each split must contain at least one index position.
                 long numPositions = max - min + 1;
-                int numSubRanges = (int) Math.min(numPositions, rangeGeometry.getArea() / maxRangeArea + 1);
+                int numSubRanges = (int) Math.min(Math.min(numPositions, Math.max(1, maxRangeSplit)), rangeGeometry.getArea() / maxRangeArea + 1);
                 long offset = numPositions / numSubRanges;
 
                 for (int i = 0; i < numSubRanges; i++) {
