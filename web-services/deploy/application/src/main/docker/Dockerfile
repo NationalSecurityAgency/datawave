@@ -23,13 +23,14 @@ ENV WILDFLY_VERSION 26.1.3.Final \
     JBOSS_HOME /opt/jboss/wildfly \
     LAUNCH_JOBS_IN_BACKGROUND true
 
-COPY --from=wildfly /opt/jboss/wildfly /opt/jboss/wildfly
+COPY --from=wildfly --chown=datawave:hadoop /opt/jboss/wildfly /opt/jboss/wildfly
 EXPOSE 8080
 
 CMD ["/opt/jboss/wildfly/bin/standalone.sh","-b","0.0.0.0"]
 
-RUN chown -R datawave:hadoop /opt/jboss && \
-    chmod -R ug+rX,o-rx /opt/jboss
+RUN cp --preserve=ownership /opt/jboss/.bash* /opt/jboss/wildfly && \
+    chmod -R u+rwX,g+rX,o-rx /opt/jboss && \
+    chmod u+x /opt/jboss/wildfly/bin/*
 
 LABEL name="Datawave web service image"
 
@@ -39,15 +40,12 @@ ENV WILDFLY_HOME=/opt/jboss/wildfly \
 
 WORKDIR $WILDFLY_HOME
 
-COPY overlay $WILDFLY_HOME/
-COPY mysql $WILDFLY_HOME/mysql
-COPY *.cli $WILDFLY_HOME/tools/
-COPY docker-entrypoint.sh /
+COPY --chown=datawave:hadoop overlay $WILDFLY_HOME/
+COPY --chown=datawave:hadoop mysql $WILDFLY_HOME/mysql
+COPY --chown=datawave:hadoop *.cli $WILDFLY_HOME/tools/
+COPY --chown=datawave:hadoop docker-entrypoint.sh /
 
-RUN cp /opt/jboss/.bash* $WILDFLY_HOME && \
-    chown -R datawave:hadoop /docker-entrypoint.sh /opt/jboss && \
-    chmod -R u+rwX /opt/jboss && \
-    chmod u+x /docker-entrypoint.sh  $WILDFLY_HOME/bin/*  $WILDFLY_HOME/tools/*.sh  $WILDFLY_HOME/tools/*.py
+RUN chmod u+x /docker-entrypoint.sh $WILDFLY_HOME/tools/*.sh $WILDFLY_HOME/tools/*.py
 
 USER datawave
 
