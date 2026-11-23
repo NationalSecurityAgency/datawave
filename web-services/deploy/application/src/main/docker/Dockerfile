@@ -42,7 +42,6 @@ WORKDIR $WILDFLY_HOME
 COPY overlay $WILDFLY_HOME/
 COPY mysql $WILDFLY_HOME/mysql
 COPY *.cli $WILDFLY_HOME/tools/
-COPY ${project.build.finalName}-${build.env}.ear $WILDFLY_HOME/standalone/deployments
 COPY docker-entrypoint.sh /
 
 RUN cp /opt/jboss/.bash* $WILDFLY_HOME && \
@@ -57,14 +56,15 @@ USER datawave
 # eventually exhausts the heap. The standalone install does the same thing in setup-wildfly.sh.
 RUN $WILDFLY_HOME/bin/add-user.sh -a -u '${hornetq.system.username}' -p '${hornetq.system.password}' -g admin,InternalUser
 
-RUN touch $WILDFLY_HOME/standalone/deployments/${project.build.finalName}-${build.env}.ear.skipdeploy && \
-    $WILDFLY_HOME/bin/jboss-cli.sh --file=$WILDFLY_HOME/tools/add-datawave-configuration.cli && \
+RUN $WILDFLY_HOME/bin/jboss-cli.sh --file=$WILDFLY_HOME/tools/add-datawave-configuration.cli && \
     rm -rf $WILDFLY_HOME/standalone/configuration/standalone_xml_history && \
     rm -rf $WILDFLY_HOME/standalone/log && \
-    rm -f $WILDFLY_HOME/tools/*.cli && \
-    rm $WILDFLY_HOME/standalone/deployments/${project.build.finalName}-${build.env}.ear.skipdeploy
+    rm -f $WILDFLY_HOME/tools/*.cli
 
 EXPOSE 8080 8443 9990
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-c", "standalone-full.xml"]
+
+# Application-only changes should reuse the configured WildFly image.
+COPY --chown=datawave:hadoop ${project.build.finalName}-${build.env}.ear $WILDFLY_HOME/standalone/deployments/
