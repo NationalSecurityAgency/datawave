@@ -40,12 +40,16 @@ ENV WILDFLY_HOME=/opt/jboss/wildfly \
 
 WORKDIR $WILDFLY_HOME
 
-COPY --chown=datawave:hadoop overlay $WILDFLY_HOME/
 COPY --chown=datawave:hadoop mysql $WILDFLY_HOME/mysql
-COPY --chown=datawave:hadoop *.cli $WILDFLY_HOME/tools/
 COPY --chown=datawave:hadoop docker-entrypoint.sh /
+RUN chmod u+x /docker-entrypoint.sh
 
-RUN chmod u+x /docker-entrypoint.sh $WILDFLY_HOME/tools/*.sh $WILDFLY_HOME/tools/*.py
+# Keep dependency modules cached when application modules or configuration change.
+COPY --chown=datawave:hadoop overlay-dependencies $WILDFLY_HOME/
+COPY --chown=datawave:hadoop *.cli $WILDFLY_HOME/tools/
+COPY --chown=datawave:hadoop overlay $WILDFLY_HOME/
+
+RUN chmod u+x $WILDFLY_HOME/tools/*.sh $WILDFLY_HOME/tools/*.py
 
 USER datawave
 

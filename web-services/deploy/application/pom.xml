@@ -388,7 +388,7 @@
                                         </buildOptions>
                                         <assembly>
                                             <name>/</name>
-                                            <!-- matches dist.xml assembly file-->
+                                            <!-- Separate dependency modules from application files in the Docker context. -->
                                             <layers>
                                                 <layer>
                                                     <id>ear</id>
@@ -402,13 +402,43 @@
                                                     </files>
                                                 </layer>
                                                 <layer>
+                                                    <id>wildfly-dependencies</id>
+                                                    <fileSets>
+                                                        <fileSet>
+                                                            <directory>${project.build.directory}/wildfly/overlay/modules</directory>
+                                                            <outputDirectory>overlay-dependencies/modules</outputDirectory>
+                                                            <excludes>
+                                                                <exclude>datawave</exclude>
+                                                                <exclude>datawave/**</exclude>
+                                                            </excludes>
+                                                            <fileMode>0640</fileMode>
+                                                            <directoryMode>0750</directoryMode>
+                                                        </fileSet>
+                                                    </fileSets>
+                                                </layer>
+                                                <layer>
+                                                    <id>wildfly-application-modules</id>
+                                                    <fileSets>
+                                                        <fileSet>
+                                                            <directory>${project.build.directory}/wildfly/overlay/modules/datawave</directory>
+                                                            <outputDirectory>overlay/modules/datawave</outputDirectory>
+                                                            <fileMode>0640</fileMode>
+                                                            <directoryMode>0750</directoryMode>
+                                                        </fileSet>
+                                                    </fileSets>
+                                                </layer>
+                                                <layer>
                                                     <id>wildfly-files</id>
                                                     <fileSets>
                                                         <fileSet>
                                                             <directory>${project.build.directory}/wildfly</directory>
                                                             <!-- target/docker/<image path>/build -->
                                                             <outputDirectory>.</outputDirectory>
-                                                            <excludes>*.sh</excludes>
+                                                            <excludes>
+                                                                <exclude>*.sh</exclude>
+                                                                <exclude>overlay/modules</exclude>
+                                                                <exclude>overlay/modules/**</exclude>
+                                                            </excludes>
                                                             <fileMode>0640</fileMode>
                                                             <directoryMode>0750</directoryMode>
                                                         </fileSet>
