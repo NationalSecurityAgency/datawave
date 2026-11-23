@@ -339,6 +339,7 @@ public class GeoWaveUtils {
         longBuffer = initLongBuffer(longBuffer);
 
         List<ByteArrayRange> splitByteArrayRanges = new ArrayList<>();
+        double maxRangeArea = maxRangeOverlap * queryGeometry.getEnvelope().getArea();
 
         for (ByteArrayRange range : byteArrayRanges) {
             int tier = decodeTier(range.getStart());
@@ -346,9 +347,12 @@ public class GeoWaveUtils {
             long max = decodePosition(range.getEnd(), longBuffer);
 
             Geometry rangeGeometry = rangeToGeometry(tier, min, max);
-            if (rangeGeometry.getArea() > maxRangeOverlap * queryGeometry.getEnvelope().getArea()) {
-                int numSubRanges = (int) (rangeGeometry.getArea() / (maxRangeOverlap * queryGeometry.getEnvelope().getArea())) + 1;
-                long offset = (max - min) / numSubRanges;
+            // A zero-area envelope cannot provide an area-based split size.
+            if (maxRangeArea > 0 && rangeGeometry.getArea() > maxRangeArea) {
+                // Bounds are inclusive, and each split must contain at least one index position.
+                long numPositions = max - min + 1;
+                int numSubRanges = (int) Math.min(numPositions, rangeGeometry.getArea() / maxRangeArea + 1);
+                long offset = numPositions / numSubRanges;
 
                 for (int i = 0; i < numSubRanges; i++) {
                     long subMax = ((i + 1) == numSubRanges) ? max : min + (i + 1) * offset - 1;

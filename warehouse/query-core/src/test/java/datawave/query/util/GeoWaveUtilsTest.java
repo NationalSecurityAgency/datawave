@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.locationtech.geowave.core.geotime.util.GeometryUtils;
 import org.locationtech.geowave.core.index.ByteArray;
 import org.locationtech.geowave.core.index.ByteArrayRange;
@@ -134,6 +136,45 @@ public class GeoWaveUtilsTest {
         List<ByteArrayRange> splitByteArrayRanges = GeoWaveUtils.splitLargeRanges(byteArrayRanges, geom, .75);
 
         assertEquals(2, splitByteArrayRanges.size());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0, 3, 0.75, 2", "1, 3, 0.5, 2", "1, 3, 0.75, 1", "0, 3, 0.25, 4", "1, 3, 0.01, 3", "1, 1, 0.01, 1", "1, 3, 0.00000000001, 3"})
+    public void splitLargeRangesPreservesPositionsTest(long min, long max, double maxRangeOverlap, int expectedRanges) throws Exception {
+        Geometry geom = new WKTReader().read("POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))");
+        ByteArrayRange original = GeoWaveUtils.createByteArrayRange(1, min, max);
+
+        List<ByteArrayRange> ranges = GeoWaveUtils.splitLargeRanges(Collections.singletonList(original), geom, maxRangeOverlap);
+
+        assertRangeCoverage(original, ranges);
+        assertEquals(expectedRanges, ranges.size());
+    }
+
+    @Test
+    public void splitLargeRangesZeroAreaTest() throws Exception {
+        Geometry geom = new WKTReader().read("LINESTRING(0 -10, 0 10)");
+        ByteArrayRange original = GeoWaveUtils.createByteArrayRange(1, 1, 3);
+
+        List<ByteArrayRange> ranges = GeoWaveUtils.splitLargeRanges(Collections.singletonList(original), geom, 0.25);
+
+        assertEquals(1, ranges.size());
+        assertRangeCoverage(original, ranges);
+    }
+
+    private void assertRangeCoverage(ByteArrayRange original, List<ByteArrayRange> ranges) {
+        long nextPosition = GeoWaveUtils.decodePosition(original.getStart());
+        long originalMax = GeoWaveUtils.decodePosition(original.getEnd());
+        for (ByteArrayRange range : ranges) {
+            long min = GeoWaveUtils.decodePosition(range.getStart());
+            long max = GeoWaveUtils.decodePosition(range.getEnd());
+            assertEquals(nextPosition, min);
+            assertTrue(min <= max, "Range start must not exceed its end");
+            assertTrue(max <= originalMax, "Split range must stay within the original range");
+            assertEquals(GeoWaveUtils.decodeTier(original.getStart()), GeoWaveUtils.decodeTier(range.getStart()));
+            assertEquals(GeoWaveUtils.decodeTier(original.getEnd()), GeoWaveUtils.decodeTier(range.getEnd()));
+            nextPosition = max + 1;
+        }
+        assertEquals(originalMax + 1, nextPosition);
     }
 
     @Test
