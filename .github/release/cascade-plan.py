@@ -11,18 +11,22 @@ This script walks every ``pom.xml`` under ``microservices/`` (skipping
 ``target``/``src``/``configcheck``), records each project's ``artifactId``,
 its ``<parent>`` reference, and every ``<dependency>`` whose ``groupId`` is
 ``gov.nsa.datawave.microservice`` (regardless of version), builds the
-consumer graph in memory, and prints the starting project plus its transitive
-dependents in a deterministic topological order as a JSON array of
-``{artifactId, path}`` records.
+consumer graph in memory, and prints the starting projects plus their transitive
+dependents, without duplicates, in a deterministic topological order as a JSON
+array of ``{artifactId, path}`` records.
 
-The output is consumed by ``.github/workflows/microservice-cascade-release.yml``
-to drive the per-project release loop.
+Starting projects may be passed as separate arguments or as a comma- or
+whitespace-separated list of paths or artifactIds.
+
+The output is consumed by the single- and multiple-project cascade release
+workflows to drive the per-project release loop.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from collections import defaultdict, deque
 from pathlib import Path
@@ -127,8 +131,13 @@ def find_start(project_dirs: Dict[str, Path], starting: str) -> str:
 
 def cascade(start: str, consumers: Dict[str, List[str]]) -> List[str]:
     """Return start + transitive dependents in topological build order."""
-    in_scope: Set[str] = {start}
-    queue = deque([start])
+    return cascade_many([start], consumers)
+
+
+def cascade_many(starts: Iterable[str], consumers: Dict[str, List[str]]) -> List[str]:
+    """Topologically order the union of all starting projects and dependents."""
+    in_scope: Set[str] = set(starts)
+    queue = deque(sorted(in_scope))
     while queue:
         current = queue.popleft()
         for c in consumers.get(current, ()):
@@ -145,9 +154,6 @@ def cascade(start: str, consumers: Dict[str, List[str]]) -> List[str]:
                 indegree[c] += 1
 
     ready: List[str] = sorted(a for a, d in indegree.items() if d == 0)
-    if start in ready:
-        ready.remove(start)
-        ready.insert(0, start)
 
     order: List[str] = []
     while ready:
@@ -160,23 +166,35 @@ def cascade(start: str, consumers: Dict[str, List[str]]) -> List[str]:
         ready.sort()
 
     if len(order) != len(in_scope):
-        cycle = [a for a, d in indegree.items() if d > 0]
+        cycle = sorted(a for a, d in indegree.items() if d > 0)
         raise SystemExit(f"Cycle detected in microservice graph among: {cycle}")
     return order
 
 
 def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("starting_project")
+    parser.add_argument(
+        "starting_project", nargs="+",
+        help="One or more project paths or artifactIds; commas and whitespace are also accepted.",
+    )
     parser.add_argument(
         "--compact", action="store_true",
         help="Emit single-line JSON suitable for $GITHUB_OUTPUT.",
     )
     args = parser.parse_args(argv)
 
+    starting_projects = [
+        project
+        for argument in args.starting_project
+        for project in re.split(r"[,\s]+", argument.strip())
+        if project
+    ]
+    if not starting_projects:
+        parser.error("Provide at least one starting project.")
+
     project_dirs, consumers, aggregators = build_graph()
-    start = find_start(project_dirs, args.starting_project)
-    ordered = cascade(start, consumers)
+    starts = [find_start(project_dirs, project) for project in starting_projects]
+    ordered = cascade_many(starts, consumers)
 
     # Exclude multi-module aggregator POMs from the release plan.
     # They are kept in the graph so that traversal still reaches their
@@ -187,6 +205,8 @@ def main(argv: List[str] | None = None) -> int:
         for a in ordered
         if a not in aggregators
     ]
+    if not payload:
+        parser.error("The selected projects have no individually releasable projects in their cascade.")
     if args.compact:
         json.dump(payload, sys.stdout, separators=(",", ":"))
     else:
