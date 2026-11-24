@@ -175,6 +175,7 @@ public class QueryLimiterImpl implements QueryLimiter {
      */
     private void activate() {
         lock.writeLock().lock();
+        boolean resourcesInitialized = this.activeQueryTracker != null;
         try {
             if (log.isDebugEnabled()) {
                 log.debug("Activating limiter with configuration {}", this.config);
@@ -193,6 +194,10 @@ public class QueryLimiterImpl implements QueryLimiter {
             setState(State.READY);
         } catch (Exception e) {
             log.error("Failed to activate limiter", e);
+            // Release resources from failed initialization, but preserve existing heartbeats after failed reconfiguration.
+            if (!resourcesInitialized) {
+                closeResources();
+            }
             deactivate(State.FAILED);
             throw new RuntimeException("Failed to activate limiter", e);
         } finally {
@@ -307,8 +312,7 @@ public class QueryLimiterImpl implements QueryLimiter {
     }
 
     /**
-     * Deactivate this {@link QueryLimiterImpl}. This method specifically does not close the heartbeat cache or Zookeeper client, that should only be done when
-     * {@link #close()} is called.
+     * Deactivate this {@link QueryLimiterImpl} without closing tracking resources, so existing heartbeats can survive a failed reconfiguration.
      */
     private void deactivate(State newState) {
         lock.writeLock().lock();
@@ -337,7 +341,18 @@ public class QueryLimiterImpl implements QueryLimiter {
         try {
             log.debug("Shutting down limiter");
             deactivate(State.CLOSED);
+            closeResources();
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
 
+    /**
+     * Close tracking resources, stopping heartbeats before closing the Zookeeper client.
+     */
+    private void closeResources() {
+        lock.writeLock().lock();
+        try {
             // Shut down the heartbeat cache, and stop all heartbeats. This needs to be done before closing the Zookeeper client.
             log.debug("Closing heartbeat cache");
             if (this.heartbeatCache != null) {

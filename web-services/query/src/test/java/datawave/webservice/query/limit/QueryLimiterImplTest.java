@@ -3,6 +3,8 @@ package datawave.webservice.query.limit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -11,11 +13,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.test.TestingServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +29,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import datawave.core.common.zookeeper.ZkClientBuilder;
 
@@ -287,6 +293,119 @@ class QueryLimiterImplTest {
                                 .isInstanceOf(NullPointerException.class)
                                 .hasMessage("cleanup interval unit must not be null");
                 // @formatter:on
+            }
+        }
+
+        @DisplayName("cleans up resources after failed startup")
+        @Nested
+        class FailedStartupTests {
+
+            @ParameterizedTest(name = "{0}")
+            @EnumSource(value = QueryLimiterMode.class, mode = EnumSource.Mode.EXCLUDE, names = {"DISABLED"})
+            void closesClientAfterHeartbeatInitializationFails(QueryLimiterMode mode) throws Exception {
+                QueryLimiterImpl limiter = new QueryLimiterImpl();
+                QueryLimiterImplConfiguration config = spy(createConfig(mode));
+                config.setHeartbeatCleanupInterval(0);
+                AtomicReference<CuratorFramework> allocatedClient = new AtomicReference<>();
+                doAnswer(invocation -> {
+                    allocatedClient.set(getField(limiter, CuratorFramework.class, "zkClient"));
+                    return invocation.callRealMethod();
+                }).when(config).getHeartbeatCleanupInterval();
+                ReflectionTestUtils.setField(limiter, "config", config);
+
+                try {
+                    assertThatThrownBy(limiter::setup).hasRootCauseInstanceOf(IllegalArgumentException.class)
+                                    .hasRootCauseMessage("cleanup interval must be greater than 0");
+
+                    assertThat(allocatedClient.get()).isNotNull();
+                    assertThat(allocatedClient.get().getState()).isEqualTo(CuratorFrameworkState.STOPPED);
+                    assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.FAILED);
+                    assertThat(getField(limiter, CuratorFramework.class, "zkClient")).isNull();
+                    assertThat(getField(limiter, QueryHeartbeatCache.class, "heartbeatCache")).isNull();
+                } finally {
+                    limiter.close();
+                }
+            }
+
+            @ParameterizedTest(name = "{0}")
+            @EnumSource(value = QueryLimiterMode.class, mode = EnumSource.Mode.EXCLUDE, names = {"DISABLED"})
+            void closesResourcesAfterTrackerInitializationFails(QueryLimiterMode mode) throws Exception {
+                QueryLimiterImpl limiter = new QueryLimiterImpl();
+                QueryLimiterImplConfiguration config = spy(createConfig(mode));
+                config.setNodeCreationTimeout(0);
+                AtomicReference<CuratorFramework> allocatedClient = new AtomicReference<>();
+                AtomicReference<QueryHeartbeatCache> allocatedCache = new AtomicReference<>();
+                // Capture the real resources before tracker construction validates the timeout.
+                doAnswer(invocation -> {
+                    allocatedClient.set(getField(limiter, CuratorFramework.class, "zkClient"));
+                    allocatedCache.set(getField(limiter, QueryHeartbeatCache.class, "heartbeatCache"));
+                    return invocation.callRealMethod();
+                }).when(config).getNodeCreationTimeout();
+                ReflectionTestUtils.setField(limiter, "config", config);
+
+                try {
+                    // Each failed initialization attempt must release its own resources.
+                    for (int attempt = 0; attempt < 2; attempt++) {
+                        assertThatThrownBy(limiter::setup).hasRootCauseInstanceOf(IllegalArgumentException.class)
+                                        .hasRootCauseMessage("nodeCreationTimeout must be greater than 0");
+
+                        ScheduledExecutorService executor = getField(allocatedCache.get(), ScheduledExecutorService.class, "executor");
+                        assertThat(executor.isShutdown()).isTrue();
+                        assertThat(executor.isTerminated()).isTrue();
+                        assertThat(allocatedClient.get().getState()).isEqualTo(CuratorFrameworkState.STOPPED);
+                        assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.FAILED);
+                        assertThat(getField(limiter, CuratorFramework.class, "zkClient")).isNull();
+                        assertThat(getField(limiter, QueryHeartbeatCache.class, "heartbeatCache")).isNull();
+                        assertThat(getField(limiter, ActiveQueryTracker.class, "activeQueryTracker")).isNull();
+                    }
+
+                    // A corrected configuration must allocate fresh resources and resume tracking.
+                    limiter.setConfiguration(createConfig(mode));
+                    limiter.setup();
+                    assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.READY);
+                    assertThat(getField(limiter, CuratorFramework.class, "zkClient")).isNotSameAs(allocatedClient.get());
+                    assertThat(getField(limiter, QueryHeartbeatCache.class, "heartbeatCache")).isNotSameAs(allocatedCache.get());
+                    limiter.markActive("retried-query", "user", "system", "logic");
+                    assertThat(limiter.getActiveQueries()).contains("retried-query");
+                    limiter.markInactive("retried-query");
+                } finally {
+                    limiter.close();
+                }
+            }
+
+            @Test
+            void preservesTrackedQueriesAfterFailedReconfiguration() throws Exception {
+                QueryLimiterImpl limiter = new QueryLimiterImpl();
+                QueryLimiterImplConfiguration config = createConfig(QueryLimiterMode.ENFORCE);
+                config.getLimitConfiguration().setDefaultUserQueryLimit(1);
+                limiter.setConfiguration(config);
+                limiter.setup();
+
+                try {
+                    limiter.markActive("existing-query", "user", "system", "logic");
+                    CuratorFramework client = getField(limiter, CuratorFramework.class, "zkClient");
+                    QueryHeartbeatCache cache = getField(limiter, QueryHeartbeatCache.class, "heartbeatCache");
+                    ScheduledExecutorService executor = getField(cache, ScheduledExecutorService.class, "executor");
+                    QueryHeartbeat heartbeat = cache.get("existing-query");
+
+                    QueryLimiterImplConfiguration badConfig = createConfig(QueryLimiterMode.ENFORCE);
+                    badConfig.setLimitConfiguration(null);
+                    limiter.setConfiguration(badConfig);
+                    assertThatThrownBy(limiter::setup).isInstanceOf(RuntimeException.class);
+
+                    assertThat(limiter.getState()).isEqualTo(QueryLimiterImpl.State.FAILED);
+                    assertThat(client.getState()).isEqualTo(CuratorFrameworkState.STARTED);
+                    assertThat(executor.isShutdown()).isFalse();
+                    assertThat(cache.get("existing-query")).isSameAs(heartbeat);
+
+                    limiter.setConfiguration(config);
+                    limiter.setup();
+                    assertThat(getField(limiter, CuratorFramework.class, "zkClient")).isSameAs(client);
+                    assertThat(getField(limiter, QueryHeartbeatCache.class, "heartbeatCache")).isSameAs(cache);
+                    assertThat(limiter.checkLimits("user", "system", "logic").metLimit()).isTrue();
+                } finally {
+                    limiter.close();
+                }
             }
         }
 
