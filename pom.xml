@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>8.7.0-SNAPSHOT</version>
+    <version>8.8.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -63,7 +63,6 @@
              still pass before enabling: shared static caches and registries are the usual blocker. -->
         <surefire.reuseForks>false</surefire.reuseForks>
         <version.accumulo>2.1.6</version.accumulo>
-        <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-embedded>2.1.0.Final</version.arquillian-weld-embedded>
         <version.assertj>3.20.2</version.assertj>
         <version.avro>1.11.4</version.avro>
@@ -108,7 +107,6 @@
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <version.hadoop>3.4.1</version.hadoop>
         <version.hadoop-shaded>1.3.0</version.hadoop-shaded>
-        <version.hamcrest>1.3</version.hamcrest>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>4.0.6</version.in-memory-accumulo>
@@ -1888,6 +1886,8 @@
                                             <exclude>junit:junit</exclude>
                                             <exclude>org.junit.vintage:junit-vintage-engine</exclude>
                                             <exclude>org.easymock:*</exclude>
+                                            <exclude>org.hamcrest:*</exclude>
+                                            <exclude>org.jboss.arquillian.junit:*</exclude>
                                         </excludes>
                                     </bannedDependencies>
                                 </rules>
@@ -1933,9 +1933,12 @@
                                         <bannedImport>org.junit.jupiter.api.Assertions</bannedImport>
                                     </restrictImports>
                                     <restrictImports>
-                                        <!-- Cannot ban hamcrest dependency until fully migrated to JUnit5, so ban the import to prevent reintroduction -->
-                                        <reason>Use JUnit5 instead of hamcrest</reason>
+                                        <reason>Use JUnit Jupiter instead of Hamcrest</reason>
                                         <bannedImport>org.hamcrest.**</bannedImport>
+                                    </restrictImports>
+                                    <restrictImports>
+                                        <reason>Use the Arquillian JUnit5 adapter instead of the JUnit4 adapter</reason>
+                                        <bannedImport>org.jboss.arquillian.junit.**</bannedImport>
                                     </restrictImports>
                                     <restrictImports>
                                         <reason>Use Mockito instead of PowerMock</reason>
