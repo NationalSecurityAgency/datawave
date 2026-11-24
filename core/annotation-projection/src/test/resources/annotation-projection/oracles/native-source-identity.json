@@ -1,0 +1,16 @@
+{
+  "sourceContent": {
+    "analyticHash": "aSource",
+    "analyticSourceHash": "source-long-v1",
+    "engine": "test-engine",
+    "model": "test-model-v1",
+    "platform": "test-cpu",
+    "configuration": {
+      "modelVersion": "1",
+      "fixture": "synthetic"
+    }
+  },
+  "nativeShort": "228F1657",
+  "nativeLong": "E432F13DBF765D8019951DCADB809334",
+  "authority": "pinned existing AnnotationUtils source identity functions, seed-zero Murmur3; no new preparation/projector invoked"
+}

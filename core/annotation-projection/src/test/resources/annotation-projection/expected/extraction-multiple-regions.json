@@ -1,0 +1,17 @@
+{
+  "logicalFields": [
+    {"base": "EXTRACTION_SOURCE", "group": ["58F48CA4", "B809141A", "CA017B28"], "field": "EXTRACTION_SOURCE.58F48CA4.B809141A.CA017B28", "value": "fixture-model-v1:fixture-extractor", "normalized": "fixture-model-v1:fixture-extractor"},
+    {"base": "ANALYTIC_HASH", "group": [], "field": "ANALYTIC_HASH", "value": "58F48CA4", "normalized": "58f48ca4"},
+    {"base": "ANALYTIC_SOURCE_HASH", "group": [], "field": "ANALYTIC_SOURCE_HASH", "value": "318DDF5130C30E298696DCB40191552E", "normalized": "318ddf5130c30e298696dcb40191552e"},
+    {"base": "EXTRACTED_TEXT", "group": ["58F48CA4", "E6E1C015", "70148DA0"], "field": "EXTRACTED_TEXT.58F48CA4.E6E1C015.70148DA0", "value": "Sample Text Five", "normalized": "sample text five"},
+    {"base": "EXTRACTION_KIND", "group": ["58F48CA4", "E6E1C015", "70148DA0"], "field": "EXTRACTION_KIND.58F48CA4.E6E1C015.70148DA0", "value": "TEXT_IN_SCENE", "normalized": "text_in_scene"},
+    {"base": "EXTRACTED_TEXT", "group": ["58F48CA4", "F22F0767", "A7E9ECFF"], "field": "EXTRACTED_TEXT.58F48CA4.F22F0767.A7E9ECFF", "value": "Sample Text One", "normalized": "sample text one"},
+    {"base": "EXTRACTION_KIND", "group": ["58F48CA4", "F22F0767", "A7E9ECFF"], "field": "EXTRACTION_KIND.58F48CA4.F22F0767.A7E9ECFF", "value": "TEXT_IN_SCENE", "normalized": "text_in_scene"},
+    {"base": "EXTRACTED_TEXT", "group": ["58F48CA4", "0F84EB6F", "C703FBA9"], "field": "EXTRACTED_TEXT.58F48CA4.0F84EB6F.C703FBA9", "value": "Sample Text Three", "normalized": "sample text three"},
+    {"base": "EXTRACTION_KIND", "group": ["58F48CA4", "0F84EB6F", "C703FBA9"], "field": "EXTRACTION_KIND.58F48CA4.0F84EB6F.C703FBA9", "value": "TEXT_IN_SCENE", "normalized": "text_in_scene"},
+    {"base": "EXTRACTED_TEXT", "group": ["58F48CA4", "D9076E19", "C36007AD"], "field": "EXTRACTED_TEXT.58F48CA4.D9076E19.C36007AD", "value": "Sample Text Two", "normalized": "sample text two"},
+    {"base": "EXTRACTION_KIND", "group": ["58F48CA4", "D9076E19", "C36007AD"], "field": "EXTRACTION_KIND.58F48CA4.D9076E19.C36007AD", "value": "TEXT_IN_SCENE", "normalized": "text_in_scene"},
+    {"base": "EXTRACTED_TEXT", "group": ["58F48CA4", "5CC1EEEC", "290DA936"], "field": "EXTRACTED_TEXT.58F48CA4.5CC1EEEC.290DA936", "value": "Sample Text Four", "normalized": "sample text four"},
+    {"base": "EXTRACTION_KIND", "group": ["58F48CA4", "5CC1EEEC", "290DA936"], "field": "EXTRACTION_KIND.58F48CA4.5CC1EEEC.290DA936", "value": "TEXT_IN_SCENE", "normalized": "text_in_scene"}
+  ]
+}

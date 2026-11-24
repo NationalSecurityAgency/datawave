@@ -1,0 +1,57 @@
+{
+  "annotationType": "TEXT_EXTRACTION",
+  "documentId": "example-single-region.dat",
+  "source": {
+    "analyticHash": "58F48CA4",
+    "analyticSourceHash": "318DDF5130C30E298696DCB40191552E",
+    "engine": "fixture-extractor",
+    "model": "fixture-model-v1",
+    "configuration": {
+      "mode": "example",
+      "revision": "1"
+    },
+    "metadata": {
+      "visibility": "PUBLIC",
+      "created_date": "2026-11-23T00:00:00Z"
+    }
+  },
+  "segments": [
+    {
+      "segmentHash": "F22F0767",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": 10,
+            "y": 20,
+            "label": "topLeftPoint"
+          },
+          {
+            "x": 20,
+            "y": 30,
+            "label": "bottomRightPoint"
+          }
+        ]
+      },
+      "values": [
+        {
+          "valueHash": "F9AFA70A",
+          "value": "Example Text 123",
+          "extension": {
+            "extensionType": "TEXT_EXTRACTION",
+            "contentKind": "PRINTED_TEXT"
+          }
+        }
+      ]
+    }
+  ],
+  "shard": "20261123_0",
+  "dataType": "annotation",
+  "uid": "1.2.3",
+  "metadata": {
+    "visibility": "PUBLIC",
+    "created_date": "2026-11-23T00:00:00Z"
+  },
+  "analyticSourceHash": "318DDF5130C30E298696DCB40191552E",
+  "annotationId": "Supplied-Extraction-v1"
+}

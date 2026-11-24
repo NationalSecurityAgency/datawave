@@ -1,0 +1,9 @@
+{
+  "logicalFields": [
+    {"base": "EXACT_COUNT", "group": ["aSource", "bAll", "vLabel"], "field": "EXACT_COUNT.aSource.bAll.vLabel", "value": "9007199254740993", "normalized": "+pE9.007199254740993"},
+    {"base": "ENABLED", "group": ["aSource", "bAll", "vLabel"], "field": "ENABLED.aSource.bAll.vLabel", "value": "false", "normalized": "false"},
+    {"base": "FUTURE_SOURCE", "group": ["aSource", "B809141A", "B33DE158"], "field": "FUTURE_SOURCE.aSource.B809141A.B33DE158", "value": "test-model-v1:test-engine:test-cpu", "normalized": "test-model-v1:test-engine:test-cpu"},
+    {"base": "ANALYTIC_HASH", "group": [], "field": "ANALYTIC_HASH", "value": "aSource", "normalized": "asource"},
+    {"base": "ANALYTIC_SOURCE_HASH", "group": [], "field": "ANALYTIC_SOURCE_HASH", "value": "source-long-v1", "normalized": "source-long-v1"}
+  ]
+}

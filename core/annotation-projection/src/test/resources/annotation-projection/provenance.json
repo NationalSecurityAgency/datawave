@@ -1,0 +1,20 @@
+{
+  "syntheticInputs": [
+    {
+      "id": "extraction-single-region",
+      "input": "raw/extraction-single-region.json",
+      "accepted": "accepted/extraction-single-region.json",
+      "logicalFields": "expected/extraction-single-region.json",
+      "inputSha256": "42d7d4f7a275597c336e8ea017be52cd05a1d20a93fdd354e44878463dff47df",
+      "origin": "independently authored synthetic extraction example"
+    },
+    {
+      "id": "extraction-multiple-regions",
+      "input": "raw/extraction-multiple-regions.json",
+      "accepted": "accepted/extraction-multiple-regions.json",
+      "logicalFields": "expected/extraction-multiple-regions.json",
+      "inputSha256": "09e56cc1346522344a17896621d4e496ea9cc97c95736fe02df6f66604490cf6",
+      "origin": "independently authored synthetic extraction example"
+    }
+  ]
+}
