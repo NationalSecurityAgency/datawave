@@ -1858,7 +1858,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setDataTypes(Multimap<String,Type<?>> dataTypes) {
-        log.warn("setDataTypes to " + dataTypes);
+        if (log.isTraceEnabled()) {
+            log.trace("setDataTypes to " + dataTypes);
+        }
         this.dataTypes = dataTypes;
     }
 
