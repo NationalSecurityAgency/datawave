@@ -776,9 +776,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     }
 
     @Override
-    public boolean isLongRunningQuery() {
+    public boolean isIntermediateEmptyPagesEnabled() {
         for (QueryLogic<?> l : getQueryLogics().values()) {
-            if (l.isLongRunningQuery()) {
+            if (l.isIntermediateEmptyPagesEnabled()) {
                 return true;
             }
         }

@@ -1,6 +1,8 @@
 package datawave.ingest.mapreduce.handler.tokenize;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -20,7 +22,6 @@ import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.lucene.analysis.Analyzer;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,7 +99,7 @@ public class ContentIndexingColumnBasedHandlerTest {
     private static final Multimap<String,NormalizedContentInterface> listExpectedAlphanumReverse = HashMultimap.create();
     private static final Multimap<String,Pair<String,Integer>> listExpectedAlphanumTfValues = HashMultimap.create();
 
-    private RawRecordContainer event = EasyMock.createMock(RawRecordContainer.class);
+    private RawRecordContainer event = mock(RawRecordContainer.class);
     private TestContentBaseIngestHelper helper;
     private ColumnVisibility colVis;
 
@@ -159,11 +160,10 @@ public class ContentIndexingColumnBasedHandlerTest {
 
     private void setupMocks() {
         try {
-            EasyMock.expect(event.getVisibility()).andReturn(colVis).anyTimes();
-            EasyMock.expect(event.getDataType()).andReturn(TypeRegistry.getType(TEST_TYPE)).anyTimes();
-            EasyMock.expect(event.getId()).andReturn(uid).anyTimes();
-            EasyMock.expect(event.getTimestamp()).andReturn(CURRENT_TIME).anyTimes();
-            EasyMock.replay(event);
+            lenient().doReturn(colVis).when(event).getVisibility();
+            lenient().doReturn(TypeRegistry.getType(TEST_TYPE)).when(event).getDataType();
+            lenient().doReturn(uid).when(event).getId();
+            lenient().doReturn(CURRENT_TIME).when(event).getTimestamp();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -1,6 +1,8 @@
 package datawave.query.rules;
 
-import org.easymock.EasyMock;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -227,10 +229,9 @@ class IncludeExcludeArgsRuleTest extends ShardQueryRuleTest {
      */
     @Test
     void testExceptionThrown() {
-        ShardQueryValidationConfiguration configuration = EasyMock.mock(ShardQueryValidationConfiguration.class);
+        ShardQueryValidationConfiguration configuration = mock(ShardQueryValidationConfiguration.class);
         Exception exception = new IllegalArgumentException("Failed to get query");
-        EasyMock.expect(configuration.getParsedQuery()).andThrow(exception);
-        EasyMock.replay(configuration);
+        doThrow(exception).when(configuration).getParsedQuery();
 
     }
 

@@ -8,14 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,7 +51,6 @@ import org.wildfly.security.auth.callback.PrincipalAuthorizeCallback;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.authz.RoleDecoder;
-import org.wildfly.security.cache.CachedIdentity;
 import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpScope;
@@ -82,7 +75,6 @@ class DatawaveHttpAuthenticationMechanismTest {
     private final HttpServerRequestWrapper requestWrapper = new HttpServerRequestWrapper();
     private DatawaveHttpAuthenticationMechanism mechanism;
     private MockCallbackHandler callbackHandler;
-    private HttpScopeHandler scopeWrapper;
 
     private static SecurityDomain securityDomain;
 
@@ -106,18 +98,11 @@ class DatawaveHttpAuthenticationMechanismTest {
     }
 
     /**
-     * Covers test scenarios where caching the identity in the session scope is disabled.
+     * Test DatawaveHttpAuthenticationMechanism failures and successes with JWT, trusted headers, and certificates.
      */
-    @DisplayName("When caching the identity in the HTTP session is disabled")
+    @DisplayName("Test DatawaveHttpAuthenticationMechanism failures and successes with JWT, trusted headers, and certificates")
     @Nested
-    class NonCachingTests {
-
-        @BeforeEach
-        void setUp() {
-            // Disable session caching features.
-            givenIdentityRestorationEnabled(false);
-            givenSessionIdChangeEnabled(false);
-        }
+    class AuthenticationTests {
 
         /**
          * Verify that given a request with no information that can be turned into evidence for authorization, it fails authentication.
@@ -398,199 +383,6 @@ class DatawaveHttpAuthenticationMechanismTest {
     }
 
     /**
-     * Covers test scenarios where caching the identity in the session scope is enabled.
-     */
-    @DisplayName("When caching the identity in the HTTP session is enabled")
-    @Nested
-    class CachingTests {
-
-        @BeforeEach
-        void setUp() {
-            // Disable session caching features.
-            givenIdentityRestorationEnabled(true);
-            givenSessionIdChangeEnabled(true);
-
-            // Set up the mock session scope for the request.
-            HttpScope scope = mock(HttpScope.class);
-            scopeWrapper = new HttpScopeHandler(scope);
-            requestWrapper.setSessionScope(scope);
-        }
-
-        @DisplayName("The cached identity should be used if already in the scope")
-        @Test
-        void givenIdentityAlreadyCached()throws HttpAuthenticationException {
-            scopeWrapper.supportAttachments();
-            scopeWrapper.setExists(true);
-
-            SecurityIdentity identity = securityDomain.createAdHocIdentity("test");
-            CachedIdentity cachedIdentity = new CachedIdentity("DATAWAVE-AUTH", false, identity);
-            scopeWrapper.setCachedIdentity(cachedIdentity);
-
-            callbackHandler.actLikeFirstAuthorizationAttemptSucceeds();
-
-            evaluateRequest();
-
-            // Verify the request succeeded.
-            requestWrapper.assertRequestSucceeded();
-
-            // Verify two callbacks occurred, one for authorizing a cached identity, and one for authentication complete with a success status.
-            List<Callback> callbacks = callbackHandler.getCapturedCallbacks();
-            assertThat(callbacks).hasSize(2);
-            assertThat(callbacks.get(0)).isInstanceOf(CachedIdentityAuthorizeCallback.class);
-            assertThat(callbacks.get(1)).isInstanceOf(AuthenticationCompleteCallback.class);
-            assertTrue(((AuthenticationCompleteCallback) callbacks.get(1)).succeeded());
-
-            // The session id should not have been changed.
-            scopeWrapper.assertSessionIdNotChanged();
-        }
-
-        @DisplayName("The identity should not be cached if the scope does not support attachments.")
-        @Test
-        void givenSessionScopeDoesNotSupportAttachments()throws HttpAuthenticationException {
-            // Tell the scope to not support attachments.
-            scopeWrapper.doNotSupportAttachments();
-
-            // Configure JWT.
-            requestWrapper.setHeader("Authorization", "Bearer iamatoken");
-
-            // The first authorization attempt with the identity cache should fail.
-            callbackHandler.actLikeFirstAuthorizationAttemptFails();
-            // Act like the evidence passes verification, and the final principal is authorized.
-            callbackHandler.actLikeEvidenceIsVerified();
-            callbackHandler.actLikeSecondAuthorizationAttemptSucceeds();
-
-            // Trigger the request.
-            evaluateRequest();
-
-            // Verify the request succeeded.
-            requestWrapper.assertRequestSucceeded();
-
-            // Verify four callbacks occurred, one for at attempt to use the empty identity cache, one for evidence verification, one for authorization of a
-            // principal, and one for authentication complete with a success status.
-            List<Callback> callbacks = callbackHandler.getCapturedCallbacks();
-            assertThat(callbacks).hasSize(4);
-            assertThat(callbacks.get(0)).isInstanceOf(CachedIdentityAuthorizeCallback.class);
-            assertThat(callbacks.get(1)).isInstanceOf(EvidenceVerifyCallback.class);
-            assertThat(callbacks.get(2)).isInstanceOf(CachedIdentityAuthorizeCallback.class);
-            assertThat(callbacks.get(3)).isInstanceOf(AuthenticationCompleteCallback.class);
-            assertTrue(((AuthenticationCompleteCallback) callbacks.get(3)).succeeded());
-
-            // Validate the evidence that was passed to the EvidenceVerifyCallback.
-            EvidenceVerifyCallback evidenceVerifyCallback = (EvidenceVerifyCallback) callbacks.get(1);
-            Evidence evidence = evidenceVerifyCallback.getEvidence();
-            assertInstanceOf(JWTEvidence.class, evidence);
-            assertEquals("iamatoken", ((JWTEvidence) evidence).getToken());
-
-            // Nothing should have been attached to the scope.
-            scopeWrapper.assertNothingAttachedToScope();
-        }
-
-        @DisplayName("The identity should be cached if the scope support attachments.")
-        @Test
-        void givenSessionScopeSupportsAttachments()throws HttpAuthenticationException {
-            // Tell the scope to support attachments.
-            scopeWrapper.supportAttachments();
-
-            // Configure JWT.
-            requestWrapper.setHeader("Authorization", "Bearer iamatoken");
-
-            // The first authorization attempt with the identity cache should fail.
-            callbackHandler.actLikeFirstAuthorizationAttemptFails();
-            // Act like the evidence passes verification, and the final principal is authorized.
-            callbackHandler.actLikeEvidenceIsVerified();
-            callbackHandler.actLikeSecondAuthorizationAttemptSucceeds();
-
-            // Trigger the request.
-            evaluateRequest();
-
-            // Verify the request succeeded.
-            requestWrapper.assertRequestSucceeded();
-
-            // Verify four callbacks occurred, one for at attempt to use the empty identity cache, one for evidence verification, one for authorization of a
-            // principal, and one for authentication complete with a success status.
-            List<Callback> callbacks = callbackHandler.getCapturedCallbacks();
-            assertThat(callbacks).hasSize(4);
-            assertThat(callbacks.get(0)).isInstanceOf(CachedIdentityAuthorizeCallback.class);
-            assertThat(callbacks.get(1)).isInstanceOf(EvidenceVerifyCallback.class);
-            assertThat(callbacks.get(2)).isInstanceOf(CachedIdentityAuthorizeCallback.class);
-            assertThat(callbacks.get(3)).isInstanceOf(AuthenticationCompleteCallback.class);
-            assertTrue(((AuthenticationCompleteCallback) callbacks.get(3)).succeeded());
-
-            // Validate the evidence that was passed to the EvidenceVerifyCallback.
-            EvidenceVerifyCallback evidenceVerifyCallback = (EvidenceVerifyCallback) callbacks.get(1);
-            Evidence evidence = evidenceVerifyCallback.getEvidence();
-            assertInstanceOf(JWTEvidence.class, evidence);
-            assertEquals("iamatoken", ((JWTEvidence) evidence).getToken());
-
-            // The identity should have been attached to the scope.
-            scopeWrapper.assertIdentityAttachedToScope();
-
-            // The session id should have been changed.
-            scopeWrapper.assertSessionIdChanged();
-        }
-
-        @DisplayName("The session ID should not be changed if disabled.")
-        @Test
-        void givenSessionIdChangeDisabled()throws HttpAuthenticationException {
-            givenSessionIdChangeEnabled(false);
-
-            // Tell the scope to support attachments.
-            scopeWrapper.supportAttachments();
-
-            // Configure JWT.
-            requestWrapper.setHeader("Authorization", "Bearer iamatoken");
-
-            // The first authorization attempt with the identity cache should fail.
-            callbackHandler.actLikeFirstAuthorizationAttemptFails();
-            // Act like the evidence passes verification, and the final principal is authorized.
-            callbackHandler.actLikeEvidenceIsVerified();
-            callbackHandler.actLikeSecondAuthorizationAttemptSucceeds();
-
-            // Trigger the request.
-            evaluateRequest();
-
-            // Verify the request succeeded.
-            requestWrapper.assertRequestSucceeded();
-
-            // Verify four callbacks occurred, one for at attempt to use the empty identity cache, one for evidence verification, one for authorization of a
-            // principal, and one for authentication complete with a success status.
-            List<Callback> callbacks = callbackHandler.getCapturedCallbacks();
-            assertThat(callbacks).hasSize(4);
-            assertThat(callbacks.get(0)).isInstanceOf(CachedIdentityAuthorizeCallback.class);
-            assertThat(callbacks.get(1)).isInstanceOf(EvidenceVerifyCallback.class);
-            assertThat(callbacks.get(2)).isInstanceOf(CachedIdentityAuthorizeCallback.class);
-            assertThat(callbacks.get(3)).isInstanceOf(AuthenticationCompleteCallback.class);
-            assertTrue(((AuthenticationCompleteCallback) callbacks.get(3)).succeeded());
-
-            // Validate the evidence that was passed to the EvidenceVerifyCallback.
-            EvidenceVerifyCallback evidenceVerifyCallback = (EvidenceVerifyCallback) callbacks.get(1);
-            Evidence evidence = evidenceVerifyCallback.getEvidence();
-            assertInstanceOf(JWTEvidence.class, evidence);
-            assertEquals("iamatoken", ((JWTEvidence) evidence).getToken());
-
-            // The identity should have been attached to the scope.
-            scopeWrapper.assertIdentityAttachedToScope();
-
-            // The session id should not have been changed.
-            scopeWrapper.assertSessionIdNotChanged();
-        }
-    }
-
-    /**
-     * Configures whether the mechanism should support identity restoration from the request's session scope.
-     */
-    private void givenIdentityRestorationEnabled(boolean enabled) {
-        mechanismProperties.put(DatawaveHttpAuthenticationMechanism.Config.OPTION_ENABLE_RESTORE_IDENTITY, String.valueOf(enabled));
-    }
-
-    /**
-     * Configures whether the mechanism should support changing the session ID after attaching a cached identity to the session scope.
-     */
-    private void givenSessionIdChangeEnabled(boolean enabled) {
-        mechanismProperties.put(DatawaveHttpAuthenticationMechanism.Config.OPTION_ENABLE_SESSION_ID_CHANGE, String.valueOf(enabled));
-    }
-
-    /**
      * Creates the mechanism and evaluates the mock request.
      */
     protected void evaluateRequest() throws HttpAuthenticationException {
@@ -714,7 +506,7 @@ class DatawaveHttpAuthenticationMechanismTest {
         }
 
         public void assertRequestSucceeded() {
-            verify(request).authenticationComplete(isNull(), any());
+            verify(request).authenticationComplete();
         }
 
         public void assertRequestFailed() {
@@ -758,38 +550,6 @@ class DatawaveHttpAuthenticationMechanismTest {
                 String key = (String) args[0];
                 return attachments.get(key);
             }).when(scope).getAttachment(any());
-        }
-
-        public void setExists(boolean exists) {
-            this.exists = exists;
-        }
-
-        public void doNotSupportAttachments() {
-            when(scope.supportsAttachments()).thenReturn(false);
-        }
-
-        public void supportAttachments() {
-            when(scope.supportsAttachments()).thenReturn(true);
-        }
-
-        public void setCachedIdentity(CachedIdentity identity){
-            attachments.put(DatawaveHttpAuthenticationMechanism.CACHED_IDENTITY_KEY, identity);
-        }
-
-        public void assertNothingAttachedToScope() {
-            verify(scope, never()).setAttachment(any(), any());
-        }
-
-        public void assertIdentityAttachedToScope() {
-            verify(scope, atLeastOnce()).setAttachment(eq(DatawaveHttpAuthenticationMechanism.CACHED_IDENTITY_KEY), isA(CachedIdentity.class));
-        }
-
-        public void assertSessionIdChanged() {
-            verify(scope, atMostOnce()).changeID();
-        }
-
-        public void assertSessionIdNotChanged() {
-            verify(scope, never()).changeID();
         }
     }
 }

@@ -1,6 +1,10 @@
 package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,7 +18,6 @@ import org.apache.curator.framework.recipes.nodes.PersistentNode;
 import org.apache.curator.retry.RetryOneTime;
 import org.apache.curator.test.TestingServer;
 import org.apache.zookeeper.CreateMode;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,10 +63,7 @@ class QueryHeartbeatTest {
         QueryHeartbeat heartbeat = createHeartbeat();
 
         // Create a mock listener.
-        Consumer<String> listener = EasyMock.createMock(Consumer.class);
-        listener.accept("queryId");
-        EasyMock.expectLastCall();
-        EasyMock.replay(listener);
+        Consumer<String> listener = mock(Consumer.class);
         heartbeat.addListener(listener);
 
         // Verify that all the nodes are started.
@@ -74,7 +74,8 @@ class QueryHeartbeatTest {
         // Verify that all the nodes were closed.
         assertNodesStopped(heartbeat);
 
-        EasyMock.verify(listener);
+        verify(listener).accept("queryId");
+        verifyNoMoreInteractions(listener);
     }
 
     /**
@@ -85,8 +86,7 @@ class QueryHeartbeatTest {
         QueryHeartbeat heartbeat = createHeartbeat();
 
         // Create a mock listener. Do not expect any calls to be made to the listener.
-        Consumer<String> listener = EasyMock.createMock(Consumer.class);
-        EasyMock.replay(listener);
+        Consumer<String> listener = mock(Consumer.class);
 
         // Add and remove the listener.
         heartbeat.addListener(listener);
@@ -94,7 +94,7 @@ class QueryHeartbeatTest {
 
         heartbeat.stop();
 
-        EasyMock.verify(listener);
+        verifyNoInteractions(listener);
     }
 
     /**
@@ -105,10 +105,9 @@ class QueryHeartbeatTest {
         QueryHeartbeat heartbeat = createHeartbeat();
 
         // Create several mock listeners. Do not expect any calls to be made to them.
-        Consumer<String> listener1 = EasyMock.createMock(Consumer.class);
-        Consumer<String> listener2 = EasyMock.createMock(Consumer.class);
-        Consumer<String> listener3 = EasyMock.createMock(Consumer.class);
-        EasyMock.replay(listener1, listener2, listener3);
+        Consumer<String> listener1 = mock(Consumer.class);
+        Consumer<String> listener2 = mock(Consumer.class);
+        Consumer<String> listener3 = mock(Consumer.class);
 
         // Add the listeners.
         heartbeat.addListener(listener1);
@@ -120,7 +119,7 @@ class QueryHeartbeatTest {
 
         heartbeat.stop();
 
-        EasyMock.verify(listener1, listener2, listener3);
+        verifyNoInteractions(listener1, listener2, listener3);
     }
 
     /**
@@ -149,8 +148,7 @@ class QueryHeartbeatTest {
         QueryHeartbeat heartbeat = createHeartbeat();
 
         // Create a mock listener. Do not expect any calls to be made to the listener.
-        Consumer<String> listener = EasyMock.createMock(Consumer.class);
-        EasyMock.replay(listener);
+        Consumer<String> listener = mock(Consumer.class);
         heartbeat.addListener(listener);
 
         // Verify that all the nodes are started.
@@ -161,7 +159,7 @@ class QueryHeartbeatTest {
         // Verify that all the nodes were closed.
         assertNodesStopped(heartbeat);
 
-        EasyMock.verify(listener);
+        verifyNoInteractions(listener);
     }
 
     /**

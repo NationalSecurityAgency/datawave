@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>datawave-warehouse-parent</artifactId>
-        <version>8.6.0-SNAPSHOT</version>
+        <version>8.7.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ingest-csv</artifactId>
     <packaging>jar</packaging>
@@ -100,10 +100,6 @@
             <artifactId>lucene-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.easymock</groupId>
-            <artifactId>easymock</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-commons</artifactId>
         </dependency>
@@ -111,6 +107,10 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>jaxrs-api</artifactId>
             <version>3.0.12.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.woodstox</groupId>

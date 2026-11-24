@@ -1,7 +1,7 @@
 package datawave.query.testframework.cardata;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -41,7 +41,7 @@ public class CarDataManager extends AbstractDataManager {
 
     @Override
     public void addTestData(final URI file, final String datatype, final Set<String> indexes) throws IOException {
-        assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
+        assertFalse(this.rawData.containsKey(datatype), "datatype has already been configured(" + datatype + ")");
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             String[] data;
             int count = 0;
@@ -79,7 +79,7 @@ public class CarDataManager extends AbstractDataManager {
 
         CarRawData(final String datatype, final String fields[]) {
             super(datatype, fields, CarField.headers(), CarField.getFieldsMetadata());
-            assertEquals("car ingest data field count is invalid", CarField.headers().size(), fields.length);
+            assertEquals(CarField.headers().size(), fields.length, "car ingest data field count is invalid");
         }
     }
 }

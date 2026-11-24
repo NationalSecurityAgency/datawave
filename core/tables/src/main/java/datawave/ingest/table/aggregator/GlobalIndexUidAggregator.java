@@ -170,14 +170,14 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                 // For best performance, don't attempt to accumulate any individual UIDs (or removals)
                 // if this PB has its ignore flag set or we've seen any other PB with the ignored flag set.
                 if (seenIgnore) {
-                    log.debug("SeenIgnore is true. Skipping collections");
+                    log.trace("SeenIgnore is true. Skipping collections");
                 } else if (v.getIGNORE()) {
                     // After a PB has its ignore flag set, from that point forward UIDs will increment
                     // the count and removal UIDs will decrement it. Apply this logic on the existing
                     // information available (the list of UIDs and removal UIDs) for consistency.
                     seenIgnore = true;
                     count = (long) this.uids.size() - this.uidsToRemove.size();
-                    log.debug("Switch to seenIgnore is true. Skipping collections");
+                    log.trace("Switch to seenIgnore is true. Skipping collections");
                 } else {
                     // Save a starting count in the event that we go over the max UID count while
                     // aggregating the current protocol buffer, v.

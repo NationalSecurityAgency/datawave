@@ -27,13 +27,12 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
-import org.easymock.EasyMockExtension;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.google.gson.Gson;
 
@@ -43,8 +42,8 @@ import datawave.util.keyword.KeywordExtractor;
 import datawave.util.keyword.KeywordResults;
 import datawave.util.keyword.VisibleContent;
 
-@ExtendWith(EasyMockExtension.class)
-public class KeywordExtractingIteratorTest extends EasyMockSupport {
+@ExtendWith(MockitoExtension.class)
+public class KeywordExtractingIteratorTest {
 
     private static final Text row = new Text("20220115_1");
     private static final Text colf = Constants.D_COLUMN_FAMILY;

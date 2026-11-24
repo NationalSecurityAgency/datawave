@@ -2,6 +2,8 @@ package datawave.ingest.mapreduce.handler.shard;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -20,7 +22,6 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
@@ -225,11 +226,9 @@ public class NumShardsTest {
         conf.set(NumShards.ENABLE_MULTIPLE_NUMSHARDS, "true");
         conf.set(NumShards.MULTIPLE_NUMSHARDS_CACHE_PATH, multipleNumShardCache.getParent());
 
-        AccumuloHelper mockedAccumuloHelper = EasyMock.createMock(AccumuloHelper.class);
-        mockedAccumuloHelper.setup(conf);
-        EasyMock.expectLastCall();
-        EasyMock.expect(mockedAccumuloHelper.newClient()).andReturn(client);
-        EasyMock.replay(mockedAccumuloHelper);
+        AccumuloHelper mockedAccumuloHelper = mock(AccumuloHelper.class);
+
+        doReturn(client).when(mockedAccumuloHelper).newClient();
 
         NumShards numShards = new NumShards(conf);
 
@@ -288,11 +287,9 @@ public class NumShardsTest {
         conf.set(NumShards.ENABLE_MULTIPLE_NUMSHARDS, "true");
         conf.set(NumShards.MULTIPLE_NUMSHARDS_CACHE_PATH, multipleNumShardCache.getParent());
 
-        AccumuloHelper mockedAccumuloHelper = EasyMock.createMock(AccumuloHelper.class);
-        mockedAccumuloHelper.setup(conf);
-        EasyMock.expectLastCall();
-        EasyMock.expect(mockedAccumuloHelper.newClient()).andReturn(client);
-        EasyMock.replay(mockedAccumuloHelper);
+        AccumuloHelper mockedAccumuloHelper = mock(AccumuloHelper.class);
+
+        doReturn(client).when(mockedAccumuloHelper).newClient();
 
         NumShards numShards = new NumShards(conf);
 

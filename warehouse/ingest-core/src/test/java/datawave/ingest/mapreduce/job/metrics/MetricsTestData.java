@@ -1,10 +1,12 @@
 package datawave.ingest.mapreduce.job.metrics;
 
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
-import org.easymock.EasyMock;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -61,10 +63,9 @@ public class MetricsTestData {
      * @return mock event
      */
     public static RawRecordContainer createEvent(Type dataType) {
-        RawRecordContainer event = EasyMock.createMock(RawRecordContainer.class);
+        RawRecordContainer event = mock(RawRecordContainer.class);
 
-        EasyMock.expect(event.getDataType()).andReturn(dataType).atLeastOnce();
-        EasyMock.replay(event);
+        doReturn(dataType).when(event).getDataType();
 
         return event;
     }

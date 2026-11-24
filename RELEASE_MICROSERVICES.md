@@ -1,105 +1,137 @@
-# Releasing Microservices
+# Releasing microservices
 
-The release process for DataWave Microservices is handled through a GitHub Actions workflow defined in `.github/workflows/microservice-release.yml`. This process currently handles one up patch releases or releases that contain a suffix (e.g. 1.0.0, 1.0.0-RC1).
+Microservices, APIs, starters, and shared parents have independent versions. Use
+GitHub Actions to publish them:
 
-## Preconditions
+| Workflow | Use it for |
+| --- | --- |
+| [Release Microservices](.github/workflows/microservice-release.yml) | One API, service, starter, or parent; also a POM-only aggregator release. |
+| [Cascade Release Microservices](.github/workflows/microservice-cascade-release.yml) | A starting project and its transitive consumers, released in dependency order. |
 
-Before starting a release, ensure that:
-- You have access to the appropriate repositories and branches.
-- All code changes to be included in the release are merged and tested.
+## Before releasing
 
-## Release Workflow Overview
+Merge the changes to the branch you intend to release and inspect the selected
+project's `pom.xml`. The workflow derives the release version from that POM;
+there is no separate release-version input. These workflows expect numeric
+`major.minor.patch` versions, normally ending in `-SNAPSHOT`.
 
-1. **Access the Repository**: Navigate to the DataWave repository on GitHub.
-   - Open your web browser and go to `https://github.com/NationalSecurityAgency/datawave`.
-   - Ensure you are logged in with the appropriate permissions.
+The repository must have `GHCR_WRITE_USER_NAME` and `GHCR_WRITE_ACCESS_TOKEN`
+configured for repository commits/tags and package publication. The workflows
+configure Java 11, Maven credentials for `github-datawave`, and GHCR login.
+Complete relevant tests before releasing: the release command skips tests and
+several quality checks. Only the cascade workflow runs the compose validation gate.
 
-2. **Trigger the Workflow**:
-   - Click on the "Actions" tab in the navigation bar.
-   - In the list of workflows, find and click on "Release Microservices".
-   - Click on "Run workflow" at the top-right of the workflow page.
+For a POM at `1.0.0-SNAPSHOT`:
 
-3. **Input Parameters**:
-   - **projectToRelease**: Choose the specific microservice or package to release. Options include:
-     - `microservices/starters/audit`
-     - `microservices/services/accumulo/api`
-     - ... (and others as defined in the workflow).
-   - **finalRelease**: Choose `true` if this is the final release, otherwise choose `false`. (A Final release will release the current patch version of the service. For example, if the poms are set to 1.0.0-SNAPSHOT, a final release will release 1.0.0, and set the poms to 1.0.1-SNAPSHOT)
-   - **modifier**: Enter the version modifier, e.g., `RC1`. (This is ignored if finalRelease is true)
+| Inputs | Published version | Next development version |
+| --- | --- | --- |
+| `finalRelease=false`, `modifier=RC1` | `1.0.0-RC1` | `1.0.0-SNAPSHOT` |
+| `finalRelease=true` | `1.0.0` | `1.0.1-SNAPSHOT` |
 
-4. **Run the Workflow**:
-   - After filling in all inputs, click "Run workflow" to start the release process.
+`modifier` is ignored for final releases. A release candidate is a real published
+artifact with a tag; it is not a dry run. Final releases rebuild the project.
 
-5. **Post-Release**:
-   - Check the workflow run logs for any errors.
-   - Verify that the release has been tagged and pushed by viewing the tags and commits in the repository.
+## Release one project
 
-## Additional Notes
+1. Open **Actions → Release Microservices → Run workflow**.
+2. Choose the branch containing the changes and workflow definition.
+3. Set `projectToRelease` to the specific project, for example
+   `microservices/services/audit/service`.
+4. Choose `finalRelease` and, for a candidate, `modifier`.
+5. Leave `pomOnly=false` for an API, service, or starter.
+6. Normally leave `bumpDownstream=false`. When enabled, it updates the selected
+   project's parent and microservice dependency version properties from available
+   releases before releasing it. It does not release downstream projects.
+7. Run the workflow and verify the published Maven artifacts, applicable container
+   images, and release tag.
 
-- The workflow handles both final and non-final releases.
-- Ensure that secrets for container registry credentials (`USER_NAME`, `ACCESS_TOKEN`) are correctly set in the repository's secrets.
-- Review the `.github/workflows/microservice-release.yml` file if custom configurations are needed for specific microservices.
+The standalone workflow commits and pushes on the selected branch, for both
+candidate and final releases. Unlike the cascade, it does not create a temporary
+branch or offer a dry-run input. Select a dedicated branch if you want to keep
+release commits off your main branch.
 
-## Cascade Releases
+Tags use `<projectToRelease>-<releaseVersion>`, for example
+`microservices/services/audit/service-1.0.0`.
 
-For releases that need to roll up through every project that depends on a given
-microservice (for example, releasing `audit-api` and then re-releasing every
-starter and service that consumes `audit-api`), use the **Cascade Release
-Microservices** workflow defined in `.github/workflows/microservice-cascade-release.yml`.
+## Release only an aggregator or parent POM
 
-### What it does
+Set `pomOnly=true` in **Release Microservices** to release the selected POM without
+building, changing, or deploying its child modules. The selected project must
+declare `<packaging>pom</packaging>`; other packaging is rejected.
 
-1. **Plan** – Maven’s reactor (`mvn -pl :<startArtifact> -amd`) is used to
-   enumerate the starting project plus every transitive dependent **in build
-   order**. The dependency graph is computed from the live POMs every run, so
-   it cannot drift. The ordered list is printed as JSON in the job log.
-2. **Release** – For each project in the planned order, the workflow calls
-   `microservice-release.yml` (the existing single-project release workflow)
-   with `bumpDownstream: true`. After each Maven `release:prepare release:perform`,
-   the release workflow runs:
-   ```
-   mvn versions:update-parent versions:update-properties \
-       -DallowSnapshots=false \
-       -Dincludes=gov.nsa.datawave.microservice:<releasedArtifactId>
-   ```
-   from `microservices/`, which rewrites the version reference in every
-   downstream POM that consumes the released artifact (whether via a
-   `${version.datawave.X}` property or a `<parent>` block). The change is
-   committed with the message `auto-update: bump <artifactId> to <version>`
-   and pushed before the next project in the cascade is released.
-3. **Compose validation** – After all releases complete, the workflow calls
-   `.github/workflows/compose-tests.yml` (`allow-snapshots: false`). If the
-   compose stack does not come up cleanly or the ingest/web tests fail, the
-   entire cascade workflow is marked as failed.
+Set `projectToRelease` to the aggregator or parent project, choose the desired
+`finalRelease` and `modifier`, and normally leave `bumpDownstream=false`. To
+publish multiple POMs, run the workflow separately for each project. Run them
+sequentially when using the same branch so their pushed commits do not compete.
 
-### Inputs
+If the selected POM is at `1.0.0-SNAPSHOT`, a final release publishes its `1.0.0` POM,
+creates its path-based `1.0.0` tag, and advances that POM to `1.0.1-SNAPSHOT`.
+The children retain their existing versions and published artifacts.
 
-- **startingProject** – path of the project to start from (same dropdown
-  values as the single-project workflow, restricted to actual microservice
-  modules).
-- **finalRelease** – same semantics as the single-project workflow.
-- **modifier** – same semantics as the single-project workflow (ignored when
-  `finalRelease=true`).
-- **dryRun** – **defaults to `true`**. With `dryRun=true` the workflow only
-  computes and prints the cascade plan; it does **not** release, bump, push,
-  or run compose. Always do a dry-run first to review the order, then re-run
-  with `dryRun=false` to actually perform the cascade.
+Aggregation and inheritance are separate Maven relationships. Check each child's
+`<parent>` declaration to determine which parent POM its consumers need; listing
+a child in an aggregator's `<modules>` does not establish inheritance.
 
-### Recovering from partial failures
+POM-only mode applies Maven's non-recursive flag to the outer command and the
+release plugin's forked builds, as described in the
+[Maven Release Plugin FAQ](https://maven.apache.org/maven-release/maven-release-plugin/faq.html).
+Dependency updates and the already-tagged version-advance step are also scoped
+to the selected POM. Reusable workflow callers can pass `pomOnly: true` as well.
 
-There is no automatic rollback. If a release inside the cascade fails:
+## Release a cascade
 
-1. Investigate the failed project’s logs and resolve the root cause.
-2. Re-trigger **Cascade Release Microservices** with the **failed project** as
-   the new `startingProject`. The plan job will re-enumerate the remaining
-   downstream cone, and the cascade resumes from there. Already-released
-   projects upstream of the failure are not re-released because they are no
-   longer in the dependent set of the failed project.
+1. Open **Actions → Cascade Release Microservices → Run workflow** and select
+   the branch to release.
+2. Choose `startingProject`. Use `microservices/microservice-parent` for its
+   broad downstream cascade, or choose a narrower API/starter/service.
+3. Set `finalRelease` and `modifier`, keeping `dryRun=true` initially.
+4. Inspect the plan, versions, existing-tag skips, and anticipated dependency
+   updates in the logs.
+5. Run again with the same selections and `dryRun=false` to publish.
 
-### Compose validation failures
+The planner follows parent and dependency relationships, ignoring pinned version
+differences. It includes the starting project and its transitive consumers; it
+does not automatically release upstream dependencies. Ensure prerequisites
+outside the plan are already published. You can inspect the project list locally:
 
-If the cascade releases all projects successfully but the final compose gate
-fails, the released artifacts have already been published. Investigate using
-the `compose-tests` job logs, fix the underlying issue with a follow-up
-commit/release, and re-run compose-tests until it passes.
+```bash
+python3 .github/release/cascade-plan.py microservices/microservice-parent
+```
 
+The cascade intentionally excludes aggregators declaring modules. Release those
+separately with POM-only mode if needed.
+The cascade has no `pomOnly` input.
+
+An actual cascade creates `cascade-release/<run_id>` and releases projects
+sequentially there. Before each release it updates that project's parent and
+microservice dependency properties using available non-SNAPSHOT versions. Major
+version updates are disabled. Final cascades exclude qualified versions; candidate
+cascades allow the selected modifier as well as unqualified releases. These
+updates use repository metadata, so review the resulting versions in the logs.
+
+After releases, compose validation runs with snapshots disallowed:
+
+- **Final release:** after validation passes, the temporary branch is merged back
+  into the selected branch. Merge conflicts produce a PR for manual resolution.
+  The temporary branch is retained if validation or merge-back does not complete.
+- **Candidate release:** the temporary branch is deleted during cleanup, including
+  after a failure. Release commits are not merged back.
+
+Published artifacts and tags remain even if later releases, compose validation,
+or merge-back fail. A failed cascade does not roll back publication.
+
+## Existing tags and recovery
+
+Both workflows check for the exact release tag before publishing. If it exists,
+publication is skipped and the selected POM is advanced to the calculated next
+development version if needed. In POM-only mode this does not update children.
+
+A tag alone is not proof that deployment succeeded: preparation can create the
+tag before publication fails. After a failed run, inspect the failed step and
+verify both the tag and package repository before retrying. A normal rerun will
+skip an existing tag rather than repair a missing deployment.
+
+Also inspect the current POM version before retrying. If a final release already
+advanced it to the next snapshot, a new run targets the next patch release,
+not the previous version. For a cascade, inspect its temporary branch (if
+retained), release logs, and any merge-back PR before choosing the recovery branch.

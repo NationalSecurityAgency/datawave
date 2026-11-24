@@ -3,6 +3,10 @@ package datawave.query.tables;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -20,7 +24,6 @@ import java.util.UUID;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -206,11 +209,10 @@ public class ShardQueryLogicQueryValidationTest {
     @Test
     public void testExceptionThrownByLuceneQueryRule() throws Exception {
         // Set up a mock rule that will throw an exception when trying to validate a lucene query.
-        QueryRule mockRule = EasyMock.createMock(QueryRule.class);
-        EasyMock.expect(mockRule.getName()).andReturn("Mock Rule").anyTimes();
-        EasyMock.expect(mockRule.copy()).andReturn(mockRule).anyTimes();
-        EasyMock.expect(mockRule.canValidate(EasyMock.anyObject())).andThrow(new IllegalArgumentException("I failed!"));
-        EasyMock.replay(mockRule);
+        QueryRule mockRule = mock(QueryRule.class);
+        lenient().doReturn("Mock Rule").when(mockRule).getName();
+        lenient().doReturn(mockRule).when(mockRule).copy();
+        doThrow(new IllegalArgumentException("I failed!")).when(mockRule).canValidate(any());
         logic.setValidationRules(List.of(mockRule));
 
         givenQuery("FOO:abc");
@@ -227,11 +229,10 @@ public class ShardQueryLogicQueryValidationTest {
     @Test
     public void testExceptionThrownByJexlQueryRule() throws Exception {
         // Set up a mock rule that will throw an exception when trying to validate a lucene query.
-        QueryRule mockRule = EasyMock.createMock(QueryRule.class);
-        EasyMock.expect(mockRule.getName()).andReturn("Mock Rule").anyTimes();
-        EasyMock.expect(mockRule.copy()).andReturn(mockRule).anyTimes();
-        EasyMock.expect(mockRule.canValidate(EasyMock.anyObject())).andThrow(new IllegalArgumentException("I failed!"));
-        EasyMock.replay(mockRule);
+        QueryRule mockRule = mock(QueryRule.class);
+        lenient().doReturn("Mock Rule").when(mockRule).getName();
+        lenient().doReturn(mockRule).when(mockRule).copy();
+        doThrow(new IllegalArgumentException("I failed!")).when(mockRule).canValidate(any());
         logic.setValidationRules(List.of(mockRule));
 
         givenQuery("FOO == abc");

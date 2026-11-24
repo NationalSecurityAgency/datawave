@@ -77,7 +77,6 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -757,22 +756,14 @@ public class BulkIngestMapFileLoaderTest {
         return null;
     }
 
-    protected FileStatus createMockFileStatus() {
-
-        FileStatus mocked = EasyMock.createMock(FileStatus.class);
-        EasyMock.replay(mocked);
-
-        return mocked;
+    protected FileStatus createFileStatus() {
+        return new FileStatus();
     }
 
-    protected FileStatus createMockFileStatus(Path path) throws Exception {
-
-        FileStatus mocked = EasyMock.createMock(FileStatus.class);
-        EasyMock.expect(mocked.getPath()).andReturn(path);
-
-        EasyMock.replay(mocked);
-
-        return mocked;
+    protected FileStatus createFileStatus(Path path) {
+        FileStatus status = new FileStatus();
+        status.setPath(path);
+        return status;
     }
 
     protected boolean processOutputContains(List<String> output, String message) {
@@ -2048,7 +2039,7 @@ public class BulkIngestMapFileLoaderTest {
             assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, false, false, false, null, false, false);
+                            new FileStatus[] {createFileStatus()}, false, false, false, false, null, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2099,7 +2090,7 @@ public class BulkIngestMapFileLoaderTest {
             assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, false, false, true, null, false, false);
+                            new FileStatus[] {createFileStatus()}, false, false, false, true, null, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2148,7 +2139,7 @@ public class BulkIngestMapFileLoaderTest {
             assertNotNull(uut, "BulkIngestMapFileLoader constructor failed to create an instance.");
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, true, false, true, null, false, false);
+                            new FileStatus[] {createFileStatus()}, false, true, false, true, null, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2201,7 +2192,7 @@ public class BulkIngestMapFileLoaderTest {
             exists.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, true, false, false, exists, false, false);
+                            new FileStatus[] {createFileStatus()}, false, true, false, false, exists, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2248,7 +2239,7 @@ public class BulkIngestMapFileLoaderTest {
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, true, false, false, existsResults, false, false);
+                            new FileStatus[] {createFileStatus()}, false, true, false, false, existsResults, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2298,7 +2289,7 @@ public class BulkIngestMapFileLoaderTest {
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, true, false, false, existsResults, false, false);
+                            new FileStatus[] {createFileStatus()}, false, true, false, false, existsResults, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2346,7 +2337,7 @@ public class BulkIngestMapFileLoaderTest {
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, false, false, false, existsResults, false, false);
+                            new FileStatus[] {createFileStatus()}, false, false, false, false, existsResults, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2395,7 +2386,7 @@ public class BulkIngestMapFileLoaderTest {
             existsResults.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, false, false, false, existsResults, false, false);
+                            new FileStatus[] {createFileStatus()}, false, false, false, false, existsResults, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2444,7 +2435,7 @@ public class BulkIngestMapFileLoaderTest {
             existsResults.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, false, false, false, existsResults, true, false);
+                            new FileStatus[] {createFileStatus()}, false, false, false, false, existsResults, true, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2492,7 +2483,7 @@ public class BulkIngestMapFileLoaderTest {
             existsResults.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, false, false, false, existsResults, false, true);
+                            new FileStatus[] {createFileStatus()}, false, false, false, false, existsResults, false, true);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2535,11 +2526,8 @@ public class BulkIngestMapFileLoaderTest {
         return mockFileSystem;
     }
 
-    private FileStatus createFileStatusMock(Path filePath, long modificationTime) {
-        FileStatus fileStatus = mock(FileStatus.class);
-        when(fileStatus.getPath()).thenReturn(filePath);
-        when(fileStatus.getModificationTime()).thenReturn(modificationTime);
-        return fileStatus;
+    private FileStatus createFileStatus(Path filePath, long modificationTime) {
+        return new FileStatus(0, false, 1, 0, modificationTime, filePath);
     }
 
     private void setupDelayPatternMock(FileSystem mockFileSystem, Path parentPath, String delayPattern, FileStatus[] delayStatuses) throws IOException {
@@ -2563,24 +2551,21 @@ public class BulkIngestMapFileLoaderTest {
         final String DELAY_PATH_PATTERN = "*delay_pattern*";
 
         // Create mocks
-        Path mockParentDir1 = new Path("/parent1");
-        Path mockParentDir2 = new Path("/parent2");
-        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
-        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+        Path parentDir1 = new Path("/parent1");
+        Path parentDir2 = new Path("/parent2");
+        FileStatus status1 = createFileStatus(new Path(parentDir1, "job.complete"), 1000L);
+        FileStatus status2 = createFileStatus(new Path(parentDir2, "job.complete"), 2000L);
 
-        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
-        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
-
-        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
-        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {});
-        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {status1, status2});
+        setupDelayPatternMock(mockFileSystem, parentDir1, DELAY_PATH_PATTERN, new FileStatus[] {});
+        setupDelayPatternMock(mockFileSystem, parentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
 
         // Configure loader and call method
         BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
         Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
 
         // Verify
-        assertJobDirectories(result, mockParentDir1, mockParentDir2);
+        assertJobDirectories(result, parentDir1, parentDir2);
     }
 
     @Test
@@ -2589,24 +2574,21 @@ public class BulkIngestMapFileLoaderTest {
         final String DELAY_PATH_PATTERN = null;
 
         // Create mocks
-        Path mockParentDir1 = new Path("/parent1");
-        Path mockParentDir2 = new Path("/parent2");
-        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
-        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
+        Path parentDir1 = new Path("/parent1");
+        Path parentDir2 = new Path("/parent2");
+        FileStatus status1 = createFileStatus(new Path(parentDir1, "job.complete"), 1000L);
+        FileStatus status2 = createFileStatus(new Path(parentDir2, "job.complete"), 2000L);
 
-        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
-        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
-
-        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
-        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {});
-        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {status1, status2});
+        setupDelayPatternMock(mockFileSystem, parentDir1, DELAY_PATH_PATTERN, new FileStatus[] {});
+        setupDelayPatternMock(mockFileSystem, parentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
 
         // Configure loader and call method
         BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
         Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
 
         // Verify
-        assertJobDirectories(result, mockParentDir1, mockParentDir2);
+        assertJobDirectories(result, parentDir1, parentDir2);
     }
 
     @Test
@@ -2615,27 +2597,22 @@ public class BulkIngestMapFileLoaderTest {
         final String DELAY_PATH_PATTERN = "*delay_pattern*";
 
         // Create mocks
-        Path mockParentDir1 = new Path("/parent1");
-        Path mockParentDir2 = new Path("/parent2");
-        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
-        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
-        FileStatus mockDelayStatus = mock(FileStatus.class);
+        Path parentDir1 = new Path("/parent1");
+        Path parentDir2 = new Path("/parent2");
+        FileStatus status1 = createFileStatus(new Path(parentDir1, "job.complete"), 1000L);
+        FileStatus status2 = createFileStatus(new Path(parentDir2, "job.complete"), 2000L);
+        FileStatus delayStatus = new FileStatus();
 
-        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
-        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
-
-        when(mockDelayStatus.isFile()).thenReturn(true);
-
-        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
-        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
-        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {status1, status2});
+        setupDelayPatternMock(mockFileSystem, parentDir1, DELAY_PATH_PATTERN, new FileStatus[] {delayStatus});
+        setupDelayPatternMock(mockFileSystem, parentDir2, DELAY_PATH_PATTERN, new FileStatus[] {delayStatus});
 
         // Configure loader and call method
         BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
         Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
 
         // Verify
-        assertJobDirectories(result, mockParentDir1, mockParentDir2);
+        assertJobDirectories(result, parentDir1, parentDir2);
     }
 
     @Test
@@ -2644,28 +2621,23 @@ public class BulkIngestMapFileLoaderTest {
         final String DELAY_PATH_PATTERN = "*delay_pattern*";
 
         // Create mocks
-        Path mockParentDir1 = new Path("/parent1");
-        Path mockParentDir2 = new Path("/parent2");
-        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
-        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
-        FileStatus mockDelayStatus = mock(FileStatus.class);
+        Path parentDir1 = new Path("/parent1");
+        Path parentDir2 = new Path("/parent2");
+        FileStatus status1 = createFileStatus(new Path(parentDir1, "job.complete"), 1000L);
+        FileStatus status2 = createFileStatus(new Path(parentDir2, "job.complete"), 2000L);
+        FileStatus delayStatus = new FileStatus();
 
-        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
-        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
-
-        when(mockDelayStatus.isFile()).thenReturn(true);
-
-        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
-        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
-        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {status1, status2});
+        setupDelayPatternMock(mockFileSystem, parentDir1, DELAY_PATH_PATTERN, new FileStatus[] {delayStatus});
+        setupDelayPatternMock(mockFileSystem, parentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
 
         // Configure loader and call method
         BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 999);
         Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
 
         // Verify
-        // mockParentDir2 should be the first in result, as dir1 was delayed.
-        assertJobDirectories(result, mockParentDir2, mockParentDir1);
+        // parentDir2 should be the first in result, as dir1 was delayed.
+        assertJobDirectories(result, parentDir2, parentDir1);
     }
 
     @Test
@@ -2674,20 +2646,15 @@ public class BulkIngestMapFileLoaderTest {
         final String DELAY_PATH_PATTERN = "*delay_pattern*";
 
         // Create mocks
-        Path mockParentDir1 = new Path("/parent1");
-        Path mockParentDir2 = new Path("/parent2");
-        FileStatus mockStatus1 = createFileStatusMock(mock(Path.class), 1000L);
-        FileStatus mockStatus2 = createFileStatusMock(mock(Path.class), 2000L);
-        FileStatus mockDelayStatus = mock(FileStatus.class);
+        Path parentDir1 = new Path("/parent1");
+        Path parentDir2 = new Path("/parent2");
+        FileStatus status1 = createFileStatus(new Path(parentDir1, "job.complete"), 1000L);
+        FileStatus status2 = createFileStatus(new Path(parentDir2, "job.complete"), 2000L);
+        FileStatus delayStatus = new FileStatus();
 
-        when(mockStatus1.getPath().getParent()).thenReturn(mockParentDir1);
-        when(mockStatus2.getPath().getParent()).thenReturn(mockParentDir2);
-
-        when(mockDelayStatus.isFile()).thenReturn(true);
-
-        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {mockStatus1, mockStatus2});
-        setupDelayPatternMock(mockFileSystem, mockParentDir1, DELAY_PATH_PATTERN, new FileStatus[] {mockDelayStatus});
-        setupDelayPatternMock(mockFileSystem, mockParentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
+        FileSystem mockFileSystem = setupMockFileSystem(PATH_PATTERN, new FileStatus[] {status1, status2});
+        setupDelayPatternMock(mockFileSystem, parentDir1, DELAY_PATH_PATTERN, new FileStatus[] {delayStatus});
+        setupDelayPatternMock(mockFileSystem, parentDir2, DELAY_PATH_PATTERN, new FileStatus[] {});
 
         // Configure loader and call method
         BulkIngestMapFileLoader testClass = setupBulkIngestMapFileLoader(DELAY_PATH_PATTERN, 5);
@@ -2695,7 +2662,7 @@ public class BulkIngestMapFileLoaderTest {
         Path[] result = testClass.getJobDirectories(mockFileSystem, PATH_PATTERN);
 
         // Verify
-        assertJobDirectories(result, mockParentDir2);
+        assertJobDirectories(result, parentDir2);
     }
 
     @Test
@@ -2871,7 +2838,7 @@ public class BulkIngestMapFileLoaderTest {
             exists.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus()}, false, true, false, false, exists, false, false);
+                            new FileStatus[] {createFileStatus()}, false, true, false, false, exists, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
@@ -2911,7 +2878,7 @@ public class BulkIngestMapFileLoaderTest {
             exists.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
-                            new FileStatus[] {createMockFileStatus(new Path(url.toString() + "/job.cleaning"))}, true, true, true, false, exists, false, false);
+                            new FileStatus[] {createFileStatus(new Path(url.toString() + "/job.cleaning"))}, true, true, true, false, exists, false, false);
 
             addFileSystemForTesting(BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 

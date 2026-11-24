@@ -26,7 +26,7 @@ import datawave.data.normalizer.Normalizer;
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
-import datawave.query.testframework.AccumuloSetupJUnit5;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.FlattenData;
@@ -41,7 +41,7 @@ import datawave.query.testframework.RawMetaData;
 public class GroupedFlattenQueryTest extends AbstractFunctionalQueryJUnit5 {
 
     @RegisterExtension
-    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
+    public static AccumuloSetupExtension accumuloSetup = AccumuloSetupExtension.create();
 
     private static final Logger log = Logger.getLogger(GroupedFlattenQueryTest.class);
 

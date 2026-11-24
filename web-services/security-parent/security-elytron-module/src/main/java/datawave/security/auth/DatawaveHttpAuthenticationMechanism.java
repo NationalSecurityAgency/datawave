@@ -23,18 +23,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wildfly.security.auth.callback.AnonymousAuthorizationCallback;
 import org.wildfly.security.auth.callback.AuthenticationCompleteCallback;
-import org.wildfly.security.auth.callback.CachedIdentityAuthorizeCallback;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
 import org.wildfly.security.auth.callback.PrincipalAuthorizeCallback;
-import org.wildfly.security.auth.server.SecurityIdentity;
-import org.wildfly.security.cache.CachedIdentity;
-import org.wildfly.security.cache.IdentityCache;
 import org.wildfly.security.evidence.Evidence;
 import org.wildfly.security.http.HttpAuthenticationException;
-import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerRequest;
-import org.wildfly.security.http.Scope;
 import org.wildfly.security.mechanism.AuthenticationMechanismException;
 import org.wildfly.security.x500.X500;
 
@@ -67,11 +61,6 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
      * The length of the string {@link #JWT_TOKEN_PREFIX}.
      */
     private static final int JWT_TOKEN_PREFIX_LEN = JWT_TOKEN_PREFIX.length();
-
-    /**
-     * The key used when attaching a cached authorization result to an HTTP scope.
-     */
-    protected static final String CACHED_IDENTITY_KEY = DatawaveHttpAuthenticationMechanism.class.getName() + ".elytron-identity";
 
     /**
      * The configuration for this mechanism.
@@ -112,20 +101,14 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
      */
     @Override
     public void evaluateRequest(HttpServerRequest request) throws HttpAuthenticationException {
-        // If identity restoration is enabled, and we succeed reauthentication, this is a success.
-        if (config.isIdentityRestorationEnabled() && attemptReauthentication(request)) {
-            log.trace("Reauthentication succeeded");
-            return;
-        }
-
-        // Otherwise, attempt to perform a new authentication.
+        // Attempt to perform authentication.
         if (attemptAuthentication(request)) {
-            log.trace("New authentication succeeded");
+            log.trace("Authentication succeeded");
             return;
         }
 
         // If we've reached this point, authentication has failed.
-        log.trace("Both re-authentication and authentication failed");
+        log.trace("Authentication failed");
 
         try {
             // Free any resources required for the authentication process.
@@ -136,23 +119,6 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
 
         // Mark in the request that authentication failed.
         request.authenticationFailed("Authentication failed");
-    }
-
-    /**
-     * Attempt to reauthenticate the calling user using an identity cached for the session, if any.
-     *
-     * @param request
-     *            the request
-     * @return true if reauthentication succeeded, or false otherwise
-     * @throws HttpAuthenticationException
-     *             if an error occurs
-     */
-    private boolean attemptReauthentication(HttpServerRequest request) throws HttpAuthenticationException {
-        IdentityCache identityCache = createIdentityCache(request);
-
-        // Authorize this attempt if a cached identity is present in the session, and it has permissions.
-        CachedIdentityAuthorizeCallback authorizeCallback = new CachedIdentityAuthorizeCallback(identityCache);
-        return attemptAuthorization(request, authorizeCallback, authorizeCallback::isAuthorized, identityCache::remove);
     }
 
     /**
@@ -177,7 +143,7 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
         if (evidence == null) {
             log.trace("Failed to obtain any evidence for authentication, proceeding with anonymous login");
             AnonymousAuthorizationCallback authorizeCallback = new AnonymousAuthorizationCallback("anonymous");
-            return attemptAuthorization(request, authorizeCallback, authorizeCallback::isAuthorized, null);
+            return attemptAuthorization(request, authorizeCallback, authorizeCallback::isAuthorized);
         }
 
         if (log.isTraceEnabled()) {
@@ -195,16 +161,9 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
 
         // If the evidence passed verification, attempt to authorize the decoded principal. Authorization will only succeed if the user has valid roles.
         if (evidenceVerifyCallback.isVerified()) {
-            // If we should restore identities, cache the identity for the request session if authorization passes.
-            if (config.isIdentityRestorationEnabled()) {
-                IdentityCache identityCache = createIdentityCache(request);
-                CachedIdentityAuthorizeCallback authorizeCallback = new CachedIdentityAuthorizeCallback(evidence.getDecodedPrincipal(), identityCache);
-                return attemptAuthorization(request, authorizeCallback, authorizeCallback::isAuthorized, identityCache::remove);
-            } else {
-                // Otherwise, attempt to authorize the identity and do not cache it.
-                PrincipalAuthorizeCallback authorizedCallback = new PrincipalAuthorizeCallback(evidence.getDecodedPrincipal());
-                return attemptAuthorization(request, authorizedCallback, authorizedCallback::isAuthorized, null);
-            }
+            // Attempt to authorize the identity
+            PrincipalAuthorizeCallback authorizedCallback = new PrincipalAuthorizeCallback(evidence.getDecodedPrincipal());
+            return attemptAuthorization(request, authorizedCallback, authorizedCallback::isAuthorized);
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("Evidence verification failed with decoded principal {}", evidence.getDecodedPrincipal());
@@ -223,14 +182,11 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
      *            the callback
      * @param authorizeResult
      *            the supplier that will return whether authentication succeeded via the callback
-     * @param logoutHandler
-     *            an operation that should execute when the session logs out. This may be null, or an operation to remove an identity from the identity cache
-     *            after the session is finished.
      * @return true if authorization succeeded, or false otherwise
      * @throws HttpAuthenticationException
      *             if an error occurs
      */
-    private boolean attemptAuthorization(HttpServerRequest request, Callback authorizeCallback, Supplier<Boolean> authorizeResult, Runnable logoutHandler)
+    private boolean attemptAuthorization(HttpServerRequest request, Callback authorizeCallback, Supplier<Boolean> authorizeResult)
                     throws HttpAuthenticationException {
         // Attempt to authorize the request.
         try {
@@ -240,7 +196,7 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
         }
         // If authorization succeeded, mark the request as successfully authorized.
         if (authorizeResult.get()) {
-            succeed(request, logoutHandler);
+            succeed(request);
             return true;
         } else {
             return false;
@@ -252,18 +208,15 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
      *
      * @param request
      *            the request to mark as succeeded.
-     * @param logoutHandler
-     *            an operation that should execute when the session logs out. This may be null, or an operation to remove an identity from the identity cache
-     *            after the session is finished.
      */
-    private void succeed(HttpServerRequest request, Runnable logoutHandler) throws HttpAuthenticationException {
+    private void succeed(HttpServerRequest request) throws HttpAuthenticationException {
         try {
             handleCallback(AuthenticationCompleteCallback.SUCCEEDED);
         } catch (AuthenticationMechanismException e) {
             throw e.toHttpAuthenticationException();
         }
 
-        request.authenticationComplete(null, logoutHandler);
+        request.authenticationComplete();
     }
 
     /**
@@ -447,102 +400,9 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
     }
 
     /**
-     * Create an identity cache that can be associated with the SESSION scope of the request.
-     *
-     * @param request
-     *            the request
-     * @return the identity cache
-     */
-    private IdentityCache createIdentityCache(HttpServerRequest request) {
-        return new IdentityCache() {
-
-            /**
-             * Attempt to attach the given identity to the request's SESSION scope.
-             *
-             * @param identity
-             *            the identity to cache (not {@code null})
-             */
-            @Override
-            public void put(SecurityIdentity identity) {
-                // Attempt to get an attachable SESSION scope for the request, creating it if need be. If we cannot obtain the scope, return early.
-                HttpScope scope = getAttachableSessionScope(request, true);
-                if (scope == null || !scope.exists()) {
-                    return;
-                }
-
-                // If we are associating an identity with the session for the first time, change the ID of the session unless otherwise disabled.
-                if (config.isSessionIdChangeEnabled() && scope.getAttachment(CACHED_IDENTITY_KEY) == null) {
-                    scope.changeID();
-                }
-
-                // Wrap the identity in a CachedIdentity and attach it to the scope.
-                CachedIdentity cachedIdentity = new CachedIdentity(getMechanismName(), false, identity);
-                scope.setAttachment(CACHED_IDENTITY_KEY, cachedIdentity);
-            }
-
-            /**
-             * Return the cached identity attached to the SESSION scope of the request.
-             *
-             * @return the cached identity, or null if no identity is cached
-             */
-            @Override
-            public CachedIdentity get() {
-                // If we cannot obtain a scope that could have an attached identity, return early.
-                HttpScope scope = getAttachableSessionScope(request, false);
-                if (scope == null || !scope.exists()) {
-                    return null;
-                }
-
-                return (CachedIdentity) scope.getAttachment(CACHED_IDENTITY_KEY);
-            }
-
-            /**
-             * Delete the cached identity (if any) attached to the SESSION scope of the request.
-             *
-             * @return the identity that was removed, possibly null
-             */
-            @Override
-            public CachedIdentity remove() {
-                // If we cannot obtain a scope that could have an attached identity, return early.
-                HttpScope scope = getAttachableSessionScope(request, false);
-                if (scope == null || !scope.exists()) {
-                    return null;
-                }
-
-                CachedIdentity identity = (CachedIdentity) scope.getAttachment(CACHED_IDENTITY_KEY);
-                scope.setAttachment(CACHED_IDENTITY_KEY, null);
-                return identity;
-            }
-        };
-    }
-
-    /**
-     * Return the SESSION scope for the request if it exists and supports attachments.
-     *
-     * @param request
-     *            the request
-     * @param createSession
-     *            whether to create the session if it does not exist
-     * @return the scope, or null if no attachable SESSION scope could be obtained
-     */
-    private HttpScope getAttachableSessionScope(HttpServerRequest request, boolean createSession) {
-        HttpScope scope = request.getScope(Scope.SESSION);
-
-        // If no scope could be obtained, or it doesn't support attachments, return null.
-        if (scope == null || !scope.supportsAttachments()) {
-            return null;
-        }
-
-        // Create the scope if indicated.
-        if (!scope.exists() && createSession) {
-            scope.create();
-        }
-
-        return scope;
-    }
-
-    /**
-     * Configuration class that will handle parsing configuration options for a {@link DatawaveHttpAuthenticationMechanism} instance.
+     * Configuration class that will handle parsing configuration options for a {@link DatawaveHttpAuthenticationMechanism} instance. This class no longer
+     * caches or restores identities based on the HTTP session. Principal caching is still handled by the DatawaveSecurityRealm via the
+     * DatawaveRealmIdentityCache.
      */
     public static class Config {
 
@@ -556,20 +416,8 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
          */
         public static final String OPTION_TRUSTED_ISSUER_DN_HEADER = "trustedIssuerDnHeader";
 
-        /**
-         * Whether to enable the ability to restore identities for the HTTP session.
-         */
-        public static final String OPTION_ENABLE_RESTORE_IDENTITY = "enableRestoreIdentity";
-
-        /**
-         * Whether to enable the ability to change the session ID after an identity is first established.
-         */
-        public static final String OPTION_ENABLE_SESSION_ID_CHANGE = "enableSessionIdChange";
-
         private final String trustedSubjectDnHeader;
         private final String trustedIssuerDnHeader;
-        private final boolean identityRestorationEnabled;
-        private final boolean sessionIdChangeEnabled;
 
         public static Config fromMap(Map<String,?> properties) {
             String trustedSubjectDnHeader = getValue((String) properties.get(OPTION_TRUSTED_SUBJECT_DN_HEADER), TRUSTED_SUBJECT_DN_HEADER_SYSTEM_PROPERTY,
@@ -577,10 +425,7 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
             String trustedIssuerDnHeader = getValue((String) properties.get(OPTION_TRUSTED_ISSUER_DN_HEADER), TRUSTED_ISSUER_DN_HEADER_SYSTEM_PROPERTY,
                             DEFAULT_TRUSTED_ISSUER_DN_HEADER);
 
-            boolean identityRestorationEnabled = ConfigUtils.getBoolean((String) properties.get(OPTION_ENABLE_RESTORE_IDENTITY), true);
-            boolean sessionIdChangeEnabled = ConfigUtils.getBoolean((String) properties.get(OPTION_ENABLE_SESSION_ID_CHANGE), true);
-
-            return new Config(trustedSubjectDnHeader, trustedIssuerDnHeader, identityRestorationEnabled, sessionIdChangeEnabled);
+            return new Config(trustedSubjectDnHeader, trustedIssuerDnHeader);
         }
 
         private static String getValue(String mapValue, String systemProperty, String defaultValue) {
@@ -591,11 +436,9 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
             return value;
         }
 
-        public Config(String trustedSubjectDnHeader, String trustedIssuerDnHeader, boolean identityRestorationEnabled, boolean sessionIdChangeEnabled) {
+        public Config(String trustedSubjectDnHeader, String trustedIssuerDnHeader) {
             this.trustedSubjectDnHeader = trustedSubjectDnHeader;
             this.trustedIssuerDnHeader = trustedIssuerDnHeader;
-            this.identityRestorationEnabled = identityRestorationEnabled;
-            this.sessionIdChangeEnabled = sessionIdChangeEnabled;
         }
 
         public String getTrustedSubjectDnHeader() {
@@ -606,19 +449,10 @@ public class DatawaveHttpAuthenticationMechanism implements HttpServerAuthentica
             return trustedIssuerDnHeader;
         }
 
-        public boolean isIdentityRestorationEnabled() {
-            return identityRestorationEnabled;
-        }
-
-        public boolean isSessionIdChangeEnabled() {
-            return sessionIdChangeEnabled;
-        }
-
         @Override
         public String toString() {
             return new StringJoiner(", ", Config.class.getSimpleName() + "[", "]").add("trustedSubjectDnHeader='" + trustedSubjectDnHeader + "'")
-                            .add("trustedIssuerDnHeader='" + trustedIssuerDnHeader + "'").add("identityRestorationEnabled=" + identityRestorationEnabled)
-                            .add("sessionIdChangeEnabled=" + sessionIdChangeEnabled).toString();
+                            .add("trustedIssuerDnHeader='" + trustedIssuerDnHeader + "'").toString();
         }
     }
 }

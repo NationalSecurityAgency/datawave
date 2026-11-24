@@ -42,7 +42,7 @@ import datawave.query.tables.ssdeep.testframework.SSDeepFields;
 import datawave.query.tables.ssdeep.testframework.SSDeepQueryTestTableHelper;
 import datawave.query.tables.ssdeep.util.SSDeepTestUtil;
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
-import datawave.query.testframework.AccumuloSetupJUnit5;
+import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
@@ -63,7 +63,7 @@ import datawave.webservice.result.EventQueryResponseBase;
 public class SSDeepIngestQueryTest extends AbstractFunctionalQueryJUnit5 {
 
     @RegisterExtension
-    public static AccumuloSetupJUnit5 accumuloSetup = new AccumuloSetupJUnit5();
+    public static AccumuloSetupExtension accumuloSetup = AccumuloSetupExtension.create();
 
     private static final Logger log = Logger.getLogger(SSDeepIngestQueryTest.class);
 

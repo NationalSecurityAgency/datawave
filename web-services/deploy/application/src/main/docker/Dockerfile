@@ -23,13 +23,14 @@ ENV WILDFLY_VERSION 26.1.3.Final \
     JBOSS_HOME /opt/jboss/wildfly \
     LAUNCH_JOBS_IN_BACKGROUND true
 
-COPY --from=wildfly /opt/jboss/wildfly /opt/jboss/wildfly
+COPY --from=wildfly --chown=datawave:hadoop /opt/jboss/wildfly /opt/jboss/wildfly
 EXPOSE 8080
 
 CMD ["/opt/jboss/wildfly/bin/standalone.sh","-b","0.0.0.0"]
 
-RUN chown -R datawave:hadoop /opt/jboss && \
-    chmod -R ug+rX,o-rx /opt/jboss
+RUN cp --preserve=ownership /opt/jboss/.bash* /opt/jboss/wildfly && \
+    chmod -R u+rwX,g+rX,o-rx /opt/jboss && \
+    chmod u+x /opt/jboss/wildfly/bin/*
 
 LABEL name="Datawave web service image"
 
@@ -39,16 +40,16 @@ ENV WILDFLY_HOME=/opt/jboss/wildfly \
 
 WORKDIR $WILDFLY_HOME
 
-COPY overlay $WILDFLY_HOME/
-COPY mysql $WILDFLY_HOME/mysql
-COPY *.cli $WILDFLY_HOME/tools/
-COPY ${project.build.finalName}-${build.env}.ear $WILDFLY_HOME/standalone/deployments
-COPY docker-entrypoint.sh /
+COPY --chown=datawave:hadoop mysql $WILDFLY_HOME/mysql
+COPY --chown=datawave:hadoop docker-entrypoint.sh /
+RUN chmod u+x /docker-entrypoint.sh
 
-RUN cp /opt/jboss/.bash* $WILDFLY_HOME && \
-    chown -R datawave:hadoop /docker-entrypoint.sh /opt/jboss && \
-    chmod -R u+rwX /opt/jboss && \
-    chmod u+x /docker-entrypoint.sh  $WILDFLY_HOME/bin/*  $WILDFLY_HOME/tools/*.sh  $WILDFLY_HOME/tools/*.py
+# Keep dependency modules cached when application modules or configuration change.
+COPY --chown=datawave:hadoop overlay-dependencies $WILDFLY_HOME/
+COPY --chown=datawave:hadoop *.cli $WILDFLY_HOME/tools/
+COPY --chown=datawave:hadoop overlay $WILDFLY_HOME/
+
+RUN chmod u+x $WILDFLY_HOME/tools/*.sh $WILDFLY_HOME/tools/*.py
 
 USER datawave
 
@@ -57,14 +58,15 @@ USER datawave
 # eventually exhausts the heap. The standalone install does the same thing in setup-wildfly.sh.
 RUN $WILDFLY_HOME/bin/add-user.sh -a -u '${hornetq.system.username}' -p '${hornetq.system.password}' -g admin,InternalUser
 
-RUN touch $WILDFLY_HOME/standalone/deployments/${project.build.finalName}-${build.env}.ear.skipdeploy && \
-    $WILDFLY_HOME/bin/jboss-cli.sh --file=$WILDFLY_HOME/tools/add-datawave-configuration.cli && \
+RUN $WILDFLY_HOME/bin/jboss-cli.sh --file=$WILDFLY_HOME/tools/add-datawave-configuration.cli && \
     rm -rf $WILDFLY_HOME/standalone/configuration/standalone_xml_history && \
     rm -rf $WILDFLY_HOME/standalone/log && \
-    rm -f $WILDFLY_HOME/tools/*.cli && \
-    rm $WILDFLY_HOME/standalone/deployments/${project.build.finalName}-${build.env}.ear.skipdeploy
+    rm -f $WILDFLY_HOME/tools/*.cli
 
 EXPOSE 8080 8443 9990
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-c", "standalone-full.xml"]
+
+# Application-only changes should reuse the configured WildFly image.
+COPY --chown=datawave:hadoop ${project.build.finalName}-${build.env}.ear $WILDFLY_HOME/standalone/deployments/
