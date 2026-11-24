@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.data.Range;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -137,6 +138,27 @@ public class GeoWaveUtilsTest {
         List<ByteArrayRange> splitByteArrayRanges = GeoWaveUtils.splitLargeRanges(byteArrayRanges, geom, .75, 8);
 
         assertEquals(2, splitByteArrayRanges.size());
+    }
+
+    @Test
+    public void splitLargeRangesDoesNotCreateInvertedBoundsTest() throws Exception {
+        Geometry world = new WKTReader().read("POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))");
+        ByteArrayRange original = GeoWaveUtils.createByteArrayRange("0101", "0103");
+
+        // The area target requests four splits for positions [1, 3]. Before the fix,
+        // offset = (3 - 1) / 4 = 0, so the first split was [0101, 0100].
+        // Constructing an Accumulo Range from those inverted bounds throws IllegalArgumentException.
+        List<ByteArrayRange> splits = GeoWaveUtils.splitLargeRanges(Collections.singletonList(original), world, 0.25, 8);
+        List<Range> results = new ArrayList<>();
+        for (ByteArrayRange split : splits) {
+            String lower = new ByteArray(split.getStart()).getHexString().replace(" ", "");
+            String upper = new ByteArray(split.getEnd()).getHexString().replace(" ", "");
+            results.add(new Range(lower, true, upper, true));
+        }
+
+        // The fix caps the split count at three positions and uses offset = (3 - 1 + 1) / 3 = 1.
+        List<Range> expected = List.of(new Range("0101", true, "0101", true), new Range("0102", true, "0102", true), new Range("0103", true, "0103", true));
+        assertEquals(expected, results);
     }
 
     @ParameterizedTest
