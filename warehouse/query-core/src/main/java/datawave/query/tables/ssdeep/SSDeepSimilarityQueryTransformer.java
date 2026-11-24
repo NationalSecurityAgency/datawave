@@ -7,7 +7,6 @@ import org.apache.accumulo.core.security.Authorizations;
 
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.webservice.query.result.event.EventBase;
@@ -25,9 +24,8 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
     protected final ResponseObjectFactory responseObjectFactory;
 
-    public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        super(markingFunctions);
+    public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, ResponseObjectFactory responseObjectFactory) {
+        super();
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
         this.responseObjectFactory = responseObjectFactory;
     }

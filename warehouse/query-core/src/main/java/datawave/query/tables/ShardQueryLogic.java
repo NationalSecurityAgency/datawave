@@ -64,7 +64,6 @@ import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.next.scanner.DocumentScannerConfig;
@@ -720,7 +719,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             return this.transformerInstance;
         }
 
-        MarkingFunctions<?> markingFunctions = this.getMarkingFunctions();
         ResponseObjectFactory responseObjectFactory = this.getResponseObjectFactory();
 
         boolean reducedInSettings = false;
@@ -729,7 +727,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             reducedInSettings = Boolean.parseBoolean(reducedResponseStr);
         }
         boolean reduced = (this.isReducedResponse() || reducedInSettings);
-        DocumentTransformer transformer = createDocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced);
+        DocumentTransformer transformer = createDocumentTransformer(this, settings, responseObjectFactory, reduced);
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
         transformer.setContentFieldNames(getConfig().getContentFieldNames());
         transformer.setLogTimingDetails(this.getLogTimingDetails());
@@ -748,9 +746,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return this.transformerInstance;
     }
 
-    protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory, Boolean reducedResponse) {
-        return new DocumentTransformer(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
+    protected DocumentTransformer createDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory,
+                    Boolean reducedResponse) {
+        return new DocumentTransformer(logic, settings, responseObjectFactory, reducedResponse);
     }
 
     public boolean isIntermediateEmptyPagesEnabled() {
@@ -866,8 +864,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 if (alreadyExists != null) {
                     ((GroupingTransform) alreadyExists).updateConfig(groupFields);
                 } else {
-                    ((DocumentTransformer) this.transformerInstance)
-                                    .addTransform(new GroupingTransform(groupFields, this.markingFunctions, this.getQueryExecutionForPageTimeout()));
+                    ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(groupFields, this.getQueryExecutionForPageTimeout()));
                 }
             }
 

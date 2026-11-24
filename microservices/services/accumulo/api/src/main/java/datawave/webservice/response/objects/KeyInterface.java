@@ -1,11 +1,11 @@
 package datawave.webservice.response.objects;
 
-import datawave.webservice.query.result.event.HasMarkings;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 
 /**
  *
  */
-public interface KeyInterface extends HasMarkings {
+public interface KeyInterface extends HasColumnVisibility {
 
     String getRow();
 

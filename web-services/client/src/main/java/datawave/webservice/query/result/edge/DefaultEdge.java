@@ -16,7 +16,6 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import datawave.marking.Markings;
 import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -29,8 +28,6 @@ public class DefaultEdge implements EdgeBase, Serializable, Message<DefaultEdge>
     private static final String COLUMN_VISIBILITY = "columnVisibility";
 
     private static final long serialVersionUID = -1621626861385080614L;
-
-    protected Markings<?> markings;
 
     // The visibility of this edge
     @XmlElement(name = "ColumnVisibility", required = true, nillable = false)
@@ -205,16 +202,6 @@ public class DefaultEdge implements EdgeBase, Serializable, Message<DefaultEdge>
     @Override
     public void setActivityDate(String activityDate) {
         this.activityDate = activityDate;
-    }
-
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-    }
-
-    @Override
-    public Markings<?> getMarkings() {
-        return this.markings;
     }
 
     @Override

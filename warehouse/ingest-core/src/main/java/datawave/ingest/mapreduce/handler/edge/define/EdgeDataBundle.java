@@ -18,9 +18,8 @@ import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.edge.define.VertexValue.ValueType;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.util.time.DateHelper;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  * Combines an EdgeDefinition with values obtained from Event data.
@@ -33,7 +32,6 @@ public class EdgeDataBundle {
     // Input/Setup variables
     // final so you're not tempted to change them
     private final RawRecordContainer event;
-    private final MarkingFunctions<?> markingFunctions;
     private VertexValue source;
     private VertexValue sink;
     private EdgeDefinition edgeDefinition;
@@ -55,7 +53,7 @@ public class EdgeDataBundle {
 
     private long eventDate;
     private IngestHelperInterface helper;
-    private Markings<?> markings;
+    private ColumnVisibility visibility;
     private ColumnVisibility maskedVisibility;
     private boolean forceMaskedVisibility; // if this is a masked event, but the
     // the fields defined aren't masked, use the unmasked visibility
@@ -69,7 +67,6 @@ public class EdgeDataBundle {
     private boolean validActivityDate;
 
     public EdgeDataBundle(RawRecordContainer event, String typeName, String id, IngestHelperInterface helper) {
-        this.markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
         this.event = event;
         this.eventDate = event.getDate();
         this.edgeType = typeName;
@@ -94,11 +91,8 @@ public class EdgeDataBundle {
         // even though event, etc. references are saved above, passing in the event
         // prevents future bug
         this.initFieldMasking(helper, event);
-        try {
-            this.markings = markingFunctions.combine(getSource().getMarkings(), getSink().getMarkings());
-        } catch (MarkingFunctions.Exception e) {
-            throw new RuntimeException("Could not combine markings", e);
-        }
+        // null means neither vertex has a field specific visibility, so the event visibility applies
+        this.visibility = VisibilityFunctions.getInstance().combine(getSource().getVisibility(), getSink().getVisibility());
     }
 
     private int getHour(long time) {
@@ -361,12 +355,15 @@ public class EdgeDataBundle {
         this.sink = sink;
     }
 
-    public Markings<?> getMarkings() {
-        return this.markings;
+    /**
+     * @return the combined field specific visibility of the source and sink, or null if the event visibility applies
+     */
+    public ColumnVisibility getVisibility() {
+        return this.visibility;
     }
 
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
+    public void setVisibility(ColumnVisibility visibility) {
+        this.visibility = visibility;
     }
 
     public RawRecordContainer getEvent() {
@@ -490,7 +487,7 @@ public class EdgeDataBundle {
         return "EdgeValue [source=" + source + ", sink=" + sink + ", edgeDefinition=" + edgeDefinition + ", edgeDirection=" + edgeDirection
                         + ", requiresMasking=" + requiresMasking + ", isDeleting=" + isDeleting + ", edgeType=" + edgeType + ", enrichedValue=" + enrichedValue
                         + ", yyyyMMdd=" + getYyyyMMdd(EdgeKey.DATE_TYPE.EVENT_ONLY) + ", hour=" + getHour(eventDate) + ", eventDate=" + eventDate
-                        + ", validActivityDate=" + validActivityDate + ", activityDate=" + activityDate + ", helper=" + helper + ", markings=" + markings
+                        + ", validActivityDate=" + validActivityDate + ", activityDate=" + activityDate + ", helper=" + helper + ", visibility=" + visibility
                         + ", maskedVisibility=" + maskedVisibility + ", forceMaskedVisibility=" + forceMaskedVisibility + ", durationValue=" + durationValue
                         + ", loadDate=" + loadDate + "]";
     }

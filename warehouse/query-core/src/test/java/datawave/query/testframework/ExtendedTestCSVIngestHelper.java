@@ -12,9 +12,9 @@ public class ExtendedTestCSVIngestHelper extends ExtendedCSVIngestHelper {
     public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
         Multimap<String,NormalizedContentInterface> normalizedFields = super.getEventFields(event);
 
-        if (null != event.getSecurityMarkings() && !event.getSecurityMarkings().isEmpty()) {
+        if (null != event.getVisibility() && event.getVisibility().getExpression().length > 0) {
             for (NormalizedContentInterface nci : normalizedFields.values()) {
-                nci.setMarkings(event.getSecurityMarkings());
+                nci.setVisibility(event.getVisibility());
             }
         }
 

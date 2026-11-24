@@ -118,6 +118,6 @@ jobs:
       run: |
         export JAVA_HOME="$DATAWAVE_JAVA"
         cd "$GITHUB_WORKSPACE/datawave"
-        mvn clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Pdocker -Ddocker-release -DskipTests -Dversion.accumulo=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
+        mvn clean deploy -Pkubernetes -Dtar -Ddeploy -Ddist -Dservice-accumulo -Dservice-dictionary -Dservice-query -Dservice-query-metric -DonlyServiceApis -Pdocker -Ddocker-release -DskipTests -Dversion.accumulo=${{ steps.get-accumulo-version.outputs.accumuloVersion }}
 
  

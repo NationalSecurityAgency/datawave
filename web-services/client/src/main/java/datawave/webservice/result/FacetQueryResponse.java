@@ -15,7 +15,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
-import datawave.marking.Markings;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.DefaultFacets;
 import datawave.webservice.query.result.event.FacetsBase;
@@ -44,16 +43,6 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
 
     public FacetQueryResponse(List<DefaultFacets> facets) {
         this.facets = new ArrayList<DefaultFacets>(facets);
-    }
-
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-    }
-
-    @Override
-    public Markings<?> getMarkings() {
-        return markings;
     }
 
     public void addFacet(FacetsBase facetInterface) {

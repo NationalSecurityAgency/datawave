@@ -22,11 +22,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.Connection;
 import datawave.microservice.dictionary.config.ResponseObjectFactory;
 import datawave.security.util.ScannerHelper;
 import datawave.table.constants.MetadataColumnFamilyConstants;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.dictionary.data.DefaultDataDictionary;
 import datawave.webservice.dictionary.data.DefaultDescription;
 import datawave.webservice.dictionary.data.DefaultDictionaryField;
@@ -39,16 +39,14 @@ public class DefaultMetadataFieldScanner {
     private static final String TIMESTAMP_FORMAT = "yyyyMMddHHmmss";
     private static final Value EMPTY_VALUE = new Value();
 
-    private final MarkingFunctions<?> markingFunctions;
     private final ResponseObjectFactory<DefaultDescription,?,DefaultMetadataField,?,?> responseObjectFactory;
     private final Map<String,String> normalizationMap;
     private final Connection connectionConfig;
     private final int numThreads;
 
-    public DefaultMetadataFieldScanner(MarkingFunctions<?> markingFunctions,
+    public DefaultMetadataFieldScanner(
                     ResponseObjectFactory<DefaultDescription,DefaultDataDictionary,DefaultMetadataField,DefaultDictionaryField,DefaultFields> responseObjectFactory,
                     Map<String,String> normalizationMap, Connection connectionConfig, int numThreads) {
-        this.markingFunctions = markingFunctions;
         this.responseObjectFactory = responseObjectFactory;
         this.normalizationMap = normalizationMap;
         this.connectionConfig = connectionConfig;
@@ -117,22 +115,18 @@ public class DefaultMetadataFieldScanner {
         private Collection<DefaultMetadataField> transform() {
             Map<Key,Value> rowEntries = new HashMap<>();
             Text row = null;
-            try {
-                while (iterator.hasNext()) {
-                    row = processEntry(row, iterator.next(), rowEntries);
-                }
-                if (!rowEntries.isEmpty()) {
-                    transformEntry(rowEntries);
-                }
-            } catch (MarkingFunctions.Exception e) {
-                throw new IllegalStateException("Unable to decode visibility", e);
+            while (iterator.hasNext()) {
+                row = processEntry(row, iterator.next(), rowEntries);
+            }
+            if (!rowEntries.isEmpty()) {
+                transformEntry(rowEntries);
             }
             // @formatter::off
             return fields.values().stream().map(Map::values).flatMap(Collection::stream).collect(Collectors.toCollection(LinkedList::new));
             // @formatter::on
         }
 
-        private Text processEntry(Text row, Map.Entry<Key,Value> entry, Map<Key,Value> rowEntries) throws MarkingFunctions.Exception {
+        private Text processEntry(Text row, Map.Entry<Key,Value> entry, Map<Key,Value> rowEntries) {
             // Handles a batch scanner bug where an entry with a null key and value may be in the iterator.
             if (entry.getKey() == null && entry.getValue() == null) {
                 return row;
@@ -162,7 +156,7 @@ public class DefaultMetadataFieldScanner {
             }
         }
 
-        private void transformEntry(Map<Key,Value> currEntry) throws MarkingFunctions.Exception {
+        private void transformEntry(Map<Key,Value> currEntry) {
             for (Map.Entry<Key,Value> entry : currEntry.entrySet()) {
                 setCurrentVars(entry);
 
@@ -272,10 +266,10 @@ public class DefaultMetadataFieldScanner {
         }
 
         // Extract the description from the current value and add it to the current {@link DefaultMetadataField}.
-        private void setDescriptions() throws MarkingFunctions.Exception {
+        private void setDescriptions() {
             DefaultDescription description = responseObjectFactory.getDescription();
             description.setDescription(currValue.toString());
-            description.setMarkings(markingFunctions.translateFromColumnVisibility(currKey.getColumnVisibilityParsed()));
+            description.setColumnVisibility(AccessExpressionUtil.normalize(currKey.getColumnVisibility().toString()).getExpression());
             currField.getDescriptions().add(description);
         }
 

@@ -1,7 +1,5 @@
 package datawave.marking;
 
-import static datawave.marking.AccessExpressionMarkings.ACCESS;
-
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +12,8 @@ import javax.xml.bind.annotation.XmlAttribute;
 import org.apache.accumulo.access.AccessExpression;
 
 import com.google.common.base.Preconditions;
+
+import datawave.visibility.AccessExpressionUtil;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
@@ -47,15 +47,7 @@ public class ColumnVisibilitySecurityMarking implements SecurityMarking {
 
     @Override
     public AccessExpression toAccessExpression() {
-        if (columnVisibility == null || columnVisibility.isEmpty()) {
-            return ACCESS.newExpression("");
-        }
-        return ACCESS.newExpression(columnVisibility);
-    }
-
-    @Override
-    public Markings<?> toMarkings() {
-        return AccessExpressionMarkings.builder().accessExpression(toAccessExpression()).build();
+        return AccessExpressionUtil.toAccessExpression(columnVisibility);
     }
 
     @Override

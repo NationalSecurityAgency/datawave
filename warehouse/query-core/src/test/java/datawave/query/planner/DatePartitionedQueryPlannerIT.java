@@ -68,7 +68,6 @@ import datawave.util.time.DateHelper;
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",
         "classpath:beanRefContext.xml",
-        "classpath:MarkingFunctionsContext.xml",
         "classpath:MetadataHelperContext.xml",
         "classpath:CacheContext.xml"})
 // @formatter:on
@@ -292,7 +291,6 @@ class DatePartitionedQueryPlannerIT extends AbstractQueryTest {
     @ContextConfiguration(locations = {
             "classpath:datawave/query/QueryLogicFactory.xml",
             "classpath:beanRefContext.xml",
-            "classpath:MarkingFunctionsContext.xml",
             "classpath:MetadataHelperContext.xml",
             "classpath:CacheContext.xml"})
     // @formatter:on
@@ -433,7 +431,6 @@ class DatePartitionedQueryPlannerIT extends AbstractQueryTest {
     @ContextConfiguration(locations = {
             "classpath:datawave/query/QueryLogicFactory.xml",
             "classpath:beanRefContext.xml",
-            "classpath:MarkingFunctionsContext.xml",
             "classpath:MetadataHelperContext.xml",
             "classpath:CacheContext.xml"})
     // @formatter:on
@@ -669,7 +666,6 @@ class DatePartitionedQueryPlannerIT extends AbstractQueryTest {
     @ContextConfiguration(locations = {
             "classpath:datawave/query/QueryLogicFactory.xml",
             "classpath:beanRefContext.xml",
-            "classpath:MarkingFunctionsContext.xml",
             "classpath:MetadataHelperContext.xml",
             "classpath:CacheContext.xml"})
     // @formatter:on

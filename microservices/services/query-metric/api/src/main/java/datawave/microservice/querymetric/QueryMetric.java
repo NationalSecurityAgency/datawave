@@ -26,7 +26,6 @@ import com.google.common.collect.Lists;
 
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.result.event.HasMarkings;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -34,7 +33,7 @@ import io.protostuff.Schema;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
-public class QueryMetric extends BaseQueryMetric implements Serializable, Message<QueryMetric>, Comparable<QueryMetric>, HasMarkings {
+public class QueryMetric extends BaseQueryMetric implements Serializable, Message<QueryMetric>, Comparable<QueryMetric> {
 
     @Override
     public int compareTo(QueryMetric that) {
@@ -142,8 +141,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                         .append(this.getErrorMessage()).append(this.getCreateCallTime()).append(this.getErrorCode()).append(this.getQueryName())
                         .append(this.getParameters()).append(this.getSourceCount()).append(this.getNextCount()).append(this.getSeekCount())
                         .append(this.getYieldCount()).append(this.getDocSize()).append(this.getDocRanges()).append(this.getFiRanges()).append(this.getPlan())
-                        .append(this.getLoginTime()).append(this.getPredictions()).append(this.getMarkings()).append(this.getNumUpdates())
-                        .append(this.getVersionMap()).toHashCode();
+                        .append(this.getLoginTime()).append(this.getPredictions()).append(this.getNumUpdates()).append(this.getVersionMap()).toHashCode();
     }
 
     @Override
@@ -171,8 +169,8 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                             .append(this.getYieldCount(), other.getYieldCount()).append(this.getDocSize(), other.getDocSize())
                             .append(this.getDocRanges(), other.getDocRanges()).append(this.getFiRanges(), other.getFiRanges())
                             .append(this.getPlan(), other.getPlan()).append(this.getLoginTime(), other.getLoginTime())
-                            .append(this.getPredictions(), other.getPredictions()).append(this.getMarkings(), other.getMarkings())
-                            .append(this.getNumUpdates(), other.getNumUpdates()).append(this.getVersionMap(), other.getVersionMap()).isEquals();
+                            .append(this.getPredictions(), other.getPredictions()).append(this.getNumUpdates(), other.getNumUpdates())
+                            .append(this.getVersionMap(), other.getVersionMap()).isEquals();
         } else {
             return false;
         }
@@ -215,7 +213,6 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         buf.append(" FI Ranges: ").append(this.getFiRanges());
         buf.append(" Login Time: ").append(this.getLoginTime());
         buf.append(" Predictions: ").append(this.getPredictions());
-        buf.append(" Markings: ").append(this.getMarkings());
         buf.append(" NumUpdates: ").append(this.getNumUpdates());
         buf.append(" VersionMap: ").append(this.getVersionMap());
         buf.append("\n");

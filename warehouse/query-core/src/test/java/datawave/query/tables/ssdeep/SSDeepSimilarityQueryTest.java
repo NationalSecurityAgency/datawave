@@ -39,7 +39,6 @@ import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.ingest.mapreduce.handler.ssdeep.SSDeepIndexHandler;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -90,7 +89,6 @@ public class SSDeepSimilarityQueryTest {
     public void setUpQuery() {
         logic = new SSDeepSimilarityQueryLogic();
         logic.setTableName(SSDeepIndexHandler.DEFAULT_SSDEEP_INDEX_TABLE_NAME);
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         logic.setBucketEncodingBase(BUCKET_ENCODING_BASE);
         logic.setBucketEncodingLength(BUCKET_ENCODING_LENGTH);

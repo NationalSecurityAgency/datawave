@@ -838,8 +838,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             cachedRowSet.beforeFirst();
             long resultBytes = 0;
             while (cachedRowSet.next() && !hitPageByteTrigger) {
-                CacheableQueryRow row = CacheableQueryRowReader.createRow(cachedRowSet, this.fixedFieldsInEvent, this.responseObjectFactory,
-                                queryLogic.getMarkingFunctions());
+                CacheableQueryRow row = CacheableQueryRowReader.createRow(cachedRowSet, this.fixedFieldsInEvent, this.responseObjectFactory);
                 results.add(this.cacheableLogic.readFromCache(row));
                 if (pageByteTrigger != 0) {
                     resultBytes += ObjectSizeOf.Sizer.getObjectSize(row);
@@ -867,8 +866,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             while (cachedRowSet.next() && cachedRowSet.getRow() <= rowEnd && !hitPageByteTrigger) {
                 if (log.isTraceEnabled())
                     log.trace("CRS.position: " + cachedRowSet.getRow() + ", size: " + cachedRowSet.size());
-                CacheableQueryRow row = CacheableQueryRowReader.createRow(cachedRowSet, this.fixedFieldsInEvent, this.responseObjectFactory,
-                                queryLogic.getMarkingFunctions());
+                CacheableQueryRow row = CacheableQueryRowReader.createRow(cachedRowSet, this.fixedFieldsInEvent, this.responseObjectFactory);
                 results.add(this.cacheableLogic.readFromCache(row));
                 if (pageByteTrigger != 0) {
                     resultBytes += ObjectSizeOf.Sizer.getObjectSize(row);

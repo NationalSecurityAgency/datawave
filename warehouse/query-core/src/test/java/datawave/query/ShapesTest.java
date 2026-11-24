@@ -77,7 +77,6 @@ import datawave.test.MacTestUtil;
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",
         "classpath:beanRefContext.xml",
-        "classpath:MarkingFunctionsContext.xml",
         "classpath:MetadataHelperContext.xml",
         "classpath:CacheContext.xml"})
 // @formatter:on

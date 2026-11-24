@@ -1,6 +1,7 @@
 package datawave.webservice.dictionary.data;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -18,8 +19,6 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlSchema;
 
 import org.junit.jupiter.api.Test;
-
-import datawave.marking.AccessExpressionMarkings;
 
 public class DefaultDescriptionTest {
 
@@ -39,11 +38,33 @@ public class DefaultDescriptionTest {
 
         assertTrue(result.contains("<columnVisibility>PRIVATE</columnVisibility>"));
         assertTrue(result.contains("<description>my description</description>"));
+        assertFalse(result.contains("<markings>"));
+    }
+
+    @Test
+    public void testColumnVisibilityRoundTrip() throws JAXBException {
+        DefaultDescription desc = new DefaultDescription("my description");
+        desc.setColumnVisibility("PRIVATE&PUBLIC");
+        DefaultDictionaryField dicField = new DefaultDictionaryField();
+        dicField.setDatatype("myType");
+        dicField.setFieldName("myField");
+        dicField.setDescriptions(new HashSet<>(List.of(desc)));
+        DefaultFields fields = new DefaultFields();
+        fields.setFields(List.of(dicField));
+
+        JAXBContext j = JAXBContext.newInstance(DefaultFields.class);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        j.createMarshaller().marshal(fields, out);
+
+        DefaultFields restored = (DefaultFields) j.createUnmarshaller().unmarshal(new ByteArrayInputStream(out.toByteArray()));
+        DefaultDescription restoredDesc = restored.getFields().get(0).getDescriptions().iterator().next();
+        assertEquals("my description", restoredDesc.getDescription());
+        assertEquals("PRIVATE&PUBLIC", restoredDesc.getColumnVisibility());
     }
 
     private static DefaultFields getDefaultFields() {
         DefaultDescription desc = new DefaultDescription();
-        desc.setMarkings(AccessExpressionMarkings.create("PRIVATE"));
+        desc.setColumnVisibility("PRIVATE");
         desc.setDescription("my description");
 
         Set<DefaultDescription> descs = new HashSet<>();
@@ -83,9 +104,7 @@ public class DefaultDescriptionTest {
                         + "            <datatype>myType</datatype>\n"
                         + "            <descriptions>\n"
                         + "                <description>my description</description>\n"
-                        + "                <markings>\n"
-                        + "                    <columnVisibility>PRIVATE</columnVisibility>\n"
-                        + "                </markings>\n"
+                        + "                <columnVisibility>PRIVATE</columnVisibility>\n"
                         + "            </descriptions>\n"
                         + "            <fieldName>myField</fieldName>\n"
                         + "        </Field>\n"
@@ -99,15 +118,12 @@ public class DefaultDescriptionTest {
         DefaultFields resp = (DefaultFields) u.unmarshal(new ByteArrayInputStream(xmlString.getBytes()));
         int fieldCount = 0;
         int descriptionCount = 0;
-        int markingCount = 0;
 
         for (DefaultDictionaryField f : resp.getFields()) {
             assertEquals("myType", f.getDatatype());
             for (DefaultDescription d : f.getDescriptions()) {
                 assertEquals("my description", d.getDescription());
-                assertTrue(d.getMarkings() instanceof AccessExpressionMarkings);
-                AccessExpressionMarkings aem = (AccessExpressionMarkings) d.getMarkings();
-                assertEquals("PRIVATE", aem.getColumnVisibilityString());
+                assertEquals("PRIVATE", d.getColumnVisibility());
                 descriptionCount++;
             }
             fieldCount++;

@@ -20,7 +20,6 @@ import datawave.core.query.logic.AbstractQueryLogicTransformer;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResponseEnricherBuilder;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.discovery.DiscoveryLogic;
 import datawave.query.discovery.DiscoveryTransformer;
@@ -93,7 +92,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                     {
                         FieldBase<?> field = responseObjectFactory.getField();
                         field.setName("QUERY");
-                        field.setMarkings(valueField.getMarkings());
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getQueryHash().toString());
@@ -104,7 +102,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                         // add a new value field that preserves the case of the original matched ssdeep.
                         FieldBase<?> field = responseObjectFactory.getField();
                         field.setName("VALUE");
-                        field.setMarkings(valueField.getMarkings());
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getMatchingHash().toString());
@@ -114,7 +111,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                     {
                         FieldBase<?> field = responseObjectFactory.getField();
                         field.setName("WEIGHTED_SCORE");
-                        field.setMarkings(valueField.getMarkings());
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getWeightedScore());
@@ -124,7 +120,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                     {
                         FieldBase<?> field = responseObjectFactory.getField();
                         field.setName("OVERLAP_SCORE");
-                        field.setMarkings(valueField.getMarkings());
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getOverlapScore());
@@ -134,7 +129,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
                     {
                         FieldBase field = responseObjectFactory.getField();
                         field.setName("OVERLAP_SSDEEP_NGRAMS");
-                        field.setMarkings(valueField.getMarkings());
                         field.setColumnVisibility(valueField.getColumnVisibility());
                         field.setTimestamp(valueField.getTimestamp());
                         field.setValue(scoredSSDeepPair.getOverlapsAsString());
@@ -209,10 +203,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
         discoveryDelegate.setResponseObjectFactory(responseObjectFactory);
     }
 
-    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
-        discoveryDelegate.setMarkingFunctions(markingFunctions);
-    }
-
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         return discoveryDelegate.initialize(client, settings, runtimeQueryAuthorizations);
@@ -274,11 +264,6 @@ public class SSDeepDiscoveryQueryLogic extends BaseQueryLogic<DiscoveredSSDeep> 
     public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
         return discoveryDelegate.getPlan(client, settings, runtimeQueryAuthorizations, expandFields, expandValues);
-    }
-
-    @Override
-    public MarkingFunctions getMarkingFunctions() {
-        return discoveryDelegate.getMarkingFunctions();
     }
 
     @Override

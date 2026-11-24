@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -51,7 +50,6 @@ import datawave.core.query.cachedresults.CacheableQueryRowReader;
 import datawave.core.query.cachedresults.CachedResultsQueryParameters;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
-import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
@@ -113,7 +111,6 @@ public class CachedResultsQueryService {
     private final QueryLogicFactory queryLogicFactory;
     private final QueryStorageCache queryStorageCache;
     private final ResponseObjectFactory responseObjectFactory;
-    private final MarkingFunctions markingFunctions;
     // Note: CachedResultsQueryParameters needs to be request scoped
     private final RequestScopeBeanSupplier<CachedResultsQueryParameters> scopedCachedResultsQueryParameters;
     private final String fieldDefinitions;
@@ -124,7 +121,7 @@ public class CachedResultsQueryService {
     public CachedResultsQueryService(CachedResultsQueryProperties cachedResultsQueryProperties, JdbcTemplate cachedResultsJdbcTemplate,
                     CachedResultsQueryCache cachedResultsQueryCache, QueryService queryService, AuditClient auditClient, SecurityMarking securityMarking,
                     QueryLogicFactory queryLogicFactory, QueryStorageCache queryStorageCache, ResponseObjectFactory responseObjectFactory,
-                    MarkingFunctions markingFunctions, CachedResultsQueryParameters cachedResultsQueryParameters) {
+                    CachedResultsQueryParameters cachedResultsQueryParameters) {
         this.cachedResultsQueryProperties = cachedResultsQueryProperties;
         this.cachedResultsJdbcTemplate = cachedResultsJdbcTemplate;
         this.cachedResultsQueryCache = cachedResultsQueryCache;
@@ -134,7 +131,6 @@ public class CachedResultsQueryService {
         this.queryLogicFactory = queryLogicFactory;
         this.queryStorageCache = queryStorageCache;
         this.responseObjectFactory = responseObjectFactory;
-        this.markingFunctions = markingFunctions;
         this.scopedCachedResultsQueryParameters = new RequestScopeBeanSupplier<>(cachedResultsQueryParameters);
         this.fieldDefinitions = IntStream.range(0, cachedResultsQueryProperties.getNumFields()).mapToObj(x -> FIELD + x + " LONGTEXT")
                         .collect(Collectors.joining(", "));
@@ -430,15 +426,7 @@ public class CachedResultsQueryService {
                         ps.setString(6, cacheableQueryRow.getRow());
                         ps.setString(7, cacheableQueryRow.getColFam());
 
-                        String visibility = EMPTY_STRING;
-                        if (cacheableQueryRow.getMarkings() != null) {
-                            AccessExpression ae = cacheableQueryRow.getMarkings().toAccessExpression();
-                            if (ae != null) {
-                                visibility = ae.getExpression();
-                            }
-                        }
-
-                        ps.setString(8, visibility);
+                        ps.setString(8, getRowVisibility(cacheableQueryRow));
 
                         // keep track of the populated columns
                         Set<Integer> populatedColumns = new HashSet<>();
@@ -498,6 +486,18 @@ public class CachedResultsQueryService {
                 }
             }
         }
+    }
+
+    /**
+     * Get the row-level visibility to store for a cached row.
+     *
+     * @param cacheableQueryRow
+     *            the row
+     * @return the row-level visibility, or an empty string if the row has none
+     */
+    static String getRowVisibility(CacheableQueryRow cacheableQueryRow) {
+        String visibility = cacheableQueryRow.getColumnVisibility();
+        return visibility == null ? EMPTY_STRING : visibility;
     }
 
     private void createTable(String tableName) throws DataAccessException {
@@ -1145,7 +1145,7 @@ public class CachedResultsQueryService {
                             long resultBytes = 0;
                             while (resultSet.next() && !hitPageByteTrigger.get()) {
                                 CacheableQueryRow row = CacheableQueryRowReader.createRow(resultSet, cachedResultsQueryStatus.getFixedFields(),
-                                                responseObjectFactory, markingFunctions);
+                                                responseObjectFactory);
                                 rows.add(row);
                                 if (cachedResultsQueryProperties.getPageByteTrigger() != 0) {
                                     resultBytes += ObjectSizeOf.Sizer.getObjectSize(row);

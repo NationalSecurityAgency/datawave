@@ -62,7 +62,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.dbutils.DbUtils;
@@ -304,13 +303,8 @@ public class CachedResultsBean {
         ps.setString(6, cqo.getRow());
         ps.setString(7, cqo.getColFam());
 
-        String visibility = "";
-        if (cqo.getMarkings() != null) {
-            AccessExpression ae = cqo.getMarkings().toAccessExpression();
-            if (ae != null) {
-                visibility = ae.getExpression();
-            }
-        }
+        // the row-level column visibility (combination of all column visibilities) is stored in the _markings_ column
+        String visibility = cqo.getColumnVisibility() == null ? "" : cqo.getColumnVisibility();
 
         ps.setString(8, visibility);
         for (Entry<String,String> e : cqo.getColumnValues().entrySet()) {

@@ -21,13 +21,11 @@ import com.google.common.collect.Lists;
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.marking.AccessExpressionUtil;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.EventFields;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
@@ -59,17 +57,16 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
     protected String tableName;
     protected ResponseObjectFactory responseObjectFactory;
 
-    public EventQueryTransformerSupport(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
-        super(markingFunctions);
+    public EventQueryTransformerSupport(String tableName, Query settings, ResponseObjectFactory responseObjectFactory) {
+        super();
         this.settings = settings;
         this.auths = new Authorizations(settings.getQueryAuthorizations().split(","));
         this.tableName = tableName;
         this.responseObjectFactory = responseObjectFactory;
     }
 
-    public EventQueryTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        this(logic.getTableName(), settings, markingFunctions, responseObjectFactory);
+    public EventQueryTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory) {
+        this(logic.getTableName(), settings, responseObjectFactory);
         this.logic = logic;
         this.responseObjectFactory = responseObjectFactory;
     }
@@ -87,7 +84,6 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         EventBase<?,?> event = (EventBase<?,?>) o;
 
         CacheableQueryRow cqo = this.responseObjectFactory.getCacheableQueryRow();
-        cqo.setMarkingFunctions(this.markingFunctions);
         Metadata metadata = event.getMetadata();
         cqo.setColFam(metadata.getDataType() + ":" + cqo.getEventId());
         cqo.setDataType(metadata.getDataType());
@@ -96,20 +92,19 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
 
         List<? extends FieldBase<?>> fields = event.getFields();
         for (FieldBase<?> f : fields) {
-            cqo.addColumn(f.getName(), f.getTypedValue(), f.getMarkings(), f.getColumnVisibility(), f.getTimestamp());
+            cqo.addColumn(f.getName(), f.getTypedValue(), f.getColumnVisibility(), f.getTimestamp());
         }
         return cqo;
     }
 
     @Override
     public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
-        Markings<?> markings = cacheableQueryRow.getMarkings();
         String dataType = cacheableQueryRow.getDataType();
         String internalId = cacheableQueryRow.getEventId();
         String row = cacheableQueryRow.getRow();
 
         EventBase event = this.responseObjectFactory.getEvent();
-        event.setMarkings(markings);
+        event.setColumnVisibility(cacheableQueryRow.getColumnVisibility());
 
         Metadata metadata = new Metadata();
         metadata.setDataType(dataType);
@@ -123,10 +118,9 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         for (Entry<String,String> entry : columnValueMap.entrySet()) {
             String columnName = entry.getKey();
             String columnValue = entry.getValue();
-            Markings<?> columnMarkings = cacheableQueryRow.getColumnMarkings(columnName);
             String columnVisibility = cacheableQueryRow.getColumnVisibility(columnName);
             Long columnTimestamp = cacheableQueryRow.getColumnTimestamp(columnName);
-            FieldBase<?> field = this.makeField(columnName, columnMarkings, columnVisibility, columnTimestamp, columnValue);
+            FieldBase<?> field = this.makeField(columnName, columnVisibility, columnTimestamp, columnValue);
             fieldList.add(field);
         }
         event.setFields(fieldList);
@@ -152,18 +146,17 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         return response;
     }
 
-    protected FieldBase<?> makeField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
+    protected FieldBase<?> makeField(String name, String columnVisibility, Long timestamp, Object value) {
         FieldBase<?> field = this.responseObjectFactory.getField();
         field.setName(name);
-        field.setMarkings(markings);
         field.setColumnVisibility(columnVisibility);
         field.setTimestamp(timestamp);
         field.setValue(value);
         return field;
     }
 
-    protected FieldBase<?> makeField(String name, Markings<?> markings, ColumnVisibility columnVisibility, Long timestamp, Object value) {
-        FieldBase<?> field = makeField(name, markings, (String) null, timestamp, value);
+    protected FieldBase<?> makeField(String name, ColumnVisibility columnVisibility, Long timestamp, Object value) {
+        FieldBase<?> field = makeField(name, (String) null, timestamp, value);
         field.setColumnVisibility(AccessExpressionUtil.toAccessExpression(columnVisibility));
         return field;
     }

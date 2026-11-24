@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -45,7 +44,6 @@ import com.google.common.collect.Lists;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
-import datawave.marking.Markings;
 import datawave.query.QueryParameters;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
@@ -74,7 +72,6 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",
-        "classpath:MarkingFunctionsContext.xml",
         "classpath:MetadataHelperContext.xml",
         "classpath:CacheContext.xml"})
 // @formatter:on
@@ -584,7 +581,7 @@ public class GroupingTest extends AbstractQueryTest {
     }
 
     /**
-     * Verify that reducing the response when grouping results in the correct combined visibility and markings.
+     * Verify that reducing the response when grouping results in the correct combined visibility and no field visibilities.
      */
     @Test
     public void testGroupByWithReducedResponse() throws Exception {
@@ -606,15 +603,13 @@ public class GroupingTest extends AbstractQueryTest {
         for (QueryResult result : queryResults) {
             // noinspection rawtypes
             for (EventBase event : result.response.getEvents()) {
-                String eventCV = Optional.ofNullable(event.getMarkings()).map(Markings::getMarkings).map(Object::toString).orElse(null);
+                String eventCV = event.getColumnVisibility();
                 assertThat(eventCV).describedAs("Assert event cv for teardown: %s, interrupt: %s", result.teardown, result.interrupt).isEqualTo(REDUCED_COLVIS);
                 // noinspection unchecked
                 for (FieldBase<?> field : (List<FieldBase<?>>) event.getFields()) {
-                    Markings<?> fieldMarkings = field.getMarkings();
-                    assertThat(fieldMarkings == null || fieldMarkings.isEmpty())
-                                    .describedAs("Assert empty field markings for field: %s, teardown: %s, interrupt: %s", field.getName(), result.teardown,
-                                                    result.interrupt)
-                                    .isTrue();
+                    String fieldCV = field.getColumnVisibility();
+                    assertThat(fieldCV == null || fieldCV.isEmpty()).describedAs("Assert empty field visibility for field: %s, teardown: %s, interrupt: %s",
+                                    field.getName(), result.teardown, result.interrupt).isTrue();
                 }
             }
         }

@@ -53,7 +53,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spring.cache.HazelcastCacheManager;
 
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.querymetric.config.QueryMetricTransportType;
 import datawave.microservice.querymetric.factory.QueryMetricResponseFactory;
@@ -63,6 +62,7 @@ import datawave.microservice.querymetric.handler.SimpleQueryGeometryHandler;
 import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.util.DnUtils;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
@@ -87,7 +87,6 @@ public class QueryMetricOperations {
     private QueryGeometryHandler geometryHandler;
     private CacheManager cacheManager;
     private Cache incomingQueryMetricsCache;
-    private MarkingFunctions<?> markingFunctions;
     private QueryMetricResponseFactory queryMetricResponseFactory;
     private MergeLockLifecycleListener mergeLock;
     private Correlator correlator;
@@ -121,8 +120,6 @@ public class QueryMetricOperations {
      *            the QueryMetricHandler
      * @param geometryHandler
      *            the QueryGeometryHandler
-     * @param markingFunctions
-     *            the MarkingFunctions
      * @param queryMetricResponseFactory
      *            the QueryMetricResponseFactory
      * @param mergeLock
@@ -138,14 +135,13 @@ public class QueryMetricOperations {
      */
     @Autowired
     public QueryMetricOperations(@Qualifier("queryMetricCacheManager") CacheManager cacheManager, ShardTableQueryMetricHandler handler,
-                    QueryGeometryHandler geometryHandler, MarkingFunctions<?> markingFunctions, QueryMetricResponseFactory queryMetricResponseFactory,
-                    MergeLockLifecycleListener mergeLock, Correlator correlator, MetricUpdateEntryProcessorFactory entryProcessorFactory,
-                    QueryMetricOperationsStats stats, QueryMetricClient queryMetricClient) {
+                    QueryGeometryHandler geometryHandler, QueryMetricResponseFactory queryMetricResponseFactory, MergeLockLifecycleListener mergeLock,
+                    Correlator correlator, MetricUpdateEntryProcessorFactory entryProcessorFactory, QueryMetricOperationsStats stats,
+                    QueryMetricClient queryMetricClient) {
         this.handler = handler;
         this.geometryHandler = geometryHandler;
         this.cacheManager = cacheManager;
         this.incomingQueryMetricsCache = cacheManager.getCache(INCOMING_METRICS);
-        this.markingFunctions = markingFunctions;
         this.queryMetricResponseFactory = queryMetricResponseFactory;
         this.mergeLock = mergeLock;
         this.correlator = correlator;
@@ -475,8 +471,8 @@ public class QueryMetricOperations {
     private boolean canViewMetric(DatawaveUserDetails currentUser, BaseQueryMetric metric) throws Exception {
         boolean userCanViewMetric = true;
         ColumnVisibility columnVisibility = null;
-        if (null != metric.getMarkings()) {
-            columnVisibility = metric.getMarkings().toColumnVisibility();
+        if (null != metric.getColumnVisibility()) {
+            columnVisibility = AccessExpressionUtil.toColumnVisibility(AccessExpressionUtil.normalize(metric.getColumnVisibility()));
         }
         for (DatawaveUser user : currentUser.getProxiedUsers()) {
             Authorizations authorizations = new Authorizations(user.getAuths().toArray(new String[0]));

@@ -9,13 +9,11 @@ import java.util.AbstractMap;
 import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.TreeMultimap;
 
 import datawave.data.type.LcNoDiacriticsType;
-import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TemporalGranularity;
 import datawave.query.attributes.TypeAttribute;
@@ -26,11 +24,6 @@ public class GroupingTransformTest {
     /** Per-page timeout used by the intermediate-result test, paired with {@link #PAGE_START} to drive the transform's clock. */
     private static final long PAGE_TIMEOUT_MS = 1000L;
     private static final Instant PAGE_START = Instant.parse("2026-01-01T00:00:00Z");
-
-    @BeforeAll
-    public static void setup() {
-        MarkingFunctions.Factory.createMarkingFunctions();
-    }
 
     /**
      * Once the per-page timeout is exceeded, apply() must reset the page timer when it emits an intermediate result, so intermediate results are paced (one per
@@ -44,7 +37,7 @@ public class GroupingTransformTest {
         groupFields.setGroupByFieldMap(groupBy);
 
         // Drive the page timer from a fixed clock, started past the timeout so the very first apply() is eligible to emit an intermediate result.
-        GroupingTransform transform = new GroupingTransform(groupFields, MarkingFunctions.Factory.createMarkingFunctions(), PAGE_TIMEOUT_MS);
+        GroupingTransform transform = new GroupingTransform(groupFields, PAGE_TIMEOUT_MS);
         setClockTo(transform, PAGE_START);
         transform.setQueryExecutionForPageStartTime(transform.clock.millis());
         setClockTo(transform, PAGE_START.plusMillis(PAGE_TIMEOUT_MS + 1));

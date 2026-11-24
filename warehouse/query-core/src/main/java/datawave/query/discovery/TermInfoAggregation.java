@@ -15,8 +15,8 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
 
-import datawave.marking.AccessExpressionUtil;
-import datawave.marking.MarkingFunctions;
+import datawave.visibility.AccessExpressionUtil;
+import datawave.visibility.VisibilityFunctions;
 
 public class TermInfoAggregation implements Function<Collection<TermInfo>,DiscoveredThing> {
 
@@ -25,7 +25,6 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
     private final boolean separateCountsByColumnVisibility;
     private boolean showReferenceCountInsteadOfTermCount = false;
     private boolean reverseIndex = false;
-    private MarkingFunctions<?> markingFunctions;
 
     public TermInfoAggregation() {
         this.separateCountsByColumnVisibility = false;
@@ -50,7 +49,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
     /*
      * TermInfos for any given data type should have the following in common: - term - date - data type
      *
-     * Therefore, we need to aggregate: - count - columnVisibilities/markings
+     * Therefore, we need to aggregate: - count - columnVisibilities
      */
     public DiscoveredThing apply(Collection<TermInfo> from) {
         if (from.isEmpty()) {
@@ -75,7 +74,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
                 chosenCount = showReferenceCountInsteadOfTermCount ? referenceCount : termCount;
 
                 try {
-                    markingFunctions.translateFromColumnVisibility(ti.vis); // just to test parsing
+                    AccessExpressionUtil.toAccessExpression(ti.vis); // just to test parsing
                     columnVisibilities.add(ti.vis);
 
                     // Keep track of counts for individual vis
@@ -108,10 +107,7 @@ public class TermInfoAggregation implements Function<Collection<TermInfo>,Discov
             } else {
                 ColumnVisibility columnVisibility;
                 try {
-                    if (null == markingFunctions) {
-                        markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-                    }
-                    columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
+                    columnVisibility = VisibilityFunctions.getInstance().combine(columnVisibilities);
                 } catch (Exception e) {
                     log.warn("Invalid columnvisibility after combining!", e);
                     return null;

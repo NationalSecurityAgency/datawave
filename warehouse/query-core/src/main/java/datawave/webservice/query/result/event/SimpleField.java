@@ -11,15 +11,12 @@ import javax.xml.bind.annotation.XmlAccessorOrder;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import datawave.data.type.Type;
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.webservice.query.util.TypedValue;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -37,8 +34,6 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
 
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility;
-    @XmlElementWrapper(name = "Markings")
-    private Markings<?> markings;
     @XmlAttribute(name = "timestamp")
     private Long timestamp;
     @XmlAttribute(name = "name")
@@ -48,10 +43,9 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
 
     public SimpleField() {}
 
-    public SimpleField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
+    public SimpleField(String name, String columnVisibility, Long timestamp, Object value) {
         super();
         this.name = name;
-        this.markings = markings;
         this.columnVisibility = columnVisibility;
         this.timestamp = timestamp;
         this.value = new TypedValue(value);
@@ -91,8 +85,7 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
     public String toString() {
         StringBuilder buf = new StringBuilder();
         buf.append("Field [");
-        buf.append("markings=").append(markings);
-        buf.append(" columnVisibility=").append(columnVisibility);
+        buf.append("columnVisibility=").append(columnVisibility);
         buf.append(" timestamp=").append(timestamp);
         buf.append(" name=").append(name);
         buf.append(" value= ");
@@ -105,7 +98,7 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(columnVisibility).append(markings).append(timestamp).append(name).append(value).hashCode();
+        return new HashCodeBuilder(17, 37).append(columnVisibility).append(timestamp).append(name).append(value).hashCode();
     }
 
     @Override
@@ -118,7 +111,6 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
             eb.append(this.name, v.name);
             eb.append(this.timestamp, v.timestamp);
             eb.append(this.columnVisibility, v.columnVisibility);
-            eb.append(this.markings, v.markings);
             eb.append(this.value, v.value);
             return eb.isEquals();
         }
@@ -132,16 +124,6 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    @Override
-    public Markings<?> getMarkings() {
-        return this.markings;
-    }
-
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
     }
 
     public static Schema<SimpleField> getSchema() {
@@ -193,9 +175,7 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
                 output.writeString(3, message.name, false);
             if (message.value != null)
                 output.writeObject(4, message.value, message.value.cachedSchema(), false);
-            if (message.markings != null) {
-                output.writeObject(5, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
-            }
+            // field 5 (markings) is retired; old payloads containing it are skipped
         }
 
         @Override
@@ -215,10 +195,6 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
                     case 4:
                         message.value = input.mergeObject(null, TypedValue.getSchema());
                         break;
-                    case 5:
-                        message.markings = AccessExpressionMarkings.builder().build();
-                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
-                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -237,8 +213,6 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
                     return "name";
                 case 4:
                     return "value";
-                case 5:
-                    return "markings";
                 default:
                     return null;
             }
@@ -256,7 +230,6 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
             fieldMap.put("timestamp", 2);
             fieldMap.put("name", 3);
             fieldMap.put("value", 4);
-            fieldMap.put("markings", 5);
         }
     };
 

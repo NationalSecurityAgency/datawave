@@ -185,6 +185,38 @@ public class MutableMetadataHandlerTest {
     }
 
     @Test
+    public void deleteWithFieldMarkingsShouldMatchEquivalentVisibility() throws Exception {
+        MutableMetadataHandlerTestSupport support = new MutableMetadataHandlerTestSupport(getClass().getSimpleName() + "_deleteMarkingsEquivalent");
+        String actualValue = "MARKINGS-DELETE";
+        String normalized = normalizeUuid(actualValue);
+
+        support.process(support.newRequest(MODE.INSERT, UUID_FIELD, actualValue, null, VIS_A_AND_B));
+        support.process(support.newMarkingsRequest(MODE.DELETE, UUID_FIELD, actualValue, "B&A"));
+
+        support.assertEventFieldAbsent(UUID_FIELD, actualValue);
+        support.assertFieldIndexAbsent(UUID_FIELD, normalized);
+        support.assertShardIndexMutation(UUID_FIELD, normalized, VIS_A_AND_B, -1);
+    }
+
+    @Test
+    public void deleteWithWrongFieldMarkingsShouldNotDeleteAnything() throws Exception {
+        MutableMetadataHandlerTestSupport support = new MutableMetadataHandlerTestSupport(getClass().getSimpleName() + "_deleteMarkingsWrong");
+        String actualValue = "KEEP-MARKINGS";
+        String normalized = normalizeUuid(actualValue);
+
+        support.process(support.newRequest(MODE.INSERT, UUID_FIELD, actualValue, null, VIS_A_AND_B));
+
+        org.apache.accumulo.core.data.Value beforeMetadata = support.captureMetadataFrequencyValue(UUID_FIELD);
+
+        support.assertProcessThrows(IllegalArgumentException.class, support.newMarkingsRequest(MODE.DELETE, UUID_FIELD, actualValue, "A&C"));
+
+        support.assertEventFieldPresent(UUID_FIELD, actualValue, VIS_A_AND_B);
+        support.assertFieldIndexPresent(UUID_FIELD, normalized, VIS_A_AND_B);
+        support.assertShardIndexMutation(UUID_FIELD, normalized, VIS_A_AND_B, 1);
+        support.assertMetadataUnchanged(UUID_FIELD, beforeMetadata);
+    }
+
+    @Test
     public void insertShouldAddHistoryFieldWhenInsertHistoryEnabled() throws Exception {
         MutableMetadataHandlerTestSupport support = new MutableMetadataHandlerTestSupport(getClass().getSimpleName() + "_historyInsertEnabled");
         String value = "HISTORY-INSERT";

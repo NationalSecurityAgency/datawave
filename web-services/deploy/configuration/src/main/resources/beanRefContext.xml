@@ -9,7 +9,6 @@
         <constructor-arg>
             <list>
                 <value>classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml</value>
-                <value>classpath*:MarkingFunctionsContext.xml</value>
                 <value>classpath*:MetadataHelperContext.xml</value>
                 <value>classpath*:MetadataHelperCacheListenerContext.xml</value>
                 <value>classpath*:CacheContext.xml</value>

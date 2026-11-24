@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -27,8 +28,7 @@ import datawave.ingest.data.Type;
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
+import datawave.visibility.VisibilityFunctions;
 
 public interface VirtualIngest {
 
@@ -127,11 +127,7 @@ public interface VirtualIngest {
         protected transient Map<String,Boolean> allowMissing = new HashMap<>();
         private Set<String> ignoreNormalizationForFields = new HashSet<>();
 
-        private transient MarkingFunctions<?> markingFunctions;
-
         public void setup(Type type, String instance, Configuration config) {
-
-            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
             String[] fieldNames = getStrings(type, instance, config, VIRTUAL_FIELD_NAMES, null);
             String[] fieldMembers = getStrings(type, instance, config, VIRTUAL_FIELD_MEMBERS, null);
@@ -515,13 +511,13 @@ public interface VirtualIngest {
          *            the original value
          * @param normalizedValue
          *            the normalized value
-         * @param markings
-         *            a map of markings
+         * @param visibility
+         *            the combined field specific visibility of the values used so far, or null if none of them has one
          */
         public void addVirtualFields(List<NormalizedContentInterface> virtualFields, Multimap<String,NormalizedContentInterface> eventFields,
                         Map<String,Multimap<VirtualFieldGrouping,NormalizedContentInterface>> groupings, String virtualFieldName, String replacement,
                         VirtualFieldGrouping grouping, GroupingPolicy groupingPolicy, boolean allowMissing, String[] fields, int pos, String startSeparator,
-                        String endSeparator, StringBuilder originalValue, StringBuilder normalizedValue, Markings<?> markings) {
+                        String endSeparator, StringBuilder originalValue, StringBuilder normalizedValue, ColumnVisibility visibility) {
             String separator = "";
             // append any constants that have been specified
             while (pos < fields.length && isConstant(fields[pos])) {
@@ -576,14 +572,10 @@ public interface VirtualIngest {
                                 normalizedValue.append(endSeparator);
 
                                 // recurse for the next virtual field definition segment
-                                try {
-                                    addVirtualFields(virtualFields, eventFields, groupings, virtualFieldName.replace("*", replacement), replacement,
-                                                    (grouping == null ? newGrouping : grouping), groupingPolicy, allowMissing, fields, pos + 1,
-                                                    this.defaultStartSeparator, this.defaultEndSeparator, originalValue, normalizedValue,
-                                                    markingFunctions.combine(markings, value.getMarkings()));
-                                } catch (MarkingFunctions.Exception e) {
-                                    throw new RuntimeException("Could not combine markings", e);
-                                }
+                                addVirtualFields(virtualFields, eventFields, groupings, virtualFieldName.replace("*", replacement), replacement,
+                                                (grouping == null ? newGrouping : grouping), groupingPolicy, allowMissing, fields, pos + 1,
+                                                this.defaultStartSeparator, this.defaultEndSeparator, originalValue, normalizedValue,
+                                                combine(visibility, value.getVisibility()));
 
                                 // reset the values to the original length
                                 originalValue.setLength(oLen);
@@ -595,7 +587,7 @@ public interface VirtualIngest {
                 } else if (!eventFields.containsKey(memberName) && allowMissing) {
                     // recurse for the next virtual field definition segment in the case that we are adding missing fields
                     addVirtualFields(virtualFields, eventFields, groupings, virtualFieldName, replacement, grouping, groupingPolicy, allowMissing, fields,
-                                    pos + 1, startSeparator, endSeparator, originalValue, normalizedValue, markings);
+                                    pos + 1, startSeparator, endSeparator, originalValue, normalizedValue, visibility);
 
                 } else {
                     int oLen = originalValue.length();
@@ -619,13 +611,9 @@ public interface VirtualIngest {
                         normalizedValue.append(endSeparator);
 
                         // recurse on the next virtual field segment
-                        try {
-                            addVirtualFields(virtualFields, eventFields, groupings, virtualFieldName, replacement, (grouping == null ? newGrouping : grouping),
-                                            groupingPolicy, allowMissing, fields, pos + 1, this.defaultStartSeparator, this.defaultEndSeparator, originalValue,
-                                            normalizedValue, markingFunctions.combine(markings, value.getMarkings()));
-                        } catch (MarkingFunctions.Exception e) {
-                            throw new RuntimeException("Could not combine markings", e);
-                        }
+                        addVirtualFields(virtualFields, eventFields, groupings, virtualFieldName, replacement, (grouping == null ? newGrouping : grouping),
+                                        groupingPolicy, allowMissing, fields, pos + 1, this.defaultStartSeparator, this.defaultEndSeparator, originalValue,
+                                        normalizedValue, combine(visibility, value.getVisibility()));
 
                         // reset the values to the original length
                         originalValue.setLength(oLen);
@@ -638,7 +626,7 @@ public interface VirtualIngest {
                 n.setFieldName(virtualFieldName);
                 n.setEventFieldValue(originalValue.toString());
                 n.setIndexedFieldValue(normalizedValue.toString());
-                n.setMarkings(markings);
+                n.setVisibility(visibility);
                 if (grouping != null) {
                     n.setGrouped(true);
                     n.setGroup(grouping.getGroup());
@@ -646,6 +634,20 @@ public interface VirtualIngest {
                 }
                 virtualFields.add(n);
             }
+        }
+
+        /**
+         * Combine the visibility accumulated so far with the visibility of the next member field. A null visibility means "use the event visibility", so it is
+         * preserved when neither side has a field specific visibility.
+         *
+         * @param visibility
+         *            the visibility accumulated so far, may be null
+         * @param fieldVisibility
+         *            the field specific visibility of the next member, may be null
+         * @return the combined visibility, or null if both are null
+         */
+        protected ColumnVisibility combine(ColumnVisibility visibility, ColumnVisibility fieldVisibility) {
+            return VisibilityFunctions.getInstance().combine(visibility, fieldVisibility);
         }
 
         /**

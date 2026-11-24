@@ -1,6 +1,7 @@
 package datawave.webservice.response;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -17,7 +18,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 
-import datawave.marking.AccessExpressionMarkings;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.response.objects.DefaultKey;
 import datawave.webservice.response.objects.Entry;
@@ -38,12 +38,11 @@ public class LookupResponseTest {
         lookupResponse = new LookupResponse();
         List<Entry> entryList = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
-            AccessExpressionMarkings markings = AccessExpressionMarkings.builder().columnVisibility("A&B&C" + i).build();
             KeyBase responseKey = new DefaultKey();
             responseKey.setRow("row" + i);
             responseKey.setColFam("cf" + i);
             responseKey.setColQual("cq" + i);
-            responseKey.setMarkings(markings);
+            responseKey.setColumnVisibility("A&B&C" + i);
             responseKey.setTimestamp(i);
             entryList.add(new Entry(responseKey, ByteBuffer.allocate(4).putInt(i).array()));
             lookupResponse.addException(new Exception("Exception message " + i));
@@ -76,7 +75,7 @@ public class LookupResponseTest {
                   && e.getKey().getColFam().equals("cf" + fi)
                   && e.getKey().getColQual().equals("cq" + fi)
                   && e.getKey().getTimestamp() == fi
-                  && ((DefaultKey) e.getKey()).getColumnVisibility().equals("A&B&C" + fi)
+                  && e.getKey().getColumnVisibility().equals("A&B&C" + fi)
                   && ByteBuffer.wrap((byte[])e.getValue()).getInt() == fi).count());
 
             assertEquals(1, de.getExceptions().stream().map(QueryExceptionType::getMessage).filter(
@@ -87,5 +86,15 @@ public class LookupResponseTest {
         }
         assertEquals(lookupResponse.getHasResults(), de.getHasResults());
         assertEquals(lookupResponse.getOperationTimeMS(), de.getOperationTimeMS());
+    }
+
+    @Test
+    public void testNullVisibilityStaysNull() {
+        DefaultKey key = new DefaultKey();
+        key.setColumnVisibility(null);
+        assertNull(key.getColumnVisibility());
+        key.setColumnVisibility("");
+        assertEquals("", key.getColumnVisibility());
+        assertNull(new DefaultKey("row", "cf", "cq", null, 1L).getColumnVisibility());
     }
 }

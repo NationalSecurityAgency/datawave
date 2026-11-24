@@ -18,8 +18,6 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import datawave.data.type.Type;
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.webservice.query.util.TypedValue;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -37,8 +35,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
 
     private static final long serialVersionUID = -3982566563059126017L;
 
-    @XmlElement(name = "Markings", type = AccessExpressionMarkings.class)
-    private Markings<?> markings;
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility;
     @XmlAttribute(name = "timestamp")
@@ -50,31 +46,12 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
 
     public DefaultField() {}
 
-    public DefaultField(String name, String columnVisibility, Markings<?> markings, Long timestamp, Object value) {
-        super();
-        this.name = name;
-        this.markings = markings;
-        this.columnVisibility = columnVisibility;
-        this.timestamp = timestamp;
-        this.value = new TypedValue(value);
-    }
-
     public DefaultField(String name, String columnVisibility, Long timestamp, Object value) {
         super();
         this.name = name;
         this.columnVisibility = columnVisibility;
         this.timestamp = timestamp;
         this.value = new TypedValue(value);
-    }
-
-    @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
-    }
-
-    @Override
-    public Markings<?> getMarkings() {
-        return markings;
     }
 
     public void setColumnVisibility(String columnVisibility) {
@@ -139,8 +116,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
-        buf.append("Field [markings=").append(markings);
-        buf.append(" columnVisibility=").append(columnVisibility);
+        buf.append("Field [columnVisibility=").append(columnVisibility);
         buf.append(" timestamp=").append(timestamp);
         buf.append(" name=").append(name);
         buf.append(" value= ");
@@ -153,7 +129,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(markings).append(columnVisibility).append(timestamp).append(name).append(value).hashCode();
+        return new HashCodeBuilder(17, 37).append(columnVisibility).append(timestamp).append(name).append(value).hashCode();
     }
 
     @Override
@@ -165,7 +141,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
 
             eb.append(this.name, v.name);
             eb.append(this.timestamp, v.timestamp);
-            eb.append(this.markings, v.markings);
             eb.append(this.columnVisibility, v.columnVisibility);
             eb.append(this.value, v.value);
             return eb.isEquals();
@@ -209,8 +184,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
 
         @Override
         public void writeTo(Output output, DefaultField message) throws IOException {
-            if (message.markings != null)
-                output.writeObject(1, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
+            // field 1 (markings) is retired
             if (message.columnVisibility != null)
                 output.writeString(2, message.columnVisibility, false);
             output.writeUInt64(3, message.timestamp, false);
@@ -225,10 +199,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {
-                    case 1:
-                        message.markings = AccessExpressionMarkings.builder().build();
-                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
-                        break;
                     case 2:
                         message.columnVisibility = input.readString();
                         break;
@@ -251,8 +221,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         @Override
         public String getFieldName(int number) {
             switch (number) {
-                case 1:
-                    return "markings";
                 case 2:
                     return "columnVisibility";
                 case 3:
@@ -274,7 +242,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
 
         private final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
-            fieldMap.put("markings", 1);
             fieldMap.put("columnVisibility", 2);
             fieldMap.put("timestamp", 3);
             fieldMap.put("name", 4);

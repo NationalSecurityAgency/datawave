@@ -87,14 +87,14 @@
         <version.commons-text>1.11.0</version.commons-text>
         <version.curator>5.9.0</version.curator>
         <version.curator.test>5.9.0</version.curator.test>
-        <version.datawave.accumulo-api>4.0.5</version.datawave.accumulo-api>
+        <version.datawave.accumulo-api>4.0.7-SNAPSHOT</version.datawave.accumulo-api>
         <version.datawave.audit-api>4.0.0</version.datawave.audit-api>
         <version.datawave.authorization-api>4.0.0</version.datawave.authorization-api>
-        <version.datawave.dictionary-api>4.0.10</version.datawave.dictionary-api>
+        <version.datawave.dictionary-api>4.0.12-SNAPSHOT</version.datawave.dictionary-api>
         <version.datawave.mapreduce-query-api>1.0.0</version.datawave.mapreduce-query-api>
         <version.datawave.metrics-reporter>3.0.0</version.datawave.metrics-reporter>
-        <version.datawave.query-api>1.0.0</version.datawave.query-api>
-        <version.datawave.query-metric-api>4.1.7</version.datawave.query-metric-api>
+        <version.datawave.query-api>1.0.5-SNAPSHOT</version.datawave.query-api>
+        <version.datawave.query-metric-api>4.1.9-SNAPSHOT</version.datawave.query-metric-api>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.dnsjava>3.6.3</version.dnsjava>
         <version.eclipse.emf>2.15.0</version.eclipse.emf>
@@ -427,11 +427,6 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.core</groupId>
-                <artifactId>accumulo-utils</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.core</groupId>
                 <artifactId>base-rest-responses</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -461,10 +456,6 @@
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>common-utils</artifactId>
                     </exclusion>
                     <exclusion>
@@ -485,10 +476,6 @@
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>base-rest-responses</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
@@ -515,10 +502,6 @@
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>common-utils</artifactId>
                     </exclusion>
                     <exclusion>
@@ -542,10 +525,6 @@
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>common-utils</artifactId>
                     </exclusion>
                     <exclusion>
@@ -566,10 +545,6 @@
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>base-rest-responses</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
@@ -601,10 +576,6 @@
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>common-utils</artifactId>
                     </exclusion>
                     <exclusion>
@@ -626,10 +597,6 @@
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>base-rest-responses</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
@@ -657,10 +624,6 @@
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
                         <artifactId>base-rest-responses</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
-                        <artifactId>accumulo-utils</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>gov.nsa.datawave.microservice</groupId>
@@ -764,6 +727,11 @@
                 <groupId>net.sf.saxon</groupId>
                 <artifactId>Saxon-HE</artifactId>
                 <version>${version.saxon-he}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-access-core</artifactId>
+                <version>1.0.0-beta3</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.accumulo</groupId>

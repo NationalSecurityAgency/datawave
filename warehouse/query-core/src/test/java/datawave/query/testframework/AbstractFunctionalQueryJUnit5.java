@@ -64,7 +64,6 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
@@ -178,7 +177,6 @@ public abstract class AbstractFunctionalQueryJUnit5 implements QueryLogicTestHar
         logic.setIncludeDataTypeAsField(true);
 
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setQueryPlanner(new DatePartitionedQueryPlanner());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
@@ -201,7 +199,6 @@ public abstract class AbstractFunctionalQueryJUnit5 implements QueryLogicTestHar
         countLogic.setFullTableScanEnabled(false);
 
         countLogic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        countLogic.setMarkingFunctions(new MarkingFunctions.Default());
         countLogic.setMetadataHelperFactory(new MetadataHelperFactory());
         countLogic.setQueryPlanner(new DefaultQueryPlanner());
         countLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());

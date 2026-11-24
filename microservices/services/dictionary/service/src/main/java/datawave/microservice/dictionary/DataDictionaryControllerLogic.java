@@ -14,8 +14,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.microservice.AccumuloConnectionService;
 import datawave.microservice.Connection;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
@@ -169,8 +167,7 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
     public VoidResponse setDescriptionPost(String fieldName, String datatype, String description, String modelName, String modelTable, String columnVisibility,
                     DatawaveUserDetails currentUser) throws Exception {
         DESC desc = this.responseObjectFactory.getDescription();
-        Markings<?> markings = AccessExpressionMarkings.builder().columnVisibility(columnVisibility).build();
-        desc.setMarkings(markings);
+        desc.setColumnVisibility(columnVisibility);
         desc.setDescription(description);
 
         Connection connection = accumuloConnectionService.getConnection(modelTable, modelName, currentUser);
@@ -282,10 +279,9 @@ public class DataDictionaryControllerLogic<DESC extends DescriptionBase<DESC>,DI
      */
     public VoidResponse deleteDescription(String fieldName, String datatype, String modelName, String modelTable, String columnVisibility,
                     DatawaveUserDetails currentUser) throws Exception {
-        Markings<?> markings = AccessExpressionMarkings.builder().columnVisibility(columnVisibility).build();
         DESC desc = this.responseObjectFactory.getDescription();
         desc.setDescription("");
-        desc.setMarkings(markings);
+        desc.setColumnVisibility(columnVisibility);
 
         Connection connection = accumuloConnectionService.getConnection(modelTable, modelName, currentUser);
         dataDictionary.deleteDescription(connection, fieldName, datatype, desc);

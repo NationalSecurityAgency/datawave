@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang3.StringUtils;
 
-import datawave.marking.MarkingFunctions;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  * Default implementations for pluggable utilities for generating tag clouds, includes mechanisms to partition keywords into separate tag clouds, combine or
@@ -22,24 +22,16 @@ import datawave.marking.MarkingFunctions;
 public class DefaultTagCloudUtils implements TagCloudUtils, Serializable {
     private static final long serialVersionUID = 652771994052429009L;
     private static final String MULTI_VALUE_SEPARATOR = ",";
-    private MarkingFunctions<?> markingFunctions;
 
     @Override
     public String generateCombinedVisibility(Set<String> visibilities) {
         if (visibilities == null || visibilities.isEmpty()) {
             return null;
         }
-        try {
-            if (null == markingFunctions) {
-                markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-            }
-            // Calculate the columnVisibility for this key from the combiner.
-            ColumnVisibility columnVisibility = markingFunctions
-                            .combineVisibilities(visibilities.stream().map(ColumnVisibility::new).collect(Collectors.toList()));
-            return new String(columnVisibility.getExpression(), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        // Calculate the columnVisibility for this key from the combiner.
+        ColumnVisibility columnVisibility = VisibilityFunctions.getInstance()
+                        .combine(visibilities.stream().map(ColumnVisibility::new).collect(Collectors.toList()));
+        return new String(columnVisibility.getExpression(), StandardCharsets.UTF_8);
     }
 
     @Override

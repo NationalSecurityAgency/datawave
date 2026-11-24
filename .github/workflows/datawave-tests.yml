@@ -94,10 +94,20 @@ jobs:
         overwrite-settings: false
     - name: Build and Run Unit Tests
       run: |
-          mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs  ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -DskipITs -DskipFormat
+          mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" -Pexamples,assemble,spotbugs  ${{ needs.configure-runner.outputs.cache_settings }} -Ddeploy -Ddist -T1C clean install -Dsurefire.rerunFailingTestsCount=3 -Dutils -Dservice-accumulo -Dservice-dictionary -Dservice-query -Dservice-query-metric -DonlyServiceApis -DskipITs -DskipFormat
+    - name: Verify visibility provider packaging
+      run: |
+          mvn -B -ntp -pl warehouse/query-core dependency:build-classpath -DincludeScope=runtime "-Dmdep.outputFile=$RUNNER_TEMP/query-core-runtime.txt"
+          if grep -Fq '/visibility-provider-standard/' "$RUNNER_TEMP/query-core-runtime.txt"; then
+            echo "query-core must not export the standard visibility provider" >&2
+            exit 1
+          fi
+          unzip -Z1 web-services/deploy/application/target/*.ear > "$RUNNER_TEMP/stock-ear.txt"
+          grep -Eq '^lib/([^/]*-)?visibility-provider-standard-[^/]+\.jar$' "$RUNNER_TEMP/stock-ear.txt"
+          mvn -B -ntp -f contrib/visibility-provider/pom.xml clean verify
     - name: Run Integration Tests
       run: |
-          mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" ${{ needs.configure-runner.outputs.cache_settings }}  -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dutils -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
+          mvn --show-version --batch-mode --errors --no-transfer-progress "-Dstyle.color=always" ${{ needs.configure-runner.outputs.cache_settings }}  -Ddeploy -T1C verify -Dfailsafe.rerunFailingTestsCount=3 -Dutils -Dservice-accumulo -Dservice-dictionary -Dservice-query -Dservice-query-metric -DonlyServiceApis -DskipUTs -DskipFormat -DskipSpotbugs -Denforcer.skip=true -Dcheckstyle.skip=true
     # Always upload the raw surefire/failsafe XML so failures and flakes are inspectable.
     - name: Upload Test Reports
       if: always()

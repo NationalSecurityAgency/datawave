@@ -15,12 +15,11 @@ import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.data.hash.UID;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.tables.shard.FieldIndexCountQueryLogic.Tuple;
 import datawave.util.TextUtil;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
@@ -38,9 +37,8 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
     private BaseQueryLogic<Entry<Key,Value>> logic = null;
     private ResponseObjectFactory responseObjectFactory;
 
-    public FieldIndexCountQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        super(markingFunctions);
+    public FieldIndexCountQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory) {
+        super();
         this.auths = new Authorizations(settings.getQueryAuthorizations().split(","));
         this.logic = logic;
         this.responseObjectFactory = responseObjectFactory;
@@ -60,22 +58,22 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
         String key = entry.getKey();
         Tuple val = entry.getValue();
 
-        Markings<?> markings = null;
+        String visibility;
         try {
-            markings = markingFunctions.translateFromColumnVisibilityForAuths(val.getColumnVisibility(), this.auths);
-        } catch (MarkingFunctions.Exception e) {
-            log.error("could not translate " + val.getColumnVisibility() + " to markings, skipping entry");
+            visibility = AccessExpressionUtil.normalize(val.getColumnVisibility()).getExpression();
+        } catch (RuntimeException e) {
+            log.error("could not parse visibility " + val.getColumnVisibility() + ", skipping entry");
             return null;
         }
-        if (null == markings || markings.isEmpty()) {
-            // can't process this one because we did not have valid security markings
-            log.error("Transformer visibility interpreter was null, skipping entry");
+        if (visibility.isEmpty()) {
+            // can't process this one because we did not have a valid visibility
+            log.error("Entry has an empty visibility, skipping entry");
             return null;
         }
 
         EventBase event = this.responseObjectFactory.getEvent();
 
-        event.setMarkings(markings);
+        event.setColumnVisibility(visibility);
 
         List<FieldBase> fields = new ArrayList<>();
 
@@ -100,15 +98,15 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
 
         String colVis = new String(val.getColumnVisibility().getExpression());
 
-        fields.add(this.makeField("FIELD", markings, colVis, 0L, fieldName));
-        fields.add(this.makeField("VALUE", markings, colVis, 0L, fieldValue));
+        fields.add(this.makeField("FIELD", colVis, 0L, fieldName));
+        fields.add(this.makeField("VALUE", colVis, 0L, fieldValue));
 
         if (dataType != null) {
-            fields.add(this.makeField("DATATYPE", markings, colVis, 0L, dataType));
+            fields.add(this.makeField("DATATYPE", colVis, 0L, dataType));
         }
 
-        fields.add(this.makeField("MOST_RECENT", markings, colVis, 0L, Long.toString(val.getMaxTimestamp())));
-        fields.add(this.makeField("RECORD_COUNT", markings, colVis, 0L, Long.toString(val.getCount())));
+        fields.add(this.makeField("MOST_RECENT", colVis, 0L, Long.toString(val.getMaxTimestamp())));
+        fields.add(this.makeField("RECORD_COUNT", colVis, 0L, Long.toString(val.getCount())));
 
         event.setFields(fields);
         Text uid = new Text(fieldName);
@@ -154,7 +152,6 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
         EventBase event = (EventBase) o;
 
         CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
-        cqo.setMarkingFunctions(this.markingFunctions);
         Metadata metadata = event.getMetadata();
         cqo.setColFam(metadata.getDataType() + ":" + cqo.getEventId());
         cqo.setDataType(metadata.getDataType());
@@ -163,7 +160,7 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
 
         List<? extends FieldBase> fields = event.getFields();
         for (FieldBase f : fields) {
-            cqo.addColumn(f.getName(), f.getTypedValue(), f.getMarkings(), f.getColumnVisibility(), f.getTimestamp());
+            cqo.addColumn(f.getName(), f.getTypedValue(), f.getColumnVisibility(), f.getTimestamp());
         }
 
         // set the size in bytes using the initial event size as an approximation
@@ -172,10 +169,9 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
         return cqo;
     }
 
-    private FieldBase makeField(String name, Markings<?> markings, String columnVisibility, Long timestamp, Object value) {
+    private FieldBase makeField(String name, String columnVisibility, Long timestamp, Object value) {
         FieldBase field = this.responseObjectFactory.getField();
         field.setName(name);
-        field.setMarkings(markings);
         field.setColumnVisibility(columnVisibility);
         field.setTimestamp(timestamp);
         field.setValue(value);
@@ -187,13 +183,12 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
         if (this.variableFieldList == null) {
             this.variableFieldList = cacheableQueryRow.getVariableColumnNames();
         }
-        Markings<?> markings = cacheableQueryRow.getMarkings();
         String dataType = cacheableQueryRow.getDataType();
         String internalId = cacheableQueryRow.getEventId();
         String row = cacheableQueryRow.getRow();
 
         EventBase event = this.responseObjectFactory.getEvent();
-        event.setMarkings(markings);
+        event.setColumnVisibility(cacheableQueryRow.getColumnVisibility());
 
         Metadata metadata = new Metadata();
         metadata.setDataType(dataType);
@@ -207,10 +202,9 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
         for (Map.Entry<String,String> entry : columnValueMap.entrySet()) {
             String columnName = entry.getKey();
             String columnValue = entry.getValue();
-            Markings<?> columnMarkings = cacheableQueryRow.getColumnMarkings(columnName);
             String columnVisibility = cacheableQueryRow.getColumnVisibility(columnName);
             Long columnTimestamp = cacheableQueryRow.getColumnTimestamp(columnName);
-            FieldBase field = this.makeField(columnName, columnMarkings, columnVisibility, columnTimestamp, columnValue);
+            FieldBase field = this.makeField(columnName, columnVisibility, columnTimestamp, columnValue);
             fieldList.add(field);
         }
         event.setFields(fieldList);

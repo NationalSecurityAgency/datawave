@@ -38,7 +38,6 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
@@ -216,7 +215,6 @@ public class DiscoveryLogicTest {
         logic.setMaxWork(-1);
         logic.setAllowLeadingWildcard(true);
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
     }
 

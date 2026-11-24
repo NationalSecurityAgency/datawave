@@ -401,7 +401,7 @@ public class KeywordQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     @Override
     public QueryLogicTransformer<Entry<Key,Value>,TagCloudPartition> getTransformer(Query settings) {
-        return new TagCloudTransformer(responseVersion, settings, config.getState(), this.markingFunctions, this.responseObjectFactory, transformers);
+        return new TagCloudTransformer(responseVersion, settings, config.getState(), this.responseObjectFactory, transformers);
     }
 
     @Override

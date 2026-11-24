@@ -13,7 +13,6 @@ import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.model.EdgeModelFieldsFactory;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.query.tables.remote.RemoteQueryLogic;
@@ -58,9 +57,8 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
     }
 
     @Override
-    public QueryLogicTransformer<EdgeBase,EdgeBase> createTransformer(Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        return new EdgeBaseTransformer(settings, markingFunctions, responseObjectFactory, edgeFields);
+    public QueryLogicTransformer<EdgeBase,EdgeBase> createTransformer(Query settings, ResponseObjectFactory responseObjectFactory) {
+        return new EdgeBaseTransformer(settings, responseObjectFactory, edgeFields);
     }
 
     @Override
@@ -134,8 +132,8 @@ public class RemoteEdgeQueryLogic extends BaseRemoteQueryLogic<EdgeBase> impleme
 
     private class EdgeBaseTransformer extends EdgeQueryTransformerSupport<EdgeBase,EdgeBase> {
 
-        public EdgeBaseTransformer(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
-            super(settings, markingFunctions, responseObjectFactory, fields);
+        public EdgeBaseTransformer(Query settings, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
+            super(settings, responseObjectFactory, fields);
         }
 
         @Override

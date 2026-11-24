@@ -70,17 +70,6 @@
     </Match>
 
     <!--
-    The offending MarkingFunctionsFactory instance is a container-managed singleton,
-    so not really a concern. Having 'postConstruct' (instance method) delegate this
-    write to a new static method would silence this bug, but that seems unnecessary
-    -->
-    <Match>
-        <Class name="datawave.marking.MarkingFunctionsFactory" />
-        <Field name="markingFunctions" />
-        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
-    </Match>
-
-    <!--
     Are we sure that System.gc() call is providing the expected benefit?
     -->
     <Match>

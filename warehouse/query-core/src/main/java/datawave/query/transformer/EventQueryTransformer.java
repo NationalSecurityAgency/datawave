@@ -16,12 +16,12 @@ import com.esotericsoftware.kryo.io.Input;
 
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
 import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.parser.EventFields;
 import datawave.query.parser.EventFields.FieldValue;
+import datawave.visibility.AccessExpressionUtil;
+import datawave.visibility.VisibilityFunctions;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -29,15 +29,12 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Key,Value>,EventBase> implements CacheableLogic {
 
-    private MarkingFunctions<?> markingFunctions;
-
-    public EventQueryTransformer(String tableName, Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
-        super(tableName, settings, markingFunctions, responseObjectFactory);
+    public EventQueryTransformer(String tableName, Query settings, ResponseObjectFactory responseObjectFactory) {
+        super(tableName, settings, responseObjectFactory);
     }
 
-    public EventQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        super(logic, settings, markingFunctions, responseObjectFactory);
+    public EventQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory) {
+        super(logic, settings, responseObjectFactory);
     }
 
     @Override
@@ -53,21 +50,17 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         }
         EventBase event = this.responseObjectFactory.getEvent();
 
-        if (null == markingFunctions) {
-            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-        }
-
-        Markings<?> markings;
+        String keyVisibility;
         try {
-            markings = this.markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(key.getColumnVisibility()), this.auths);
+            keyVisibility = AccessExpressionUtil.normalize(new ColumnVisibility(key.getColumnVisibility())).getExpression();
         } catch (Exception e) {
-            log.error("could not translate " + key.getColumnVisibility() + " to markings, skipping entry");
+            log.error("could not parse visibility " + key.getColumnVisibility() + ", skipping entry");
             return null;
         }
 
-        if (null == markings || markings.isEmpty()) {
-            // can't process this one because we did not have valid security markings
-            log.error("Transformer visibility interpreter was null, skipping entry");
+        if (keyVisibility.isEmpty()) {
+            // can't process this one because we did not have a valid visibility
+            log.error("Entry has an empty visibility, skipping entry");
             return null;
         }
         ByteArrayInputStream bais = new ByteArrayInputStream(entry.getValue().get());
@@ -106,27 +99,27 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
 
             for (FieldValue fv : e.getValue()) {
                 visibilitiesToMerge.add(fv.getVisibility());
+                String fieldVisibility;
                 try {
-                    Markings<?> fieldMarkings = this.markingFunctions.translateFromColumnVisibility(fv.getVisibility());
-                    String value = new String(fv.getValue(), StandardCharsets.UTF_8);
-                    // if this is a content field name, then replace the value with the uid
-                    if (getContentFieldNames().contains(fieldName)) {
-                        value = baseUid;
-                    }
-                    values.add(this.makeField(fieldName, fieldMarkings, fieldMarkings.toAccessExpression().getExpression(), entry.getKey().getTimestamp(),
-                                    value));
-                } catch (MarkingFunctions.Exception e1) {
-                    throw new RuntimeException("could not make markings from: " + fv.getVisibility());
+                    fieldVisibility = AccessExpressionUtil.normalize(fv.getVisibility()).getExpression();
+                } catch (RuntimeException e1) {
+                    throw new RuntimeException("could not normalize visibility: " + fv.getVisibility(), e1);
                 }
+                String value = new String(fv.getValue(), StandardCharsets.UTF_8);
+                // if this is a content field name, then replace the value with the uid
+                if (getContentFieldNames().contains(fieldName)) {
+                    value = baseUid;
+                }
+                values.add(this.makeField(fieldName, fieldVisibility, entry.getKey().getTimestamp(), value));
             }
         }
 
         ColumnVisibility columnVisibility = null;
         try {
-            columnVisibility = markingFunctions.combineVisibilities(visibilitiesToMerge);
-            event.setMarkings(markingFunctions.translateFromColumnVisibility(columnVisibility));
+            columnVisibility = VisibilityFunctions.getInstance().combine(visibilitiesToMerge);
+            event.setColumnVisibility(AccessExpressionUtil.normalize(columnVisibility).getExpression());
         } catch (Exception e1) {
-            throw new RuntimeException("could not make markings from: " + columnVisibility);
+            throw new RuntimeException("could not combine visibilities: " + visibilitiesToMerge, e1);
         }
 
         event.setFields(new ArrayList<>(values));

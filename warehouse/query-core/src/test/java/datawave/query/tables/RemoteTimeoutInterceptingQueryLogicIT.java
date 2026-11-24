@@ -34,7 +34,6 @@ import datawave.core.query.remote.RemoteQueryService;
 import datawave.core.query.remote.RemoteTimeoutQueryException;
 import datawave.core.query.remote.RemoteTimeoutQueryRuntimeException;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
-import datawave.marking.MarkingFunctions;
 import datawave.query.tables.remote.RemoteQueryLogic;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
@@ -207,7 +206,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(10);
 
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
@@ -220,7 +218,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
         compositeLogic.setMaxPageSize(1);
-        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
         compositeLogic.setQueryLogics(logics);
         compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
@@ -242,7 +239,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(100);
 
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
@@ -255,7 +251,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
         compositeLogic.setMaxPageSize(1);
-        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
         compositeLogic.setQueryLogics(logics);
         compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
@@ -276,7 +271,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(100);
 
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
@@ -289,7 +283,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
         compositeLogic.setMaxPageSize(1);
-        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
         compositeLogic.setQueryLogics(logics);
         compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
@@ -311,7 +304,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(100);
 
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
@@ -324,7 +316,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
         compositeLogic.setMaxPageSize(1);
-        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
         compositeLogic.setQueryLogics(logics);
         compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
@@ -342,7 +333,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(100);
 
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
@@ -355,7 +345,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
         compositeLogic.setMaxPageSize(1);
-        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
         compositeLogic.setQueryLogics(logics);
         compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
@@ -377,7 +366,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
         // only wait 100ms for the read
         remoteConfig.setSocketTimeout(100);
 
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
@@ -390,7 +378,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
         compositeLogic.setMaxPageSize(1);
-        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
         compositeLogic.setQueryLogics(logics);
         compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
@@ -442,7 +429,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
     public void testCompositeListEffectAuths() {
         ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
 
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         HttpHandler foreverHandler = new RemoteQueryServiceTestUtil.ForeverHandler(interrupt);
@@ -455,7 +441,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
         compositeLogic.setMaxPageSize(1);
-        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
         compositeLogic.setQueryLogics(logics);
         compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
@@ -473,7 +458,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         ((RemoteQueryLogic) remoteDelegate).setUserOperations(new AlwaysRemoteAuthorizationExceptionUserOperations());
 
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         Map<String,QueryLogic<?>> logics = new HashMap<>();
@@ -482,7 +466,6 @@ public class RemoteTimeoutInterceptingQueryLogicIT {
 
         CompositeQueryLogic compositeLogic = new CompositeQueryLogic();
         compositeLogic.setMaxPageSize(1);
-        compositeLogic.setMarkingFunctions(new MarkingFunctions.Default());
         compositeLogic.setQueryLogics(logics);
         compositeLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 

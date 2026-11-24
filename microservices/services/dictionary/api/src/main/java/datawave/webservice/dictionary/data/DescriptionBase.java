@@ -3,16 +3,25 @@ package datawave.webservice.dictionary.data;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
-import datawave.marking.Markings;
-import datawave.webservice.query.result.event.HasMarkings;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 import io.protostuff.Message;
 
 @XmlAccessorType(XmlAccessType.NONE)
-public abstract class DescriptionBase<T> implements HasMarkings, Message<T> {
+public abstract class DescriptionBase<T> implements HasColumnVisibility, Message<T> {
 
     protected String description;
 
-    protected Markings<?> markings;
+    protected String columnVisibility;
+
+    @Override
+    public String getColumnVisibility() {
+        return columnVisibility;
+    }
+
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
+    }
 
     public abstract String getDescription();
 

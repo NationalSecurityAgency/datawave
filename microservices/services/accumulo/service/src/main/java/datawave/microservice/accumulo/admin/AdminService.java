@@ -41,8 +41,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
+import datawave.visibility.AccessExpressionUtil;
 import datawave.webservice.query.util.OptionallyEncodedString;
 import datawave.webservice.request.UpdateRequest;
 import datawave.webservice.request.objects.MutationEntry;
@@ -69,13 +68,11 @@ import datawave.webservice.result.VoidResponse;
 public class AdminService {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    private final MarkingFunctions<?> markingFunctions;
     private final AccumuloClient warehouseAccumuloClient;
 
     @Autowired
-    public AdminService(@Qualifier("warehouse") AccumuloClient warehouseAccumuloClient, MarkingFunctions<?> markingFunctions) {
+    public AdminService(@Qualifier("warehouse") AccumuloClient warehouseAccumuloClient) {
         this.warehouseAccumuloClient = warehouseAccumuloClient;
-        this.markingFunctions = markingFunctions;
     }
 
     /**
@@ -560,8 +557,6 @@ public class AdminService {
 
         ValidateVisibilityResponse response = new ValidateVisibilityResponse();
         try {
-            SecurityOperations securityOps = warehouseAccumuloClient.securityOperations();
-            Authorizations authorizations = securityOps.getUserAuthorizations(warehouseAccumuloClient.whoami());
             List<Visibility> visibilityList = new ArrayList<>();
 
             for (String v : visibilityArray) {
@@ -570,15 +565,15 @@ public class AdminService {
                     vis.setValid(false);
                     visibilityList.add(vis);
                     try {
-                        Markings<?> markings = markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(v), authorizations);
+                        String columnVisibility = AccessExpressionUtil.normalize(new ColumnVisibility(v)).getExpression();
                         vis.setVisibility(v);
                         vis.setValid(true);
-                        vis.setMarkings(markings);
+                        vis.setColumnVisibility(columnVisibility);
                     } catch (Exception e) {
                         response.addMessage("Could not interpret " + v);
                     }
                 } catch (RuntimeException e) {
-                    log.info("Marking functions operation failed", e);
+                    log.info("Visibility validation failed", e);
                     response.addMessage("Could not interpret " + v);
                 }
             }

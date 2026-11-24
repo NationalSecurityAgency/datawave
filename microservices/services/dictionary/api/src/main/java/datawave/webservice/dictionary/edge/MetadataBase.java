@@ -6,22 +6,23 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
-import datawave.marking.Markings;
-import datawave.webservice.query.result.event.HasMarkings;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 import io.protostuff.Message;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultMetadata.class)
-public abstract class MetadataBase<T> implements HasMarkings, Message<T> {
+public abstract class MetadataBase<T> implements HasColumnVisibility, Message<T> {
 
-    protected transient Markings<?> markings;
+    protected transient String columnVisibility;
 
-    public Markings<?> getMarkings() {
-        return markings;
+    @Override
+    public String getColumnVisibility() {
+        return columnVisibility;
     }
 
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
     }
 
     public abstract String getEdgeType();

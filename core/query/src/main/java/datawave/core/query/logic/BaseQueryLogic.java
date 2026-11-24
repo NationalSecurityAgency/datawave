@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Required;
 import datawave.audit.SelectorExtractor;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
@@ -47,7 +46,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected ProxiedUserDetails serverUser;
 
     protected Set<String> requiredRoles;
-    protected MarkingFunctions<?> markingFunctions;
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
     protected ResponseEnricherBuilder responseEnricherBuilder = null;
@@ -65,7 +63,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
 
         // copy other variables
         setMaxResults(other.maxResults);
-        setMarkingFunctions(other.getMarkingFunctions());
         setResponseObjectFactory(other.getResponseObjectFactory());
         setLogicName(other.getLogicName());
         setLogicDescription(other.getLogicDescription());
@@ -98,14 +95,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
                     throws Exception {
         // for many query logics, the query is what it is
         return settings.getQuery();
-    }
-
-    public MarkingFunctions<?> getMarkingFunctions() {
-        return markingFunctions;
-    }
-
-    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
-        this.markingFunctions = markingFunctions;
     }
 
     public ResponseObjectFactory getResponseObjectFactory() {
@@ -234,7 +223,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
             //@formatter:off
             ResponseEnricher enricher = responseEnricherBuilder
                     .withConfig(getConfig())
-                    .withMarkingFunctions(getMarkingFunctions())
                     .withResponseObjectFactory(responseObjectFactory)
                     .withCurrentUser(getCurrentUser())
                     .withServerUser(getServerUser())

@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.query.tables.keyword.transform.KeywordResultsTransformer;
 import datawave.webservice.result.keyword.DefaultTagCloud;
 import datawave.webservice.result.keyword.DefaultTagCloudEntry;
@@ -15,7 +13,7 @@ import datawave.webservice.result.keyword.DefaultTagCloudEntry;
  */
 public class TagCloudTestUtil {
 
-    private static final Markings<?> ALL_MARKINGS = AccessExpressionMarkings.builder().columnVisibility("ALL").build();
+    private static final String ALL_VISIBILITY = "ALL";
 
     public static final String SOPRANO_SOURCE = "20130101_0/test/-1kfeoq.-80b5fs.r0262j";
     public static final String CAPONE_SOURCE = "20130101_0/test/-cvy0gj.tlf59s.-duxzua";
@@ -32,7 +30,7 @@ public class TagCloudTestUtil {
         } else {
             expectedCloud.setMetadata(metadata);
         }
-        expectedCloud.setMarkings(ALL_MARKINGS);
+        expectedCloud.setColumnVisibility(ALL_VISIBILITY);
         expectedCloud.setTags(entries);
         expectedCloud.setIntermediateResult(false);
 
@@ -50,7 +48,7 @@ public class TagCloudTestUtil {
         entries.add(createTagCloudEntry("much farther", 0.5903, 1, List.of(docId)));
 
         DefaultTagCloud expectedCloud = new DefaultTagCloud();
-        expectedCloud.setMarkings(ALL_MARKINGS);
+        expectedCloud.setColumnVisibility(ALL_VISIBILITY);
         expectedCloud.setTags(entries);
         if (version.equals("1")) {
             expectedCloud.setLanguage("keyword");

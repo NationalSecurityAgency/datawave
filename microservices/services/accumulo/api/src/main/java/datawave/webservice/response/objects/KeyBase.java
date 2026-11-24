@@ -4,14 +4,11 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 
-import datawave.marking.Markings;
-import datawave.webservice.query.result.event.HasMarkings;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultKey.class)
-public abstract class KeyBase implements HasMarkings {
-
-    protected Markings<?> markings;
+public abstract class KeyBase implements HasColumnVisibility {
 
     public abstract String getRow();
 

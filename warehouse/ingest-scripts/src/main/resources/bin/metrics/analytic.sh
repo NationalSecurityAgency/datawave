@@ -34,6 +34,7 @@ then
 	CLASSPATH=$(findJar javatuples):${CLASSPATH}
 	CLASSPATH=$(findJar datawave-core):${CLASSPATH}
 	CLASSPATH=$(findJar common-utils):${CLASSPATH}
+	CLASSPATH=${DATAWAVE_VISIBILITY_PROVIDER_JAR}:${CLASSPATH}
 
 	#
 	# Transform the classpath into a comma-separated list also

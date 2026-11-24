@@ -256,7 +256,10 @@ public class DefaultDataDictionary extends DataDictionaryBase<DefaultDataDiction
                 if (!first) {
                     builder.append(", ");
                 }
-                builder.append(desc.getMarkings()).append(" ").append(desc.getDescription());
+                if (desc.getColumnVisibility() != null) {
+                    builder.append(desc.getColumnVisibility()).append(" ");
+                }
+                builder.append(desc.getDescription());
                 first = false;
             }
 

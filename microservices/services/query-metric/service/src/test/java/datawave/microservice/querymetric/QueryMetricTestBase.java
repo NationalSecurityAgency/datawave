@@ -1,6 +1,5 @@
 package datawave.microservice.querymetric;
 
-import static datawave.marking.AccessExpressionMarkings.ACCESS;
 import static datawave.microservice.querymetric.config.HazelcastMetricCacheConfiguration.INCOMING_METRICS;
 import static datawave.security.authorization.DatawaveUser.UserType.USER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.accumulo.access.AccessExpression;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -66,8 +64,6 @@ import com.hazelcast.spring.cache.HazelcastCacheManager;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.ingest.protobuf.Uid;
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.microservice.authorization.preauth.ProxiedEntityX509Filter;
 import datawave.microservice.authorization.user.DatawaveUserDetails;
 import datawave.microservice.querymetric.config.QueryMetricClientProperties;
@@ -147,15 +143,10 @@ public class QueryMetricTestBase {
     protected DatawaveUserDetails nonAdminUser;
     protected static boolean isHazelCast;
     protected static CacheManager staticCacheManager;
-    protected static Markings<?> metricMarkings;
+    protected static final String METRIC_VISIBILITY = "A&C";
     protected List<String> tables;
     protected Collection<String> auths;
     protected AccumuloClient accumuloClient;
-
-    static {
-        AccessExpression ae = ACCESS.newExpression("A&C");
-        metricMarkings = AccessExpressionMarkings.builder().accessExpression(ae).build();
-    }
 
     @AfterAll
     public static void afterClass() {
@@ -226,7 +217,7 @@ public class QueryMetricTestBase {
         DefaultEvent event = new DefaultEvent();
         List<DefaultField> fields = new ArrayList<>();
 
-        event.setMarkings(metric.getMarkings());
+        event.setColumnVisibility(metric.getColumnVisibility());
 
         addStringField(fields, "QUERY_ID", metric.getColumnVisibility(), createTime, metric.getQueryId());
         addDateField(fields, "BEGIN_DATE", metric.getColumnVisibility(), createTime, metric.getBeginDate(), sdf_date_time1);
@@ -326,7 +317,7 @@ public class QueryMetricTestBase {
         long now = System.currentTimeMillis();
         Date nowDate = new Date(now);
         m.setQueryId(queryId);
-        m.setMarkings(metricMarkings);
+        m.setColumnVisibility(METRIC_VISIBILITY);
         m.setEndDate(nowDate);
         m.setBeginDate(DateUtils.addDays(nowDate, -1));
         m.setLastUpdated(nowDate);
@@ -400,7 +391,6 @@ public class QueryMetricTestBase {
             assertTrue(assertObjectsEqual(m1.getQueryType(), m2.getQueryType()), message + "queryType");
             assertTrue(assertObjectsEqual(m1.getQueryAuthorizations(), m2.getQueryAuthorizations()), message + "queryAuthorizations");
             assertTrue(assertObjectsEqual(m1.getColumnVisibility(), m2.getColumnVisibility()), message + "columnVisibility");
-            assertEquals(m1.getMarkings(), m2.getMarkings(), message + "markings");
             assertTrue(assertObjectsEqual(m1.getBeginDate(), m2.getBeginDate()), message + "beginDate");
             assertTrue(assertObjectsEqual(m1.getEndDate(), m2.getEndDate()), message + "endDate");
             assertEquals(m1.getCreateDate(), m2.getCreateDate(), message + "createDate");

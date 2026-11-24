@@ -43,7 +43,6 @@ import datawave.query.tables.ShardQueryLogic;
 // @formatter:off
 @ContextConfiguration(locations = {
         "classpath:datawave/query/QueryLogicFactory.xml",
-        "classpath:MarkingFunctionsContext.xml",
         "classpath:MetadataHelperContext.xml",
         "classpath:CacheContext.xml"})
 // @formatter:on

@@ -23,7 +23,6 @@ import com.google.common.collect.Sets;
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;
@@ -31,6 +30,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.TypeMetadata;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  * This class is the only way that composite fields get create.
@@ -50,7 +50,6 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
 
     // Whether the value is from the index
     private final boolean fromIndex;
-    private MarkingFunctions<?> markingFunctions;
 
     /**
      * Constructor that accepts raw components
@@ -61,15 +60,12 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
      *            the type metadata
      * @param attrFilter
      *            the attribute filter
-     * @param markingFunctions
-     *            the marking functions
      * @param fromIndex
      *            flag denoting if this class is operating on values from the field index
      */
-    public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter,
-                    MarkingFunctions<?> markingFunctions, boolean fromIndex) {
+    public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter, boolean fromIndex) {
         // in Java 25 we can create the attribute factory first
-        this(new AttributeFactory(typeMetadata), compositeMetadata, attrFilter, markingFunctions, fromIndex);
+        this(new AttributeFactory(typeMetadata), compositeMetadata, attrFilter, fromIndex);
     }
 
     /**
@@ -81,15 +77,11 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
      *            the composite metadata
      * @param attrFilter
      *            the attribute filter
-     * @param markingFunctions
-     *            the marking functions
      * @param fromIndex
      *            flag denoting if this class is operating on values from the field index
      */
-    public ValueToAttributes(AttributeFactory attributeFactory, CompositeMetadata compositeMetadata, EventDataQueryFilter attrFilter,
-                    MarkingFunctions<?> markingFunctions, boolean fromIndex) {
+    public ValueToAttributes(AttributeFactory attributeFactory, CompositeMetadata compositeMetadata, EventDataQueryFilter attrFilter, boolean fromIndex) {
         this.attrFactory = attributeFactory;
-        this.markingFunctions = markingFunctions;
         this.attrFilter = attrFilter;
         if (compositeMetadata != null) {
             this.compositeToFieldMap = compositeMetadata.getCompositeFieldMapByType();
@@ -168,11 +160,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                     Collection<Attribute<?>> currentAttributes, List<Collection<Attribute<?>>> componentAttributes, String separator) {
         if (componentAttributes == null) {
             // finally create the composite from what we have
-            try {
-                return Arrays.asList(Maps.immutableEntry(compositeField, joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
-            } catch (MarkingFunctions.Exception e) {
-                log.debug("could not join attributes:", e);
-            }
+            return Arrays.asList(Maps.immutableEntry(compositeField, joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
         } else {
             List<Entry<String,Attribute<? extends Comparable<?>>>> compositeAttributes = new ArrayList<>();
             Collection<Attribute<?>> compAttrs = componentAttributes.get(0);
@@ -184,7 +172,6 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             }
             return compositeAttributes;
         }
-        return new ArrayList<>();
     }
 
     public String getCompositeAttributeKey(String composite, String grouping) {
@@ -223,8 +210,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         return attr;
     }
 
-    public Attribute<?> joinAttributes(String compositeName, Collection<Attribute<?>> in, boolean isOverloadedComposite, String separator)
-                    throws MarkingFunctions.Exception {
+    public Attribute<?> joinAttributes(String compositeName, Collection<Attribute<?>> in, boolean isOverloadedComposite, String separator) {
         Collection<ColumnVisibility> columnVisibilities = Sets.newHashSet();
         List<String> dataList = new ArrayList<>();
         long timestamp = 0;
@@ -292,10 +278,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         }
         ColumnVisibility columnVisibility;
         try {
-            if (null == markingFunctions) {
-                markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-            }
-            columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
+            columnVisibility = VisibilityFunctions.getInstance().combine(columnVisibilities);
         } catch (Exception e) {
             log.warn("Invalid column visibility after combining!", e);
             return null;
@@ -329,7 +312,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType<?>) type).getNormalizedValues()
                             : Arrays.asList(type.getNormalizedValue());
         } else {
-            new MarkingFunctions.Exception().printStackTrace(System.err);
+            log.warn("Expected a TypeAttribute but found " + attr.getClass().getName(), new IllegalStateException());
             return Arrays.asList(String.valueOf(attr.getData()));
         }
     }

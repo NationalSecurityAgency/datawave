@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.FieldVisibilities;
 
 /**
  * The purpose of this class is to demonstrate a likely usage pattern for an IngestPolicyEnforcer implementation
@@ -26,18 +27,18 @@ public class ExampleIngestPolicyEnforcer extends IngestPolicyEnforcer {
         }
         validateUUIDs(event);
         validateEventDate(event);
-        validateSecurityMarkings(event);
+        validateVisibility(event);
     }
 
     /**
-     * Verify that security markings have already been applied to the raw record. See ingest config properties, '*.data.category.security.field.domains' and
+     * Verify that a visibility has already been applied to the raw record. See ingest config properties, '*.data.category.security.field.domains' and
      * '*.data.category.security.field.names'
      *
      * @param event
      *            the event container
      */
-    private void validateSecurityMarkings(RawRecordContainer event) {
-        if (null == event.getSecurityMarkings() || event.getSecurityMarkings().isEmpty()) {
+    private void validateVisibility(RawRecordContainer event) {
+        if (FieldVisibilities.isEmpty(event.getVisibility())) {
             event.addError(RawDataErrorNames.MISSING_DATA_ERROR);
             log.error("No security markings have been applied to the event: " + event.getRawFileName() + ", record: " + event.getRawRecordNumber());
         }

@@ -67,9 +67,8 @@ class AnnotationCachePolicyTest {
                             .doesNotHaveBean(HazelcastInstance.class)
                             .doesNotHaveBean(HazelcastCacheClientHealthIndicator.class);
                     assertThat(context.getBean("cacheManager")).isInstanceOf(CaffeineCacheManager.class);
-                    assertThat(context.getBean("markings-cache-manager")).isInstanceOf(CaffeineCacheManager.class);
                     assertThat(context.getBean("remoteOperationsCacheManager")).isInstanceOf(CaffeineCacheManager.class);
-                    for (String manager : new String[] {"cacheManager", "markings-cache-manager", "remoteOperationsCacheManager"}) {
+                    for (String manager : new String[] {"cacheManager", "remoteOperationsCacheManager"}) {
                         CaffeineCacheManager caches = context.getBean(manager, CaffeineCacheManager.class);
                         String name = "remoteOperationsCacheManager".equals(manager) ? "getRemoteUser" : "annotation-cache-probe";
                         Cache cache = caches.getCache(name);

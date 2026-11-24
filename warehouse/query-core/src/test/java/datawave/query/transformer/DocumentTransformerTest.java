@@ -16,8 +16,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.attributes.Document;
@@ -32,7 +30,6 @@ public class DocumentTransformerTest {
 
     // variables used to build the transformer
     private final Query query = new QueryImpl();
-    private final MarkingFunctions<?> markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
     private final ResponseObjectFactory responseObjectFactory = new DefaultResponseObjectFactory();
     private final KryoDocumentSerializer serializer = new KryoDocumentSerializer();
 
@@ -52,7 +49,7 @@ public class DocumentTransformerTest {
         givenDocumentFieldValue("field1", "5");
 
         String tableName = TableName.SHARD;
-        transformer = new DocumentTransformer(tableName, query, markingFunctions, responseObjectFactory, true);
+        transformer = new DocumentTransformer(tableName, query, responseObjectFactory, true);
     }
 
     @AfterEach

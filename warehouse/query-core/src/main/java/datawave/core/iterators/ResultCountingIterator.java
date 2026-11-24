@@ -31,7 +31,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 
-import datawave.marking.MarkingFunctions;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  * <p>
@@ -66,7 +66,6 @@ public class ResultCountingIterator extends WrappingIterator {
 
     private String threadName = null;
     protected Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
-    protected MarkingFunctions<?> markingFunctions;
 
     public ResultCountingIterator() {
         threadName = Thread.currentThread().getName();
@@ -207,13 +206,10 @@ public class ResultCountingIterator extends WrappingIterator {
 
         sw.start();
 
-        if (null == markingFunctions) {
-            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-        }
         ColumnVisibility columnVisibility;
         try {
-            columnVisibility = markingFunctions.combineVisibilities(columnVisibilities);
-        } catch (MarkingFunctions.Exception e) {
+            columnVisibility = VisibilityFunctions.getInstance().combine(columnVisibilities);
+        } catch (RuntimeException e) {
             log.error("Could not create combined columnVisibility for the count", e);
             return null;
         }

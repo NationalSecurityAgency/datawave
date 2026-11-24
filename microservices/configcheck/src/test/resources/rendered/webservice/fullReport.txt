@@ -405,7 +405,6 @@ doc.beans.TokenizedLuceneToJexlQueryParser.allowedFunctions: allowedQueryFunctio
 doc.beans.TokenizedLuceneToJexlQueryParser.skipTokenizeUnfieldedFields: skipTokenizeFields
 doc.beans.TokenizedLuceneToJexlQueryParser.tokenizedFields: tokenizeFields
 doc.beans.allowedQueryFunctions.parser: LuceneToJexlQueryParser
-doc.beans.baseQueryLogic.markingFunctions: markingFunctions
 doc.beans.baseQueryLogic.responseObjectFactory: responseObjectFactory
 doc.beans.queryLogicFactory.queryLogicFactoryConfiguration: QueryLogicFactoryConfiguration
 

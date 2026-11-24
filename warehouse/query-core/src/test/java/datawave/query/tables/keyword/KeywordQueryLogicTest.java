@@ -27,7 +27,6 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections.iterators.ArrayListIterator;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,8 +39,6 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 import datawave.query.config.KeywordQueryConfiguration;
@@ -61,8 +58,6 @@ public class KeywordQueryLogicTest {
     private KeywordQueryConfiguration mockKeywordConfig;
 
     private Query query;
-
-    private final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
 
     @BeforeEach
     public void setup() throws TableNotFoundException {
@@ -200,7 +195,6 @@ public class KeywordQueryLogicTest {
         AccumuloClient client = mock(AccumuloClient.class);
 
         KeywordQueryLogic logic = new KeywordQueryLogic();
-        logic.setMarkingFunctions(markingFunctions);
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         Authorizations auths = new Authorizations("A");
@@ -226,7 +220,6 @@ public class KeywordQueryLogicTest {
         AccumuloClient mockClient = mock(AccumuloClient.class);
 
         KeywordQueryLogic logic = new KeywordQueryLogic();
-        logic.setMarkingFunctions(markingFunctions);
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         Authorizations auths = new Authorizations("A");
@@ -245,8 +238,6 @@ public class KeywordQueryLogicTest {
         Key dataKey = new Key("20241218_0", "d", "sampleCsv" + '\u0000' + "1.2.3" + '\u0000' + "someView", "A");
         Value viewValue = new Value(KeywordResults.serialize(results));
         Map.Entry<Key,Value> entry = new AbstractMap.SimpleImmutableEntry<>(dataKey, viewValue);
-
-        markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility("A"), auths);
 
         logic.initialize(mockClient, settings, Set.of(auths));
         QueryLogicTransformer<Map.Entry<Key,Value>,TagCloudPartition> transformer = logic.getTransformer(settings);

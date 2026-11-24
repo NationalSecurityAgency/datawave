@@ -1,4 +1,3 @@
-accumulo-utils-1.3.jar
 base-rest-responses-1.2.jar
 caffeine-2.6.2.jar
 commons-collections4-4.1.jar

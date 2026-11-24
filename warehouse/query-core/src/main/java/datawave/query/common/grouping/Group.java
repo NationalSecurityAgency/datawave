@@ -12,7 +12,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import datawave.marking.AccessExpressionUtil;
+import datawave.visibility.AccessExpressionUtil;
 
 /**
  * Represents a grouping of values for fields specified via the #GROUP_BY functionality, with information about the total number of times the grouping was seen,

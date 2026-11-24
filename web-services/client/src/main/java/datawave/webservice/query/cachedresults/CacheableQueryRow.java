@@ -7,12 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
-import datawave.webservice.query.result.event.HasMarkings;
+import datawave.webservice.query.result.event.HasColumnVisibility;
 import datawave.webservice.query.util.TypedValue;
 
-public abstract class CacheableQueryRow implements HasMarkings {
+public abstract class CacheableQueryRow implements HasColumnVisibility {
 
     private static final Set<String> fixedColumnSet = new LinkedHashSet<String>();
     static {
@@ -28,15 +26,39 @@ public abstract class CacheableQueryRow implements HasMarkings {
         fixedColumnSet.add("_column_timestamps_");
     }
 
-    protected MarkingFunctions<?> markingFunctions;
+    protected String columnVisibility;
 
     public static Set<String> getFixedColumnSet() {
         return Collections.unmodifiableSet(fixedColumnSet);
     }
 
-    public abstract void addColumn(String columnName, String columnStringValue, Markings<?> markings, String columnVisibility, Long timestamp);
+    /**
+     * Add a column value.
+     *
+     * @param columnName
+     *            the column name
+     * @param columnStringValue
+     *            the column value
+     * @param columnVisibility
+     *            the column visibility expression of the value; null means no visibility
+     * @param timestamp
+     *            the timestamp of the value
+     */
+    public abstract void addColumn(String columnName, String columnStringValue, String columnVisibility, Long timestamp);
 
-    public abstract void addColumn(String columnName, TypedValue columnValue, Markings<?> markings, String columnVisibility, Long timestamp);
+    /**
+     * Add a column value.
+     *
+     * @param columnName
+     *            the column name
+     * @param columnValue
+     *            the column value
+     * @param columnVisibility
+     *            the column visibility expression of the value; null means no visibility
+     * @param timestamp
+     *            the timestamp of the value
+     */
+    public abstract void addColumn(String columnName, TypedValue columnValue, String columnVisibility, Long timestamp);
 
     public abstract String getUser();
 
@@ -51,8 +73,6 @@ public abstract class CacheableQueryRow implements HasMarkings {
     public abstract String getRow();
 
     public abstract String getColFam();
-
-    public abstract Markings<?> getColumnMarkings(String columnName);
 
     public abstract String getColumnVisibility(String columnName);
 
@@ -99,17 +119,25 @@ public abstract class CacheableQueryRow implements HasMarkings {
 
     public abstract void setUser(String user_);
 
-    public abstract void setColumnMarkingsMap(Map<String,Markings<?>> columnMarkingsMap);
-
     public abstract void setColumnColumnVisibilityMap(Map<String,String> columnVisibilityMap);
 
     public abstract void setColumnTimestampMap(Map<String,Long> parseColumnTimestamps);
 
-    public MarkingFunctions<?> getMarkingFunctions() {
-        return markingFunctions;
+    /**
+     * @return the row-level column visibility
+     */
+    @Override
+    public String getColumnVisibility() {
+        return columnVisibility;
     }
 
-    public void setMarkingFunctions(MarkingFunctions<?> markingFunctions) {
-        this.markingFunctions = markingFunctions;
+    /**
+     * @param columnVisibility
+     *            the row-level column visibility
+     */
+    @Override
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
     }
+
 }

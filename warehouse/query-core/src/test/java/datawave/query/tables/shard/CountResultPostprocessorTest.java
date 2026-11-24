@@ -11,7 +11,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import datawave.marking.MarkingFunctions;
 import datawave.query.tables.CountingShardQueryLogic;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
@@ -53,7 +52,7 @@ class CountResultPostprocessorTest {
     }
 
     private CountResultPostprocessor postprocessor() {
-        return new CountResultPostprocessor(new MarkingFunctions.Default());
+        return new CountResultPostprocessor();
     }
 
     private long countOf(Object result) {

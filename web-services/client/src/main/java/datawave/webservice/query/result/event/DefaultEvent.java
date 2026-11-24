@@ -16,8 +16,6 @@ import javax.xml.bind.annotation.XmlTransient;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 
-import datawave.marking.AccessExpressionMarkings;
-import datawave.marking.Markings;
 import datawave.webservice.query.data.ObjectSizeOf;
 import io.protostuff.Input;
 import io.protostuff.Message;
@@ -29,9 +27,6 @@ import io.protostuff.Schema;
 public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implements Serializable, Message<DefaultEvent>, ObjectSizeOf {
 
     private static final long serialVersionUID = 2390592143914560317L;
-
-    @XmlElement(name = "Markings", type = AccessExpressionMarkings.class)
-    private Markings<?> markings;
 
     @XmlElement(name = "Metadata")
     private Metadata metadata;
@@ -50,17 +45,18 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
 
     @Override
     public String toString() {
-        return getMarkings() + ": " + (this.fields != null ? this.fields.toString() : "fields are null");
+        return getColumnVisibility() + ": " + (this.fields != null ? this.fields.toString() : "fields are null");
     }
 
     @Override
-    public Markings<?> getMarkings() {
-        return this.markings;
+    @XmlElement(name = "ColumnVisibility")
+    public String getColumnVisibility() {
+        return super.getColumnVisibility();
     }
 
     @Override
-    public void setMarkings(Markings<?> markings) {
-        this.markings = markings;
+    public void setColumnVisibility(String columnVisibility) {
+        super.setColumnVisibility(columnVisibility);
     }
 
     public Metadata getMetadata() {
@@ -78,7 +74,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
 
             EqualsBuilder eb = new EqualsBuilder();
 
-            eb.append(this.markings, v.markings);
+            eb.append(this.columnVisibility, v.columnVisibility);
             eb.append(this.metadata, v.metadata);
             eb.append(this.fields, v.fields);
             return eb.isEquals();
@@ -89,7 +85,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
 
     @Override
     public int hashCode() {
-        int result = markings != null ? markings.hashCode() : 0;
+        int result = columnVisibility != null ? columnVisibility.hashCode() : 0;
         result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
         result = 31 * result + (fields != null ? fields.hashCode() : 0);
         return result;
@@ -123,9 +119,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
         }
 
         public void writeTo(Output output, DefaultEvent message) throws IOException {
-            if (message.markings != null)
-                output.writeObject(1, (AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA, false);
-
+            // field 1 (markings) is retired
             if (message.metadata != null) {
                 output.writeObject(2, message.metadata, Metadata.getSchema(), false);
             }
@@ -141,6 +135,10 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
                     }
                 }
             }
+
+            if (message.columnVisibility != null) {
+                output.writeString(4, message.columnVisibility, false);
+            }
         }
 
         public void mergeFrom(Input input, DefaultEvent message) throws IOException {
@@ -148,10 +146,6 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
             Schema<DefaultField> schema = null;
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {
-                    case 1:
-                        message.markings = AccessExpressionMarkings.builder().build();
-                        input.mergeObject((AccessExpressionMarkings) message.markings, AccessExpressionMarkings.SCHEMA);
-                        break;
                     case 2:
                         message.metadata = input.mergeObject(null, Metadata.getSchema());
                         break;
@@ -165,6 +159,9 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
                         DefaultField f = input.mergeObject(null, schema);
                         message.fields.add(f);
                         break;
+                    case 4:
+                        message.columnVisibility = input.readString();
+                        break;
                     default:
                         input.handleUnknownField(number, this);
                         break;
@@ -174,12 +171,12 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
 
         public String getFieldName(int number) {
             switch (number) {
-                case 1:
-                    return "markings";
                 case 2:
                     return "metadata";
                 case 3:
                     return "fields";
+                case 4:
+                    return "columnVisibility";
                 default:
                     return null;
             }
@@ -192,9 +189,9 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
 
         final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
-            fieldMap.put("markings", 1);
             fieldMap.put("metadata", 2);
             fieldMap.put("fields", 3);
+            fieldMap.put("columnVisibility", 4);
         }
     };
 

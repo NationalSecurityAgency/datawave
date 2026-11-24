@@ -14,6 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -29,8 +30,7 @@ import datawave.ingest.data.Type;
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.Markings;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  * Similar to VirtualIngest virtual fields, but composite fields are not written in the event section of the shard table (only in the field index section)
@@ -132,11 +132,7 @@ public interface CompositeIngest {
         protected Map<String,Boolean> allowMissing = new HashMap<>();
         private Set<String> ignoreNormalizationForFields = new HashSet<>();
 
-        protected MarkingFunctions<?> markingFunctions;
-
         public void setup(Type type, Configuration config) {
-
-            markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
 
             Set<String> indexOnly = Sets.newHashSet(getStrings(type, config, BaseIngestHelper.INDEX_ONLY_FIELDS, new String[0]));
 
@@ -333,7 +329,7 @@ public interface CompositeIngest {
         // Create the composite field from the event Fields members
         public void addCompositeFields(List<NormalizedContentInterface> compositeFields, Multimap<String,NormalizedContentInterface> eventFields,
                         String compositeFieldName, String replacement, String[] grouping, GroupingPolicy groupingPolicy, boolean allowMissing, String[] fields,
-                        int pos, StringBuilder originalValue, StringBuilder normalizedValue, Markings<?> markings, boolean isOverloadedField) {
+                        int pos, StringBuilder originalValue, StringBuilder normalizedValue, ColumnVisibility visibility, boolean isOverloadedField) {
             String separator = (pos > 0) ? compositeSeparator.get(compositeFieldName) : "";
             // append any constants that have been specified
             while (pos < fields.length && isConstant(fields[pos])) {
@@ -382,14 +378,9 @@ public interface CompositeIngest {
                                 normalizedValue.append(separator);
                                 normalizedValue.append(value.getIndexedFieldValue());
                                 if (pos + 1 < fields.length) {
-                                    try {
-                                        addCompositeFields(compositeFields, eventFields, compositeFieldName.replace("*", replacement), replacement,
-                                                        (grouping == null ? newGrouping : grouping), groupingPolicy, allowMissing, fields, pos + 1,
-                                                        originalValue, normalizedValue, markingFunctions.combine(markings, value.getMarkings()),
-                                                        isOverloadedField);
-                                    } catch (MarkingFunctions.Exception e) {
-                                        throw new RuntimeException("Could not combine markings", e);
-                                    }
+                                    addCompositeFields(compositeFields, eventFields, compositeFieldName.replace("*", replacement), replacement,
+                                                    (grouping == null ? newGrouping : grouping), groupingPolicy, allowMissing, fields, pos + 1, originalValue,
+                                                    normalizedValue, combine(visibility, value.getVisibility()), isOverloadedField);
                                 }
                                 originalValue.setLength(oLen);
                                 normalizedValue.setLength(nLen);
@@ -398,7 +389,7 @@ public interface CompositeIngest {
                     }
                 } else if (!eventFields.containsKey(memberName) && allowMissing) {
                     addCompositeFields(compositeFields, eventFields, compositeFieldName, replacement, grouping, groupingPolicy, allowMissing, fields, pos + 1,
-                                    originalValue, normalizedValue, markings, isOverloadedField);
+                                    originalValue, normalizedValue, visibility, isOverloadedField);
                 } else {
                     int oLen = originalValue.length();
                     int nLen = normalizedValue.length();
@@ -419,13 +410,9 @@ public interface CompositeIngest {
                         } else {
                             normalizedValue.append(value.getIndexedFieldValue());
                         }
-                        try {
-                            addCompositeFields(compositeFields, eventFields, compositeFieldName, replacement, (grouping == null ? newGrouping : grouping),
-                                            groupingPolicy, allowMissing, fields, pos + 1, originalValue, normalizedValue,
-                                            markingFunctions.combine(markings, value.getMarkings()), isOverloadedField);
-                        } catch (MarkingFunctions.Exception e) {
-                            throw new RuntimeException("Could not combine markings", e);
-                        }
+                        addCompositeFields(compositeFields, eventFields, compositeFieldName, replacement, (grouping == null ? newGrouping : grouping),
+                                        groupingPolicy, allowMissing, fields, pos + 1, originalValue, normalizedValue,
+                                        combine(visibility, value.getVisibility()), isOverloadedField);
                         originalValue.setLength(oLen);
                         normalizedValue.setLength(nLen);
                     }
@@ -435,7 +422,7 @@ public interface CompositeIngest {
                 n.setFieldName(compositeFieldName);
                 n.setEventFieldValue(originalValue.toString());
                 n.setIndexedFieldValue(normalizedValue.toString());
-                n.setMarkings(markings);
+                n.setVisibility(visibility);
                 if (grouping != null) {
                     n.setGrouped(true);
                     n.setGroup(grouping[0]);
@@ -443,6 +430,20 @@ public interface CompositeIngest {
                 }
                 compositeFields.add(n);
             }
+        }
+
+        /**
+         * Combine the visibility accumulated so far with the visibility of the next component field. A null visibility means "use the event visibility", so it
+         * is preserved when neither side has a field specific visibility.
+         *
+         * @param visibility
+         *            the visibility accumulated so far, may be null
+         * @param fieldVisibility
+         *            the field specific visibility of the next component, may be null
+         * @return the combined visibility, or null if both are null
+         */
+        protected ColumnVisibility combine(ColumnVisibility visibility, ColumnVisibility fieldVisibility) {
+            return VisibilityFunctions.getInstance().combine(visibility, fieldVisibility);
         }
 
         private boolean isConstant(String name) {

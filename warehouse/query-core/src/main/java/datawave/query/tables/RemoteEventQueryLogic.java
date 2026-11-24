@@ -15,7 +15,6 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.Query;
 import datawave.query.transformer.EventQueryTransformerSupport;
 import datawave.webservice.query.result.event.EventBase;
@@ -56,9 +55,8 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
     }
 
     @Override
-    public QueryLogicTransformer<EventBase,EventBase> createTransformer(Query settings, MarkingFunctions<?> markingFunctions,
-                    ResponseObjectFactory responseObjectFactory) {
-        return new EventBaseTransformer(settings, markingFunctions, responseObjectFactory);
+    public QueryLogicTransformer<EventBase,EventBase> createTransformer(Query settings, ResponseObjectFactory responseObjectFactory) {
+        return new EventBaseTransformer(settings, responseObjectFactory);
     }
 
     @Override
@@ -124,13 +122,12 @@ public class RemoteEventQueryLogic extends BaseRemoteQueryLogic<EventBase> {
 
     private class EventBaseTransformer extends EventQueryTransformerSupport<EventBase,EventBase> {
 
-        public EventBaseTransformer(Query settings, MarkingFunctions<?> markingFunctions, ResponseObjectFactory responseObjectFactory) {
-            super("notable", settings, markingFunctions, responseObjectFactory);
+        public EventBaseTransformer(Query settings, ResponseObjectFactory responseObjectFactory) {
+            super("notable", settings, responseObjectFactory);
         }
 
-        public EventBaseTransformer(BaseQueryLogic<Map.Entry<Key,Value>> logic, Query settings, MarkingFunctions<?> markingFunctions,
-                        ResponseObjectFactory responseObjectFactory) {
-            super(logic, settings, markingFunctions, responseObjectFactory);
+        public EventBaseTransformer(BaseQueryLogic<Map.Entry<Key,Value>> logic, Query settings, ResponseObjectFactory responseObjectFactory) {
+            super(logic, settings, responseObjectFactory);
         }
 
         @Override

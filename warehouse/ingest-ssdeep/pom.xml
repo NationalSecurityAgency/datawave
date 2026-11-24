@@ -32,7 +32,7 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.core</groupId>
-            <artifactId>accumulo-utils</artifactId>
+            <artifactId>common-utils</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>

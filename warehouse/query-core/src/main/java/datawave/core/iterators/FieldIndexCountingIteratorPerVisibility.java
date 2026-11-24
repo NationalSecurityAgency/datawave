@@ -34,10 +34,10 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Sets;
 
 import datawave.iterators.IteratorSettingHelper;
-import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.util.CompositeTimestamp;
 import datawave.util.TextUtil;
+import datawave.visibility.VisibilityFunctions;
 
 /**
  *
@@ -98,7 +98,6 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
 
     private Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
     private TreeMap<Key,Value> keyCache = null;
-    private MarkingFunctions<?> markingFunctions;
 
     // -------------------------------------------------------------------------
     // ------------- Constructors
@@ -565,11 +564,8 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
 
             ColumnVisibility cv;
             try {
-                if (null == markingFunctions) {
-                    markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-                }
                 // Calculate the columnVisibility for this key from the combiner.
-                cv = markingFunctions.combineVisibilities(columnVisibilities);
+                cv = VisibilityFunctions.getInstance().combine(columnVisibilities);
             } catch (Exception e) {
                 log.error("Could not create combined columnVisibility for the count", e);
                 return null;
