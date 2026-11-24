@@ -50,6 +50,7 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractIngest;
 import datawave.query.util.AbstractQueryTest;
 import datawave.table.constants.TableName;
+import datawave.test.framework.util.MacTestUtil;
 
 /**
  * Verifies that a query can read shard data after the data tables have been taken offline, by routing scans through a scan server.
@@ -283,7 +284,7 @@ public class ScanServerOfflineTableIT extends AbstractQueryTest {
     private static void takeDataTablesOffline() throws Exception {
         TableOperations tops = client.tableOperations();
         for (String table : OFFLINE_TABLES) {
-            tops.flush(table, null, null, true);
+            MacTestUtil.flushTable(tops, table);
             tops.offline(table, true);
             log.info("took table offline: {}", table);
         }

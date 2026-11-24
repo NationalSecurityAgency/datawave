@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.test.framework.util.MacTestUtil;
 
 public class AccumuloUtilTest {
     private InMemoryInstance instance;
@@ -53,7 +54,7 @@ public class AccumuloUtilTest {
         m.put("file", "rfile7", new Value());
         writer.addMutation(m);
 
-        accumuloClient.tableOperations().flush("test1");
+        MacTestUtil.flushTable(accumuloClient.tableOperations(), "test1");
     }
 
     @AfterEach

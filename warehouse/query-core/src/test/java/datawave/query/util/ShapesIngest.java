@@ -32,7 +32,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.query.index.day.IndexIngestUtil;
 import datawave.table.constants.MetadataColumnFamilyConstants;
 import datawave.table.constants.TableName;
-import datawave.test.MacTestUtil;
+import datawave.test.framework.util.MacTestUtil;
 
 /**
  * Data for complex testing of ingest types, normalizers, query models, visibilities and more.

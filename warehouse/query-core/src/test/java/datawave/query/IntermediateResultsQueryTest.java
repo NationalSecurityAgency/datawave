@@ -53,7 +53,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.table.constants.TableName;
-import datawave.test.MacTestUtil;
+import datawave.test.framework.util.MacTestUtil;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.runner.RunningQuery;
