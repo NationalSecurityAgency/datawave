@@ -1,13 +1,13 @@
 package datawave.webservice.query.limit;
 
 /**
- * Represents the mode to start the {@link QueryLimiterImpl} up in when configuring it.
+ * Represents the mode in which the {@link QueryLimiterImpl} operates.
  */
 public enum QueryLimiterMode {
 
     /**
      * The query limiter feature is fully disabled. Query information will not be tracked in Zookeeper, and query limits will not be enforced. Additionally, the
-     * Zookeeper connection will not be created.
+     * Zookeeper connection will not be created. Switching to this mode closes existing tracking resources and clears this server's tracked queries.
      */
     DISABLED(false),
 

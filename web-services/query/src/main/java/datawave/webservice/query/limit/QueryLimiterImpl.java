@@ -26,16 +26,23 @@ import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
+import javax.ejb.Local;
+import javax.ejb.LocalBean;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 
 import com.google.common.util.concurrent.Striped;
 
+import datawave.configuration.RefreshLifecycle;
 import datawave.configuration.spring.SpringBean;
 
 /**
@@ -44,6 +51,8 @@ import datawave.configuration.spring.SpringBean;
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
 @DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
+@Local(QueryLimiter.class)
+@LocalBean
 @Singleton
 @Startup
 // Concurrent access is managed directly in the methods via the ReadWriteLock.
@@ -100,6 +109,9 @@ public class QueryLimiterImpl implements QueryLimiter {
     @SpringBean(name = "queryLimiterConfig")
     @SuppressWarnings("CdiInjectionPointsInspection")
     private QueryLimiterImplConfiguration config;
+
+    @Inject
+    private ApplicationContext applicationContext;
 
     /**
      * The cache of query heartbeats.
@@ -171,6 +183,27 @@ public class QueryLimiterImpl implements QueryLimiter {
     }
 
     /**
+     * Apply refreshed configuration after Spring and the refreshable CDI scope have finished refreshing.
+     *
+     * @param lifecycle
+     *            the refresh lifecycle event
+     */
+    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+    public void onRefresh(@Observes RefreshLifecycle lifecycle) {
+        if (lifecycle == RefreshLifecycle.COMPLETE) {
+            lock.writeLock().lock();
+            try {
+                if (getState() != State.CLOSED) {
+                    setConfiguration(applicationContext.getBean("queryLimiterConfig", QueryLimiterImplConfiguration.class));
+                    activate();
+                }
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+    }
+
+    /**
      * Attempt to activate this {@link QueryLimiterImpl} instance.
      */
     private void activate() {
@@ -182,6 +215,7 @@ public class QueryLimiterImpl implements QueryLimiter {
             }
 
             checkNotNull(this.config, "Limiter configuration cannot be null");
+            checkNotNull(this.config.getMode(), "Limiter mode cannot be null");
 
             // Do nothing if the query limiter mode is DISABLED. All methods will effectively become no-ops.
             if (config.getMode() != QueryLimiterMode.DISABLED) {
@@ -189,6 +223,9 @@ public class QueryLimiterImpl implements QueryLimiter {
                 initZkClient();
                 initHeartbeatCache();
                 initActiveQueryTracker();
+            } else {
+                deactivate(State.READY);
+                closeResources();
             }
 
             setState(State.READY);

@@ -21,7 +21,7 @@ Information about active queries is tracked and managed in Zookeeper where the f
 The `QueryLimiterImpl` bean requires the following beans to be configured. See [QueryLimiterFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/QueryLimiterFactory.xml) and [ZookeeperFactory.xml](../../../../../../../../deploy/configuration/src/main/resources/datawave/query/ZookeeperFactory.xml) for example configurations.
 - A [ZkClientBuilder](../../../../../../../../../core/common-util/src/main/java/datawave/core/common/zookeeper/ZkClientBuilder.java) instance with the bean id `defaultZkClientBuilder`. This configures the Zookeeper client that will be used for Zookeeper operations.
 - A single [QueryLimitConfiguration](QueryLimitConfiguration.java) instance. This contains the configured limits used by the `QueryLimiter` instance.
-- A single [QueryHeartbeatCache](QueryHeartbeatCache.java) instance. This cache contains and maintains connections to Zookeeper for active queries. The implementing class is [QueryHeartbeatCacheImpl](QueryHeartbeatCacheImpl.java).
+- A [QueryLimiterImplConfiguration](QueryLimiterImplConfiguration.java) bean named `queryLimiterConfig`, referencing the client builder and limit configuration. The heartbeat cache is created internally.
 
 ### Enabling the Query Limiter
 
@@ -32,6 +32,16 @@ By default, the query limiter will start the mode `DISABLED`. In this mode:
 * Query information is not tracked in Zookeeper. 
 
 This can be changed by setting the `mode` property of the configured `QueryLimiterImplConfiguration`. See [QueryLimiterMode](QueryLimiterMode.java) for all options.
+
+### Configuration Refresh
+
+After updating configuration, call `Common/Configuration/refresh` to apply the new mode and limits. The limiter applies them together after the Spring context and refreshable CDI scope have finished refreshing.
+
+Refreshing in `ENFORCE` or `TRACK_ONLY` preserves the existing ZooKeeper client, heartbeat cache, and tracked queries. Switching between these modes suspends or resumes enforcement while keeping query counts.
+
+Switching to `DISABLED` closes tracking resources and clears this server's tracked queries. Re-enabling the limiter creates fresh resources and tracks subsequent queries.
+
+ZooKeeper connection settings, heartbeat cleanup settings, and node creation timeouts are used when tracking resources are initialized. Changing these settings requires restarting the application or disabling and re-enabling the limiter.
 
 
 ### Limit Configuration
