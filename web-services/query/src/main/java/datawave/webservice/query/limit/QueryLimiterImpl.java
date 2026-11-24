@@ -42,8 +42,8 @@ import datawave.configuration.spring.SpringBean;
  * The implementation of {@link QueryLimiter}.
  */
 @RunAs("InternalUser")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
 @Singleton
 @Startup
 // Concurrent access is managed directly in the methods via the ReadWriteLock.
