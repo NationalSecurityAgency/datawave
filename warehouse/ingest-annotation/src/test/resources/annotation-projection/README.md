@@ -1,14 +1,38 @@
 # Annotation projection ingest checks
 
-Annotation projection turns selected annotation JSON values into DataWave fields for indexing and querying annotations and truthmarks. Shared annotation inputs, profiles and logical-field answers belong to `core/annotation-projection`. This module consumes that module's test artifact and checks the ingest-specific behavior.
+Annotation projection selects annotation JSON values and turns them into DataWave fields for indexing and querying annotations and truthmarks. Shared inputs, profiles and expected logical fields belong to [core/annotation-projection](../../../../../../core/annotation-projection/README.md). This module reuses their test JAR and checks behavior owned by ingest.
 
-`IngestAnnotationProjectionFixtureContractTest` checks existing Type normalization, Hadoop reader framing and annotation/source persistence serializers. It does not execute the future preparation, projector, routed indexing or retrieval implementation.
+The source calls the prepared test context a fixture. The local files are **test data and expected answers** used by `IngestAnnotationProjectionFixtureContractTest`; they do not perform ingest or write to a database.
 
-The local resources contain six independent mutation/count snapshots, an independent-route profile and a malformed-reader input. Complete mutation snapshots retain row, family, qualifier, visibility, timestamp and typed value expectations. Persistence assertions compare multisets, retaining duplicate submissions and comparing decoded protobuf content rather than incidental map wire order. Event/index entries and handler counts in these snapshots remain independent expected answers for later integration tests.
+## Current coverage
 
-The Unicode persistence case expects eight submissions, including distinct segment payloads sharing a complete key. Scanner/compaction retention is separate. Multiple-region indexed totals remain pending an independent native aggregation oracle. The independent-route profile distinguishes fi-only, event-only, forward-only, reverse-only and all-off policies.
+The test class executes three kinds of checks:
 
-From the worktree root, run the shared and ingest fixture suites together:
+- **Normalization:** instantiate the configured DataWave Type and compare its normalized term with a literal expected answer.
+- **Reader framing:** run `SimpleAnnotationRecordReader` against temporary files containing a single object, newline-delimited JSON, adjacent objects, a root array or a malformed root.
+- **Serialization for persistence:** compare existing annotation/source serializers with expected keys, decoded values and entry counts.
+
+These checks do not execute the planned preparation, semantic projector, routed indexing, handler/mapper counting or storage retrieval implementation.
+
+## Local test data and expected writes
+
+| Location | Purpose |
+| --- | --- |
+| `expected/*-mutations.json` | Six independently authored sets of expected Accumulo entries and counts. Some include event/index answers for later integration tests. |
+| `configuration/independent-route-profile.json` | Policies that enable each output destination separately, plus a field with all destinations disabled. |
+| `raw/reader-malformed-root.json` | Invalid input used to check reader initialization failure. |
+
+An expected entry specifies its table, row, column family, column qualifier, visibility, timestamp and value. The serializer test compares a **multiset**: every occurrence counts, including duplicate entries with the same key. It compares decoded protobuf messages so incidental map serialization order does not affect equality.
+
+A serializer output entry is a candidate for a write; this test does not submit it to Accumulo. Event/index entries and expected handler counts in the same files are answers for later tests, not evidence that those writes or counters already work. Metadata cleanup counts are kept separate.
+
+The Unicode case expects eight serializer entries, including distinct segment payloads sharing a complete key. This checks preservation before submission; proving retention during scans or compaction requires storage tests. The multiple-region indexed submission total still needs an independently established answer using native aggregation behavior.
+
+The independent-route profile covers the field index (`fi`), event fields, global forward index, global reverse index and disabled output. Its future execution tests must verify both the expected entries and the absence of entries for disabled destinations.
+
+## Verification
+
+From the worktree root, run the shared core and ingest checks together:
 
 ```sh
 mvn -o -B -pl core/annotation,core/annotation-projection,warehouse/ingest-annotation test \
@@ -16,4 +40,6 @@ mvn -o -B -pl core/annotation,core/annotation-projection,warehouse/ingest-annota
   -Dsurefire.failIfNoSpecifiedTests=false -Dspotless.skip=true -Dsort.skip=true
 ```
 
-Service consumers should reuse the core fixture artifact and verify their own coordinated persistence/index writes, including final identities, message retries and updates. Shared normalization and index-mutation construction are planned reusable DataWave components; their production implementation is still pending.
+See the [shared test data README](../../../../../../core/annotation-projection/src/test/resources/annotation-projection/README.md) for model, hash, formatting and extension cases.
+
+Annotation service tests should reuse the core test data and verify their own coordinated persistence/index writes, including final identities, message retries and updates. Shared normalization and index-mutation construction remain planned reusable DataWave components.
