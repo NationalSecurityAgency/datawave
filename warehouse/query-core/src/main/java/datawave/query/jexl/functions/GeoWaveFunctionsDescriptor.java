@@ -217,7 +217,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     List<ByteArrayRange> byteArrayRanges = index.getIndexStrategy().getQueryRanges(range, maxRanges).getCompositeQueryRanges();
                     if (config.isOptimizeGeoWaveRanges()) {
                         byteArrayRanges = GeoWaveUtils.optimizeByteArrayRanges(geometry, byteArrayRanges, config.getGeoWaveRangeSplitThreshold(),
-                                        config.getGeoWaveMaxRangeOverlap());
+                                        config.getGeoWaveMaxRangeOverlap(), maxRanges);
                     }
                     allRanges.addAll(byteArrayRanges);
                 }

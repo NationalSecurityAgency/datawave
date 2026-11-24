@@ -14,17 +14,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.locationtech.jts.geom.Envelope;
 
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.MetadataHelper;
@@ -74,6 +78,52 @@ public class GeoWaveFunctionsDescriptorTest {
 
         // Test that the default number of envelopes produces the same expanded query as the two envelope expansion
         assertEquals(defaultExpandedQuery, twoEnvelopesExpandedQuery);
+    }
+
+    @Test
+    public void testOptimizedRangesCanBuildAccumuloRanges() throws Exception {
+        String query = "geowave:intersects(GEO_FIELD, 'POLYGON((0 12.34, 0.01 12.34, 0.01 22.34, 0 22.34, 0 12.34))')";
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.addField("GEO_FIELD", "datawave.data.type.GeometryType");
+        JexlArgumentDescriptor descriptor = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(find(JexlASTHelper.parseJexlQuery(query)));
+
+        JexlNode indexQuery = descriptor.getIndexQuery(config, helper, null, null);
+
+        assertTrue(buildAccumuloRanges(indexQuery) > 0);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"datawave.data.type.GeometryType", "datawave.data.type.PointType"})
+    public void testThinPolygonUsesConfiguredSplitLimit(String fieldType) throws Exception {
+        String query = "geowave:intersects(GEO_FIELD, 'POLYGON((0 12.34, 0.00000000001 12.34, 0.00000000001 22.34, 0 22.34, 0 12.34))')";
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setGeometryMaxExpansion(2);
+        config.setPointMaxExpansion(3);
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.addField("GEO_FIELD", fieldType);
+        JexlArgumentDescriptor descriptor = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(find(JexlASTHelper.parseJexlQuery(query)));
+
+        JexlNode indexQuery = descriptor.getIndexQuery(config, helper, null, null);
+
+        int rangeCount = buildAccumuloRanges(indexQuery);
+        assertTrue(rangeCount > 0);
+        // Pruning examines fewer than 4 * threshold + 1 cells per input range at each tier.
+        int maxExpansion = fieldType.endsWith("GeometryType") ? config.getGeometryMaxExpansion() : config.getPointMaxExpansion();
+        assertTrue(rangeCount <= 32 * maxExpansion * (4 * config.getGeoWaveRangeSplitThreshold() + 1) * maxExpansion);
+    }
+
+    private int buildAccumuloRanges(JexlNode node) {
+        LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
+        if (range != null) {
+            new Range(range.getLower().toString(), range.getUpper().toString());
+            return 1;
+        }
+        int count = 0;
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            count += buildAccumuloRanges(node.jjtGetChild(i));
+        }
+        return count;
     }
 
     @Test
