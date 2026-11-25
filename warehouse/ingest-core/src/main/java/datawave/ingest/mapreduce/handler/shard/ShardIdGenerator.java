@@ -1,6 +1,9 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * This interface defines behavior for overriding the default behavior for generating a shard id for records in {@link ShardIdFactory}.
@@ -14,7 +17,7 @@ public interface ShardIdGenerator {
      *            the event record
      * @return true if this generator should be used to get a shard id for the record, or false otherwise
      */
-    boolean isApplicable(RawRecordContainer record);
+    boolean isApplicable(RawRecordContainer record, Multimap<String,NormalizedContentInterface> eventFields);
 
     /**
      * Return a shard id for the given record.
@@ -27,5 +30,5 @@ public interface ShardIdGenerator {
      *            the number of shards
      * @return the shard id
      */
-    String getShardId(RawRecordContainer record, String baseShardId, int numShards);
+    String getShardId(RawRecordContainer record, Multimap<String,NormalizedContentInterface> eventFields, String baseShardId, int numShards);
 }

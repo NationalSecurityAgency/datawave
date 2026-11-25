@@ -200,7 +200,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
                     throws IOException, InterruptedException {
 
-        final String shardId = shardIdFactory.getShardId(event);
+        final String shardId = shardIdFactory.getShardId(event, fields);
         final String shardDateString = ShardIdFactory.getDateString(shardId);
         final Text dateColumnQualifier = new Text(shardDateString);
         final Date shardDate = DateHelper.parse(shardDateString);
@@ -487,10 +487,10 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
     }
 
     @Override
-    public FacetValue estimate(RawRecordContainer input) {
+    public FacetValue estimate(RawRecordContainer input, Multimap<String,NormalizedContentInterface> eventFields) {
         // precision value: 10, sparse set disabled.
         final HyperLogLogPlus card = new HyperLogLogPlus(10);
-        final String id = shardIdFactory.getShardId(input) + "/" + input.getDataType() + "/" + input.getId().toString();
+        final String id = shardIdFactory.getShardId(input, eventFields) + "/" + input.getDataType() + "/" + input.getId().toString();
         card.offer(id);
 
         return new FacetValue(card, new CountMinSketch(10, 1, 1));

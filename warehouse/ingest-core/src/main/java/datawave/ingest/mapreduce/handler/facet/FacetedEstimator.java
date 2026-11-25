@@ -1,5 +1,9 @@
 package datawave.ingest.mapreduce.handler.facet;
 
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
+
 public interface FacetedEstimator<T> {
     /**
      * Estimate the cardinality of a given input. Implementations shall know the method for producing the cardinality of this object.
@@ -8,6 +12,6 @@ public interface FacetedEstimator<T> {
      *            the given input
      * @return a FacetValue
      */
-    FacetValue estimate(T input);
+    FacetValue estimate(T input, Multimap<String,NormalizedContentInterface> eventFields);
 
 }

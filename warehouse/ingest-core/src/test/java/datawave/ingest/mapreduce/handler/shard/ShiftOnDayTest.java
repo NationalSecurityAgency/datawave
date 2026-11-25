@@ -15,10 +15,14 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.RawRecordContainerImplTest;
 import datawave.ingest.data.Type;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.CSVIngestHelper;
 import datawave.util.time.DateHelper;
 
@@ -68,13 +72,13 @@ class ShiftOnDayTest {
         void testAllNonNullAttributes() {
             this.dataTypes = Set.of("a", "b", "c");
             this.begin = DateHelper.parse("20240115");
-            this.end = DateHelper.parse("20240120");
+            this.end = DateHelper.parseTimeExactToSeconds("20240120235959");
 
             ShiftOnDay generator = init();
 
             assertEquals(Set.of("a", "b", "c"), generator.getDataTypes());
             assertEquals(DateHelper.parse("20240115"), generator.getBegin());
-            assertEquals(DateHelper.parse("20240120"), generator.getEnd());
+            assertEquals(DateHelper.parseTimeExactToSeconds("20240120235959"), generator.getEnd());
         }
 
         /**
@@ -115,22 +119,22 @@ class ShiftOnDayTest {
             Configuration configuration = new Configuration();
             if (this.dataTypes != null) {
                 String dataTypesStr = joiner.join(this.dataTypes);
-                configuration.set("generator." + ShiftOnDay.DATATYPES, dataTypesStr);
+                configuration.set("generator.1." + ShiftOnDay.DATATYPES, dataTypesStr);
             }
             if (this.begin != null) {
-                configuration.set("generator." + ShiftOnDay.BEGIN, DateHelper.format(this.begin));
+                configuration.set("generator.1." + ShiftOnDay.BEGIN, DateHelper.formatToTimeExactToSeconds(this.begin));
             }
             if (this.end != null) {
-                configuration.set("generator." + ShiftOnDay.END, DateHelper.format(this.end));
+                configuration.set("generator.1." + ShiftOnDay.END, DateHelper.formatToTimeExactToSeconds(this.end));
             }
 
-            return new ShiftOnDay(configuration, "generator");
+            return new ShiftOnDay(configuration, "generator.1");
         }
 
     }
 
     /**
-     * Verify that for a {@link ShiftOnDay} with all null attributes, {@link ShiftOnDay#isApplicable(RawRecordContainer)} always returns true.
+     * Verify that for a {@link ShiftOnDay} with all null attributes, {@link ShiftOnDay#isApplicable(RawRecordContainer, Multimap)} always returns true.
      */
     @Test
     void testIsApplicableWithAllNullAttributes() {
@@ -138,12 +142,12 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, null, null);
 
-        assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record, null));
     }
 
     /**
-     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer)} returns false if it has a non-empty set of data types, and null dates, and the record
-     * does not have a matching data type.
+     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer, Multimap)} returns false if it has a non-empty set of data types, and null dates, and the
+     * record does not have a matching data type.
      */
     @Test
     void testIsApplicableWithNonMatchingDataTypeWithNullDates() {
@@ -151,12 +155,12 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(Set.of("wiki", "tv", "text"), null, null);
 
-        assertFalse(generator.isApplicable(record));
+        assertFalse(generator.isApplicable(record, createMultimap()));
     }
 
     /**
-     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer)} returns true if it has a non-empty set of data types, and null dates, and the record has
-     * a matching data type.
+     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer, Multimap)} returns true if it has a non-empty set of data types, and null dates, and the
+     * record has a matching data type.
      */
     @Test
     void testIsApplicableWithMatchingDataTypeWithNullDates() {
@@ -164,12 +168,12 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(Set.of("wiki", "tv", CSV), null, null);
 
-        assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record, createMultimap()));
     }
 
     /**
-     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer)} returns true if it has an empty set of data types, a non-null begin date, and a null end
-     * dates, and the record has a date equal to or after the begin date.
+     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer, Multimap)} returns true if it has an empty set of data types, a non-null begin date, and a
+     * null end dates, and the record has a date equal to or after the begin date.
      */
     @Test
     void testIsApplicableWithDateWithinRangeWithNonNullBeginDate() {
@@ -177,12 +181,12 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, DateHelper.parse("20200101"), null);
 
-        assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record, createMultimap()));
     }
 
     /**
-     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer)} returns false if it has an empty set of data types, a non-null begin date, and a null end
-     * dates, and the record has a date before the begin date.
+     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer, Multimap)} returns false if it has an empty set of data types, a non-null begin date, and
+     * a null end dates, and the record has a date before the begin date.
      */
     @Test
     void testIsApplicableWithDateOutsideRangeWithNonNullBeginDate() {
@@ -190,12 +194,12 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, DateHelper.parse("20200101"), null);
 
-        assertFalse(generator.isApplicable(record));
+        assertFalse(generator.isApplicable(record, createMultimap()));
     }
 
     /**
-     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer)} returns true if it has an empty set of data types, a null begin date, and a non-null end
-     * dates, and the record has a date equal to or before the end date.
+     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer, Multimap)} returns true if it has an empty set of data types, a null begin date, and a
+     * non-null end dates, and the record has a date equal to or before the end date.
      */
     @Test
     void testIsApplicableWithDateWithinRangeWithNonNullEndDate() {
@@ -203,12 +207,12 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, null, DateHelper.parse("20240111"));
 
-        assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record, createMultimap()));
     }
 
     /**
-     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer)} returns false if it has an empty set of data types, a null begin date, and a non-null end
-     * dates, and the record has a date after the end date.
+     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer, Multimap)} returns false if it has an empty set of data types, a null begin date, and a
+     * non-null end dates, and the record has a date after the end date.
      */
     @Test
     void testIsApplicableWithDateOutsideRangeWithNonNullEndDate() {
@@ -216,12 +220,12 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, null, DateHelper.parse("20200101"));
 
-        assertFalse(generator.isApplicable(record));
+        assertFalse(generator.isApplicable(record, createMultimap()));
     }
 
     /**
-     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer)} returns true if it has an empty set of data types, a non-null begin date, and a non-null
-     * end dates, and the record has a date that falls within the date range.
+     * Verify that {@link ShiftOnDay#isApplicable(RawRecordContainer, Multimap)} returns true if it has an empty set of data types, a non-null begin date, and a
+     * non-null end dates, and the record has a date that falls within the date range.
      */
     @Test
     void testIsApplicableWithDateWithinRangeWithNonNullDates() {
@@ -229,7 +233,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, DateHelper.parse("20200101"), DateHelper.parse("20240101"));
 
-        assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record, createMultimap()));
     }
 
     /**
@@ -241,7 +245,7 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, DateHelper.parse("20200101"), DateHelper.parse("20240101"));
 
-        assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record, createMultimap()));
     }
 
     /**
@@ -253,17 +257,17 @@ class ShiftOnDayTest {
 
         ShiftOnDay generator = new ShiftOnDay(null, DateHelper.parse("20200101"), DateHelper.parse("20240101"));
 
-        assertTrue(generator.isApplicable(record));
+        assertTrue(generator.isApplicable(record, createMultimap()));
     }
 
     /**
-     * Verify the behavior of {@link ShiftOnDay#getShardId(RawRecordContainer, String, int)}.
+     * Verify the behavior of {@link ShiftOnDay#getShardId(RawRecordContainer, Multimap, String, int)}.
      */
     @Test
     void testGetShardId() {
         RawRecordContainer record = createRecord("20240101");
         ShiftOnDay shiftOnDay = new ShiftOnDay(null, null, null);
-        String shardId = shiftOnDay.getShardId(record, "20240101_2", 10);
+        String shardId = shiftOnDay.getShardId(record, null, "20240101_2", 10);
         assertEquals("20240101_12", shardId);
     }
 
@@ -275,4 +279,14 @@ class ShiftOnDayTest {
         event.setDataType(dataType);
         return event;
     }
+
+    private Multimap<String,NormalizedContentInterface> createMultimap(String... fieldValues) {
+        Multimap<String,NormalizedContentInterface> map = HashMultimap.create();
+        for (String fieldValue : fieldValues) {
+            String[] parts = fieldValue.split(":");
+            map.put(parts[0], new NormalizedFieldAndValue(parts[0], parts[1]));
+        }
+        return map;
+    }
+
 }
