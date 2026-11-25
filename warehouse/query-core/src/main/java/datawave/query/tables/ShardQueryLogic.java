@@ -3430,6 +3430,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         getConfig().setDocAggregationThresholdMs(docAggregationThresholdMs);
     }
 
+    public int getDocAggregationMaxEntries() {
+        return getConfig().getDocAggregationMaxEntries();
+    }
+
+    public void setDocAggregationMaxEntries(int docAggregationMaxEntries) {
+        getConfig().setDocAggregationMaxEntries(docAggregationMaxEntries);
+    }
+
     public int getTfAggregationThresholdMs() {
         return getConfig().getTfAggregationThresholdMs();
     }

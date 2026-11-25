@@ -91,6 +91,7 @@ import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.visitors.CardinalityVisitor;
 import datawave.query.predicate.ConfiguredPredicate;
+import datawave.query.predicate.EventDataQueryEntryLimitFilter;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
@@ -284,6 +285,8 @@ public class QueryOptions implements OptionDescriber {
 
     public static final String DOC_AGGREGATION_THRESHOLD_MS = "doc.agg.threshold";
 
+    public static final String DOC_AGGREGATION_MAX_ENTRIES = "doc.agg.max.entries";
+
     public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
 
     public static final String FIELD_COUNTS = "field.counts";
@@ -471,6 +474,7 @@ public class QueryOptions implements OptionDescriber {
 
     // aggregation thresholds
     private int docAggregationThresholdMs = -1;
+    private int docAggregationMaxEntries = -1;
     private int tfAggregationThresholdMs = -1;
 
     private CountMap fieldCounts;
@@ -596,6 +600,7 @@ public class QueryOptions implements OptionDescriber {
         this.seekingEventAggregation = other.seekingEventAggregation;
 
         this.docAggregationThresholdMs = other.docAggregationThresholdMs;
+        this.docAggregationMaxEntries = other.docAggregationMaxEntries;
         this.tfAggregationThresholdMs = other.tfAggregationThresholdMs;
 
         this.fieldCounts = other.fieldCounts;
@@ -839,7 +844,14 @@ public class QueryOptions implements OptionDescriber {
             eventEvaluationFilter = evaluationFilter.clone();
         }
 
-        return eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
+        EventDataQueryFilter filter = eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
+
+        if (docAggregationMaxEntries > 0) {
+            // protect against aggregating problematically large documents: truncate past the limit and mark the document incomplete
+            filter = new EventDataQueryEntryLimitFilter(filter).withMaxEntries(docAggregationMaxEntries);
+        }
+
+        return filter;
     }
 
     public void setEvaluationFilter(EventDataQueryFilter evaluationFilter) {
@@ -1440,6 +1452,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(TF_FIELD_SEEK, "The number of fields traversed by a Term Frequency data filter or aggregator before a seek is issued");
         options.put(TF_NEXT_SEEK, "The number of next calls made by a Term Frequency data filter or aggregator before a seek is issued");
         options.put(DOC_AGGREGATION_THRESHOLD_MS, "Document aggregations that exceed this threshold are logged as a warning");
+        options.put(DOC_AGGREGATION_MAX_ENTRIES,
+                        "Maximum number of entries aggregated into a single document; a document is truncated and marked incomplete past this (-1 disables)");
         options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
         options.put(FIELD_COUNTS, "Map of field counts from the global index");
         options.put(TERM_COUNTS, "Map of term counts from the global index");
@@ -1655,6 +1669,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(DOC_AGGREGATION_THRESHOLD_MS)) {
             this.docAggregationThresholdMs = Integer.parseInt(options.get(DOC_AGGREGATION_THRESHOLD_MS));
+        }
+
+        if (options.containsKey(DOC_AGGREGATION_MAX_ENTRIES)) {
+            this.docAggregationMaxEntries = Integer.parseInt(options.get(DOC_AGGREGATION_MAX_ENTRIES));
         }
 
         if (options.containsKey(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS)) {
@@ -2462,6 +2480,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setDocAggregationThresholdMs(int docAggregationThresholdMs) {
         this.docAggregationThresholdMs = docAggregationThresholdMs;
+    }
+
+    public int getDocAggregationMaxEntries() {
+        return docAggregationMaxEntries;
+    }
+
+    public void setDocAggregationMaxEntries(int docAggregationMaxEntries) {
+        this.docAggregationMaxEntries = docAggregationMaxEntries;
     }
 
     public int getTfAggregationThresholdMs() {
