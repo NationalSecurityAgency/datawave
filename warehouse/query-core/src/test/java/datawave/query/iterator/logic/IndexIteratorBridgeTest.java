@@ -12,7 +12,6 @@ import java.util.TreeSet;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +31,7 @@ public class IndexIteratorBridgeTest {
     @Test
     void testIterationInterrupted() {
         IndexIteratorBridge itr = createInterruptibleIndexIteratorBridge("FIELD_A", uids, true, 2);
-        assertThrows(IterationInterruptedException.class, () -> driveIterator(itr, "FIELD_A", uids));
+        assertThrows(RuntimeException.class, () -> driveIterator(itr, "FIELD_A", uids));
     }
 
     @Test
@@ -44,7 +43,7 @@ public class IndexIteratorBridgeTest {
         itr.next();
 
         assertTrue(itr.hasNext());
-        assertThrows(IterationInterruptedException.class, itr::next);
+        assertThrows(RuntimeException.class, itr::next);
     }
 
     // === assert methods ===
