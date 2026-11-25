@@ -39,7 +39,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.AbstractQueryTest;
 import datawave.query.util.CompositeTestingIngest;
 import datawave.query.util.TypeMetadata;
-import datawave.table.constants.TableName;
 
 @ExtendWith(SpringExtension.class)
 @ComponentScan(basePackages = "datawave.query")
@@ -116,9 +115,9 @@ public class ValueToAttributesTest extends AbstractQueryTest {
         // ingest with the document range only; CompositeTestingIngest already uses IndexIngestUtil
         // internally to derive the other shard index table variants that AbstractQueryTest iterates over.
         CompositeTestingIngest.writeItAll(clientForTest, CompositeTestingIngest.WhatKindaRange.DOCUMENT);
-        PrintUtility.printTable(clientForTest, auths, TableName.SHARD);
-        PrintUtility.printTable(clientForTest, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(clientForTest, auths, TableName.METADATA);
+        PrintUtility.printShardTable(clientForTest, auths);
+        PrintUtility.printShardIndexTable(clientForTest, auths);
+        PrintUtility.printMetadataTable(clientForTest, auths);
     }
 
     @AfterAll

@@ -25,6 +25,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import com.google.common.collect.Sets;
 
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
+import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper.INTERRUPT;
@@ -173,6 +174,10 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQueryJUnit5 {
         Map<String,String> options = new HashMap<>();
         options.put(FacetedConfiguration.FACETED_FIELDS, "CITY");
         options.put(FacetedConfiguration.FACETED_SEARCH_TYPE, FacetedSearchType.FIELD_VALUE_FACETS.name());
+
+        PrintUtility.printFacetTable(client, auths, FacetQueryTestTableHelper.FACET_TABLE_NAME);
+        PrintUtility.printSimpleTable(client, auths, FacetQueryTestTableHelper.FACET_METADATA_TABLE_NAME);
+        PrintUtility.printSimpleTable(client, auths, FacetQueryTestTableHelper.FACET_HASH_TABLE_NAME);
 
         runTest(query, options, expected);
     }
