@@ -51,15 +51,10 @@ public class InMemoryTable {
             this.count = count;
         }
 
-        @Override
-        public int hashCode() {
-            return super.hashCode() + count;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            return (other instanceof InMemoryMemKey) && super.equals(other) && count == ((InMemoryMemKey) other).count;
-        }
+        // equals and hashCode are deliberately not overridden, matching the tablet server's MemKey, which overrides only compareTo. Folding the mutation
+        // count into equality broke the symmetry Key.equals promises: memKey.equals(plainKey) was false while plainKey.equals(memKey) was true, and a
+        // MemKey never matched an equal plain Key in a HashSet or HashMap. User iterators see these keys directly, so they saw the asymmetry too. The
+        // count still participates in compareTo below, which is what orders newest-first for the versioning iterator.
 
         @Override
         public String toString() {
