@@ -1,10 +1,14 @@
 package datawave.util.keyword;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -30,6 +34,14 @@ public class YakeKeywordExtractorTest {
                     + "science and machine learning competitions. Details about the transaction remain somewhat vague but "
                     + "given that Google is hosting its Cloud Next conference in San Francisco this week the official "
                     + "announcement could come as early as tomorrow.";
+
+    static final LinkedHashMap<String,Double> EXPECTED_DEDUPED_NEWS_OUTPUT = new LinkedHashMap<>();
+    static {
+        LinkedHashMap<String,Double> m = EXPECTED_DEDUPED_NEWS_OUTPUT;
+        m.put("acquiring kaggle", 0.4602);
+        m.put("cloud next", 0.3884);
+        m.put("san francisco", 0.3884);
+    }
 
     static final LinkedHashMap<String,Double> EXPECTED_NEWS_OUTPUT = new LinkedHashMap<>();
     static {
@@ -106,6 +118,7 @@ public class YakeKeywordExtractorTest {
                 .withMinNGrams(2)
                 .withMaxNGrams(3)
                 .withKeywordCount(10)
+                .withMaxSimilarityThreshold(0.9)
                 .withLanguage(BaseYakeLanguage.ENGLISH)
                 .build();
         //@formatter:on
@@ -114,6 +127,77 @@ public class YakeKeywordExtractorTest {
         keywords.entrySet().forEach(i -> log.info(i.toString()));
         assertEquals(4, keywords.size());
         assertEquals(EXPECTED_NEWS_OUTPUT, keywords);
+    }
+
+    @Test
+    public void testInputWithStrictDeduplication() {
+        //@formatter:off
+        YakeKeywordExtractor keywordExtractor = new YakeKeywordExtractor.Builder()
+                .withMaxScoreThreshold(0.6f)
+                .withMinNGrams(2)
+                .withMaxNGrams(3)
+                .withKeywordCount(10)
+                .withMaxSimilarityThreshold(0.6)
+                .withLanguage(BaseYakeLanguage.ENGLISH)
+                .build();
+        //@formatter:on
+
+        Map<String,Double> keywords = keywordExtractor.extractKeywords(TEST_NEWS_INPUT_INPUT);
+        keywords.entrySet().forEach(i -> log.info(i.toString()));
+        assertEquals(3, keywords.size());
+        assertEquals(EXPECTED_DEDUPED_NEWS_OUTPUT, keywords);
+    }
+
+    @Test
+    public void testDeduplicationStopsAtKeywordCount() {
+        AtomicInteger visited = new AtomicInteger();
+        Stream<TokenScore> candidates = Stream
+                        .of(new TokenScore("first keyword", 0.1), new TokenScore("second keyword", 0.2), new TokenScore("unexpected keyword", 0.3))
+                        .peek(candidate -> {
+                            if (visited.incrementAndGet() > 2) {
+                                throw new AssertionError("Consumed a candidate after reaching the keyword count");
+                            }
+                        });
+
+        List<TokenScore> selected = YakeKeywordExtractor.deduplicateCandidateTokens(candidates, 0.9, 2).collect(Collectors.toList());
+
+        assertEquals(2, selected.size());
+        assertEquals(2, visited.get());
+    }
+
+    @Test
+    public void testDeduplicationProcessesAllCandidatesWhenUnlimited() {
+        AtomicInteger visited = new AtomicInteger();
+        Stream<TokenScore> candidates = Stream
+                        .of(new TokenScore("first keyword", 0.1), new TokenScore("second keyword", 0.2), new TokenScore("third keyword", 0.3))
+                        .peek(candidate -> visited.incrementAndGet());
+
+        List<TokenScore> selected = YakeKeywordExtractor.deduplicateCandidateTokens(candidates, 0.9, 0).collect(Collectors.toList());
+
+        assertEquals(3, selected.size());
+        assertEquals(3, visited.get());
+    }
+
+    @Test
+    public void testDisabledDeduplicationStillHonorsKeywordCount() {
+        Stream<TokenScore> candidates = Stream.of(new TokenScore("first keyword", 0.1), new TokenScore("second keyword", 0.2),
+                        new TokenScore("third keyword", 0.3));
+
+        List<TokenScore> selected = YakeKeywordExtractor.deduplicateCandidateTokens(candidates, 0.0, 2).collect(Collectors.toList());
+
+        assertEquals(2, selected.size());
+    }
+
+    @Test
+    public void testSimilarityThresholdValidation() {
+        assertEquals(0.0, new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(0.0).build().getMaxSimilarityThreshold());
+        assertEquals(1.0, new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(1.0).build().getMaxSimilarityThreshold());
+
+        assertThrows(IllegalArgumentException.class, () -> new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(-0.1));
+        assertThrows(IllegalArgumentException.class, () -> new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(1.1));
+        assertThrows(IllegalArgumentException.class, () -> new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(Double.NaN));
+        assertThrows(IllegalArgumentException.class, () -> new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(Double.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class, () -> new YakeKeywordExtractor.Builder().withMaxSimilarityThreshold(Double.NEGATIVE_INFINITY));
     }
 
     @Test
