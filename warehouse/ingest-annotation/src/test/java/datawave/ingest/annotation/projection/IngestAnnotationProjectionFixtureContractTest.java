@@ -1,5 +1,6 @@
 package datawave.ingest.annotation.projection;
 
+import static datawave.annotation.projection.AnnotationProjectionTestCases.BASELINE_PROFILES_RESOURCE;
 import static datawave.annotation.projection.AnnotationProjectionTestCases.JSON;
 import static datawave.annotation.projection.AnnotationProjectionTestCases.annotation;
 import static datawave.annotation.projection.AnnotationProjectionTestCases.content;
@@ -45,10 +46,11 @@ import datawave.ingest.annotation.mapreduce.input.SimpleAnnotationRecordReader;
 import datawave.ingest.data.TypeRegistry;
 
 /**
- * Checks ingest normalization, reader framing and existing persistence serializers using the shared core projection fixtures and independent consumer answers.
+ * Checks the ingest responsibilities that follow or surround semantic projection: DataWave Type normalization, supported JSON record framing and conversion of
+ * accepted annotations to Accumulo keys and values. Shared inputs come from the core projection test artifact; expected answers remain independently authored.
  * <p>
- * These checks do not execute the planned preparation, projector, routed indexing or retrieval implementation. Reader and mutation resources belong to this
- * consumer; shared annotation inputs and logical-field answers come from the core projection test artifact.
+ * These tests call the existing Types, reader and persistence serializers. The core AnnotationProjectorTest separately executes projection. Integrated
+ * preparation, index writes and scanner/readback checks remain separate; producing serialized keys and values here does not perform an Accumulo write.
  */
 class IngestAnnotationProjectionFixtureContractTest {
     @TempDir
@@ -88,18 +90,19 @@ class IngestAnnotationProjectionFixtureContractTest {
                 read("expected/" + id + ".json").path("logicalFields"),
                 id.startsWith("extension-") ?
                         "configuration/exact-extension-profile.json" :
-                        "configuration/baseline-profiles.json"
+                        BASELINE_PROFILES_RESOURCE
         );
         //@formatter:on
     }
 
     /**
-     * Applies the same normalization checks to the small score and padding variants, keeping their field answers independent of the future projector.
+     * Normalizes the literal fields in {@code oracles/field-format-cases.json}, including score and padding variants. The expected values are read directly
+     * from the resource rather than produced by the projector, keeping this Type check independent of expression evaluation.
      */
     @Test
     void variantFieldAnswersStayIndependentAndNormalize() throws Exception {
         for (JsonNode row : read("oracles/field-format-cases.json").path("cases")) {
-            assertFieldNormalization(row.path("logicalFields"), "configuration/baseline-profiles.json");
+            assertFieldNormalization(row.path("logicalFields"), BASELINE_PROFILES_RESOURCE);
         }
     }
 
@@ -134,8 +137,8 @@ class IngestAnnotationProjectionFixtureContractTest {
     }
 
     /**
-     * Checks the stored source key and decoded payload for the independently expected source identity in each reference case. The supplied-input columns
-     * identify the future completion scenario; this test serializes its accepted state and does not perform completion or reference reconciliation.
+     * Serializes the independently expected source in each reference case and checks its Accumulo key and decoded payload. The expected hash columns build the
+     * accepted state; the supplied-input columns describe a separate preparation scenario and do not drive source completion in this test.
      */
     @ParameterizedTest(name = "source-reference-{0}")
     @MethodSource("datawave.annotation.projection.AnnotationProjectionTestCases#sourceReferences")

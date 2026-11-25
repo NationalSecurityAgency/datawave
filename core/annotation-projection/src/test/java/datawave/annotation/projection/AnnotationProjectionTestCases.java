@@ -24,10 +24,11 @@ import datawave.annotation.protobuf.v1.Segment;
 import datawave.annotation.protobuf.v1.SegmentBoundary;
 
 /**
- * Ordinary inputs and literal expected answers for annotation model and preparation tests. Builders only assemble test inputs; no production preparation,
- * projection, hashing or normalization calculates an expected answer here.
+ * Supplies reusable annotation test inputs and independently written expected answers. A test fixture is the prepared context for a test: here, built
+ * annotation examples, argument rows and resource files that the core and ingest tests can share.
  * <p>
- * This helper and its shared resources are published only in the test artifact for reuse by ingest and service tests.
+ * Builders assemble inputs and literal accepted-state examples; they do not run preparation, projection, hashing or normalization to calculate an expected
+ * answer. This helper and the shared resources are published only in the test artifact, so service tests can reuse them as well.
  */
 public final class AnnotationProjectionTestCases {
     public static final String ROOT = "/annotation-projection/";
@@ -35,10 +36,22 @@ public final class AnnotationProjectionTestCases {
     public static final String NATIVE_SHORT = "228F1657";
     public static final String NATIVE_LONG = "E432F13DBF765D8019951DCADB809334";
 
+    /** Shared configuration resource containing the synthetic extraction, binary-label and multiclass-label profiles. */
+    public static final String BASELINE_PROFILES_RESOURCE = "configuration/baseline-profiles.json";
+
+    /** Identifies preparation cases with NaN or infinity scores; this is a test intent label, not a public error code. */
+    public static final String NONFINITE_SCORE_INTENT = "NONFINITE_SCORE";
+
     private AnnotationProjectionTestCases() {}
 
     /**
-     * Reads a fixture as UTF-8 text. The resource name is relative to the annotation-projection resource directory.
+     * Reads a test resource as UTF-8 text.
+     *
+     * @param resource
+     *            the path relative to the annotation-projection resource directory, such as {@code raw/extraction-single-region.json}
+     * @return the complete resource text
+     * @throws IOException
+     *             if the resource is missing or cannot be read
      */
     public static String text(String resource) throws IOException {
         try (InputStream stream = AnnotationProjectionTestCases.class.getResourceAsStream(ROOT + resource)) {
@@ -50,14 +63,26 @@ public final class AnnotationProjectionTestCases {
     }
 
     /**
-     * Reads a JSON fixture into a tree that tests can inspect or modify.
+     * Reads a JSON test resource into a tree that tests can inspect or modify.
+     *
+     * @param resource
+     *            the path relative to the annotation-projection resource directory
+     * @return the parsed JSON tree
+     * @throws IOException
+     *             if the resource cannot be read or its JSON cannot be parsed
      */
     public static JsonNode read(String resource) throws IOException {
         return JSON.readTree(text(resource));
     }
 
     /**
-     * Parses a fixture with the strict protobuf JSON parser. Unknown annotation properties cause parsing to fail.
+     * Parses an annotation test resource with the strict protobuf JSON parser. Unknown annotation properties cause parsing to fail.
+     *
+     * @param resource
+     *            the path relative to the annotation-projection resource directory
+     * @return the built annotation represented by the resource
+     * @throws IOException
+     *             if the resource cannot be read or parsed as AnnotationV1 JSON
      */
     public static Annotation annotation(String resource) throws IOException {
         Annotation.Builder builder = Annotation.newBuilder();
@@ -367,13 +392,13 @@ public final class AnnotationProjectionTestCases {
      * Building these inputs does not run the registry loader or establish that it rejects them.
      */
     public static Stream<Arguments> setupFailures() throws IOException {
-        ObjectNode conflict = (ObjectNode) read("configuration/baseline-profiles.json");
+        ObjectNode conflict = (ObjectNode) read(BASELINE_PROFILES_RESOURCE);
         ((ObjectNode) conflict.path("profiles").get(1).path("datawave").path("fields").path("ANALYTIC_HASH")).put("reverseIndex", false);
-        ObjectNode protectedField = (ObjectNode) read("configuration/baseline-profiles.json");
+        ObjectNode protectedField = (ObjectNode) read(BASELINE_PROFILES_RESOURCE);
         ((ObjectNode) protectedField.path("profiles").get(0).path("semantic").path("bindings").get(0)).put("field", "LOAD_DATE");
         ObjectNode policies = (ObjectNode) protectedField.path("profiles").get(0).path("datawave").path("fields");
         policies.set("LOAD_DATE", policies.remove("EXTRACTED_TEXT"));
-        ObjectNode selector = (ObjectNode) read("configuration/baseline-profiles.json");
+        ObjectNode selector = (ObjectNode) read(BASELINE_PROFILES_RESOURCE);
         ((ObjectNode) selector.path("profiles").get(0).path("semantic").path("bindings").get(0).path("expression")).put("path", "$..value");
         return Stream.of(Arguments.of("setup-shared-policy-conflict", conflict.toString(), "SHARED_POLICY_CONFLICT"),
                         Arguments.of("setup-protected-field", protectedField.toString(), "PROTECTED_DESTINATION"),
@@ -425,7 +450,7 @@ public final class AnnotationProjectionTestCases {
                                         + score.toLowerCase(Locale.ROOT).replace("-", "negative-")
                                         + "-" + type.toLowerCase(Locale.ROOT),
                                 raw.toString(),
-                                "NONFINITE_SCORE"
+                                NONFINITE_SCORE_INTENT
                         )
                 );
                 //@formatter:on
