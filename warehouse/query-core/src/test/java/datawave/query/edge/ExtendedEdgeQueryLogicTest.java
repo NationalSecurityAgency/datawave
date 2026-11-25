@@ -1,6 +1,7 @@
 package datawave.query.edge;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -87,6 +88,17 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
 
         compareResults(logic, factory, expected);
+    }
+
+    @Test
+    public void testUnfieldedQueryThrowsClearError() throws Exception {
+        // a bare, unfielded LUCENE term is mapped to _ANYFIELD_ and is not supported by edge queries
+        QueryImpl q = configQuery("JUPITER", auths);
+        q.addParameter("query.syntax", "LUCENE");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> runLogic(q, auths));
+        String message = e.getMessage();
+        assertNotNull(message);
+        assertTrue(message.contains("unfielded terms"), "error should mention unfielded terms, but was: " + message);
     }
 
     @Test
