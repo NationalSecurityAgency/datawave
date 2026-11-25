@@ -1,0 +1,43 @@
+{
+  "annotationId": "Opaque-v1",
+  "annotationType": "FUTURE",
+  "documentId": "content-label-fixture.dat",
+  "source": {
+    "analyticHash": "aSource",
+    "analyticSourceHash": "source-long-v1",
+    "engine": "test-engine",
+    "model": "test-model-v1",
+    "platform": "test-cpu",
+    "configuration": {
+      "modelVersion": "1",
+      "fixture": "synthetic"
+    }
+  },
+  "segments": [
+    {
+      "segmentHash": "bAll",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [
+        {
+          "valueHash": "vLabel",
+          "value": "present",
+          "score": 0.75,
+          "extension": {
+            "properties": {
+              "nested": {
+                "key": "value"
+              }
+            },
+            "items": [
+              1,
+              false,
+              "1"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

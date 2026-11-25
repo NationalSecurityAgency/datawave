@@ -1,0 +1,546 @@
+{
+  "profileFormatVersion": 1,
+  "profiles": [
+    {
+      "id": "extraction-baseline",
+      "revision": 1,
+      "annotationType": "TEXT_EXTRACTION",
+      "semantic": {
+        "selectorDialect": "scoped-paths-v1",
+        "output": {
+          "trim": "java-string-trim",
+          "omitBlank": true
+        },
+        "bindings": [
+          {
+            "id": "value",
+            "scope": "value",
+            "field": "EXTRACTED_TEXT",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.value"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "score",
+            "scope": "value",
+            "field": "EXTRACTION_SCORE",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.score"
+            },
+            "format": "java-float-text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "type",
+            "scope": "value",
+            "field": "EXTRACTION_KIND",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.extension.contentKind"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "source",
+            "scope": "source",
+            "field": "EXTRACTION_SOURCE",
+            "required": false,
+            "expression": {
+              "op": "join-nonblank",
+              "delimiter": ":",
+              "operands": [
+                {
+                  "op": "select",
+                  "path": "$.model"
+                },
+                {
+                  "op": "select",
+                  "path": "$.engine"
+                },
+                {
+                  "op": "select",
+                  "path": "$.platform"
+                }
+              ]
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "source-all-label",
+              "hashStrategy": "murmur3-32-unencoded-chars-v1"
+            }
+          },
+          {
+            "id": "analytic-hash",
+            "scope": "source",
+            "field": "ANALYTIC_HASH",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.analyticHash"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "none"
+            }
+          },
+          {
+            "id": "analytic-source-hash",
+            "scope": "source",
+            "field": "ANALYTIC_SOURCE_HASH",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.analyticSourceHash"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "none"
+            }
+          }
+        ]
+      },
+      "datawave": {
+        "fields": {
+          "EXTRACTED_TEXT": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "EXTRACTION_SCORE": {
+            "typeClass": "datawave.data.type.NumberType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": false,
+            "termFrequency": false
+          },
+          "EXTRACTION_KIND": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "EXTRACTION_SOURCE": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "ANALYTIC_HASH": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "ANALYTIC_SOURCE_HASH": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          }
+        }
+      }
+    },
+    {
+      "id": "binary-label-baseline",
+      "revision": 1,
+      "annotationType": "BINARY_LABEL",
+      "semantic": {
+        "selectorDialect": "scoped-paths-v1",
+        "output": {
+          "trim": "java-string-trim",
+          "omitBlank": true
+        },
+        "bindings": [
+          {
+            "id": "value",
+            "scope": "value",
+            "field": "BINARY_CATEGORY",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.value"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "score",
+            "scope": "value",
+            "field": "BINARY_SCORE",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.score"
+            },
+            "format": "java-float-text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "result",
+            "scope": "value",
+            "field": "BINARY_RESULT",
+            "required": false,
+            "expression": {
+              "op": "concat",
+              "delimiter": ":",
+              "operands": [
+                {
+                  "op": "select",
+                  "path": "$.value"
+                },
+                {
+                  "op": "format",
+                  "format": "java-float-text",
+                  "operand": {
+                    "op": "select",
+                    "path": "$.score"
+                  }
+                }
+              ]
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "source",
+            "scope": "source",
+            "field": "BINARY_SOURCE",
+            "required": false,
+            "expression": {
+              "op": "join-nonblank",
+              "delimiter": ":",
+              "operands": [
+                {
+                  "op": "select",
+                  "path": "$.model"
+                },
+                {
+                  "op": "select",
+                  "path": "$.engine"
+                },
+                {
+                  "op": "select",
+                  "path": "$.platform"
+                }
+              ]
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "source-all-label",
+              "hashStrategy": "murmur3-32-unencoded-chars-v1"
+            }
+          },
+          {
+            "id": "analytic-hash",
+            "scope": "source",
+            "field": "ANALYTIC_HASH",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.analyticHash"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "none"
+            }
+          },
+          {
+            "id": "analytic-source-hash",
+            "scope": "source",
+            "field": "ANALYTIC_SOURCE_HASH",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.analyticSourceHash"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "none"
+            }
+          }
+        ]
+      },
+      "datawave": {
+        "fields": {
+          "BINARY_CATEGORY": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "BINARY_SCORE": {
+            "typeClass": "datawave.data.type.NumberType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": false,
+            "termFrequency": false
+          },
+          "BINARY_RESULT": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "BINARY_SOURCE": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "ANALYTIC_HASH": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "ANALYTIC_SOURCE_HASH": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          }
+        }
+      }
+    },
+    {
+      "id": "multiclass-label-baseline",
+      "revision": 1,
+      "annotationType": "MULTICLASS_LABEL",
+      "semantic": {
+        "selectorDialect": "scoped-paths-v1",
+        "output": {
+          "trim": "java-string-trim",
+          "omitBlank": true
+        },
+        "bindings": [
+          {
+            "id": "value",
+            "scope": "value",
+            "field": "MULTICLASS_CATEGORY",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.value"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "score",
+            "scope": "value",
+            "field": "MULTICLASS_SCORE",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.score"
+            },
+            "format": "java-float-text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "result",
+            "scope": "value",
+            "field": "MULTICLASS_RESULT",
+            "required": false,
+            "expression": {
+              "op": "concat",
+              "delimiter": ":",
+              "operands": [
+                {
+                  "op": "select",
+                  "path": "$.value"
+                },
+                {
+                  "op": "format",
+                  "format": "java-float-text",
+                  "operand": {
+                    "op": "select",
+                    "path": "$.score"
+                  }
+                }
+              ]
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "source",
+            "scope": "source",
+            "field": "MULTICLASS_SOURCE",
+            "required": false,
+            "expression": {
+              "op": "join-nonblank",
+              "delimiter": ":",
+              "operands": [
+                {
+                  "op": "select",
+                  "path": "$.model"
+                },
+                {
+                  "op": "select",
+                  "path": "$.engine"
+                },
+                {
+                  "op": "select",
+                  "path": "$.platform"
+                }
+              ]
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "source-all-label",
+              "hashStrategy": "murmur3-32-unencoded-chars-v1"
+            }
+          },
+          {
+            "id": "analytic-hash",
+            "scope": "source",
+            "field": "ANALYTIC_HASH",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.analyticHash"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "none"
+            }
+          },
+          {
+            "id": "analytic-source-hash",
+            "scope": "source",
+            "field": "ANALYTIC_SOURCE_HASH",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.analyticSourceHash"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "none"
+            }
+          }
+        ]
+      },
+      "datawave": {
+        "fields": {
+          "MULTICLASS_CATEGORY": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "MULTICLASS_SCORE": {
+            "typeClass": "datawave.data.type.NumberType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": false,
+            "termFrequency": false
+          },
+          "MULTICLASS_RESULT": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "MULTICLASS_SOURCE": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "ANALYTIC_HASH": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "ANALYTIC_SOURCE_HASH": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          }
+        }
+      }
+    }
+  ]
+}

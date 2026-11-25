@@ -1,0 +1,45 @@
+{
+  "annotationType": "TEXT_EXTRACTION",
+  "documentId": "example-single-region.dat",
+  "source": {
+    "analyticHash": "58F48CA4",
+    "analyticSourceHash": "318DDF5130C30E298696DCB40191552E",
+    "engine": "fixture-extractor",
+    "model": "fixture-model-v1",
+    "configuration": {
+      "mode": "example",
+      "revision": "1"
+    }
+  },
+  "segments": [
+    {
+      "segmentHash": "F22F0767",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": 10,
+            "y": 20,
+            "label": "topLeftPoint"
+          },
+          {
+            "x": 20,
+            "y": 30,
+            "label": "bottomRightPoint"
+          }
+        ]
+      },
+      "values": [
+        {
+          "valueHash": "F9AFA70A",
+          "value": "Example Text 123",
+          "extension": {
+            "extensionType": "TEXT_EXTRACTION",
+            "contentKind": "PRINTED_TEXT"
+          }
+        }
+      ]
+    }
+  ],
+  "annotationId": "Supplied-Extraction-v1"
+}

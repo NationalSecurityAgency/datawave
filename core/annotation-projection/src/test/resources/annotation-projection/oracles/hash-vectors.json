@@ -1,0 +1,6 @@
+{"vectors": [
+  {"algorithm": "murmur3-32-unencoded-chars-v1", "input": "ALL", "expected": "B809141A"},
+  {"algorithm": "murmur3-32-unencoded-chars-v1", "input": "fixture-model-v1:fixture-extractor", "expected": "CA017B28"},
+  {"algorithm": "murmur3-32-unencoded-chars-v1", "input": "test-model-v1:test-engine:test-cpu", "expected": "B33DE158"},
+  {"algorithm": "murmur3-32-unencoded-chars-v1", "input": " model :engine", "expected": "6F0883EE"}
+]}

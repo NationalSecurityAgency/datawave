@@ -1,0 +1,10 @@
+{
+  "logicalFields": [
+    {"base": "BINARY_CATEGORY", "group": ["aSource", "bAll", "vLabel"], "field": "BINARY_CATEGORY.aSource.bAll.vLabel", "value": "present", "normalized": "present"},
+    {"base": "BINARY_SCORE", "group": ["aSource", "bAll", "vLabel"], "field": "BINARY_SCORE.aSource.bAll.vLabel", "value": "0.75", "normalized": "+ZE7.5"},
+    {"base": "BINARY_RESULT", "group": ["aSource", "bAll", "vLabel"], "field": "BINARY_RESULT.aSource.bAll.vLabel", "value": "present:0.75", "normalized": "present:0.75"},
+    {"base": "BINARY_SOURCE", "group": ["aSource", "B809141A", "B33DE158"], "field": "BINARY_SOURCE.aSource.B809141A.B33DE158", "value": "test-model-v1:test-engine:test-cpu", "normalized": "test-model-v1:test-engine:test-cpu"},
+    {"base": "ANALYTIC_HASH", "group": [], "field": "ANALYTIC_HASH", "value": "aSource", "normalized": "asource"},
+    {"base": "ANALYTIC_SOURCE_HASH", "group": [], "field": "ANALYTIC_SOURCE_HASH", "value": "source-long-v1", "normalized": "source-long-v1"}
+  ]
+}

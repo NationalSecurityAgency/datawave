@@ -1,0 +1,11 @@
+{
+  "mutations": [
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000FUTURE", "columnQualifier": "Future-v1\u0000source\u0000source-long-v1", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "empty"}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000FUTURE", "columnQualifier": "Future-v1\u0000doc\u0000content-label-fixture.dat", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "empty"}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000FUTURE", "columnQualifier": "Future-v1\u0000md\u0000visibility\u0000PUBLIC", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "empty"}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000FUTURE", "columnQualifier": "Future-v1\u0000md\u0000created_date\u00002026-11-23T00:00:00Z", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "empty"}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000FUTURE", "columnQualifier": "Future-v1\u0000seg\u0000bAll", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "protobuf-segment", "acceptedSegment": 0}},
+    {"table": "datawave.annotationSource", "row": "source-long-v1", "columnFamily": "d", "columnQualifier": "test-engine\u0000test-model-v1\u0000aSource", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "protobuf-source"}}
+  ],
+  "counts": {"persistence": 6, "event": 0, "fieldIndex": 0, "forwardIndex": 0, "reverseIndex": 0, "termFrequency": 0, "diagnostics": 0, "handlerReturn": 6, "mapperRowsCreated": 6, "metadataCleanupIncluded": false}
+}

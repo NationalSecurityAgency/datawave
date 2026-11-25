@@ -1,0 +1,15 @@
+{
+  "mutations": [
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000TEXT_EXTRACTION", "columnQualifier": "0BC9FDC2\u0000source\u0000318DDF5130C30E298696DCB40191552E", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "empty"}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000TEXT_EXTRACTION", "columnQualifier": "0BC9FDC2\u0000doc\u0000example-multiple-regions.dat", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "empty"}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000TEXT_EXTRACTION", "columnQualifier": "0BC9FDC2\u0000md\u0000visibility\u0000PUBLIC", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "empty"}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000TEXT_EXTRACTION", "columnQualifier": "0BC9FDC2\u0000md\u0000created_date\u00002026-11-23T00:00:00Z", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "empty"}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000TEXT_EXTRACTION", "columnQualifier": "0BC9FDC2\u0000seg\u0000F22F0767", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "protobuf-segment", "acceptedSegment": 4}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000TEXT_EXTRACTION", "columnQualifier": "0BC9FDC2\u0000seg\u0000D9076E19", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "protobuf-segment", "acceptedSegment": 2}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000TEXT_EXTRACTION", "columnQualifier": "0BC9FDC2\u0000seg\u00000F84EB6F", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "protobuf-segment", "acceptedSegment": 0}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000TEXT_EXTRACTION", "columnQualifier": "0BC9FDC2\u0000seg\u00005CC1EEEC", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "protobuf-segment", "acceptedSegment": 1}},
+    {"table": "datawave.annotation", "row": "20261123_0", "columnFamily": "annotation\u00001.2.3\u0000TEXT_EXTRACTION", "columnQualifier": "0BC9FDC2\u0000seg\u0000E6E1C015", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "protobuf-segment", "acceptedSegment": 3}},
+    {"table": "datawave.annotationSource", "row": "318DDF5130C30E298696DCB40191552E", "columnFamily": "d", "columnQualifier": "fixture-extractor\u0000fixture-model-v1\u000058F48CA4", "visibility": "PUBLIC", "timestamp": 1795392000000, "value": {"kind": "protobuf-source"}}
+  ],
+  "counts": {"persistence": 10, "indexedSubmissionTotal": "pending-native-aggregation-oracle", "metadataCleanupIncluded": false}
+}

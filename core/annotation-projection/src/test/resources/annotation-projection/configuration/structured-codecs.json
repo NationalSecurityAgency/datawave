@@ -1,0 +1,11 @@
+{
+  "annotationExtensionCodecVersion": 1,
+  "declarations": [
+    {
+      "annotationType": "FUTURE",
+      "extensionKey": "stats",
+      "codec": "json",
+      "version": 1
+    }
+  ]
+}

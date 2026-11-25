@@ -1,0 +1,153 @@
+{
+  "profileFormatVersion": 1,
+  "profiles": [
+    {
+      "id": "future-baseline",
+      "revision": 1,
+      "annotationType": "FUTURE",
+      "semantic": {
+        "selectorDialect": "scoped-paths-v1",
+        "output": {
+          "trim": "java-string-trim",
+          "omitBlank": true
+        },
+        "bindings": [
+          {
+            "id": "exact-count",
+            "scope": "value",
+            "field": "EXACT_COUNT",
+            "required": true,
+            "expression": {
+              "op": "select",
+              "path": "$.extension.stats.count"
+            },
+            "format": "json-number-text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "enabled",
+            "scope": "value",
+            "field": "ENABLED",
+            "required": true,
+            "expression": {
+              "op": "select",
+              "path": "$.extension.stats.enabled"
+            },
+            "format": "boolean-text",
+            "grouping": {
+              "kind": "source-segment-value"
+            }
+          },
+          {
+            "id": "source",
+            "scope": "source",
+            "field": "FUTURE_SOURCE",
+            "required": false,
+            "expression": {
+              "op": "join-nonblank",
+              "delimiter": ":",
+              "operands": [
+                {
+                  "op": "select",
+                  "path": "$.model"
+                },
+                {
+                  "op": "select",
+                  "path": "$.engine"
+                },
+                {
+                  "op": "select",
+                  "path": "$.platform"
+                }
+              ]
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "source-all-label",
+              "hashStrategy": "murmur3-32-unencoded-chars-v1"
+            }
+          },
+          {
+            "id": "analytic-hash",
+            "scope": "source",
+            "field": "ANALYTIC_HASH",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.analyticHash"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "none"
+            }
+          },
+          {
+            "id": "analytic-source-hash",
+            "scope": "source",
+            "field": "ANALYTIC_SOURCE_HASH",
+            "required": false,
+            "expression": {
+              "op": "select",
+              "path": "$.analyticSourceHash"
+            },
+            "format": "text",
+            "grouping": {
+              "kind": "none"
+            }
+          }
+        ]
+      },
+      "datawave": {
+        "fields": {
+          "EXACT_COUNT": {
+            "typeClass": "datawave.data.type.NumberType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": false,
+            "termFrequency": false
+          },
+          "ENABLED": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "FUTURE_SOURCE": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "ANALYTIC_HASH": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          },
+          "ANALYTIC_SOURCE_HASH": {
+            "typeClass": "datawave.data.type.LcNoDiacriticsType",
+            "termSource": "value",
+            "event": true,
+            "fieldIndex": true,
+            "forwardIndex": true,
+            "reverseIndex": true,
+            "termFrequency": false
+          }
+        }
+      }
+    }
+  ]
+}

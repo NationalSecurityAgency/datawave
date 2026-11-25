@@ -1,0 +1,70 @@
+{
+  "protoSha256": "53ef3ff3e24cd4aac81a8b1f4c72cc92bcd1e8e0ada0346792adfd04a3a27591",
+  "messages": {
+    "Point": {
+      "x": 1,
+      "y": 2,
+      "label": 3
+    },
+    "SegmentValue": {
+      "valueHash": 1,
+      "value": 2,
+      "score": 3,
+      "extension": 4
+    },
+    "SegmentBoundary": {
+      "boundaryType": 1,
+      "start": 21,
+      "end": 22,
+      "points": 23
+    },
+    "Segment": {
+      "segmentHash": 1,
+      "boundary": 2,
+      "values": 3,
+      "metadata": 50
+    },
+    "Annotation": {
+      "shard": 1,
+      "dataType": 2,
+      "uid": 3,
+      "annotationId": 4,
+      "documentId": 5,
+      "annotationType": 6,
+      "analyticSourceHash": 7,
+      "source": 8,
+      "segments": 20,
+      "metadata": 50
+    },
+    "AnnotationSource": {
+      "analyticHash": 1,
+      "analyticSourceHash": 2,
+      "engine": 3,
+      "model": 4,
+      "configuration": 5,
+      "platform": 6,
+      "metadata": 50
+    },
+    "SegmentList": {
+      "segments": 1,
+      "nextPageToken": 2
+    },
+    "AnnotationList": {
+      "annotations": 1,
+      "nextPageToken": 2
+    },
+    "AnnotationMessage": {
+      "annotationMessageId": 1,
+      "annotations": 2,
+      "source": 3,
+      "parameters": 50
+    }
+  },
+  "boundaryTypes": {
+    "UNKNOWN": 0,
+    "ALL": 1,
+    "POINTS": 2,
+    "TIME_MILLI": 3,
+    "TEXT_CHAR": 4
+  }
+}

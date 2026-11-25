@@ -1,0 +1,14 @@
+{
+  "vectors": [
+    {"format": "text", "kind": "string", "input": "12", "expected": "12"},
+    {"format": "json-number-text", "kind": "exact-number", "inputJson": "9007199254740993", "expected": "9007199254740993"},
+    {"format": "json-number-text", "kind": "exact-number", "inputJson": "12.5000", "expected": "12.5"},
+    {"format": "json-number-text", "kind": "exact-number", "inputJson": "1e-10000", "expected": "1E-10000"},
+    {"format": "json-number-text", "kind": "exact-number", "inputJson": "1000.0", "expected": "1E+3"},
+    {"format": "boolean-text", "kind": "boolean", "input": false, "expected": "false"},
+    {"format": "boolean-text", "kind": "boolean", "input": true, "expected": "true"},
+    {"format": "json-number-text", "kind": "string", "input": "12", "failure": "WRONG_SELECTED_KIND"},
+    {"format": "boolean-text", "kind": "string", "input": "false", "failure": "WRONG_SELECTED_KIND"},
+    {"format": "text", "kind": "object", "input": {"x": 1}, "failure": "WRONG_SELECTED_KIND"}
+  ]
+}

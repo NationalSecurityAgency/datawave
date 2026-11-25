@@ -1,0 +1,43 @@
+{
+  "annotationType": "MULTICLASS_LABEL",
+  "documentId": "content-label-fixture.dat",
+  "source": {
+    "analyticHash": "aSource",
+    "analyticSourceHash": "source-long-v1",
+    "engine": "test-engine",
+    "model": "test-model-v1",
+    "platform": "test-cpu",
+    "configuration": {
+      "modelVersion": "1",
+      "fixture": "synthetic"
+    },
+    "metadata": {
+      "visibility": "PUBLIC",
+      "created_date": "2026-11-23T00:00:00Z"
+    }
+  },
+  "segments": [
+    {
+      "segmentHash": "bAll",
+      "boundary": {
+        "boundaryType": "ALL"
+      },
+      "values": [
+        {
+          "valueHash": "vLabel",
+          "value": "circle",
+          "score": 0.75
+        }
+      ]
+    }
+  ],
+  "shard": "20261123_0",
+  "dataType": "annotation",
+  "uid": "1.2.3",
+  "metadata": {
+    "visibility": "PUBLIC",
+    "created_date": "2026-11-23T00:00:00Z"
+  },
+  "analyticSourceHash": "source-long-v1",
+  "annotationId": "Synthetic-MulticlassLabel"
+}

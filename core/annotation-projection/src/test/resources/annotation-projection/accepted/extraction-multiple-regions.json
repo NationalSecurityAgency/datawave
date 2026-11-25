@@ -1,0 +1,169 @@
+{
+  "annotationType": "TEXT_EXTRACTION",
+  "documentId": "example-multiple-regions.dat",
+  "source": {
+    "analyticHash": "58F48CA4",
+    "analyticSourceHash": "318DDF5130C30E298696DCB40191552E",
+    "engine": "fixture-extractor",
+    "model": "fixture-model-v1",
+    "configuration": {
+      "mode": "example",
+      "revision": "1"
+    },
+    "metadata": {
+      "visibility": "PUBLIC",
+      "created_date": "2026-11-23T00:00:00Z"
+    }
+  },
+  "segments": [
+    {
+      "segmentHash": "0F84EB6F",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": 50,
+            "y": 60,
+            "label": "topLeftPoint"
+          },
+          {
+            "x": 60,
+            "y": 70,
+            "label": "bottomRightPoint"
+          }
+        ]
+      },
+      "values": [
+        {
+          "valueHash": "C703FBA9",
+          "value": "Sample Text Three",
+          "extension": {
+            "extensionType": "TEXT_EXTRACTION",
+            "contentKind": "TEXT_IN_SCENE"
+          }
+        }
+      ]
+    },
+    {
+      "segmentHash": "5CC1EEEC",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": 70,
+            "y": 80,
+            "label": "topLeftPoint"
+          },
+          {
+            "x": 80,
+            "y": 90,
+            "label": "bottomRightPoint"
+          }
+        ]
+      },
+      "values": [
+        {
+          "valueHash": "290DA936",
+          "value": "Sample Text Four",
+          "extension": {
+            "extensionType": "TEXT_EXTRACTION",
+            "contentKind": "TEXT_IN_SCENE"
+          }
+        }
+      ]
+    },
+    {
+      "segmentHash": "D9076E19",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": 30,
+            "y": 40,
+            "label": "topLeftPoint"
+          },
+          {
+            "x": 40,
+            "y": 50,
+            "label": "bottomRightPoint"
+          }
+        ]
+      },
+      "values": [
+        {
+          "valueHash": "C36007AD",
+          "value": "Sample Text Two",
+          "extension": {
+            "extensionType": "TEXT_EXTRACTION",
+            "contentKind": "TEXT_IN_SCENE"
+          }
+        }
+      ]
+    },
+    {
+      "segmentHash": "E6E1C015",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": 90,
+            "y": 100,
+            "label": "topLeftPoint"
+          },
+          {
+            "x": 100,
+            "y": 110,
+            "label": "bottomRightPoint"
+          }
+        ]
+      },
+      "values": [
+        {
+          "valueHash": "70148DA0",
+          "value": "Sample Text Five",
+          "extension": {
+            "extensionType": "TEXT_EXTRACTION",
+            "contentKind": "TEXT_IN_SCENE"
+          }
+        }
+      ]
+    },
+    {
+      "segmentHash": "F22F0767",
+      "boundary": {
+        "boundaryType": "POINTS",
+        "points": [
+          {
+            "x": 10,
+            "y": 20,
+            "label": "topLeftPoint"
+          },
+          {
+            "x": 20,
+            "y": 30,
+            "label": "bottomRightPoint"
+          }
+        ]
+      },
+      "values": [
+        {
+          "valueHash": "A7E9ECFF",
+          "value": "Sample Text One",
+          "extension": {
+            "extensionType": "TEXT_EXTRACTION",
+            "contentKind": "TEXT_IN_SCENE"
+          }
+        }
+      ]
+    }
+  ],
+  "shard": "20261123_0",
+  "dataType": "annotation",
+  "uid": "1.2.3",
+  "metadata": {
+    "visibility": "PUBLIC",
+    "created_date": "2026-11-23T00:00:00Z"
+  },
+  "analyticSourceHash": "318DDF5130C30E298696DCB40191552E",
+  "annotationId": "0BC9FDC2"
+}

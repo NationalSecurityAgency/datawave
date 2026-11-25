@@ -1,0 +1,17 @@
+{
+  "vectors": [
+    {"id": "optional-score-absent", "json": {"segments": [{"values": [{}]}]}, "scorePresent": false},
+    {"id": "optional-score-null", "json": {"segments": [{"values": [{"score": null}]}]}, "scorePresent": false},
+    {"id": "optional-score-zero", "json": {"segments": [{"values": [{"score": 0}]}]}, "scorePresent": true, "floatText": "0.0"},
+    {"id": "optional-score-negative-zero", "json": {"segments": [{"values": [{"score": -0.0}]}]}, "scorePresent": true, "floatText": "-0.0"},
+    {"id": "source-absent", "json": {}, "sourcePresent": false},
+    {"id": "source-null", "json": {"source": null}, "sourcePresent": false},
+    {"id": "source-empty-present", "json": {"source": {}}, "sourcePresent": true, "platformPresent": false},
+    {"id": "platform-null", "json": {"source": {"platform": null}}, "sourcePresent": true, "platformPresent": false},
+    {"id": "platform-empty-present", "json": {"source": {"platform": ""}}, "sourcePresent": true, "platformPresent": true},
+    {"id": "boundary-absent", "json": {"segments": [{}]}, "boundaryPresent": false},
+    {"id": "span-absent", "json": {"segments": [{"boundary": {}}]}, "boundaryPresent": true, "startPresent": false, "endPresent": false},
+    {"id": "span-explicit-zero", "json": {"segments": [{"boundary": {"start": 0, "end": 0}}]}, "boundaryPresent": true, "startPresent": true, "endPresent": true},
+    {"id": "point-implicit-zero", "json": {"segments": [{"boundary": {"points": [{}]}}]}, "pointX": 0, "pointY": 0}
+  ]
+}
