@@ -5,10 +5,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.clientImpl.ClientContext;
 
 import datawave.core.common.result.ConnectionPool;
-import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 public interface AccumuloConnectionFactory extends AutoCloseable {
 
@@ -110,21 +108,4 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
      * @return A map representation
      */
     Map<String,String> getTrackingMap(StackTraceElement[] stackTrace);
-
-    /**
-     * Utility method to unwrap the ClientContext instance within {@link WrappedAccumuloClient} as needed
-     *
-     * @param accumuloClient
-     *            {@link AccumuloClient} instance
-     * @return {@link WrappedAccumuloClient#getReal()}, if applicable; accumuloClient itself, if it implements {@link ClientContext}; otherwise returns null
-     */
-    static ClientContext getClientContext(AccumuloClient accumuloClient) {
-        ClientContext cc = null;
-        if (accumuloClient instanceof WrappedAccumuloClient) {
-            cc = (ClientContext) ((WrappedAccumuloClient) accumuloClient).getReal();
-        } else if (accumuloClient instanceof ClientContext) {
-            cc = (ClientContext) accumuloClient;
-        }
-        return cc;
-    }
 }

@@ -15,7 +15,6 @@ import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase.ConsistencyLevel;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl3.parser.ParseException;
@@ -27,7 +26,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloTableUtils;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
@@ -179,8 +178,10 @@ public class PushdownScheduler extends Scheduler {
         if (client instanceof InMemoryAccumuloClient) {
             tableId = TableId.of(config.getTableName());
         } else {
-            ClientContext ctx = AccumuloConnectionFactory.getClientContext(client);
-            tableId = ctx.getTableId(tableName);
+            tableId = AccumuloTableUtils.getTableId(client, tableName);
+            if (tableId == null) {
+                throw new TableNotFoundException(null, tableName, "Table does not exist");
+            }
         }
 
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), getPushdownFunction());
