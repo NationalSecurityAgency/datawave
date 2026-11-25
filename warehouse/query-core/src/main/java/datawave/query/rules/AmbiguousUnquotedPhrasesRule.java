@@ -5,14 +5,19 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.QuotedFieldQueryNode;
 
 import datawave.query.lucene.visitors.AmbiguousUnfieldedTermsVisitor;
 import datawave.query.lucene.visitors.BaseVisitor;
 import datawave.query.lucene.visitors.LuceneQueryStringBuildingVisitor;
 
 /**
- * An implementation of {@link QueryRule} that checks a LUCENE query for any unquoted phrases that are implicitly AND'd with a preceding fielded term, e.g.
- * {@code FOO:term1 term2 term3} should be {@code FOO:"term1 term2 term3"}.
+ * An implementation of {@link QueryRule} that checks a LUCENE query for any unquoted phrases that are implicitly AND'd with a preceding fielded term, e.g.:
+ * <ul>
+ * <li>{@code FOO:term1 term2 term3} should be {@code FOO:"term1 term2 term3"}.</li>
+ * <li>{@code FOO:"term1" term2 term3} should be {@code FOO:"term1 term2 term3"}.</li>
+ * <li>{@code FOO:term1 "term2" term3} should be {@code FOO:"term1 term2 term3"}.</li>
+ * </ul>
  */
 public class AmbiguousUnquotedPhrasesRule extends ShardQueryRule {
 
@@ -73,14 +78,26 @@ public class AmbiguousUnquotedPhrasesRule extends ShardQueryRule {
         }
 
         @Override
-        public Object visit(FieldQueryNode node, Object data) {
-            String field = node.getFieldAsString();
-            if (field.isEmpty()) {
-                ((StringBuilder) data).append(" ").append(node.getTextAsString());
-            } else {
-                ((StringBuilder) data).append(field).append(":\"").append(node.getTextAsString());
-            }
+        public Object visit(QuotedFieldQueryNode node, Object data) {
+            appendFieldTerm(node, data);
             return data;
+        }
+
+        @Override
+        public Object visit(FieldQueryNode node, Object data) {
+            appendFieldTerm(node, data);
+            return data;
+        }
+
+        private void appendFieldTerm(FieldQueryNode node, Object data) {
+            String field = node.getFieldAsString();
+            StringBuilder sb = (StringBuilder) data;
+            if (!field.isEmpty()) {
+                sb.append(field).append(":\"");
+            } else {
+                sb.append(" ");
+            }
+            sb.append(node.getTextAsString());
         }
     }
 
