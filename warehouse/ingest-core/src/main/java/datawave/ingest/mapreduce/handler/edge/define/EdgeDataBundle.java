@@ -68,6 +68,8 @@ public class EdgeDataBundle {
     private long activityDate;
     private boolean validActivityDate;
 
+    private EdgeKey.DATE_TYPE dateType;
+
     public EdgeDataBundle(RawRecordContainer event, String typeName, String id, IngestHelperInterface helper) {
         this.markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
         this.event = event;
@@ -99,6 +101,24 @@ public class EdgeDataBundle {
         } catch (MarkingFunctions.Exception e) {
             throw new RuntimeException("Could not combine markings", e);
         }
+    }
+
+    public EdgeDataBundle(RawRecordContainer event) {
+        this.markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+        this.event = event;
+
+    }
+
+    public void clearNonEventFields() {
+        this.source = null;
+        this.sink = null;
+        this.hasMaskedSource = false;
+        this.hasMaskedSink = false;
+        this.sourceMaskedValue = null;
+        this.sinkMaskedValue = null;
+        this.forceMaskedVisibility = false;
+        this.enrichedValue = null;
+        this.enrichedIndex = null;
     }
 
     private int getHour(long time) {
@@ -141,6 +161,25 @@ public class EdgeDataBundle {
 
     public void setMaskedVisibility(ColumnVisibility maskedVisibility) {
         this.maskedVisibility = maskedVisibility;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void initMarkings(Markings m1, Markings m2) {
+        if (m1 != null) {
+            if (m2 != null) {
+                try {
+                    this.markings = markingFunctions.combine(m1, m2);
+                } catch (Exception e) {
+                    throw new RuntimeException("Unable to combine markings", e);
+                }
+            } else {
+                this.markings = m1;
+            }
+        } else if (m2 != null) {
+            this.markings = m2;
+        } else {
+            this.markings = null;
+        }
     }
 
     public int getDuration() {
@@ -514,6 +553,26 @@ public class EdgeDataBundle {
 
             return (null);
         }
+    }
+
+    public void setDateType(EdgeKey.DATE_TYPE dateType) {
+        this.dateType = dateType;
+    }
+
+    public void setEdgeDefinition(EdgeDefinition edgeDef) {
+        this.edgeDefinition = edgeDef;
+        this.edgeDirection = edgeDef.getDirection();
+        this.edgeType = edgeDef.getEdgeType();
+
+    }
+
+    public void setUUID(String uuid) {
+        this.uuid = uuid;
+
+    }
+
+    public EdgeKey.DATE_TYPE getDateType() {
+        return this.dateType;
     }
 
 } /* end EdgeValue */
