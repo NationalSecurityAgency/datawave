@@ -36,34 +36,41 @@ import org.apache.accumulo.core.client.admin.ReplicationOperations;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.Credentials;
-import org.apache.accumulo.core.clientImpl.thrift.SecurityErrorCode;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.SystemPermission;
-import org.apache.accumulo.core.singletons.SingletonReservation;
 
-public class InMemoryAccumuloClient extends ClientContext implements AccumuloClient {
+/**
+ * In-memory implementation of {@link AccumuloClient} for testing. Does not connect to a real Accumulo instance.
+ */
+public class InMemoryAccumuloClient implements AccumuloClient {
 
-    String username;
+    final String username;
     private final InMemoryAccumulo acu;
 
-    public InMemoryAccumuloClient(String username, InMemoryInstance instance) throws AccumuloSecurityException {
-        this(new Credentials(username, new PasswordToken(new byte[0])), instance.acu);
-    }
-
-    public InMemoryAccumuloClient(Credentials credentials, InMemoryAccumulo acu) throws AccumuloSecurityException {
-        super(SingletonReservation.noop(), new InMemoryClientInfo(credentials), DefaultConfiguration.getInstance(), null);
-        if (credentials.getToken().isDestroyed())
-            throw new AccumuloSecurityException(credentials.getPrincipal(), SecurityErrorCode.TOKEN_EXPIRED);
-        this.username = credentials.getPrincipal();
-        this.acu = acu;
+    public InMemoryAccumuloClient(String username, InMemoryInstance instance) {
+        this.username = username;
+        this.acu = instance.acu;
         if (!acu.users.containsKey(username)) {
             InMemoryUser user = new InMemoryUser(username, new PasswordToken(new byte[0]), Authorizations.EMPTY);
             user.permissions.add(SystemPermission.SYSTEM);
             acu.users.put(user.name, user);
         }
+    }
+
+    /**
+     * Not supported by the in-memory implementation.
+     */
+    @Override
+    public ConditionalWriter createConditionalWriter(String tableName) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Not supported by the in-memory implementation.
+     */
+    @Override
+    public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -156,15 +163,11 @@ public class InMemoryAccumuloClient extends ClientContext implements AccumuloCli
         return new InMemoryNamespaceOperations(acu, username);
     }
 
-    @Override
-    public ConditionalWriter createConditionalWriter(String tableName, ConditionalWriterConfig config) {
-        // TODO add implementation
-        throw new UnsupportedOperationException();
-    }
-
+    /**
+     * Not supported by the in-memory implementation.
+     */
     @Override
     public ReplicationOperations replicationOperations() {
-        // TODO add implementation
         throw new UnsupportedOperationException();
     }
 
