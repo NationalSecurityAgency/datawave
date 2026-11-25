@@ -123,7 +123,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
     }
 
     private static String nodeToKey(JexlNode node) {
-        return JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(node), true);
+        return JexlStringBuildingVisitor.buildQuery(TreeFlatteningRebuildingVisitor.flatten(node), true);
     }
 
 }
