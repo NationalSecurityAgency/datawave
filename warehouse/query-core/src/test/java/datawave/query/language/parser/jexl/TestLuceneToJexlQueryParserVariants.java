@@ -105,17 +105,12 @@ public class TestLuceneToJexlQueryParserVariants {
 
     @Test
     public void testVariantsMultiple() throws ParseException {
+        // Same-type alternates follow their own occurrence tracks across positions; mixed combinations are no longer emitted.
         // @formatter:off
         String expected = "("
                 + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo@bar.com', 'to', 'bar@foo.com', 'address') || "
                 + "content:phrase(TOKFIELD, termOffsetMap, 'from', '@bar.com', 'to', '@foo.com', 'address') || "
-                + "content:phrase(TOKFIELD, termOffsetMap, 'from', '@bar.com', 'to', 'bar', 'address') || "
-                + "content:phrase(TOKFIELD, termOffsetMap, 'from', '@bar.com', 'to', 'bar@foo.com', 'address') || "
-                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo', 'to', '@foo.com', 'address') || "
-                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo', 'to', 'bar', 'address') || "
-                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo', 'to', 'bar@foo.com', 'address') || "
-                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo@bar.com', 'to', '@foo.com', 'address') || "
-                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo@bar.com', 'to', 'bar', 'address')"
+                + "content:phrase(TOKFIELD, termOffsetMap, 'from', 'foo', 'to', 'bar', 'address')"
                 + ")";
         // @formatter:on
         assertEquals(expected, parseQuery("TOKFIELD:\"from foo@bar.com to bar@foo.com address\""));

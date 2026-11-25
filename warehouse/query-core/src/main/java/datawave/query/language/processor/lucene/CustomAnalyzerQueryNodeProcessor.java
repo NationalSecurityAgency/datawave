@@ -21,8 +21,10 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -31,6 +33,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
+import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
 import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
@@ -49,36 +52,42 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
 
+import datawave.query.Constants;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 
 /**
+ * Adds analyzer-generated alternatives to configured query fields, keeping the original query as the first OR clause.
  * <p>
- * Applies tokenization to {@link TextableQueryNode} objects using a configured Lucene {@link Analyzer}.
- * </p>
- * Uses the {@link Analyzer} specified in the the {@link ConfigurationKeys#ANALYZER} attribute of the {@link QueryConfigHandler} to process non-wildcard
- * {@link FieldQueryNode}s for fields listed in <code>tokenizedFields</code>.
- * <p>
- * (Nodes that are {@link WildcardQueryNode}, {@link FuzzyQueryNode} or {@link RegexpQueryNode} or are part of a {@link TermRangeQueryNode} are NOT processed by
- * this processor.)
+ * An {@link Analyzer} turns query text into tokens (word strings). It can change a word's spelling or split one input word into several tokens, such as
+ * {@code wi-fi} into {@code wi} and {@code fi}. This processor uses the analyzer from {@link ConfigurationKeys#ANALYZER} for {@link FieldQueryNode}s whose
+ * fields are listed in {@code tokenizedFields}. Wildcards, fuzzy terms, regular expressions, and children of range queries are left unchanged.
  * </p>
  * <p>
- * The text of each {@link TextableQueryNode} is processed using the {@link Analyzer} to generate tokens. If the analyzer returns one or more terms that are not
- * identical to the input, the processor generates an {@link OrQueryNode} containing the original query node and a new {@link QuotedFieldQueryNode} or
- * {@link SlopQueryNode} depending on the nature of the original query node and whether <code>useSlopForTokenizedTerms</code> is <code>false</code>.
+ * A position is one word slot in the analyzer's output. A positive {@link PositionIncrementAttribute} starts a new position; zero means another form of the
+ * word at the current position. A token's {@link TypeAttribute} labels how that form was produced. For example, a filter may label dictionary forms
+ * {@code LEMMA} and shortened forms {@code STEM}. Here, "modality" means that type label; no particular labels are required.
  * </p>
  * <p>
- * There are three primary cases where tokenization will be applied to input query terms - single terms (e.g: wi-fi), phrases (e.g: "portable wi-fi"), and
- * phrases with slop (e.g: "portable wi-fi"~3). In the case of single term input, tokenization will produce a phrase with slop equals to the number of positions
- * in the original query if <code>useSlopForTokenizedTerms</code> is set to <code>true</code>, otherwise a phrase without slop will be produced. In the case of
- * phrase input, a new phrase query will be generated with the new tokens. In t he case of a phrase with slop, a new phrase with slop will be generated and an
- * attempt will be made to adjust the slop based on the number of additional tokens generated. For exa mple, in the case of the slop query above, the new query
- * will be "portable wi fi"~4 because an additional token was generated based on the split of 'wi' and 'fi' into two separate tokens.
+ * Expansion is per modality. A track is a phrase under construction, with one token per position. The primary track uses the first token at each position. Each
+ * type also gets a track, using its own first form when available and the primary form otherwise. Additional forms of one type use separate tracks, called
+ * spill tracks: second forms share a track across positions, third forms share another, and so on. Where a spill form is missing, its track uses that type's
+ * first form, or the primary form if the type is absent.
  * </p>
  * <p>
- * FieldQueryNodes with empty fields are considered 'unfielded' and will be tokenized if <code>unfieldedTokenized</code> is <code>true</code>. The
- * <code>skipTokenizeUnfieldedFields</code> can be used in this case to indicate that a node should be treated as un-fielded but not tokenized. When this
- * processor encounters such a field in a node, it will not tokenize the text of that node and will set that node's field to an empty string so that downstream
- * processors will treat the node as if it is un-fielded.
+ * Correctness assumes token filters emit same-position alternatives with distinct, stable type strings. The processor intentionally stops generating every
+ * combination of forms across positions. For example, it no longer independently generates a phrase using a lemma at one position and a stem at another. The
+ * original and primary phrases remain, and missing-type fallbacks can still contain forms of other types. Counting primary among the type tracks, total OR
+ * clauses are bounded by type tracks plus spill tracks plus one for the original, regardless of phrase length for fixed types and form counts. Duplicate
+ * phrases and alternatives equal to the original text are skipped.
+ * </p>
+ * <p>
+ * Each distinct alternative becomes a {@link QuotedFieldQueryNode}, optionally wrapped in a {@link SlopQueryNode}. Slop controls the allowed distance between
+ * phrase terms. Existing slop adjustments apply to all tracks: for example, splitting {@code "portable wi-fi"~3} produces {@code "portable wi fi"~4}. An
+ * unquoted input that expands to several words also gets slop when {@code useSlopForTokenizedTerms} is true; otherwise its alternative is an exact phrase.
+ * </p>
+ * <p>
+ * An empty field means the query is unfielded, and it is analyzed when {@code unfieldedTokenized} is true. Fields in {@code skipTokenizeUnfieldedFields} are
+ * made unfielded without analyzing their text.
  * </p>
  *
  * @see Analyzer
@@ -100,7 +109,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     /** use this Analyzer to tokenize query nodes */
     private Analyzer analyzer;
 
-    /** track positon increments when tokenizing, potentially used for handing stop words. */
+    /** Include analyzer position gaps in the count used to adjust slop. */
     private boolean positionIncrementsEnabled;
 
     /** determines whether nodes with empty fields should be tokenized */
@@ -115,11 +124,11 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
      */
     private final Set<String> skipTokenizeUnfieldedFields = new HashSet<>();
 
-    /** treat tokenized test as a phrase (as opposed to a phrase-with-slop) */
+    /** Allow distance between words when an unquoted input expands to several tokens. */
     private boolean useSlopForTokenizedTerms = true;
 
     /**
-     * establish configuration from <code>QueryConfigHandler</code> and process the speicfied tree
+     * Read the analyzer settings from {@link QueryConfigHandler} and process the supplied query tree.
      *
      * @param queryTree
      *            the query tree to process
@@ -217,7 +226,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             final String text = textableNode.getText().toString();
 
             FieldQueryNode fieldNode;
-            String field = "";
+            String field = Constants.EMPTY_STRING;
 
             if (FieldQueryNode.class.isAssignableFrom(nodeClazz)) {
                 fieldNode = (FieldQueryNode) node;
@@ -225,7 +234,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
 
                 // treat these fields as un-fielded and skip tokenization if enabled.
                 if (skipTokenizeUnfieldedFields.contains(field.toUpperCase())) {
-                    fieldNode.setField("");
+                    fieldNode.setField(Constants.EMPTY_STRING);
 
                     if (logger.isDebugEnabled()) {
                         logger.debug("Skipping tokenization of un-fielded query node: " + fieldNode);
@@ -257,6 +266,20 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         return children; /* no-op */
     }
 
+    /**
+     * Analyze one query node and add its distinct phrase alternatives. Position increments determine word slots for the builder; the separate
+     * {@code positionCount} keeps the existing slop calculation, including its behavior when position increments are disabled.
+     *
+     * @param node
+     *            the original query node
+     * @param text
+     *            the original query text
+     * @param field
+     *            the query field, or an empty string for an unfielded query
+     * @return the original node if no distinct alternative is found, otherwise an OR group with the original first
+     * @throws QueryNodeException
+     *             if reading the analyzer output fails
+     */
     private QueryNode tokenizeNode(final QueryNode node, final String text, final String field) throws QueryNodeException {
         if (analyzer == null) {
             if (logger.isDebugEnabled()) {
@@ -289,10 +312,10 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             final PositionIncrementAttribute posIncrAtt = buffer.hasAttribute(PositionIncrementAttribute.class)
                             ? buffer.getAttribute(PositionIncrementAttribute.class)
                             : null;
+            final TypeAttribute typeAtt = buffer.hasAttribute(TypeAttribute.class) ? buffer.getAttribute(TypeAttribute.class) : null;
 
-            // the variant builder will maintain multiple versions of the tokenized query as we find tokens
-            // that have multiple variants in the same position - e.g., stems, roots or lemmas.
-            final VariantBuilder b = new VariantBuilder();
+            // Keep each type's forms together across words instead of generating every combination.
+            final ModalityVariantBuilder b = new ModalityVariantBuilder();
 
             // build the new query strings from the tokenizer output while tracking cases where we've dropped words
             // and will need to adjust the phrase slop for the query as a result.
@@ -302,7 +325,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 String token = termAtt.toString();
                 final int positionIncrement = posIncrAtt != null ? posIncrAtt.getPositionIncrement() : 1;
                 positionCount += positionIncrementsEnabled ? positionIncrement : 1;
-                b.append(token, positionIncrement == 0);
+                b.append(token, typeAtt != null ? typeAtt.type() : null, positionIncrement == 0);
             }
 
             if (b.hasNoVariants()) {
@@ -339,16 +362,16 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     }
 
     /**
-     * Create a new query node for the specified field and tokenize text, optionally wrapping it in a SlopQueryNode if we've determined that slop is needed
-     * (either due to tokens being removed or there being slop on the original query we need to account for.
+     * Create a phrase alternative and mark it as processed so it will not be analyzed again. Wrap it in a {@link SlopQueryNode} when an allowed distance
+     * between terms is supplied.
      *
      * @param field
      *            the field for the query node
      * @param tokenizedText
-     *            the text for the query node
+     *            the analyzed tokens joined into a phrase
      * @param slopNeeded
-     *            whether slop is needed.
-     * @return a new QuotedFieldQueryNode or possibly a SlopQueryNode containing the new clause. Both of these nodes will be marked as 'PROCESSED'.
+     *            the allowed distance, or {@link Integer#MIN_VALUE} to leave the phrase without a slop wrapper
+     * @return a processed phrase node, optionally inside a processed slop node
      */
     public QueryNode createNewQueryNode(String field, String tokenizedText, int slopNeeded) {
         QueryNode newQueryNode = new QuotedFieldQueryNode(field, new UnescapedCharSequence(tokenizedText), -1, -1);
@@ -361,8 +384,8 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     }
 
     /**
-     * Calculate the amount of slop we need to add to a new query node for tokenized text. This is based on the based on the number of positions observed in the
-     * tokenized text and the difference between the slop in the original query minus the original token count.
+     * Determine the slop for an analyzed phrase. If the input had slop, adjust it by the difference between the analyzer's position count and the number of
+     * whitespace-separated input words. This accounts for words removed or split by the analyzer.
      *
      * @param node
      *            the original query node from which the tokenized text originated.
@@ -370,7 +393,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
      *            the text of the original query.
      * @param positionsObserved
      *            the number of positions observed in the tokenized text.
-     * @return the amount of slop we need to add to our new query clauses, Integer.MIN_VALUE if there should be no changes to the original node.
+     * @return the slop for generated phrases, or {@link Integer#MIN_VALUE} when they should have no slop wrapper
      */
     private int calculateSlopNeeded(QueryNode node, String text, int positionsObserved) {
         int slopNeeded = positionsObserved;
@@ -408,8 +431,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     }
 
     /**
-     * If a query node was something that has text, get the text. If the query node was already unescaped, convert it to it's escaped version. This way it can
-     * be compared to other nodes with escapes in place.
+     * Get the original text with its escape characters restored so it can be compared with analyzer-generated alternatives.
      *
      * @param node
      *            the node to extract text from
@@ -424,11 +446,11 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     }
 
     /**
-     * Work around a Lucene Bug in UnescapedCharSequence.toStringEscaped()
+     * Restore escape characters that Lucene's {@link UnescapedCharSequence#toStringEscaped()} does not preserve.
      *
      * @param unescaped
      *            string value
-     * @return unescaped string
+     * @return the text with its escape characters restored
      */
     private static String toStringEscaped(UnescapedCharSequence unescaped) {
         // non efficient implementation
@@ -446,16 +468,186 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     }
 
     /**
-     * Maintains one or more buffers for tokenized queries. During standard operation, works like a StringBuilder. If the tokenizer encounters a variant (e.g.,
-     * zero position offset, same start and end as the previous token) appendVariant will start building a second buffer containing that variant.
+     * Builds a small set of alternative phrases from the analyzer's word strings.
+     * <p>
+     * A position is a word slot, and a track is a list with one word per slot. The primary track uses the first word at each position. A type's base track uses
+     * its first form there, falling back to primary when that type is absent. If a type supplies a second distinct form, that form goes into a second track;
+     * third forms go into a third track. Those extra tracks use the base track's word wherever their own form is missing.
+     * </p>
+     * <p>
+     * The same numbered track is reused across positions. For example, if one type emits {@code a, x} at the first position and {@code b, y} at the next, the
+     * phrases are {@code a b} and {@code x y}; the builder does not also create {@code a y} and {@code x b}. Sequential tokens, such as the two words produced
+     * by splitting {@code wi-fi}, start separate positions and remain in order in every phrase.
+     * </p>
+     * <p>
+     * A new type's track copies the preceding primary words. A new extra track copies its type's preceding base words. Types are arbitrary strings, and track
+     * numbers are stored separately from them, so a real type name ending in {@code #2} cannot be mistaken for an extra track.
+     * </p>
      */
+    public static class ModalityVariantBuilder {
+        /** First forms at completed positions. */
+        private final List<String> primary = new ArrayList<>();
+        /** Type to phrase lists: index zero holds first forms, index one holds second forms, and so on. */
+        private final Map<String,List<List<String>>> tracks = new LinkedHashMap<>();
+        /** Distinct forms at the current position, grouped by type and kept in emission order. */
+        private final Map<String,List<String>> positionForms = new LinkedHashMap<>();
+        /** First form at the current position, or null when no position is pending. */
+        private String positionPrimary;
+
+        /**
+         * Create a builder with no tokens.
+         */
+        public ModalityVariantBuilder() {}
+
+        /**
+         * Copy the completed words and current position so a variant read can finish a temporary copy without changing the source builder.
+         */
+        private ModalityVariantBuilder(ModalityVariantBuilder source) {
+            primary.addAll(source.primary);
+            for (Map.Entry<String,List<List<String>>> entry : source.tracks.entrySet()) {
+                List<List<String>> typeTracks = new ArrayList<>();
+                for (List<String> track : entry.getValue()) {
+                    typeTracks.add(new ArrayList<>(track));
+                }
+                tracks.put(entry.getKey(), typeTracks);
+            }
+            for (Map.Entry<String,List<String>> entry : source.positionForms.entrySet()) {
+                positionForms.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+            }
+            positionPrimary = source.positionPrimary;
+        }
+
+        /**
+         * Add a token to the current word position or start the next position. The first token always starts a position, even if {@code samePosition} is true.
+         * Repeated identical forms of the same type at one position are ignored.
+         *
+         * @param input
+         *            the token text
+         * @param type
+         *            the analyzer's type label; {@code null} groups tokens whose stream has no type attribute
+         * @param samePosition
+         *            true for another form at the current position (position increment zero), false for a new position
+         * @return this builder
+         */
+        public ModalityVariantBuilder append(String input, String type, boolean samePosition) {
+            if (!samePosition) {
+                finishPosition();
+            }
+            if (positionPrimary == null) {
+                positionPrimary = input;
+            }
+            List<String> forms = positionForms.computeIfAbsent(type, key -> new ArrayList<>());
+            if (!forms.contains(input)) {
+                forms.add(input);
+            }
+            return this;
+        }
+
+        /**
+         * Finish the current word position. Create any newly needed tracks from preceding words, then add exactly one word to every track using its own form or
+         * fallback.
+         */
+        private void finishPosition() {
+            if (positionPrimary == null) {
+                return;
+            }
+
+            // New types copy preceding primary words; extra forms copy preceding words from their type's base track.
+            for (Map.Entry<String,List<String>> entry : positionForms.entrySet()) {
+                List<List<String>> typeTracks = tracks.computeIfAbsent(entry.getKey(), key -> new ArrayList<>());
+                if (typeTracks.isEmpty()) {
+                    typeTracks.add(new ArrayList<>(primary));
+                }
+                while (typeTracks.size() < entry.getValue().size()) {
+                    typeTracks.add(new ArrayList<>(typeTracks.get(0)));
+                }
+            }
+
+            for (Map.Entry<String,List<List<String>>> entry : tracks.entrySet()) {
+                List<String> forms = positionForms.get(entry.getKey());
+                String base = forms != null ? forms.get(0) : positionPrimary;
+                List<List<String>> typeTracks = entry.getValue();
+                for (int i = 0; i < typeTracks.size(); i++) {
+                    typeTracks.get(i).add(forms != null && i < forms.size() ? forms.get(i) : base);
+                }
+            }
+            primary.add(positionPrimary);
+            positionForms.clear();
+            positionPrimary = null;
+        }
+
+        /**
+         * Check whether any tokens have been added, including tokens at the current position.
+         *
+         * @return true if the builder has no tokens
+         */
+        public boolean hasNoVariants() {
+            return primary.isEmpty() && positionPrimary == null;
+        }
+
+        /**
+         * Read the distinct phrases built so far, joining their tokens with spaces. Reading does not close the current position or change previously returned
+         * sets, so more forms can still be added at that position. The original query is added separately by the processor.
+         *
+         * @return an independent {@link TreeSet} of phrase strings in lexical order, or an empty set if no tokens were added
+         */
+        public Set<String> getVariants() {
+            if (positionPrimary == null) {
+                return collectVariants();
+            }
+            ModalityVariantBuilder snapshot = new ModalityVariantBuilder(this);
+            snapshot.finishPosition();
+            return snapshot.collectVariants();
+        }
+
+        /**
+         * Join the completed tracks into sorted, distinct phrase strings.
+         */
+        private Set<String> collectVariants() {
+            Set<String> result = new TreeSet<>();
+            if (!primary.isEmpty()) {
+                result.add(String.join(Constants.SPACE, primary));
+            }
+            for (List<List<String>> typeTracks : tracks.values()) {
+                for (List<String> track : typeTracks) {
+                    result.add(String.join(Constants.SPACE, track));
+                }
+            }
+            return result;
+        }
+    }
+
+    /**
+     * Legacy builder that generates all combinations of word alternatives. Adding another form at the current position copies every existing phrase and
+     * replaces its last word, so the number of phrases can grow exponentially with phrase length. Kept for callers of earlier releases; this processor uses
+     * {@link ModalityVariantBuilder}.
+     *
+     * @deprecated Use {@link ModalityVariantBuilder} to keep one phrase per type and numbered extra form.
+     */
+    @Deprecated
     public static class VariantBuilder {
         List<List<String>> variants = new ArrayList<>();
 
+        /**
+         * Add a token at the next position or as another form of the current word.
+         *
+         * @param input
+         *            the token text
+         * @param appendVariant
+         *            true to add another form at the current position, false to start the next position
+         * @return this builder
+         */
         public VariantBuilder append(String input, boolean appendVariant) {
             return appendVariant ? appendVariant(input) : append(input);
         }
 
+        /**
+         * Add the same token to the end of every phrase.
+         *
+         * @param input
+         *            the token text
+         * @return this builder
+         */
         public VariantBuilder append(String input) {
             if (variants.isEmpty()) {
                 variants.add(new ArrayList<>());
@@ -468,6 +660,13 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             return this;
         }
 
+        /**
+         * Copy each phrase and replace its last token with this form, preserving the existing phrases. If there are no phrases yet, start one with this token.
+         *
+         * @param input
+         *            another form for the current position
+         * @return this builder
+         */
         public VariantBuilder appendVariant(String input) {
             if (variants.isEmpty()) {
                 append(input);
@@ -476,7 +675,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 List<List<String>> newVariants = new ArrayList<>();
 
                 for (List<String> b : variants) {
-                    // create a new variant of all the existing strings, replacing the
+                    // Copy the phrase and replace its last word.
                     List<String> newVariant = new ArrayList<>(b);
                     newVariant.set(newVariant.size() - 1, input);
                     newVariants.add(newVariant);
@@ -488,6 +687,11 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             return this;
         }
 
+        /**
+         * Check whether any tokens have been added.
+         *
+         * @return true if all phrase lists are empty
+         */
         public boolean hasNoVariants() {
             boolean hasNoVariants = true;
             for (List<String> b : variants) {
@@ -500,10 +704,15 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             return hasNoVariants;
         }
 
+        /**
+         * Read the distinct phrase strings without changing the builder.
+         *
+         * @return an independent {@link TreeSet} of phrase strings in lexical order
+         */
         public Set<String> getVariants() {
             Set<String> result = new TreeSet<>();
             for (List<String> b : variants) {
-                result.add(String.join(" ", b));
+                result.add(String.join(Constants.SPACE, b));
             }
             return result;
         }
