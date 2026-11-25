@@ -25,7 +25,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.TimingMetadata;
 import datawave.query.testframework.AbstractFunctionalQueryJUnit5;
 import datawave.query.testframework.AccumuloSetupExtension;
 import datawave.query.testframework.BaseRawData;
@@ -166,10 +165,6 @@ public class QueryAuthsTest extends AbstractFunctionalQueryJUnit5 {
 
         @Override
         public void assertValid(Document doc) {
-            if (doc instanceof TimingMetadata) {
-                return;
-            }
-
             Map<String,Attribute<? extends Comparable<?>>> dict = doc.getDictionary();
 
             for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : dict.entrySet()) {
@@ -181,9 +176,7 @@ public class QueryAuthsTest extends AbstractFunctionalQueryJUnit5 {
 
                 Attribute<?> attr = entry.getValue();
 
-                if (attr instanceof Document) {
-                    assertValid((Document) attr);
-                } else if (attr instanceof Attributes) {
+                if (attr instanceof Attributes) {
                     assertValid((Attributes) attr, fieldName);
                 } else {
                     assertValid(attr, fieldName);
@@ -194,9 +187,7 @@ public class QueryAuthsTest extends AbstractFunctionalQueryJUnit5 {
 
         protected void assertValid(Attributes attrs, String fieldName) {
             for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {
-                if (attr instanceof Document) {
-                    assertValid((Document) attr);
-                } else if (attr instanceof Attributes) {
+                if (attr instanceof Attributes) {
                     assertValid((Attributes) attr, fieldName);
                 } else {
                     assertValid(attr, fieldName);
