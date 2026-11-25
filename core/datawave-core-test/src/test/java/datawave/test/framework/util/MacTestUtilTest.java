@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -102,7 +101,7 @@ class MacTestUtilTest {
         private List<Map.Entry<String,String>> snapshot() {
             List<Map.Entry<String,String>> entries = new ArrayList<>(visible.size());
             for (Map.Entry<String,String> entry : visible.entrySet()) {
-                entries.add(new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
+                entries.add(Map.entry(entry.getKey(), entry.getValue()));
             }
             return entries;
         }

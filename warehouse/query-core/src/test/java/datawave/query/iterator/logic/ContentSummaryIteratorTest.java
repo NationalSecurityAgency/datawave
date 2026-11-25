@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -71,7 +70,7 @@ public class ContentSummaryIteratorTest {
         b64s.close();
         bos.close();
         Value value = new Value(bos.toByteArray());
-        Map.Entry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
+        Map.Entry<Key,Value> entry = Map.entry(key, value);
         source.add(entry);
     }
 

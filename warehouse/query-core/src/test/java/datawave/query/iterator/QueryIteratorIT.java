@@ -190,13 +190,13 @@ public class QueryIteratorIT {
     protected List<Map.Entry<Key,Value>> addIndexedField(String row, String dataType, String uid, String field, String value, long eventTimestamp) {
         List<Map.Entry<Key,Value>> listSource = new ArrayList<>();
 
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, field, value, dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getEvent(row, field, value, dataType, uid, eventTimestamp), EMPTY_VALUE));
         String cleanFieldForFi = field;
         int baseFieldIndex = field.indexOf(".");
         if (baseFieldIndex > -1) {
             cleanFieldForFi = cleanFieldForFi.substring(0, baseFieldIndex);
         }
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, cleanFieldForFi, value, dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, cleanFieldForFi, value, dataType, uid, eventTimestamp), EMPTY_VALUE));
 
         return listSource;
     }
@@ -215,46 +215,46 @@ public class QueryIteratorIT {
         // indexed
         listSource.addAll(addIndexedField(row, dataType, uid, "EVENT_FIELD1", "a", eventTimestamp));
         // unindexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD2", "b", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD3", "c", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getEvent(row, "EVENT_FIELD2", "b", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getEvent(row, "EVENT_FIELD3", "c", dataType, uid, eventTimestamp), EMPTY_VALUE));
         // indexed
         listSource.addAll(addIndexedField(row, dataType, uid, "EVENT_FIELD4", "d", eventTimestamp));
 
         // unindexed
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "EVENT_FIELD5", "e", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getEvent(row, "EVENT_FIELD5", "e", dataType, uid, eventTimestamp), EMPTY_VALUE));
         // indexed
         listSource.addAll(addIndexedField(row, dataType, uid, "EVENT_FIELD6", "f", eventTimestamp));
 
         // add some indexed TF fields
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a b c", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "a", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "b", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD1", "c", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "a", dataType, uid, eventTimestamp), getTFValue(0)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "b", dataType, uid, eventTimestamp), getTFValue(1)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD1", "c", dataType, uid, eventTimestamp), getTFValue(2)));
+        listSource.add(Map.entry(getEvent(DEFAULT_ROW, "TF_FIELD1", "a,, b,,, c,,", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "TF_FIELD1", "a b c", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "TF_FIELD1", "a", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "TF_FIELD1", "b", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "TF_FIELD1", "c", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getTF(row, "TF_FIELD1", "a", dataType, uid, eventTimestamp), getTFValue(0)));
+        listSource.add(Map.entry(getTF(row, "TF_FIELD1", "b", dataType, uid, eventTimestamp), getTFValue(1)));
+        listSource.add(Map.entry(getTF(row, "TF_FIELD1", "c", dataType, uid, eventTimestamp), getTFValue(2)));
 
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent(row, "TF_FIELD2", ",x, ,y, ,z,", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x y z", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "x", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "y", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD2", "z", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "x", dataType, uid, eventTimestamp), getTFValue(23)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "y", dataType, uid, eventTimestamp), getTFValue(24)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD2", "z", dataType, uid, eventTimestamp), getTFValue(25)));
+        listSource.add(Map.entry(getEvent(row, "TF_FIELD2", ",x, ,y, ,z,", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "TF_FIELD2", "x y z", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "TF_FIELD2", "x", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "TF_FIELD2", "y", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "TF_FIELD2", "z", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getTF(row, "TF_FIELD2", "x", dataType, uid, eventTimestamp), getTFValue(23)));
+        listSource.add(Map.entry(getTF(row, "TF_FIELD2", "y", dataType, uid, eventTimestamp), getTFValue(24)));
+        listSource.add(Map.entry(getTF(row, "TF_FIELD2", "z", dataType, uid, eventTimestamp), getTFValue(25)));
 
         // add an index only TF
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "TF_FIELD4", "d", dataType, uid, eventTimestamp), getTFValue(3)));
-        listSource.add(new AbstractMap.SimpleEntry<>(getTF(row, "TF_FIELD4", "d", dataType, uid, eventTimestamp), getTFValue(3)));
+        listSource.add(Map.entry(getFI(row, "TF_FIELD4", "d", dataType, uid, eventTimestamp), getTFValue(3)));
+        listSource.add(Map.entry(getTF(row, "TF_FIELD4", "d", dataType, uid, eventTimestamp), getTFValue(3)));
 
         // add some index only field data
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "pear", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD1", "orange", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "beef", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "chicken", dataType, uid, eventTimestamp), EMPTY_VALUE));
-        listSource.add(new AbstractMap.SimpleEntry<>(getFI(row, "INDEX_ONLY_FIELD2", "pork", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "INDEX_ONLY_FIELD1", "apple", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "INDEX_ONLY_FIELD1", "pear", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "INDEX_ONLY_FIELD1", "orange", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "INDEX_ONLY_FIELD2", "beef", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "INDEX_ONLY_FIELD2", "chicken", dataType, uid, eventTimestamp), EMPTY_VALUE));
+        listSource.add(Map.entry(getFI(row, "INDEX_ONLY_FIELD2", "pork", dataType, uid, eventTimestamp), EMPTY_VALUE));
 
         return listSource;
     }
@@ -1244,8 +1244,7 @@ public class QueryIteratorIT {
         groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1", eventTimestamp));
         groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2", eventTimestamp));
 
-        Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
-                        new HashMap<>());
+        Map.Entry<Key,Map<String,List<String>>> expectedEvent = Map.entry(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"), new HashMap<>());
 
         expectedEvent.getValue().put("EVENT_FIELD1.A.B.C.0", new ArrayList<>(List.of("a1")));
         expectedEvent.getValue().put("EVENT_FIELD1.X.Y.Z.0", new ArrayList<>(List.of("a2")));
@@ -1268,8 +1267,7 @@ public class QueryIteratorIT {
         groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1", eventTimestamp));
         groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2", eventTimestamp));
 
-        Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
-                        new HashMap<>());
+        Map.Entry<Key,Map<String,List<String>>> expectedEvent = Map.entry(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"), new HashMap<>());
 
         expectedEvent.getValue().put("EVENT_FIELD1.A.B.C.0", new ArrayList<>(List.of("a1")));
         expectedEvent.getValue().put("EVENT_FIELD1.X.Y.Z.0", new ArrayList<>(List.of("a2")));
@@ -1293,8 +1291,7 @@ public class QueryIteratorIT {
         groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.C.B.C.1", "b1", eventTimestamp));
         groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.D.B.C.1", "b2", eventTimestamp));
 
-        Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
-                        new HashMap<>());
+        Map.Entry<Key,Map<String,List<String>>> expectedEvent = Map.entry(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"), new HashMap<>());
         expectedEvent.getValue().put("EVENT_FIELD1.A.B.C.0", new ArrayList<>(List.of("a1")));
         expectedEvent.getValue().put("EVENT_FIELD1.B.B.C.0", new ArrayList<>(List.of("a2")));
         expectedEvent.getValue().put("EVENT_FIELD1.C.B.C.1", new ArrayList<>(List.of("b1")));
@@ -1316,8 +1313,7 @@ public class QueryIteratorIT {
         groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.1", "b1", eventTimestamp));
         groupingData.addAll(addIndexedField(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567", "EVENT_FIELD1.A.B.C.1", "b2", eventTimestamp));
 
-        Map.Entry<Key,Map<String,List<String>>> expectedEvent = new AbstractMap.SimpleEntry<>(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"),
-                        new HashMap<>());
+        Map.Entry<Key,Map<String,List<String>>> expectedEvent = Map.entry(getHitKey(DEFAULT_ROW, DEFAULT_DATATYPE, "123.345.567"), new HashMap<>());
         List<String> values = new ArrayList<>();
         values.add("a1");
         values.add("a2");
@@ -1658,7 +1654,7 @@ public class QueryIteratorIT {
         expectedDocument.put("TF_FIELD1", List.of("a,, b,,, c,,"));
         expectedDocument.put("TF_FIELD2", List.of(",x, ,y, ,z,"));
 
-        return new AbstractMap.SimpleEntry<>(hitKey, expectedDocument);
+        return Map.entry(hitKey, expectedDocument);
     }
 
     protected boolean isExpectHitTerm() {

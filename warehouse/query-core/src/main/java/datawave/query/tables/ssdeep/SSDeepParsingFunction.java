@@ -1,6 +1,5 @@
 package datawave.query.tables.ssdeep;
 
-import java.util.AbstractMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -62,6 +61,6 @@ public class SSDeepParsingFunction implements Function<Map.Entry<Key,Value>,Map.
         final SSDeepHash matchingHash = SSDeepHash.parse(matchingHashString);
 
         final NGramTuple matchingNgram = new NGramTuple(chunkSize, ngram);
-        return new AbstractMap.SimpleEntry<>(matchingNgram, matchingHash);
+        return Map.entry(matchingNgram, matchingHash);
     }
 }

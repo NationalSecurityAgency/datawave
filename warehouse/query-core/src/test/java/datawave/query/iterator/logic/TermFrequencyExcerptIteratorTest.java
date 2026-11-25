@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -79,7 +78,7 @@ public class TermFrequencyExcerptIteratorTest {
             // @formatter:on
             Key key = new Key(row, colf, colq, new ColumnVisibility("ALL"), new Date().getTime());
             Value value = new Value(info.toByteArray());
-            Map.Entry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
+            Map.Entry<Key,Value> entry = Map.entry(key, value);
             source.add(entry);
         }
     }
@@ -114,7 +113,7 @@ public class TermFrequencyExcerptIteratorTest {
                 // @formatter:on
                 Key key = new Key(row, colf, colq, new ColumnVisibility("ALL"), new Date().getTime());
                 Value value = new Value(info.toByteArray());
-                Map.Entry<Key,Value> entry = new AbstractMap.SimpleEntry<>(key, value);
+                Map.Entry<Key,Value> entry = Map.entry(key, value);
                 source.add(entry);
                 i++;
             }

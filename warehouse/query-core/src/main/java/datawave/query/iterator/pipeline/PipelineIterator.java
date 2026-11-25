@@ -1,6 +1,5 @@
 package datawave.query.iterator.pipeline;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -332,7 +331,7 @@ public class PipelineIterator implements Iterator<Entry<Key,Document>> {
                 log.debug("WaitWindowOverrun at yieldKey " + e.getYieldKey().getLeft() + " for queryId:" + queryId);
             }
             waitWindowObserver.setYieldKey(e.getYieldKey());
-            result = new AbstractMap.SimpleEntry<>(e.getYieldKey().getLeft(), WaitWindowObserver.getWaitWindowOverrunDocument());
+            result = Map.entry(e.getYieldKey().getLeft(), WaitWindowObserver.getWaitWindowOverrunDocument());
         } else {
             if (log.isDebugEnabled()) {
                 logYieldKeyHistory(e, "Yielded");

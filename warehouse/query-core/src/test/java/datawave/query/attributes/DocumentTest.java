@@ -3,9 +3,9 @@ package datawave.query.attributes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
@@ -307,7 +307,7 @@ public class DocumentTest {
     }
 
     protected Entry<Key,Value> serialize(Document d) {
-        Entry<Key,Document> entry = new AbstractMap.SimpleEntry<>(documentKey, d);
+        Entry<Key,Document> entry = Map.entry(documentKey, d);
         return serializer.apply(entry);
     }
 
@@ -321,11 +321,11 @@ public class DocumentTest {
 
         Value value = new Value();
         List<Entry<Key,Value>> entries = new ArrayList<>();
-        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_A\0value-a"), value));
-        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_B\0value-b"), value));
-        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_C\0value-c"), value));
-        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_D\0value-d"), value));
-        entries.add(new AbstractMap.SimpleEntry<>(new Key("row", "datatype\0uid", "FIELD_E\0value-e"), value));
+        entries.add(Map.entry(new Key("row", "datatype\0uid", "FIELD_A\0value-a"), value));
+        entries.add(Map.entry(new Key("row", "datatype\0uid", "FIELD_B\0value-b"), value));
+        entries.add(Map.entry(new Key("row", "datatype\0uid", "FIELD_C\0value-c"), value));
+        entries.add(Map.entry(new Key("row", "datatype\0uid", "FIELD_D\0value-d"), value));
+        entries.add(Map.entry(new Key("row", "datatype\0uid", "FIELD_E\0value-e"), value));
 
         List<Key> documentKeys = createDocumentKeys();
 

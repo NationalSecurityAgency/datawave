@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +55,7 @@ public class SplittableRFileInputFormatTest {
     public void testSingleKeySplit() throws IOException, InterruptedException {
         List<Map.Entry<Key,Value>> data = new ArrayList<>();
         Key original = createKey(1);
-        data.add(new AbstractMap.SimpleEntry<>(original, createValue(0)));
+        data.add(Map.entry(original, createValue(0)));
 
         // get the splits from the file
         tmpFile = createRFile(data);
@@ -188,7 +187,7 @@ public class SplittableRFileInputFormatTest {
     }
 
     private void addData(List<Map.Entry<Key,Value>> data, int key, int value) {
-        data.add(new AbstractMap.SimpleEntry<>(createKey(key), createValue(value)));
+        data.add(Map.entry(createKey(key), createValue(value)));
     }
 
     /**

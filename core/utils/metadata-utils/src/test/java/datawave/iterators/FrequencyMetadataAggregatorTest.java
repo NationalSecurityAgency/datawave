@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.net.URISyntaxException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -649,7 +648,7 @@ public class FrequencyMetadataAggregatorTest {
         Scanner scanner = createScanner();
         List<Map.Entry<Key,Value>> actual = new ArrayList<>();
         for (Map.Entry<Key,Value> entry : scanner) {
-            actual.add(new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
+            actual.add(Map.entry(entry.getKey(), entry.getValue()));
         }
 
         List<Map.Entry<Key,Value>> expectedSorted = new ArrayList(expected);
@@ -691,7 +690,7 @@ public class FrequencyMetadataAggregatorTest {
         Scanner scanner = createCombinerScanner();
         List<Map.Entry<Key,Value>> actual = new ArrayList<>();
         for (Map.Entry<Key,Value> entry : scanner) {
-            actual.add(new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
+            actual.add(Map.entry(entry.getKey(), entry.getValue()));
         }
 
         List<Map.Entry<Key,Value>> expectedSorted = new ArrayList(expected);
@@ -802,6 +801,6 @@ public class FrequencyMetadataAggregatorTest {
     }
 
     private void expect(String row, Text colf, String colq, String colv, long timestamp, Value value) {
-        expected.add(new AbstractMap.SimpleEntry<>(new Key(new Text(row), colf, new Text(colq), new ColumnVisibility(colv), timestamp), value));
+        expected.add(Map.entry(new Key(new Text(row), colf, new Text(colq), new ColumnVisibility(colv), timestamp), value));
     }
 }

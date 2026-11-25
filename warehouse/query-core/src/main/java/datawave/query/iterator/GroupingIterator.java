@@ -2,7 +2,6 @@ package datawave.query.iterator;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
-import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -127,7 +126,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
 
     @Override
     public Map.Entry<Key,Document> next() {
-        return new AbstractMap.SimpleEntry<>(next.getKey(), next.getValue());
+        return Map.entry(next.getKey(), next.getValue());
     }
 
     /**

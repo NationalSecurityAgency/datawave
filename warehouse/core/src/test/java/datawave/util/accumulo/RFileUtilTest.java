@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -179,7 +178,7 @@ public class RFileUtilTest {
 
     public static Key addData(List<Map.Entry<Key,Value>> data, int key, int value) {
         Key created = createKey(key);
-        data.add(new AbstractMap.SimpleEntry<>(created, createValue(value)));
+        data.add(Map.entry(created, createValue(value)));
         return created;
     }
 
