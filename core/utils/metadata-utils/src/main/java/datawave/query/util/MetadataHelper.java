@@ -1101,7 +1101,7 @@ public class MetadataHelper {
             // combines the protocol buffer data.
             IteratorSetting stripConfig = new IteratorSetting(50, EdgeMetadataCQStrippingIterator.class);
             IteratorSetting combineConfig = new IteratorSetting(51, EdgeMetadataCombiner.class);
-            combineConfig.addOption("columns", MetadataColumnFamilyConstants.COLF_EDGE.toString());
+            combineConfig.addOption("columns", MetadataColumnFamilyConstants.COLF_EDGE_STR);
             scanner.addScanIterator(stripConfig);
             scanner.addScanIterator(combineConfig);
 
