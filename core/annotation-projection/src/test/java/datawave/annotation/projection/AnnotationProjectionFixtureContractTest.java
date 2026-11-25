@@ -3,6 +3,7 @@ package datawave.annotation.projection;
 import static datawave.annotation.projection.AnnotationProjectionTestCases.JSON;
 import static datawave.annotation.projection.AnnotationProjectionTestCases.NATIVE_LONG;
 import static datawave.annotation.projection.AnnotationProjectionTestCases.NATIVE_SHORT;
+import static datawave.annotation.projection.AnnotationProjectionTestCases.NONFINITE_SCORE_INTENT;
 import static datawave.annotation.projection.AnnotationProjectionTestCases.acceptedAnnotations;
 import static datawave.annotation.projection.AnnotationProjectionTestCases.annotation;
 import static datawave.annotation.projection.AnnotationProjectionTestCases.bounded;
@@ -58,10 +59,12 @@ import datawave.annotation.util.v1.AnnotationUtils;
 import datawave.annotation.util.v1.AnnotationValidators;
 
 /**
- * Checks shared fixture models and independently written expected answers against existing annotation parsing, validation, hashing and serialization APIs.
- * These checks use the shared annotation model and do not execute consumer normalization, readers, persistence or index writes.
+ * Checks the annotation test inputs and independently written expected answers before they are used to assess projection. Existing annotation APIs validate
+ * complete models and verify JSON/binary round trips, literal hashes, optional-property presence and schema coverage.
  * <p>
- * The production preparation and projection implementation is still pending. Input and expected-answer consistency is not acceptance of those later features.
+ * The resources under {@code accepted/}, {@code schema/} and {@code oracles/} supply prepared examples and expected answers; constructing or checking them does
+ * not execute preparation. The separate {@link AnnotationProjectorTest} runs the projector against these answers. Ingest tests own Type normalization, reader
+ * behavior and persistence serialization.
  */
 class AnnotationProjectionFixtureContractTest {
     // Exact numeric nodes keep the fixture comparison from rounding integers or underflowing tiny decimals.
@@ -243,7 +246,7 @@ class AnnotationProjectionFixtureContractTest {
      * keeps both profiled and unprofiled annotation types without claiming that preparation has rejected either one.
      */
     static Stream<Arguments> nonfiniteScores() throws Exception {
-        return preparationFailures().filter(row -> "NONFINITE_SCORE".equals(row.get()[2]));
+        return preparationFailures().filter(row -> NONFINITE_SCORE_INTENT.equals(row.get()[2]));
     }
 
     /**
@@ -339,8 +342,11 @@ class AnnotationProjectionFixtureContractTest {
     }
 
     /**
-     * Checks the exact-number formatting answers against BigDecimal's trailing-zero removal and text representation. Only explicit numeric input vectors are
-     * considered; this does not authorize converting String values to numbers or verify the future formatting operator.
+     * Checks the expected numeric text in {@code oracles/scalar-format-vectors.json} against BigDecimal's trailing-zero removal and text representation. Only
+     * explicit numeric inputs participate, so the check does not treat numeric-looking strings as numbers.
+     * <p>
+     * This validates the independent answers. {@link AnnotationProjectorTest} separately passes the prepared scalar values through actual projection bindings
+     * to exercise the configured formats.
      */
     @Test
     void scalarExactNumberAnswersHaveIndependentMathematicalMeaning() throws Exception {
