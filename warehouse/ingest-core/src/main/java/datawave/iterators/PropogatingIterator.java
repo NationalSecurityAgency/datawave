@@ -1,6 +1,7 @@
 package datawave.iterators;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -331,7 +332,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
                         log.debug("Default aggregator is " + propAgg.getClass());
                     defaultAgg = propAgg;
                 } else {
-                    aggMap.put(new ArrayByteSequence(familyOption.getKey().getBytes()), propAgg);
+                    aggMap.put(new ArrayByteSequence(familyOption.getKey().getBytes(StandardCharsets.UTF_8)), propAgg);
                 }
             }
         }

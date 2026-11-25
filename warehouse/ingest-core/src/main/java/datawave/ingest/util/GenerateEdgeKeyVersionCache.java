@@ -1,5 +1,6 @@
 package datawave.ingest.util;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import org.apache.commons.codec.binary.Base64;
@@ -57,7 +58,7 @@ public class GenerateEdgeKeyVersionCache {
                         printUsageAndExit();
                     } else {
                         username = toolArgs[i];
-                        password = PasswordConverter.parseArg(toolArgs[i + 1]).getBytes();
+                        password = PasswordConverter.parseArg(toolArgs[i + 1]).getBytes(StandardCharsets.UTF_8);
                         tableName = toolArgs[i + 2];
                         // skip over args
                         i += 3;

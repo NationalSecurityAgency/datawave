@@ -1,5 +1,6 @@
 package datawave.ingest.table.aggregator.util;
 
+import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.Calendar;
 
@@ -18,9 +19,9 @@ public class ShardedYearIndexKeyParser extends AbstractIndexKeyParser {
 
         // use a byte array constructor to avoid expensive parsing of the ColumnVisibility
         String year = getYear();
-        byte[] row = (year + NULL_CHAR + getValue()).getBytes();
-        byte[] cf = getField().getBytes();
-        byte[] cq = getDatatype().getBytes();
+        byte[] row = (year + NULL_CHAR + getValue()).getBytes(StandardCharsets.UTF_8);
+        byte[] cf = getField().getBytes(StandardCharsets.UTF_8);
+        byte[] cq = getDatatype().getBytes(StandardCharsets.UTF_8);
         byte[] cv = key.getColumnVisibilityData().toArray();
         return new Key(row, cf, cq, cv, key.getTimestamp());
     }

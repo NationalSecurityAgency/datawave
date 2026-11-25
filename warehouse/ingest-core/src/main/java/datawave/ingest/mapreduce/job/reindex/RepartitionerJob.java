@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;
 
@@ -81,7 +82,7 @@ public class RepartitionerJob implements Tool {
 
         // configure the accumulo helper
         AccumuloHelper.setInstanceName(configuration, jobConfig.instance);
-        AccumuloHelper.setPassword(configuration, getPassword().getBytes());
+        AccumuloHelper.setPassword(configuration, getPassword().getBytes(StandardCharsets.UTF_8));
         AccumuloHelper.setUsername(configuration, jobConfig.username);
         AccumuloHelper.setZooKeepers(configuration, jobConfig.zookeepers);
 

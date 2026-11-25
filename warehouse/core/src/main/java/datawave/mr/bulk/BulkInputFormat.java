@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -569,8 +570,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         Set<Pair<Text,Text>> columns = new HashSet<>();
         for (String col : conf.getStringCollection(COLUMNS)) {
             int idx = col.indexOf(':');
-            Text cf = new Text(idx < 0 ? Base64.decodeBase64(col.getBytes()) : Base64.decodeBase64(col.substring(0, idx).getBytes()));
-            Text cq = idx < 0 ? null : new Text(Base64.decodeBase64(col.substring(idx + 1).getBytes()));
+            Text cf = new Text(idx < 0 ? Base64.decodeBase64(col.getBytes(StandardCharsets.UTF_8))
+                            : Base64.decodeBase64(col.substring(0, idx).getBytes(StandardCharsets.UTF_8)));
+            Text cq = idx < 0 ? null : new Text(Base64.decodeBase64(col.substring(idx + 1).getBytes(StandardCharsets.UTF_8)));
             columns.add(Pair.of(cf, cq));
         }
         return columns;
@@ -664,7 +666,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         } else {
             String passwd = conf.get(PASSWORD);
             if (null != passwd)
-                return passwd.getBytes();
+                return passwd.getBytes(StandardCharsets.UTF_8);
             else
                 return null;
         }

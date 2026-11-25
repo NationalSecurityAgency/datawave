@@ -4,6 +4,7 @@ import static datawave.ingest.input.reader.LineReader.Properties.LONGLINE_NEWLIN
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Date;
@@ -242,7 +243,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
             this.parser.reset();
             String data = rawPageText.toString().trim();
 
-            event.setRawData(data.getBytes());
+            event.setRawData(data.getBytes(StandardCharsets.UTF_8));
 
             try {
                 StringReader reader = new StringReader(data);
@@ -257,7 +258,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
             updateEventDate(event);
 
             if (event instanceof Configurable) {
-                event.setId(UID.builder(((Configurable) event).getConf()).newId(data.getBytes(), event.getTimeForUID()));
+                event.setId(UID.builder(((Configurable) event).getConf()).newId(data.getBytes(StandardCharsets.UTF_8), event.getTimeForUID()));
             } else {
                 event.generateId(null);
             }

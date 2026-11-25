@@ -1,5 +1,6 @@
 package datawave.ingest.mapreduce.job.util;
 
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -64,7 +65,7 @@ public class AccumuloUtil {
         AccumuloHelper.setInstanceName(config, instanceName);
         AccumuloHelper.setZooKeepers(config, zookeepers);
         AccumuloHelper.setUsername(config, username);
-        AccumuloHelper.setPassword(config, password.getBytes());
+        AccumuloHelper.setPassword(config, password.getBytes(StandardCharsets.UTF_8));
         if (clientPropertiesPath != null) {
             AccumuloHelper.setClientPropertiesPath(config, clientPropertiesPath);
         }

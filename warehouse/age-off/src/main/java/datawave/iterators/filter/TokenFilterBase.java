@@ -1,5 +1,6 @@
 package datawave.iterators.filter;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 import org.apache.accumulo.core.data.Key;
@@ -26,7 +27,7 @@ public abstract class TokenFilterBase extends AppliedRule {
 
     // These are the possible delimiters in a column visibility exception for the double quote. NOTE, this is fragile
     // but currently there is no way to get this list out of the accumulo ColumnVisibility class.
-    private static final byte[] DELIMITERS = "|&()".getBytes();
+    private static final byte[] DELIMITERS = "|&()".getBytes(StandardCharsets.UTF_8);
 
     /**
      * This method is to be implemented by sub-classes of this class. It should return the tokens that needs to be tested against a test token for the instance
@@ -124,7 +125,7 @@ public abstract class TokenFilterBase extends AppliedRule {
             String[] patternStrs = options.getOption(AgeOffConfigParams.MATCHPATTERN).split(",");
             patternBytes = new byte[patternStrs.length][];
             for (int i = 0; i < patternStrs.length; i++) {
-                patternBytes[i] = patternStrs[i].trim().getBytes();
+                patternBytes[i] = patternStrs[i].trim().getBytes(StandardCharsets.UTF_8);
             }
         }
         ruleApplied = false;

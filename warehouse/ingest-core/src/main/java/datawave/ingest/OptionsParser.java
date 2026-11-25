@@ -1,5 +1,7 @@
 package datawave.ingest;
 
+import java.nio.charset.StandardCharsets;
+
 import org.apache.hadoop.conf.Configuration;
 
 import datawave.ingest.config.TableConfigCache;
@@ -39,7 +41,7 @@ public class OptionsParser {
             } else if (args[i].equals(USER_FLAG) || args[i].equals(USER_FLAG_2)) {
                 AccumuloHelper.setUsername(conf, args[++i]);
             } else if (args[i].equals(PASSWORD_FLAG) || args[i].equals(PASSWORD_FLAG_2)) {
-                AccumuloHelper.setPassword(conf, PasswordConverter.parseArg(args[++i]).getBytes());
+                AccumuloHelper.setPassword(conf, PasswordConverter.parseArg(args[++i]).getBytes(StandardCharsets.UTF_8));
             } else if (args[i].equals(ACC_CACHE_DIR_FLAG)) {
                 conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, args[++i]);
             } else if (args[i].equals(CONFIG_DIR_FLAG)) {

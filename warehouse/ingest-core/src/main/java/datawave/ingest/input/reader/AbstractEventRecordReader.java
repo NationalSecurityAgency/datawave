@@ -1,6 +1,7 @@
 package datawave.ingest.input.reader;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -213,7 +214,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
             builder.append(value);
         }
 
-        return uidBuilder.newId(builder.toString().getBytes(), event.getTimeForUID());
+        return uidBuilder.newId(builder.toString().getBytes(StandardCharsets.UTF_8), event.getTimeForUID());
     }
 
     /**

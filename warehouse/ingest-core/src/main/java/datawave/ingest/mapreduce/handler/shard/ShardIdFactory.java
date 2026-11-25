@@ -1,5 +1,6 @@
 package datawave.ingest.mapreduce.handler.shard;
 
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -32,7 +33,7 @@ public class ShardIdFactory {
      * @return Shard id
      */
     public byte[] getShardIdBytes(RawRecordContainer record) {
-        return getShardId(record).getBytes();
+        return getShardId(record).getBytes(StandardCharsets.UTF_8);
     }
 
     /**

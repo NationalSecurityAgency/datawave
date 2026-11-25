@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 import org.apache.commons.collections4.IteratorUtils;
@@ -141,7 +142,7 @@ public class SimpleAnnotationRecordReader extends AbstractEventRecordReader<Byte
     @Override
     public BytesWritable getCurrentValue() throws IOException, InterruptedException {
         if (currentJsonString != null) {
-            return new BytesWritable(currentJsonString.getBytes());
+            return new BytesWritable(currentJsonString.getBytes(StandardCharsets.UTF_8));
         } else {
             return null;
         }
@@ -155,7 +156,7 @@ public class SimpleAnnotationRecordReader extends AbstractEventRecordReader<Byte
             event.setTimestamp(this.inputDate);
         }
 
-        event.setRawData(currentJsonString.getBytes());
+        event.setRawData(currentJsonString.getBytes(StandardCharsets.UTF_8));
 
         if (!event.isTimestampSet()) {
             event.setTimestamp(System.currentTimeMillis());

@@ -2,6 +2,7 @@ package datawave.ingest.mapreduce.handler.tokenize;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -355,8 +356,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             TermAndZone indexedTermAndZone = new TermAndZone(nfv.getIndexedFieldValue(), nfv.getIndexedFieldName());
 
             org.apache.hadoop.util.bloom.Key alreadySeen = null;
-            if ((alreadyIndexedTerms != null) && alreadyIndexedTerms
-                            .membershipTest(alreadySeen = new org.apache.hadoop.util.bloom.Key(indexedTermAndZone.getToken().getBytes()))) {
+            if ((alreadyIndexedTerms != null) && alreadyIndexedTerms.membershipTest(
+                            alreadySeen = new org.apache.hadoop.util.bloom.Key(indexedTermAndZone.getToken().getBytes(StandardCharsets.UTF_8)))) {
                 if (log.isDebugEnabled()) {
                     log.debug("Not creating index mutations for {} as we've already created mutations for it.", termAndZone);
                 }
@@ -808,7 +809,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
                         .append(nfv.getIndexedFieldName());
 
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId, ColumnFamilyConstants.TERM_FREQUENCY_TEXT.getBytes(),
-                        colq.toString().getBytes(), visibility, event.getTimestamp(), deleteMode));
+                        colq.toString().getBytes(StandardCharsets.UTF_8), visibility, event.getTimestamp(), deleteMode));
 
         contextWriter.write(bKey, value, context);
     }
@@ -863,7 +864,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         if (getBitSetIndexEnabled()) {
             String shard = new String(shardId);
             String cq = shard.substring(0, 8) + '\u0000' + event.getDataType().outputName();
-            Key key = new Key(nFV.getEventFieldValue().getBytes(), nFV.getEventFieldName().getBytes(), cq.getBytes(), visibility, event.getTimestamp());
+            Key key = new Key(nFV.getEventFieldValue().getBytes(StandardCharsets.UTF_8), nFV.getEventFieldName().getBytes(StandardCharsets.UTF_8),
+                            cq.getBytes(StandardCharsets.UTF_8), visibility, event.getTimestamp());
             Value value = getValueForBitsetIndex(shard);
             BulkIngestKey bik = new BulkIngestKey(getShardBitsetIndexTableName(), key);
             contextWriter.write(bik, value, context);
