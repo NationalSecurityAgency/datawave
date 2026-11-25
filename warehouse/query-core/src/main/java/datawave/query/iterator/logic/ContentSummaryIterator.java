@@ -44,15 +44,12 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
 
     private static final int MAX_SUMMARY_SIZE = 1500;
 
-    // 100 megabytes
-    private static final int MAX_CONTENT_SIZE = 100 * 1024 * 1024;
-
     /**
      * A list of view names to potentially create a summary for. The closer to the front in the list, the higher the priority to get a summary for that view
      */
     protected final ArrayList<String> viewSummaryOrder = new ArrayList<>();
 
-    /** the size in bytes of the summary to create */
+    /** the maximum String.length() of each view's summary, decoded from UTF-8 content bytes */
     protected int summarySize;
 
     /** if we will only look at the view names specified in the query */
@@ -238,8 +235,8 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
 
         Key top = source.getTopKey();
 
-        // this is where we will save all the content found for this document
-        final Map<String,byte[]> foundContent = new HashMap<>();
+        // save only bounded, decoded prefixes for this document's matching views
+        final Map<String,String> foundContent = new HashMap<>();
 
         // while we have d keys for the same document
         while (source.hasTop() && dtUid.equals(getDtUidFromDKey(source.getTopKey()))) {
@@ -252,11 +249,13 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
                 if (name.endsWith("*")) {
                     name = name.substring(0, name.length() - 1);
                     if (currentViewName.startsWith(name)) {
-                        addContentToFound(foundContent, currentViewName, source);
+                        addContentToFound(foundContent, currentViewName);
+                        break;
                     }
                 } else {
                     if (currentViewName.equalsIgnoreCase(name)) {
-                        addContentToFound(foundContent, currentViewName, source);
+                        addContentToFound(foundContent, currentViewName);
+                        break;
                     }
                 }
             }
@@ -266,7 +265,7 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
         }
 
         // create the summary
-        String summary = new SummaryCreator(viewSummaryOrder, foundContent, summarySize).createSummary();
+        String summary = new SummaryCreator(viewSummaryOrder, foundContent).createSummary();
         if (summary != null) {
             tk = new Key(top.getRow(), new Text(dtUid), new Text(summary), top.getColumnVisibility());
             tv = new Value();
@@ -278,17 +277,8 @@ public class ContentSummaryIterator implements SortedKeyValueIterator<Key,Value>
         tv = null;
     }
 
-    private static void addContentToFound(Map<String,byte[]> foundContent, String currentViewName, SortedKeyValueIterator<Key,Value> source) {
-        // true for compressed, false for uncompressed
-        byte[] content = source.getTopValue().get();
-        if (content.length < MAX_CONTENT_SIZE) {
-            foundContent.put(currentViewName + Constants.COLON + Boolean.TRUE, content);
-        } else {
-            content = ContentKeyValueFactory.decodeAndDecompressContent(content);
-            // pre-truncate big content to MAX_SUMMARY_SIZE
-            content = new String(content).substring(0, MAX_SUMMARY_SIZE).getBytes();
-            foundContent.put(currentViewName + Constants.COLON + Boolean.FALSE, content);
-        }
+    private void addContentToFound(Map<String,String> foundContent, String currentViewName) {
+        foundContent.put(currentViewName, ContentKeyValueFactory.decodeAndDecompressContent(source.getTopValue().get(), summarySize));
     }
 
     /**
