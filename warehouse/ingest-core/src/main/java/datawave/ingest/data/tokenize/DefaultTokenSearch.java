@@ -297,7 +297,14 @@ public class DefaultTokenSearch implements TokenSearch {
      */
     @Override
     public String[] getTokenWords(String input) {
-        return tokenWordPtrn.split(input, 0);
+        // The pattern's classes match only ASCII non-alphanumeric characters.
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            if (c <= 0x7f && !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))) {
+                return tokenWordPtrn.split(input, 0);
+            }
+        }
+        return new String[] {input};
     }
 
     /*
