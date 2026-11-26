@@ -1,5 +1,6 @@
 package datawave.ingest.util;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -25,7 +26,7 @@ public final class ThreadUtil {
      * @param unit
      *            the time unit
      * @return true if all tasks completed, false, if we interrupted and continued.
-     * @deprecated replaced by {@link ThreadUtils#shutdownAndWait(ThreadPoolExecutor, long, TimeUnit)}
+     * @deprecated replaced by {@link ThreadUtils#shutdownAndWait(ExecutorService, long, TimeUnit)}
      */
     @Deprecated
     public static boolean shutdownAndWait(ThreadPoolExecutor executor, long timeToWait, TimeUnit unit) {

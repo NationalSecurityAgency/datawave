@@ -1,10 +1,7 @@
 package datawave.webservice.query.limit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.ignoreStubs;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockingDetails;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -13,6 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -41,10 +39,10 @@ class QueryHeartbeatTest {
     }
 
     /**
-     * Verify that when {@link QueryHeartbeat#stop()} is called, that all underlying nodes are closed, and no exception occurs if a listener has not been set.
+     * Verify that when {@link QueryHeartbeat#stop()} is called, that all underlying nodes are closed, and no exception occurs if a listener has not been added.
      */
     @Test
-    void testStopWithNullListener() throws Exception {
+    void testStopWithNoListeners() throws Exception {
         QueryHeartbeat heartbeat = createHeartbeat();
 
         // Verify that all the nodes are started.
@@ -57,7 +55,7 @@ class QueryHeartbeatTest {
     }
 
     /**
-     * Verify that when {@link QueryHeartbeat#stop()} is called, that all underlying nodes are closed, and if a listener has been set, that the listener is
+     * Verify that when {@link QueryHeartbeat#stop()} is called, that all underlying nodes are closed, and if a listener has been added, that the listener is
      * notified that the heartbeat stopped.
      */
     @Test
@@ -65,9 +63,8 @@ class QueryHeartbeatTest {
         QueryHeartbeat heartbeat = createHeartbeat();
 
         // Create a mock listener.
-        QueryHeartbeatCache.HeartbeatStoppedListener listener = mock(QueryHeartbeatCache.HeartbeatStoppedListener.class);
-
-        heartbeat.setListener(listener);
+        Consumer<String> listener = mock(Consumer.class);
+        heartbeat.addListener(listener);
 
         // Verify that all the nodes are started.
         assertNodesStarted(heartbeat);
@@ -77,15 +74,56 @@ class QueryHeartbeatTest {
         // Verify that all the nodes were closed.
         assertNodesStopped(heartbeat);
 
-        verify(listener, times(1)).heartbeatStopped("queryId");
-
-        if (listener != null && mockingDetails(listener).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(listener));
-        }
+        verify(listener).accept("queryId");
+        verifyNoMoreInteractions(listener);
     }
 
     /**
-     * Verify that when {@link QueryHeartbeat#stopWithoutNotifyingListener()} ()} is called, that all underlying nodes are closed, and no exception occurs if a
+     * Verify that when a listener is removed via {@link QueryHeartbeat#removeListener(Consumer)}, it is correctly removed by identity.
+     */
+    @Test
+    void testRemoveListener() throws Exception {
+        QueryHeartbeat heartbeat = createHeartbeat();
+
+        // Create a mock listener. Do not expect any calls to be made to the listener.
+        Consumer<String> listener = mock(Consumer.class);
+
+        // Add and remove the listener.
+        heartbeat.addListener(listener);
+        heartbeat.removeListener(listener);
+
+        heartbeat.stop();
+
+        verifyNoInteractions(listener);
+    }
+
+    /**
+     * Verify that all listeners are removed via {@link QueryHeartbeat#clearListeners()}.
+     */
+    @Test
+    void testClearListeners() throws Exception {
+        QueryHeartbeat heartbeat = createHeartbeat();
+
+        // Create several mock listeners. Do not expect any calls to be made to them.
+        Consumer<String> listener1 = mock(Consumer.class);
+        Consumer<String> listener2 = mock(Consumer.class);
+        Consumer<String> listener3 = mock(Consumer.class);
+
+        // Add the listeners.
+        heartbeat.addListener(listener1);
+        heartbeat.addListener(listener2);
+        heartbeat.addListener(listener3);
+
+        // Clear the listeners.
+        heartbeat.clearListeners();
+
+        heartbeat.stop();
+
+        verifyNoInteractions(listener1, listener2, listener3);
+    }
+
+    /**
+     * Verify that when {@link QueryHeartbeat#stopWithoutNotifyingListener()} is called, that all underlying nodes are closed, and no exception occurs if a
      * listener has not been set.
      */
     @Test
@@ -110,8 +148,8 @@ class QueryHeartbeatTest {
         QueryHeartbeat heartbeat = createHeartbeat();
 
         // Create a mock listener. Do not expect any calls to be made to the listener.
-        QueryHeartbeatCache.HeartbeatStoppedListener listener = mock(QueryHeartbeatCache.HeartbeatStoppedListener.class);
-        heartbeat.setListener(listener);
+        Consumer<String> listener = mock(Consumer.class);
+        heartbeat.addListener(listener);
 
         // Verify that all the nodes are started.
         assertNodesStarted(heartbeat);
@@ -120,11 +158,8 @@ class QueryHeartbeatTest {
 
         // Verify that all the nodes were closed.
         assertNodesStopped(heartbeat);
-        verifyNoInteractions(listener);
 
-        if (listener != null && mockingDetails(listener).isMock()) {
-            verifyNoMoreInteractions(ignoreStubs(listener));
-        }
+        verifyNoInteractions(listener);
     }
 
     /**

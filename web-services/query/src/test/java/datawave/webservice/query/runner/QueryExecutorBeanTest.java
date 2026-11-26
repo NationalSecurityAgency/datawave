@@ -15,7 +15,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ejb.EJBContext;
@@ -305,7 +305,7 @@ public class QueryExecutorBeanTest {
         } else {
             assertSame(pageResponse, ReflectionTestUtils.invokeMethod(bean, "_next", runningQuery, queryId, Collections.emptyList()));
         }
-        verify(queryLimiter, times(expectedReleases)).stopCountingQueryTowardsLimits(queryId);
+        verify(queryLimiter, times(expectedReleases)).markInactive(queryId);
     }
 
     @ParameterizedTest(name = "{0}: accounting releases={1}")
@@ -327,37 +327,42 @@ public class QueryExecutorBeanTest {
         cache.put(queryId, runningQuery);
 
         QueryHeartbeat heartbeat = new QueryHeartbeat(queryId, Collections.emptyList());
-        QueryHeartbeatCache heartbeats = new QueryHeartbeatCache();
-        heartbeats.put(heartbeat);
-        queryLimiter = spy(new QueryLimiter());
-        queryLimiter.setHeartbeatCache(heartbeats);
-        ReflectionTestUtils.setField(bean, "queryLimiter", queryLimiter);
-        doReturn("limit".equals(failure) ? QueryLimiterResponse.metLimit("at limit") : QueryLimiterResponse.hasNotMetLimit()).when(queryLimiter)
-                        .checkForLimits(userDN, null, queryLogicName);
-        if ("limiterError".equals(failure)) {
-            doThrow(new IOException("limit check failed")).when(queryLimiter).checkForLimits(userDN, null, queryLogicName);
-        } else if ("closeError".equals(failure)) {
-            doThrow(new IOException("client return failed")).when(connectionFactory).returnClient(client);
+        QueryHeartbeatCache heartbeats = new QueryHeartbeatCache(10, TimeUnit.MINUTES);
+        try {
+            heartbeats.put(heartbeat);
+            doAnswer(invocation -> {
+                heartbeats.stopAndRemove(invocation.getArgument(0, String.class));
+                return null;
+            }).when(queryLimiter).markInactive(queryId);
+            doReturn("limit".equals(failure) ? QueryLimiterResponse.metLimit("at limit") : QueryLimiterResponse.hasNotMetLimit()).when(queryLimiter)
+                            .checkLimits(userDN, null, queryLogicName);
+            if ("limiterError".equals(failure)) {
+                doThrow(new IOException("limit check failed")).when(queryLimiter).checkLimits(userDN, null, queryLogicName);
+            } else if ("closeError".equals(failure)) {
+                doThrow(new IOException("client return failed")).when(connectionFactory).returnClient(client);
+            }
+            UserTransaction transaction = mock(UserTransaction.class);
+            when(transaction.getStatus()).thenReturn(Status.STATUS_ACTIVE);
+            when(ctx.getUserTransaction()).thenReturn(transaction);
+            when(ctx.getCallerPrincipal()).thenReturn(() -> "owner");
+
+            assertThrows(DatawaveWebApplicationException.class, () -> bean.reset(queryId));
+
+            assertSame(runningQuery, cache.get(queryId));
+            assertSame(client, runningQuery.getClient());
+            assertSame(iterator, runningQuery.getTransformIterator());
+            assertFalse(runningQuery.isFinished());
+            assertFalse(runningQuery.isCanceled());
+            assertEquals(expectedReleases == 0 ? originalLifecycle : BaseQueryMetric.Lifecycle.CLOSED, runningQuery.getMetric().getLifecycle());
+            assertSame(expectedReleases == 0 ? heartbeat : null, heartbeats.get(queryId));
+            verify(queryLimiter).checkLimits(userDN, null, queryLogicName);
+            verify(queryLimiter, times(expectedReleases)).markInactive(queryId);
+            verify(connectionFactory, times(expectedReleases)).returnClient(client);
+            verify(logic).initialize(eq(client), eq(settings), any());
+            verify(transaction).commit();
+        } finally {
+            heartbeats.close(true);
         }
-        UserTransaction transaction = mock(UserTransaction.class);
-        when(transaction.getStatus()).thenReturn(Status.STATUS_ACTIVE);
-        when(ctx.getUserTransaction()).thenReturn(transaction);
-        when(ctx.getCallerPrincipal()).thenReturn(() -> "owner");
-
-        assertThrows(DatawaveWebApplicationException.class, () -> bean.reset(queryId));
-
-        assertSame(runningQuery, cache.get(queryId));
-        assertSame(client, runningQuery.getClient());
-        assertSame(iterator, runningQuery.getTransformIterator());
-        assertFalse(runningQuery.isFinished());
-        assertFalse(runningQuery.isCanceled());
-        assertEquals(expectedReleases == 0 ? originalLifecycle : BaseQueryMetric.Lifecycle.CLOSED, runningQuery.getMetric().getLifecycle());
-        assertSame(expectedReleases == 0 ? heartbeat : null, heartbeats.get(queryId));
-        verify(queryLimiter).checkForLimits(userDN, null, queryLogicName);
-        verify(queryLimiter, times(expectedReleases)).stopCountingQueryTowardsLimits(queryId);
-        verify(connectionFactory, times(expectedReleases)).returnClient(client);
-        verify(logic).initialize(eq(client), eq(settings), any());
-        verify(transaction).commit();
     }
 
     private QueryImpl createNewQuery() throws Exception {
@@ -499,7 +504,7 @@ public class QueryExecutorBeanTest {
         Arrays.sort(dns);
         List<String> dnList = Arrays.asList(dns);
 
-        when(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
+        when(queryLimiter.checkLimits(userDN.toLowerCase(), null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
         when(ctx.getCallerPrincipal()).thenReturn(principal);
         when(persister.create(eq(userDN), eq(dnList), any(SecurityMarking.class), eq(queryLogicName), any(QueryParameters.class), eq(optionalParameters)))
                         .thenReturn(q);
@@ -765,7 +770,7 @@ public class QueryExecutorBeanTest {
 
         MultivaluedMap<String,String> optionalParameters = createNewQueryParameters(q, queryParameters);
 
-        when(queryLimiter.checkForLimits(userDN.toLowerCase(), null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
+        when(queryLimiter.checkLimits(userDN.toLowerCase(), null, queryLogicName)).thenReturn(QueryLimiterResponse.hasNotMetLimit());
         when(ctx.getCallerPrincipal()).thenReturn(principal);
         when(logic.getAuditType(null)).thenReturn(AuditType.NONE);
         when(persister.create(any(), any(), any(), any(), any(), any())).thenReturn(q);

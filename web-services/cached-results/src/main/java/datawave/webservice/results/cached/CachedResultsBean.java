@@ -239,7 +239,6 @@ public class CachedResultsBean {
     private AccumuloConnectionRequestBean accumuloConnectionRequestBean;
 
     @Inject
-    @SpringBean(name = "queryLimiter")
     private QueryLimiter queryLimiter;
 
     protected static final String COMMA = ",";
@@ -400,7 +399,7 @@ public class CachedResultsBean {
                     try {
                         // Check if submitting a new query would exceed any configured concurrent query limits.
                         Query settings = rq.getSettings();
-                        QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(settings.getUserDN(), settings.getSystemFrom(),
+                        QueryLimiterResponse limiterResponse = queryLimiter.checkLimits(settings.getUserDN(), settings.getSystemFrom(),
                                         settings.getQueryLogicName());
                         if (limiterResponse.metLimit()) {
                             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.CONCURRENT_QUERY_LIMIT_EXCEEDED,
@@ -525,7 +524,7 @@ public class CachedResultsBean {
                     query.setQueryMetrics(metrics);
                     query.setClient(client);
                     if (logic.isQueryLimiterEnabled()) {
-                        queryLimiter.countQueryTowardsLimits(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
+                        queryLimiter.markActive(q.getId().toString(), userDn, q.getSystemFrom(), logic.getLogicName());
                     }
                 } finally {
                     qlCache.poll(q.getId().toString());
@@ -767,7 +766,7 @@ public class CachedResultsBean {
                 }
                 if (query.getLogic().isQueryLimiterEnabled()) {
                     try {
-                        queryLimiter.stopCountingQueryTowardsLimits(query.getSettings().getId().toString());
+                        queryLimiter.markInactive(query.getSettings().getId().toString());
                     } catch (Exception e) {
                         log.error("Failed to stop counting query " + query.getSettings().getId().toString() + " towards limits", e);
                     }

@@ -67,7 +67,7 @@ public interface Matcher {
     static Matcher getMatcher(String str, long maxCacheSize) {
         Objects.requireNonNull(str, "Parameter str cannot be null");
 
-        if (QueryLimitConstants.wildcardOnlyPattern.matcher(str).matches()) {
+        if (QueryLimiterUtils.wildcardOnlyPattern.matcher(str).matches()) {
             return WildcardMatcher.of();
         } else {
             // Analyze the regex to determine what, if any, regex constructs are present.

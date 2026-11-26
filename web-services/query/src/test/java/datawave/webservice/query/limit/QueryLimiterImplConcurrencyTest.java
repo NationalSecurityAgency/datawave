@@ -33,9 +33,15 @@ import org.junit.jupiter.api.Test;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-class QueryLimiterConcurrencyTest {
+import datawave.core.common.zookeeper.ZkClientBuilder;
 
-    private static final Logger log = Logger.getLogger(QueryLimiterConcurrencyTest.class);
+/**
+ * Tests the use of {@link QueryLimiterImpl} in concurrent scenarios. These tests are sometimes flaky, so it is recommended to establish a number of retries in
+ * CI workflows.
+ */
+class QueryLimiterImplConcurrencyTest {
+
+    private static final Logger log = Logger.getLogger(QueryLimiterImplConcurrencyTest.class);
 
     private static final Random random = new Random();
 
@@ -66,7 +72,7 @@ class QueryLimiterConcurrencyTest {
     private final List<QueryCreationTask> tasks = new ArrayList<>();
 
     private QueryLimitConfiguration limitConfig;
-    private static final Map<String,QueryLimiter> serversToLimiters = new HashMap<>();
+    private static final Map<String,QueryLimiterImpl> serversToLimiters = new HashMap<>();
     private List<QueryCreationAttempt> attempts;
     private TestingServer server;
 
@@ -83,7 +89,7 @@ class QueryLimiterConcurrencyTest {
 
     @AfterEach
     void tearDown() throws IOException {
-        serversToLimiters.values().forEach(QueryLimiter::shutdown);
+        serversToLimiters.values().forEach(QueryLimiterImpl::close);
         serversToLimiters.clear();
 
         if (server != null) {
@@ -111,7 +117,7 @@ class QueryLimiterConcurrencyTest {
      * Verify that when the max default limit for a user is reached across all systems, that additional queries are not allowed to be created for the user.
      */
     @Test
-    void testDefaultUserLimit() throws InterruptedException, ExecutionException {
+    void testDefaultUserLimit() throws Exception {
         // Establish a default user limit of 20.
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
@@ -139,7 +145,7 @@ class QueryLimiterConcurrencyTest {
      * Verify that when the max default limit for a system is reached, that additional queries are not allowed to be created on the system.
      */
     @Test
-    void testDefaultSystemLimit() throws ExecutionException, InterruptedException {
+    void testDefaultSystemLimit() throws Exception {
         // Establish a default system limit of 10.
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(10);
@@ -168,7 +174,7 @@ class QueryLimiterConcurrencyTest {
      * for that query logic group.
      */
     @Test
-    void testQueryLogicGroupLimit() throws ExecutionException, InterruptedException {
+    void testQueryLogicGroupLimit() throws Exception {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(15);
@@ -216,7 +222,7 @@ class QueryLimiterConcurrencyTest {
      * Verify that when an individual user reaches their custom query limit across multiple systems, that they are not allowed to create any more queries.
      */
     @Test
-    void testCustomUserLimit() throws ExecutionException, InterruptedException {
+    void testCustomUserLimit() throws Exception {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(20);
@@ -285,7 +291,7 @@ class QueryLimiterConcurrencyTest {
      * Verify that when a system reaches a custom query limit across multiple systems, that no more queries may be created on the system.
      */
     @Test
-    void testCustomSystemLimit() throws ExecutionException, InterruptedException {
+    void testCustomSystemLimit() throws Exception {
         QueryLimitConfiguration config = new QueryLimitConfiguration();
         config.setDefaultSystemQueryLimit(100);
         config.setDefaultUserQueryLimit(20);
@@ -455,10 +461,10 @@ class QueryLimiterConcurrencyTest {
                 }
 
                 try {
-                    QueryLimiter queryLimiter = serversToLimiters.get(request.system);
+                    QueryLimiterImpl queryLimiter = serversToLimiters.get(request.system);
 
                     // Check if a limit has been met.
-                    QueryLimiterResponse limiterResponse = queryLimiter.checkForLimits(request.userDn, request.system, request.queryLogic);
+                    QueryLimiterResponse limiterResponse = queryLimiter.checkLimits(request.userDn, request.system, request.queryLogic);
 
                     // If a limit has been met, record it.
                     if (limiterResponse.metLimit()) {
@@ -467,7 +473,7 @@ class QueryLimiterConcurrencyTest {
                     } else {
                         // Otherwise 'create' a query and store the heartbeat to keep it alive until stopped.
                         String queryId = UUID.randomUUID().toString();
-                        queryLimiter.countQueryTowardsLimits(queryId, request.userDn, request.system, request.queryLogic);
+                        queryLimiter.markActive(queryId, request.userDn, request.system, request.queryLogic);
                         log.trace("Created query " + queryId);
                         attempts.add(QueryCreationAttempt.succeeded(request, queryId));
                     }
@@ -583,10 +589,16 @@ class QueryLimiterConcurrencyTest {
 
     private void ensureLimiterExistsFor(String system) {
         if (!serversToLimiters.containsKey(system)) {
-            QueryLimiter limiter = new QueryLimiter();
-            limiter.setZookeeperConfig(server.getConnectString());
-            limiter.setConfiguration(this.limitConfig);
-            limiter.setHeartbeatCache(new QueryHeartbeatCache());
+            ZkClientBuilder zkClientBuilder = new ZkClientBuilder();
+            zkClientBuilder.setConnectString(server.getConnectString());
+
+            QueryLimiterImplConfiguration config = new QueryLimiterImplConfiguration();
+            config.setMode(QueryLimiterMode.ENFORCE);
+            config.setZkClientBuilder(zkClientBuilder);
+            config.setLimitConfiguration(this.limitConfig);
+
+            QueryLimiterImpl limiter = new QueryLimiterImpl();
+            limiter.setConfiguration(config);
             limiter.setup();
             serversToLimiters.put(system, limiter);
         }

@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -42,13 +43,13 @@ class ThreadUtilsTest {
     }
 
     /**
-     * Tests for {@link ThreadUtils#shutdownAndWait(ThreadPoolExecutor, long, TimeUnit)}.
+     * Tests for {@link ThreadUtils#shutdownAndWait(ExecutorService, long, TimeUnit)}.
      */
     @Nested
     class ShutdownAndWaitTests {
 
         /**
-         * Verify that {@link ThreadUtils#shutdownAndWait(ThreadPoolExecutor, long, TimeUnit)} returns true when all tasks complete before the timeout.
+         * Verify that {@link ThreadUtils#shutdownAndWait(ExecutorService, long, TimeUnit)} returns true when all tasks complete before the timeout.
          */
         @Test
         void testWhenAllTasksCompleteBeforeTimeout() {
@@ -71,7 +72,7 @@ class ThreadUtilsTest {
         }
 
         /**
-         * Verify that {@link ThreadUtils#shutdownAndWait(ThreadPoolExecutor, long, TimeUnit)} returns false when tasks do not complete before the timeout.
+         * Verify that {@link ThreadUtils#shutdownAndWait(ExecutorService, long, TimeUnit)} returns false when tasks do not complete before the timeout.
          */
         @Test
         void testWhenTasksDoNotCompleteBeforeTimeout() {
@@ -95,7 +96,7 @@ class ThreadUtilsTest {
         }
 
         /**
-         * Verify that {@link ThreadUtils#shutdownAndWait(ThreadPoolExecutor, long, TimeUnit)} returns false when the thread is interrupted.
+         * Verify that {@link ThreadUtils#shutdownAndWait(ExecutorService, long, TimeUnit)} returns false when the thread is interrupted.
          */
         @Test
         void testInterrupted() throws InterruptedException {
