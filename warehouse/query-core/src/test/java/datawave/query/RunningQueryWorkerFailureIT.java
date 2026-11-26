@@ -36,6 +36,7 @@ import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -55,6 +56,7 @@ import datawave.test.iter.RuntimeExceptionIterator;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.runner.RunningQuery;
 
+@Tag("IntegrationTest")
 class RunningQueryWorkerFailureIT {
     private static final String TABLE = "worker_failure";
     private static final String FIRST_ROW = "intermediate";
