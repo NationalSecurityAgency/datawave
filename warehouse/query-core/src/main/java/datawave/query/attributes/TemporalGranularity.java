@@ -1,6 +1,7 @@
 package datawave.query.attributes;
 
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.function.Function;
 
@@ -169,12 +170,14 @@ public enum TemporalGranularity {
     }
 
     /**
-     * A {@link Function} implementation to will handle datetime value formatting.
+     * A {@link Function} implementation to will handle datetime value formatting. Instances are shared across threads via the enum constants, so the formatter
+     * must be thread-safe ({@link DateTimeFormatter} rather than {@link java.text.SimpleDateFormat}).
      */
     private static class DateTimeValueFormatter implements Function<String,String> {
 
         private static final Logger log = Logger.getLogger(DateTimeValueFormatter.class);
-        private final SimpleDateFormat formatter;
+        private final String pattern;
+        private final DateTimeFormatter formatter;
         private final Function<String,String> postFormatFunction;
 
         private DateTimeValueFormatter(String pattern) {
@@ -182,7 +185,8 @@ public enum TemporalGranularity {
         }
 
         private DateTimeValueFormatter(String pattern, Function<String,String> postFormatFunction) {
-            this.formatter = new SimpleDateFormat(pattern);
+            this.pattern = pattern;
+            this.formatter = DateTimeFormatter.ofPattern(pattern).withZone(ZoneId.systemDefault());
             this.postFormatFunction = postFormatFunction;
         }
 
@@ -191,12 +195,12 @@ public enum TemporalGranularity {
             try {
                 // Attempt to format the denormalized date value.
                 Date date = DateNormalizer.DATE_NORMALIZER.denormalize(value);
-                String formattedDate = formatter.format(date);
+                String formattedDate = formatter.format(date.toInstant());
                 // Perform any additional formatting required.
                 return postFormatFunction.apply(formattedDate);
             } catch (Exception e) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Failed to format value " + value + " as date with pattern " + formatter.toPattern(), e);
+                    log.debug("Failed to format value " + value + " as date with pattern " + pattern, e);
                 }
                 // If a date could not be parsed, return the original value.
                 return value;

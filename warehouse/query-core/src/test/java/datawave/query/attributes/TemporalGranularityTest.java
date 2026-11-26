@@ -2,10 +2,19 @@ package datawave.query.attributes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.util.AssertionErrors.assertFalse;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
@@ -120,6 +129,61 @@ public class TemporalGranularityTest {
         for (TemporalGranularity transformer : TemporalGranularity.values()) {
             TemporalGranularity actual = TemporalGranularity.of(transformer.getName());
             assertEquals(transformer, actual, "Incorrect transformer " + actual + " returned for name " + transformer.getName());
+        }
+    }
+
+    /**
+     * Verify that the shared formatter in each {@link TemporalGranularity} produces correct results when used concurrently by many threads.
+     */
+    @Test
+    public void testConcurrentTransform() throws Exception {
+        List<String> inputs = new ArrayList<>();
+        for (int i = 0; i < 200; i++) {
+            inputs.add(String.format("20%02d-%02d-%02d %02d:%02d:%02d", 10 + (i % 20), 1 + (i % 12), 1 + (i % 28), i % 24, i % 60, (i * 7) % 60));
+        }
+
+        // Compute the expected results on a single thread first.
+        TemporalGranularity[] granularities = TemporalGranularity.values();
+        String[][] expected = new String[granularities.length][inputs.size()];
+        for (int g = 0; g < granularities.length; g++) {
+            for (int i = 0; i < inputs.size(); i++) {
+                expected[g][i] = granularities[g].transform(inputs.get(i));
+            }
+        }
+
+        int threads = 16;
+        int iterations = 50;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        CountDownLatch start = new CountDownLatch(1);
+        try {
+            List<Future<List<String>>> futures = new ArrayList<>();
+            for (int t = 0; t < threads; t++) {
+                futures.add(executor.submit(() -> {
+                    List<String> mismatches = new ArrayList<>();
+                    start.await();
+                    for (int n = 0; n < iterations; n++) {
+                        for (int g = 0; g < granularities.length; g++) {
+                            for (int i = 0; i < inputs.size(); i++) {
+                                String actual = granularities[g].transform(inputs.get(i));
+                                if (!expected[g][i].equals(actual)) {
+                                    mismatches.add(granularities[g] + " " + inputs.get(i) + ": expected " + expected[g][i] + " but was " + actual);
+                                }
+                            }
+                        }
+                    }
+                    return mismatches;
+                }));
+            }
+            start.countDown();
+
+            List<String> mismatches = new ArrayList<>();
+            for (Future<List<String>> future : futures) {
+                mismatches.addAll(future.get(60, TimeUnit.SECONDS));
+            }
+            assertTrue(mismatches.isEmpty(),
+                            mismatches.size() + " incorrect concurrent transforms, e.g. " + mismatches.stream().limit(5).collect(Collectors.toList()));
+        } finally {
+            executor.shutdownNow();
         }
     }
 
