@@ -751,4 +751,42 @@ public class ExecutableDeterminationVisitorTest {
         assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, ExecutableDeterminationVisitor.getState(query, config, helper, output));
         assertEquals("Summary: NON_EXECUTABLE:[AndNode( delayed/eval only predicate )]", output.get(0));
     }
+
+    /**
+     * Verify that delayed and evaluation-only terms against _NOFIELD_ are ignorable, like their undelayed counterparts.
+     */
+    @Test
+    public void testDelayedNoFieldTermsAreIgnorable() throws ParseException, TableNotFoundException {
+        HashSet<String> indexedFields = new HashSet<>();
+        indexedFields.add("INDEXEDFIELD");
+
+        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+        EasyMock.expect(helper.getIndexOnlyFields(null)).andReturn(Collections.emptySet()).anyTimes();
+
+        replayAll();
+
+        assertNoFieldMarkerState("((_Delayed_ = true) && (_NOFIELD_ == 'a'))", ExecutableDeterminationVisitor.STATE.IGNORABLE,
+                        "Summary: IGNORABLE:[AndNode( delayed/eval only predicate )]");
+        assertNoFieldMarkerState("((_Eval_ = true) && (_NOFIELD_ == 'a'))", ExecutableDeterminationVisitor.STATE.IGNORABLE,
+                        "Summary: IGNORABLE:[AndNode( delayed/eval only predicate )]");
+
+        // an ignorable delayed term should not prevent a disjunction from being executable
+        assertNoFieldMarkerState("INDEXEDFIELD == 'a' || ((_Delayed_ = true) && (_NOFIELD_ == 'b'))", ExecutableDeterminationVisitor.STATE.EXECUTABLE,
+                        "Summary: EXECUTABLE:[INDEXEDFIELD == 'a']");
+
+        // a delayed expression that is not solely against _NOFIELD_ is still non-executable
+        assertNoFieldMarkerState("((_Delayed_ = true) && (_NOFIELD_ == 'a' && INDEXEDFIELD == 'b'))", ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE,
+                        "Summary: NON_EXECUTABLE:[AndNode( delayed/eval only predicate )]");
+
+        verifyAll();
+    }
+
+    private void assertNoFieldMarkerState(String query, ExecutableDeterminationVisitor.STATE expectedState, String expectedSummary) throws ParseException {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        for (boolean forFieldIndex : new boolean[] {false, true}) {
+            LinkedList<String> output = new LinkedList<>();
+            assertEquals(expectedState, ExecutableDeterminationVisitor.getState(script, config, helper, forFieldIndex, output), query);
+            assertEquals(expectedSummary, output.get(0), query);
+        }
+    }
 }

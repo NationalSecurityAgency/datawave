@@ -979,7 +979,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         // if a delayed predicate, then this is not-executable against the index by choice
         else if (instance.isAnyTypeOf(DELAYED, EVALUATION_ONLY)) {
-            if (isNoFieldOnly(node)) {
+            // check the marker's source, since the first child of the marker node itself is the marker assignment rather than the source's identifier
+            if (isNoFieldOnly(JexlASTHelper.dereference(instance.getSource()))) {
                 state = STATE.IGNORABLE;
             } else if (instance.isType(EVALUATION_ONLY) && isIndexOnly(node)) {
                 state = STATE.ERROR;
