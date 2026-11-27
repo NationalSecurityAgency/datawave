@@ -1,16 +1,23 @@
 package datawave.query.index.day;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import datawave.util.time.DateHelper;
 
@@ -85,6 +92,46 @@ public class DayRowIteratorTest {
         assertEquals(367, expected.size());
 
         test();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"20240228, 20240301, '20240228,20240229,20240301'", "20000228, 20000301, '20000228,20000229,20000301'",
+            "21000228, 21000301, '21000228,21000301'", "20241231, 20250101, '20241231,20250101'", "20240430, 20240501, '20240430,20240501'"})
+    public void testOrderedInclusiveRange(String first, String last, String days) {
+        assertDays(timeToDate(first), timeToDate(last), List.of(days.split(",")));
+    }
+
+    @Test
+    public void testReversedRange() {
+        assertDays(timeToDate("20240408"), timeToDate("20240407"), List.of());
+    }
+
+    @Test
+    public void testTimesAreTruncatedToGmtDays() {
+        assertDays(Date.from(Instant.parse("2024-03-09T23:59:59.999Z")), Date.from(Instant.parse("2024-03-11T00:00:00Z")),
+                        List.of("20240309", "20240310", "20240311"));
+    }
+
+    @Test
+    public void testReversedTimesWithinSameDay() {
+        assertDays(Date.from(Instant.parse("2024-11-03T23:59:59.999Z")), Date.from(Instant.parse("2024-11-03T00:00:00Z")), List.of("20241103"));
+    }
+
+    @Test
+    public void testSupportedDateLimits() {
+        assertDays(DateHelper.MIN_SUPPORTED_DATE, DateHelper.MIN_SUPPORTED_DATE, List.of("00010101"));
+        assertDays(DateHelper.MAX_SUPPORTED_DATE, DateHelper.MAX_SUPPORTED_DATE, List.of("99991231"));
+    }
+
+    private void assertDays(Date first, Date last, List<String> expectedDays) {
+        DayRowIterator iter = new DayRowIterator(first, last);
+        List<String> actual = new ArrayList<>();
+        while (iter.hasNext()) {
+            assertTrue(iter.hasNext());
+            actual.add(iter.next());
+        }
+        assertFalse(iter.hasNext());
+        assertEquals(expectedDays, actual);
     }
 
     private void test() {
