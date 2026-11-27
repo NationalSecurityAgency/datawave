@@ -126,7 +126,7 @@ public class JavaRegexAnalyzer {
 
     // digit character classes
     private static final List<String> DIGIT_CHARACTER_CLASSES = Arrays.asList("\\P{Lower}", "\\P{Upper}", "\\p{ASCII}", "\\P{Alpha}", "\\p{Digit}",
-                    "\\p{Alnum}", "\\P{{Punct}", "\\p{Graph}", "\\p{Print}", "\\P{Blank}", "\\P{Cntrl}", "\\p{XDigit}", "\\P{Space}", "\\P{javaLowerCase}",
+                    "\\p{Alnum}", "\\P{Punct}", "\\p{Graph}", "\\p{Print}", "\\P{Blank}", "\\P{Cntrl}", "\\p{XDigit}", "\\P{Space}", "\\P{javaLowerCase}",
                     "\\P{javaUpperCase}", "\\P{javaWhitespace}", "\\P{javaMirrored}", "\\P{InGreek}", "\\P{Lu}", "\\P{Sc}", "\\p{L}");
 
     // the character class chars
