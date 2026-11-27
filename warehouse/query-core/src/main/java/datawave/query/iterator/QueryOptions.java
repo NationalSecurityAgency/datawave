@@ -1048,7 +1048,7 @@ public class QueryOptions implements OptionDescriber {
 
     public FileSystemCache getFileSystemCache() throws MalformedURLException {
         if (this.fsCache == null && this.hdfsSiteConfigURLs != null) {
-            this.fsCache = new FileSystemCache(this.hdfsSiteConfigURLs);
+            this.fsCache = FileSystemCache.getInstance(this.hdfsSiteConfigURLs);
         }
         return this.fsCache;
     }
