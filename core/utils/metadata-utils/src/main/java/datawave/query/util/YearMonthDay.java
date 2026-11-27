@@ -1,13 +1,24 @@
 package datawave.query.util;
 
 import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import datawave.util.time.DateHelper;
 
 public class YearMonthDay implements Comparable<YearMonthDay> {
     public static final int DAYS_IN_LEAP_YEAR = 366;
     private String yyyymmdd;
-    private Calendar cal = Calendar.getInstance();
+    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+    private Calendar cal = newCalendar();
+
+    /**
+     * DateHelper formats dates in UTC, so the calendars used here must also be in UTC. A calendar in the JVM's default time zone shifts the result by a day
+     * when the zone is not UTC.
+     */
+    private static Calendar newCalendar() {
+        return new GregorianCalendar(UTC);
+    }
 
     public YearMonthDay(String value) {
         yyyymmdd = value;
@@ -111,7 +122,8 @@ public class YearMonthDay implements Comparable<YearMonthDay> {
     }
 
     public static String calculateMMDD(int ordinal, int year) {
-        Calendar c = Calendar.getInstance();
+        Calendar c = newCalendar();
+        c.clear();
         c.set(Calendar.YEAR, year);
         c.set(Calendar.DAY_OF_YEAR, ordinal);
         return DateHelper.format(c.getTime());
@@ -123,7 +135,7 @@ public class YearMonthDay implements Comparable<YearMonthDay> {
         String day = value.substring(6, 8);
         int nmonth = month.charAt(0) == '0' ? Integer.parseInt(month.substring(1, 2)) : Integer.parseInt(month);
         int nday = day.charAt(0) == '0' ? Integer.parseInt(day.substring(1, 2)) : Integer.parseInt(day);
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = newCalendar();
         cal.clear();
         cal.set(year, nmonth - 1, nday);
         return cal.get(Calendar.DAY_OF_YEAR);
