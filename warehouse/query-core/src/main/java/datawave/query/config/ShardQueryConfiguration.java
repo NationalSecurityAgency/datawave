@@ -603,6 +603,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int dayIndexThreshold = -1;
 
     /**
+     * If true, allow the use of null checks against index-only fields in queries.
+     */
+    private boolean allowIndexOnlyNullChecks = false;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -870,6 +875,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTruncatedIndexTableName(other.getTruncatedIndexTableName());
         this.setOriginalJexlQuery(other.getOriginalJexlQuery());
         this.setAllHitsQueryConfig(other.getAllHitsQueryConfig());
+        this.setAllowIndexOnlyNullChecks(other.isAllowIndexOnlyNullChecks());
     }
 
     /**
@@ -927,6 +933,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
         this.setSortedUIDs(other.isSortedUIDs());
         this.setBloom(other.getBloom());
+        this.setAllowIndexOnlyNullChecks(other.isAllowIndexOnlyNullChecks());
     }
 
     @Override
@@ -3244,7 +3251,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseTruncatedIndex() == that.isUseTruncatedIndex() &&
                 getTruncatedIndexTableName() == that.getTruncatedIndexTableName() &&
                 Objects.equals(getOriginalJexlQuery(), that.getOriginalJexlQuery()) &&
-                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig());
+                Objects.equals(getAllHitsQueryConfig(), that.getAllHitsQueryConfig()) &&
+                isAllowIndexOnlyNullChecks() == that.isAllowIndexOnlyNullChecks();
         // @formatter:on
     }
 
@@ -3484,7 +3492,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 isUseTruncatedIndex(),
                 getTruncatedIndexTableName(),
                 getOriginalJexlQuery(),
-                getAllHitsQueryConfig()
+                getAllHitsQueryConfig(),
+                isAllowIndexOnlyNullChecks()
         );
         // @formatter:on
     }
@@ -3648,5 +3657,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setQueryLimiterEnabled(boolean queryLimiterEnabled) {
         this.queryLimiterEnabled = queryLimiterEnabled;
+    }
+
+    public boolean isAllowIndexOnlyNullChecks() {
+        return allowIndexOnlyNullChecks;
+    }
+
+    public void setAllowIndexOnlyNullChecks(boolean allowIndexOnlyNullCheck) {
+        this.allowIndexOnlyNullChecks = allowIndexOnlyNullCheck;
     }
 }

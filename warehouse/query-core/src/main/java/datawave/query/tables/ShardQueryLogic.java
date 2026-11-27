@@ -3671,4 +3671,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     public boolean isUseSynchronousRunningQuery() {
         return getConfig().isUseSynchronousRunningQuery();
     }
+
+    public void setAllowIndexOnlyNullChecks(boolean value) {
+        getConfig().setAllowIndexOnlyNullChecks(value);
+    }
 }

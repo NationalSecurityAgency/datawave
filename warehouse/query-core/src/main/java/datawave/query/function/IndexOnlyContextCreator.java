@@ -4,11 +4,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -22,6 +25,7 @@ import datawave.query.attributes.Document;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.logic.IndexOnlyFieldPresenceFilter;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DelayedNonEventIndexContext;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
@@ -58,6 +62,16 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     private final TimeFilter timeFilter;
 
     /**
+     * Index-only fields that the query references in null checks, which are evaluated against the field index when null index-only fields are allowed.
+     */
+    private final Set<String> indexOnlyNullCheckFields;
+
+    /**
+     * Field index presence filters for the fields in {@link #indexOnlyNullCheckFields}, created on demand.
+     */
+    private final Map<String,IndexOnlyFieldPresenceFilter> indexOnlyPresenceFilters = new HashMap<>();
+
+    /**
      * Constructor
      *
      * @param source
@@ -88,7 +102,8 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     public IndexOnlyContextCreator(final SortedKeyValueIterator<Key,Value> source, final Range range, final TypeMetadata typeMetadata,
                     final CompositeMetadata compositeMetadata, final QueryOptions options, Collection<String> variables,
                     IteratorBuildingVisitor iteratorBuildingVisitor, Multimap<String,JexlNode> delayedNonEventFieldMap, Equality equality,
-                    Collection<ByteSequence> columnFamilies, boolean inclusive, JexlContextValueComparator comparatorFactory) {
+                    Collection<ByteSequence> columnFamilies, boolean inclusive, JexlContextValueComparator comparatorFactory,
+                    Collection<String> indexOnlyNullCheckFields) {
         super(variables, comparatorFactory);
         checkNotNull(source, SIMPLE_NAME + " cannot be initialized with a null " + SKVI_SIMPLE_NAME);
         checkNotNull(range, SIMPLE_NAME + " cannot be initialized with a null Range");
@@ -109,6 +124,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
 
         this.range = range;
         this.timeFilter = options.getTimeFilter();
+        this.indexOnlyNullCheckFields = indexOnlyNullCheckFields == null ? Set.of() : Set.copyOf(indexOnlyNullCheckFields);
     }
 
     @Override
@@ -116,7 +132,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         final Tuple3<Key,Document,DatawaveJexlContext> tuple;
         if (null != from) {
             tuple = super.apply(from);
-            verifyContext(tuple.third());
+            verifyContext(tuple.third(), from.first());
         } else {
             tuple = null;
         }
@@ -187,15 +203,36 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
      *
      * @param context
      *            jexl context to verify, assumed to be non-null
+     * @param documentKey
+     *            the key of the document being evaluated
      */
-    private void verifyContext(DatawaveJexlContext context) {
+    private void verifyContext(DatawaveJexlContext context, Key documentKey) {
         // Make sure that index-only fields being queried are represented in the context, in
         // order to avoid potential downstream eval misfire (see #1204)
         for (String var : this.variables) {
             if (this.indexOnlyFields.contains(var) && !context.has(var)) {
+                // A null-checked field with no field index entry for the document is left absent so that FIELD == null evaluates true. The field index
+                // filters may not have checked this document (e.g. a null check ORed with an unindexed term), so presence is checked here.
+                if (this.indexOnlyNullCheckFields.contains(var) && !isPresentInFieldIndex(var, documentKey)) {
+                    continue;
+                }
                 context.set(var, FunctionalSet.empty());
             }
         }
+    }
+
+    /**
+     * Determine if the given index-only field has a field index entry for the given document.
+     *
+     * @param field
+     *            the index-only field
+     * @param documentKey
+     *            the document key
+     * @return true if the field is present for the document
+     */
+    private boolean isPresentInFieldIndex(String field, Key documentKey) {
+        IndexOnlyFieldPresenceFilter filter = indexOnlyPresenceFilters.computeIfAbsent(field, iteratorBuildingVisitor::buildNullIndexOnlyFieldFilter);
+        return documentKey.equals(filter.move(documentKey), PartialKey.ROW_COLFAM);
     }
 
     /*

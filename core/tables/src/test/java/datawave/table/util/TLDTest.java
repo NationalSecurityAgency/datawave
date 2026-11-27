@@ -238,7 +238,7 @@ public class TLDTest {
         Key parentKey = buildEventDataKey(rootId);
         Key nextParent = TLD.getNextParentKey(parentKey);
 
-        String cf = datatype + '\u0000' + rootId + '.' + QueryConstants.MAX_UNICODE_STRING;
+        String cf = datatype + '\u0000' + rootId + '.' + QueryConstants.MAX_UNICODE_STR;
         String cq = field + '\u0000' + value;
         Key expectedKey = new Key(row, cf, cq, cv, 0L);
         assertEquals(expectedKey, nextParent);

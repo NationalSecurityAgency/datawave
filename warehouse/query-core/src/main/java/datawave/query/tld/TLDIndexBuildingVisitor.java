@@ -22,6 +22,7 @@ import com.google.common.collect.Maps;
 import datawave.data.type.NoOpType;
 import datawave.query.Constants;
 import datawave.query.iterator.builder.AbstractIteratorBuilder;
+import datawave.query.iterator.logic.IndexOnlyFieldPresenceFilter;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.LiteralRange;
@@ -35,6 +36,14 @@ import datawave.query.util.IteratorToSortedKeyValueIterator;
 
 public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(TLDIndexBuildingVisitor.class);
+
+    /**
+     * Build a field presence filter that counts an entry for the top level document or any of its descendants as present.
+     */
+    @Override
+    public IndexOnlyFieldPresenceFilter buildNullIndexOnlyFieldFilter(String field) {
+        return super.buildNullIndexOnlyFieldFilter(field).withTldMatching(true);
+    }
 
     @Override
     public Object visit(ASTNENode node, Object data) {
@@ -59,6 +68,10 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         if (null == builder.getValue()) {
             if (isQueryFullySatisfied == true) {
                 throw new RuntimeException("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
+            }
+            if (allowIndexOnlyNullChecks && indexOnlyFields.contains(builder.getField())) {
+                // INDEX_ONLY_FIELD != null is satisfied when the field is present anywhere in the document tree
+                ((AbstractIteratorBuilder) data).addInclude(buildNullIndexOnlyFieldFilter(builder.getField()));
             }
             return null;
         }
@@ -144,6 +157,14 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         if (builder.getValue() == null) {
             if (isQueryFullySatisfied) {
                 throw new RuntimeException("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
+            }
+            if (allowIndexOnlyNullChecks && indexOnlyFields.contains(builder.getField())) {
+                if (data == null) {
+                    // no parent to supply candidates
+                    throw nullIndexOnlyFieldException(builder.getField());
+                }
+                // INDEX_ONLY_FIELD == null is satisfied when the field is absent from the entire document tree
+                ((AbstractIteratorBuilder) data).addExclude(buildNullIndexOnlyFieldFilter(builder.getField()));
             }
             return null;
         }

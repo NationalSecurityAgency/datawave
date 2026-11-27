@@ -81,23 +81,44 @@ import datawave.query.util.MetadataHelper;
 /**
  * Determine if a node can be processed against the global index and/or the field index
  * <p>
- * A node can be processed against the field index if it is not a ER/NR/LE/LT/GE/GT node (unless surrounded by an ivarator expression).
+ * A node can be processed against the field index if it is not an ER/NR/LE/LT/GE/GT node (unless surrounded by an ivarator expression).
  * <p>
- * A node can be processed against the global index if it is not a ER,NR,LE,LT,GE,GT,NOT, or NE (unless surrounded by an ivarator expression).
+ * A node can be processed against the global index if it is not an ER,NR,LE,LT,GE,GT,NOT, or NE (unless surrounded by an ivarator expression).
  * <p>
  * In general an OR can be processed if it is completely composed of expressions that can be processed. An AND can be processed it at least one of its children
  * can be processed.
  */
 public class ExecutableDeterminationVisitor extends BaseVisitor {
 
-    /**
-     * EXECUTABLE means that the expression is executable against the index PARTIAL means that we have an OR that cannot be completely satisfied by the index
-     * NON_EXECUTABLE means that the expression cannot be executed against the index IGNORABLE means that it does not matter the executable state of the
-     * underlying expression ERROR means that we have an expression that is index only but yet cannot be run against the index (negation, delayed prefix)
-     * NEGATED_EXECUTABLE means that the subtree must be run as a filter against EXECUTABLE components
-     */
     public enum STATE {
-        EXECUTABLE, PARTIAL, NON_EXECUTABLE, IGNORABLE, ERROR, NEGATED_EXECUTABLE
+        /**
+         * The expression is executable against the index.
+         */
+        EXECUTABLE,
+        /**
+         * The expression is an OR that cannot be completely satisfied by the index.
+         */
+        PARTIAL,
+        /**
+         * The expression cannot be executed against the index.
+         */
+        NON_EXECUTABLE,
+        /**
+         * The executable state of the underlying expression does not matter.
+         */
+        IGNORABLE,
+        /**
+         * THe expression is index-only, but yet cannot be run against the index (negation, delayed prefix).
+         */
+        ERROR,
+        /**
+         * The subtree must be run as a filter against EXECUTABLE components.
+         */
+        NEGATED_EXECUTABLE,
+        /**
+         * The expression requires an EXECUTABLE sibling or parent that it is ANDed with. If no such term exists, this resolves to ERROR.
+         */
+        REQUIRES_EXECUTABLE
     }
 
     /**
@@ -461,7 +482,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
 
         // push down any negations to ensure the state is accurate
         JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(node);
-        STATE state = (STATE) pushedDownTree.jjtAccept(visitor, "");
+        STATE state = visitor.resolveRequiresExecutable((STATE) pushedDownTree.jjtAccept(visitor, ""));
         visitor.summarize();
         return state;
     }
@@ -473,7 +494,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
 
         // push down any negations to ensure the state is accurate
         JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(node);
-        STATE state = (STATE) pushedDownTree.jjtAccept(visitor, "");
+        STATE state = visitor.resolveRequiresExecutable((STATE) pushedDownTree.jjtAccept(visitor, ""));
         visitor.summarize();
         return state;
     }
@@ -508,6 +529,23 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
 
     /**
+     * A REQUIRES_EXECUTABLE state that reaches the top of the visited tree is not satisfied by an EXECUTABLE sibling, so it is an ERROR.
+     *
+     * @param state
+     *            the state of the visited tree
+     * @return ERROR if the state is REQUIRES_EXECUTABLE, otherwise the state
+     */
+    private STATE resolveRequiresExecutable(STATE state) {
+        if (state == STATE.REQUIRES_EXECUTABLE) {
+            if (output != null) {
+                output.move(STATE.REQUIRES_EXECUTABLE, STATE.ERROR);
+            }
+            return STATE.ERROR;
+        }
+        return state;
+    }
+
+    /**
      * allOrNone means that all contained children must be executable for this node to be executable. Used for expressions, scripts, and or nodes.
      *
      * @param node
@@ -529,6 +567,17 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         if (log.isTraceEnabled()) {
             log.trace("node:" + PrintingVisitor.formattedQueryString(node));
             log.trace("states are:" + states);
+        }
+        // REQUIRES_EXECUTABLE is passed up, so an EXECUTABLE term in an enclosing AND can satisfy it. An ERROR still takes priority.
+        if (states.remove(STATE.REQUIRES_EXECUTABLE)) {
+            if (states.contains(STATE.ERROR)) {
+                if (output != null) {
+                    output.move(STATE.REQUIRES_EXECUTABLE, STATE.ERROR);
+                }
+            } else {
+                states.clear();
+                states.add(STATE.REQUIRES_EXECUTABLE);
+            }
         }
         if (states.isEmpty()) {
             // no child states, so nothing to evaluate
@@ -608,6 +657,20 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             states.add((STATE) (node.jjtGetChild(i).jjtAccept(this, data + PREFIX)));
         }
+        // REQUIRES_EXECUTABLE is satisfied by an EXECUTABLE sibling, and then acts as a NON_EXECUTABLE filter. Without an EXECUTABLE sibling, it is passed
+        // up, so an EXECUTABLE term in an enclosing AND can satisfy it. An ERROR still takes priority.
+        if (states.remove(STATE.REQUIRES_EXECUTABLE)) {
+            if (states.contains(STATE.EXECUTABLE) || states.contains(STATE.ERROR)) {
+                STATE resolved = states.contains(STATE.EXECUTABLE) ? STATE.NON_EXECUTABLE : STATE.ERROR;
+                states.add(resolved);
+                if (output != null) {
+                    output.move(STATE.REQUIRES_EXECUTABLE, resolved);
+                }
+            } else {
+                states.clear();
+                states.add(STATE.REQUIRES_EXECUTABLE);
+            }
+        }
         if (states.isEmpty()) {
             // no child states, so nothing to evaluate
             state = STATE.IGNORABLE;
@@ -664,9 +727,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             state = STATE.NON_EXECUTABLE;
         } else {
             state = unlessAnyNonExecutable(node, data + PREFIX);
-            // the only non-executable case here would be with a null literal, which only cannot be computed if index only
+            // the only non-executable case here would be with a null literal, which, if index-only, requires an executable anchor sibling
             if (state == STATE.NON_EXECUTABLE && isIndexOnly(node)) {
-                state = STATE.ERROR;
+                state = isAllowedIndexOnlyNullCheck(node) ? STATE.REQUIRES_EXECUTABLE : STATE.ERROR;
             }
         }
         if (output != null) {
@@ -692,16 +755,16 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         } else if (forFieldIndex) {
             // make an executability check on the children
             state = unlessAnyNonExecutable(node, data + PREFIX);
-            // the only non-executable case here would be with a null literal, which only cannot be computed if index only
+            // the only non-executable case here would be with a null literal, which, if index-only, requires an executable anchor sibling
             if (state == STATE.NON_EXECUTABLE && isIndexOnly(node)) {
-                state = STATE.ERROR;
+                state = isAllowedIndexOnlyNullCheck(node) ? STATE.REQUIRES_EXECUTABLE : STATE.ERROR;
             }
         } else {
             // global index checks won't run against negations at this time
             state = STATE.NON_EXECUTABLE;
-            // no support for index only fields being not-null at this time
             if (isIndexOnly(node)) {
-                state = STATE.ERROR;
+                // If this is a index-only null check, it requires an executable anchor sibling
+                state = isAllowedIndexOnlyNullCheck(node) ? STATE.REQUIRES_EXECUTABLE : STATE.ERROR;
             }
         }
         if (output != null) {
@@ -803,6 +866,25 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             }
         }
         return false;
+    }
+
+    /**
+     * Determine if an EQ or NE node compares against a null literal, i.e. {@code FIELD == null} or {@code FIELD != null}, and null checks against index-only
+     * fields are allowed. The caller is responsible for checking that the field is index-only.
+     *
+     * @param node
+     *            an EQ or NE node
+     * @return true if the node is a null check and index-only null checks are allowed, or false otherwise
+     */
+    private boolean isAllowedIndexOnlyNullCheck(JexlNode node) {
+        if (config == null || !config.isAllowIndexOnlyNullChecks()) {
+            return false;
+        }
+        try {
+            return JexlASTHelper.getLiteral(node) instanceof ASTNullLiteral;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
     private boolean isIndexOnly(JexlNode node) {
@@ -926,7 +1008,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
 
         // global index does not yet support NEGATED_EXECUTABLE so unless it is an error it's always NON_EXECUTABLE
-        if (!forFieldIndex && state != STATE.ERROR) {
+        if (!forFieldIndex && state != STATE.ERROR && state != STATE.REQUIRES_EXECUTABLE) {
             if (output != null) {
                 output.move(state, STATE.NON_EXECUTABLE);
             }

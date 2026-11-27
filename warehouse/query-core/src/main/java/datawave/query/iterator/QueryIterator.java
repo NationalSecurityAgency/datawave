@@ -105,6 +105,7 @@ import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.jexl.visitors.NullCheckFieldsVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
@@ -1007,6 +1008,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                                 .setOptions(this).setVariables(variables).setIteratorBuildingVisitor(iteratorBuildingVisitor)
                                 .setDelayedNonEventFieldMap(delayedNonEventFieldMap).setEquality(getEquality()).setColumnFamilies(columnFamilies)
                                 .setInclusive(inclusive).setComparatorFactory(this);
+
+                // If we allow null checks against index-only fields in the form INDEX_ONLY == null or INDEX_ONLY != null, identify all index-only fields
+                // present in the query that are used in null check terms.
+                if (this.allowIndexOnlyNullChecks) {
+                    contextCreatorBuilder.setIndexOnlyNullCheckFields(NullCheckFieldsVisitor.getFields(getScript(documentSource), getIndexOnlyFields()));
+                }
+
                 final IndexOnlyContextCreator contextCreator = contextCreatorBuilder.build();
 
                 if (exceededOrEvaluationCache != null) {
@@ -1519,6 +1527,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setCollectTimingDetails(this.collectTimingDetails)
                 .setQuerySpanCollector(this.querySpanCollector)
                 .setIndexOnlyFields(this.getAllIndexOnlyFields())
+                .setAllowIndexOnlyNullChecks(this.allowIndexOnlyNullChecks)
                 .setAllowTermFrequencyLookup(this.allowTermFrequencyLookup)
                 .setCompositeMetadata(compositeMetadata)
                 .setFiNextSeek(this.getFiNextSeek())
