@@ -514,7 +514,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                     if (config.isValid()) {
                         Path path = new Path(config.getBasePathURI(), subdirectory);
                         URI uri = path.toUri();
-                        FileSystem fs = new FileSystemCache(hdfsSiteConfigURLs).getFileSystem(uri);
+                        FileSystem fs = FileSystemCache.getInstance(hdfsSiteConfigURLs).getFileSystem(uri);
                         pathAndFs.add(new IvaratorCacheDir(config, fs, uri.toString()));
                     }
                 }
