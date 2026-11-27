@@ -21,6 +21,7 @@ import org.apache.commons.jexl3.parser.ASTDefineVars;
 import org.apache.commons.jexl3.parser.ASTDivNode;
 import org.apache.commons.jexl3.parser.ASTDoWhileStatement;
 import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTEQSNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTEWNode;
 import org.apache.commons.jexl3.parser.ASTEmptyFunction;
@@ -36,6 +37,7 @@ import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTIdentifierAccess;
 import org.apache.commons.jexl3.parser.ASTIfStatement;
 import org.apache.commons.jexl3.parser.ASTIncrementGetNode;
+import org.apache.commons.jexl3.parser.ASTInstanceOf;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTJxltLiteral;
 import org.apache.commons.jexl3.parser.ASTLENode;
@@ -46,9 +48,11 @@ import org.apache.commons.jexl3.parser.ASTMethodNode;
 import org.apache.commons.jexl3.parser.ASTModNode;
 import org.apache.commons.jexl3.parser.ASTMulNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNESNode;
 import org.apache.commons.jexl3.parser.ASTNEWNode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNSWNode;
+import org.apache.commons.jexl3.parser.ASTNotInstanceOf;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTNullLiteral;
 import org.apache.commons.jexl3.parser.ASTNullpNode;
@@ -80,7 +84,10 @@ import org.apache.commons.jexl3.parser.ASTSizeFunction;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.ASTSubNode;
 import org.apache.commons.jexl3.parser.ASTTernaryNode;
+import org.apache.commons.jexl3.parser.ASTThrowStatement;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.ASTTryResources;
+import org.apache.commons.jexl3.parser.ASTTryStatement;
 import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.ASTUnaryPlusNode;
 import org.apache.commons.jexl3.parser.ASTVar;
@@ -599,6 +606,48 @@ public class BaseVisitor extends ParserVisitor {
 
     @Override
     protected Object visit(ASTQualifiedIdentifier node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+
+    @Override
+    protected Object visit(ASTEQSNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+
+    @Override
+    protected Object visit(ASTInstanceOf node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+
+    @Override
+    protected Object visit(ASTNESNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+
+    @Override
+    protected Object visit(ASTNotInstanceOf node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+
+    @Override
+    protected Object visit(ASTThrowStatement node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+
+    @Override
+    protected Object visit(ASTTryResources node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+
+    @Override
+    protected Object visit(ASTTryStatement node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }

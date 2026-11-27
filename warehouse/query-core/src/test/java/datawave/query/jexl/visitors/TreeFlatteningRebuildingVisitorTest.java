@@ -2,12 +2,16 @@ package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.JexlASTHelper.jexlFeatures;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Collections;
+import java.util.List;
 
+import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTOrNode;
@@ -29,6 +33,37 @@ import datawave.test.JexlNodeAssert;
 public class TreeFlatteningRebuildingVisitorTest {
 
     private final ASTValidator validator = new ASTValidator();
+
+    @Test
+    public void ignoresNullChildSlotsWithoutChangingTheOriginalTree() throws ParseException {
+        String query = "A == 'a' || B == 'b'";
+        ASTJexlScript original = JexlASTHelper.parseJexlQuery(query);
+        JexlNode junction = original.jjtGetChild(0);
+        JexlNodes.ensureCapacity(junction, 3);
+        junction.jjtAddChild(junction.jjtGetChild(1), 2);
+        junction.jjtAddChild(null, 1);
+
+        for (ASTJexlScript copy : List.of(TreeFlatteningRebuildingVisitor.flatten(original), TreeFlatteningRebuildingVisitor.flattenAll(original))) {
+            JexlNodeAssert.assertThat(copy).isEqualTo(query).hasValidLineage();
+            assertEquals(3, junction.jjtGetNumChildren());
+            assertNull(junction.jjtGetChild(1));
+        }
+    }
+
+    @Test
+    public void preservesLeadingRangeWithoutChangingOriginalLineage() throws ParseException {
+        String query = "FIELD >= '2' && FIELD <= '3' && OTHER == 'x'";
+        ASTJexlScript original = JexlASTHelper.parseJexlQuery(query);
+        for (ASTJexlScript copy : List.of(TreeFlatteningRebuildingVisitor.flatten(original), TreeFlatteningRebuildingVisitor.flattenAll(original))) {
+            JexlNode junction = copy.jjtGetChild(0);
+            assertEquals(2, junction.jjtGetNumChildren());
+            assertInstanceOf(ASTAndNode.class, junction.jjtGetChild(0));
+            assertEquals(2, junction.jjtGetChild(0).jjtGetNumChildren());
+            assertEquals(query, JexlStringBuildingVisitor.buildQuery(copy));
+            JexlNodeAssert.assertThat(copy).hasValidLineage();
+            JexlNodeAssert.assertThat(original).isEqualTo(query).hasValidLineage();
+        }
+    }
 
     @Test
     public void dontFlattenASTDelayedPredicateAndTest() throws Exception {

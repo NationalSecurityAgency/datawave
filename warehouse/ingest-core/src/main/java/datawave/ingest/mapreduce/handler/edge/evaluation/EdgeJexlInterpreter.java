@@ -9,6 +9,7 @@ import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 public class EdgeJexlInterpreter extends Interpreter {
 
@@ -19,27 +20,17 @@ public class EdgeJexlInterpreter extends Interpreter {
     // we want to avoid short-circuiting an OR so we generate all possible edges if they are group aware
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        Object left = node.jjtGetChild(0).jjtAccept(this, data);
-        boolean matchesL = false;
-        boolean matchesR = false;
-        try {
-            boolean leftValue = arithmetic.toBoolean(left);
-            if (leftValue) {
-                matchesL = true;
+        boolean matches = false;
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
+            Object value = child.jjtAccept(this, data);
+            try {
+                matches |= arithmetic.toBoolean(value);
+            } catch (ArithmeticException xrt) {
+                throw new JexlException(child, "boolean coercion error", xrt);
             }
-        } catch (ArithmeticException xrt) {
-            throw new JexlException(node.jjtGetChild(0), "boolean coercion error", xrt);
         }
-        Object right = node.jjtGetChild(1).jjtAccept(this, data);
-        try {
-            boolean rightValue = arithmetic.toBoolean(right);
-            if (rightValue) {
-                matchesR = true;
-            }
-        } catch (ArithmeticException xrt) {
-            throw new JexlException(node.jjtGetChild(1), "boolean coercion error", xrt);
-        }
-        return (matchesL || matchesR);
+        return matches;
     }
 
     @Override
