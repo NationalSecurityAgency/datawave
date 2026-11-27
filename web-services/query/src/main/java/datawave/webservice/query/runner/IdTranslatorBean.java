@@ -3,13 +3,12 @@ package datawave.webservice.query.runner;
 import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -84,7 +83,7 @@ public class IdTranslatorBean {
     @Inject
     private QueryLogicFactory queryLogicFactory;
 
-    private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
+    private Map<String,UUIDType> uuidTypes = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
