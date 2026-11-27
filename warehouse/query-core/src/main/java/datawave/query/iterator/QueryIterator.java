@@ -54,6 +54,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
 
+import datawave.core.common.util.ExceptionUtils;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.data.type.Type;
@@ -583,15 +584,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
-        TabletClosedException tce = null;
+        TabletClosedException tce = ExceptionUtils.findCause(e, TabletClosedException.class);
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
-        }
-        if (reason instanceof TabletClosedException) {
-            tce = (TabletClosedException) reason;
         }
 
         int depth = 1;
@@ -602,9 +600,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
-            }
-            if (reason instanceof TabletClosedException) {
-                tce = (TabletClosedException) reason;
             }
             depth++;
         }

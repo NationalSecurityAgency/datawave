@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Splitter;
 
+import datawave.core.common.util.ExceptionUtils;
 import datawave.next.scanner.CandidateResult;
 import datawave.next.scanner.CandidateResultSerializer;
 import datawave.next.stats.DocIdQueryIterStats;
@@ -291,15 +292,12 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
         // handled specially to ensure that the client will retry the scan elsewhere
         IOException ioe = null;
         IterationInterruptedException iie = null;
-        TabletClosedException tce = null;
+        TabletClosedException tce = ExceptionUtils.findCause(e, TabletClosedException.class);
         if (reason instanceof IOException) {
             ioe = (IOException) reason;
         }
         if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
-        }
-        if (reason instanceof TabletClosedException) {
-            tce = (TabletClosedException) reason;
         }
 
         int depth = 1;
@@ -310,9 +308,6 @@ public class DocIdQueryIterator implements SortedKeyValueIterator<Key,Value> {
             }
             if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
-            }
-            if (reason instanceof TabletClosedException) {
-                tce = (TabletClosedException) reason;
             }
             depth++;
         }
