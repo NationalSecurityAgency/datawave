@@ -73,7 +73,6 @@ import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.function.DocumentRangeProvider;
 import datawave.query.function.IndexOnlyContextCreator;
-import datawave.query.function.IndexOnlyContextCreatorBuilder;
 import datawave.query.function.JexlContextCreator;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.KeyToDocumentData;
@@ -1002,12 +1001,22 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(iteratorBuildingVisitor,
                                 getScript(), getNonEventFields());
 
-                IndexOnlyContextCreatorBuilder contextCreatorBuilder = new IndexOnlyContextCreatorBuilder().setSource(sourceDeepCopy)
-                                .setRange(getDocumentRange(documentSource)).setTypeMetadata(typeMetadataForEval).setCompositeMetadata(compositeMetadata)
-                                .setOptions(this).setVariables(variables).setIteratorBuildingVisitor(iteratorBuildingVisitor)
-                                .setDelayedNonEventFieldMap(delayedNonEventFieldMap).setEquality(getEquality()).setColumnFamilies(columnFamilies)
-                                .setInclusive(inclusive).setComparatorFactory(this);
-                final IndexOnlyContextCreator contextCreator = contextCreatorBuilder.build();
+                // @formatter:off
+                final IndexOnlyContextCreator contextCreator = IndexOnlyContextCreator.builder()
+                                .setSource(sourceDeepCopy)
+                                .setRange(getDocumentRange(documentSource))
+                                .setTypeMetadata(typeMetadataForEval)
+                                .setCompositeMetadata(compositeMetadata)
+                                .setOptions(this)
+                                .setVariables(variables)
+                                .setIteratorBuildingVisitor(iteratorBuildingVisitor)
+                                .setDelayedNonEventFieldMap(delayedNonEventFieldMap)
+                                .setEquality(getEquality())
+                                .setColumnFamilies(columnFamilies)
+                                .setInclusive(inclusive)
+                                .setComparatorFactory(this)
+                                .build();
+                // @formatter:on
 
                 if (exceededOrEvaluationCache != null) {
                     contextCreator.addAdditionalEntries(exceededOrEvaluationCache);
