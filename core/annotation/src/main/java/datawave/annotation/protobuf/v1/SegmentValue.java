@@ -110,7 +110,21 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
     /**
      * <pre>
-     * e.g., label
+     * e.g., label; exactly one of value or vector must be present.
+     * </pre>
+     *
+     * <code>string value = 2;</code>
+     *
+     * @return Whether the value field is set.
+     */
+    @java.lang.Override
+    public boolean hasValue() {
+        return ((bitField0_ & 0x00000001) != 0);
+    }
+
+    /**
+     * <pre>
+     * e.g., label; exactly one of value or vector must be present.
      * </pre>
      *
      * <code>string value = 2;</code>
@@ -132,7 +146,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
     /**
      * <pre>
-     * e.g., label
+     * e.g., label; exactly one of value or vector must be present.
      * </pre>
      *
      * <code>string value = 2;</code>
@@ -165,7 +179,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
      */
     @java.lang.Override
     public boolean hasScore() {
-        return ((bitField0_ & 0x00000001) != 0);
+        return ((bitField0_ & 0x00000002) != 0);
     }
 
     /**
@@ -278,6 +292,37 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         return map.get(key);
     }
 
+    public static final int VECTOR_FIELD_NUMBER = 5;
+    private datawave.annotation.protobuf.v1.VectorPayload vector_;
+
+    /**
+     * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+     *
+     * @return Whether the vector field is set.
+     */
+    @java.lang.Override
+    public boolean hasVector() {
+        return vector_ != null;
+    }
+
+    /**
+     * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+     *
+     * @return The vector.
+     */
+    @java.lang.Override
+    public datawave.annotation.protobuf.v1.VectorPayload getVector() {
+        return vector_ == null ? datawave.annotation.protobuf.v1.VectorPayload.getDefaultInstance() : vector_;
+    }
+
+    /**
+     * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+     */
+    @java.lang.Override
+    public datawave.annotation.protobuf.v1.VectorPayloadOrBuilder getVectorOrBuilder() {
+        return getVector();
+    }
+
     private byte memoizedIsInitialized = -1;
 
     @java.lang.Override
@@ -297,13 +342,16 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         if (!getValueHashBytes().isEmpty()) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 1, valueHash_);
         }
-        if (!getValueBytes().isEmpty()) {
+        if (((bitField0_ & 0x00000001) != 0)) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 2, value_);
         }
-        if (((bitField0_ & 0x00000001) != 0)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
             output.writeFloat(3, score_);
         }
         com.google.protobuf.GeneratedMessageV3.serializeStringMapTo(output, internalGetExtension(), ExtensionDefaultEntryHolder.defaultEntry, 4);
+        if (vector_ != null) {
+            output.writeMessage(5, getVector());
+        }
         getUnknownFields().writeTo(output);
     }
 
@@ -317,16 +365,19 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         if (!getValueHashBytes().isEmpty()) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, valueHash_);
         }
-        if (!getValueBytes().isEmpty()) {
+        if (((bitField0_ & 0x00000001) != 0)) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, value_);
         }
-        if (((bitField0_ & 0x00000001) != 0)) {
+        if (((bitField0_ & 0x00000002) != 0)) {
             size += com.google.protobuf.CodedOutputStream.computeFloatSize(3, score_);
         }
         for (java.util.Map.Entry<java.lang.String,java.lang.String> entry : internalGetExtension().getMap().entrySet()) {
             com.google.protobuf.MapEntry<java.lang.String,java.lang.String> extension__ = ExtensionDefaultEntryHolder.defaultEntry.newBuilderForType()
                             .setKey(entry.getKey()).setValue(entry.getValue()).build();
             size += com.google.protobuf.CodedOutputStream.computeMessageSize(4, extension__);
+        }
+        if (vector_ != null) {
+            size += com.google.protobuf.CodedOutputStream.computeMessageSize(5, getVector());
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSize = size;
@@ -345,8 +396,12 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
         if (!getValueHash().equals(other.getValueHash()))
             return false;
-        if (!getValue().equals(other.getValue()))
+        if (hasValue() != other.hasValue())
             return false;
+        if (hasValue()) {
+            if (!getValue().equals(other.getValue()))
+                return false;
+        }
         if (hasScore() != other.hasScore())
             return false;
         if (hasScore()) {
@@ -355,6 +410,12 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         }
         if (!internalGetExtension().equals(other.internalGetExtension()))
             return false;
+        if (hasVector() != other.hasVector())
+            return false;
+        if (hasVector()) {
+            if (!getVector().equals(other.getVector()))
+                return false;
+        }
         if (!getUnknownFields().equals(other.getUnknownFields()))
             return false;
         return true;
@@ -369,8 +430,10 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         hash = (19 * hash) + getDescriptor().hashCode();
         hash = (37 * hash) + VALUEHASH_FIELD_NUMBER;
         hash = (53 * hash) + getValueHash().hashCode();
-        hash = (37 * hash) + VALUE_FIELD_NUMBER;
-        hash = (53 * hash) + getValue().hashCode();
+        if (hasValue()) {
+            hash = (37 * hash) + VALUE_FIELD_NUMBER;
+            hash = (53 * hash) + getValue().hashCode();
+        }
         if (hasScore()) {
             hash = (37 * hash) + SCORE_FIELD_NUMBER;
             hash = (53 * hash) + java.lang.Float.floatToIntBits(getScore());
@@ -378,6 +441,10 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         if (!internalGetExtension().getMap().isEmpty()) {
             hash = (37 * hash) + EXTENSION_FIELD_NUMBER;
             hash = (53 * hash) + internalGetExtension().hashCode();
+        }
+        if (hasVector()) {
+            hash = (37 * hash) + VECTOR_FIELD_NUMBER;
+            hash = (53 * hash) + getVector().hashCode();
         }
         hash = (29 * hash) + getUnknownFields().hashCode();
         memoizedHashCode = hash;
@@ -520,10 +587,16 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             valueHash_ = "";
 
             value_ = "";
-
-            score_ = 0F;
             bitField0_ = (bitField0_ & ~0x00000001);
+            score_ = 0F;
+            bitField0_ = (bitField0_ & ~0x00000002);
             internalGetMutableExtension().clear();
+            if (vectorBuilder_ == null) {
+                vector_ = null;
+            } else {
+                vector_ = null;
+                vectorBuilder_ = null;
+            }
             return this;
         }
 
@@ -552,13 +625,21 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             int from_bitField0_ = bitField0_;
             int to_bitField0_ = 0;
             result.valueHash_ = valueHash_;
-            result.value_ = value_;
             if (((from_bitField0_ & 0x00000001) != 0)) {
-                result.score_ = score_;
                 to_bitField0_ |= 0x00000001;
+            }
+            result.value_ = value_;
+            if (((from_bitField0_ & 0x00000002) != 0)) {
+                result.score_ = score_;
+                to_bitField0_ |= 0x00000002;
             }
             result.extension_ = internalGetExtension();
             result.extension_.makeImmutable();
+            if (vectorBuilder_ == null) {
+                result.vector_ = vector_;
+            } else {
+                result.vector_ = vectorBuilder_.build();
+            }
             result.bitField0_ = to_bitField0_;
             onBuilt();
             return result;
@@ -611,7 +692,8 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                 valueHash_ = other.valueHash_;
                 onChanged();
             }
-            if (!other.getValue().isEmpty()) {
+            if (other.hasValue()) {
+                bitField0_ |= 0x00000001;
                 value_ = other.value_;
                 onChanged();
             }
@@ -619,6 +701,9 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                 setScore(other.getScore());
             }
             internalGetMutableExtension().mergeFrom(other.internalGetExtension());
+            if (other.hasVector()) {
+                mergeVector(other.getVector());
+            }
             this.mergeUnknownFields(other.getUnknownFields());
             onChanged();
             return this;
@@ -650,12 +735,12 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                         } // case 10
                         case 18: {
                             value_ = input.readStringRequireUtf8();
-
+                            bitField0_ |= 0x00000001;
                             break;
                         } // case 18
                         case 29: {
                             score_ = input.readFloat();
-                            bitField0_ |= 0x00000001;
+                            bitField0_ |= 0x00000002;
                             break;
                         } // case 29
                         case 34: {
@@ -664,6 +749,11 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                             internalGetMutableExtension().getMutableMap().put(extension__.getKey(), extension__.getValue());
                             break;
                         } // case 34
+                        case 42: {
+                            input.readMessage(getVectorFieldBuilder().getBuilder(), extensionRegistry);
+
+                            break;
+                        } // case 42
                         default: {
                             if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                                 done = true; // was an endgroup tag
@@ -788,7 +878,20 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
         /**
          * <pre>
-         * e.g., label
+         * e.g., label; exactly one of value or vector must be present.
+         * </pre>
+         *
+         * <code>string value = 2;</code>
+         *
+         * @return Whether the value field is set.
+         */
+        public boolean hasValue() {
+            return ((bitField0_ & 0x00000001) != 0);
+        }
+
+        /**
+         * <pre>
+         * e.g., label; exactly one of value or vector must be present.
          * </pre>
          *
          * <code>string value = 2;</code>
@@ -809,7 +912,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
         /**
          * <pre>
-         * e.g., label
+         * e.g., label; exactly one of value or vector must be present.
          * </pre>
          *
          * <code>string value = 2;</code>
@@ -829,7 +932,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
         /**
          * <pre>
-         * e.g., label
+         * e.g., label; exactly one of value or vector must be present.
          * </pre>
          *
          * <code>string value = 2;</code>
@@ -842,7 +945,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
             if (value == null) {
                 throw new NullPointerException();
             }
-
+            bitField0_ |= 0x00000001;
             value_ = value;
             onChanged();
             return this;
@@ -850,7 +953,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
         /**
          * <pre>
-         * e.g., label
+         * e.g., label; exactly one of value or vector must be present.
          * </pre>
          *
          * <code>string value = 2;</code>
@@ -858,7 +961,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * @return This builder for chaining.
          */
         public Builder clearValue() {
-
+            bitField0_ = (bitField0_ & ~0x00000001);
             value_ = getDefaultInstance().getValue();
             onChanged();
             return this;
@@ -866,7 +969,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
 
         /**
          * <pre>
-         * e.g., label
+         * e.g., label; exactly one of value or vector must be present.
          * </pre>
          *
          * <code>string value = 2;</code>
@@ -880,7 +983,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
                 throw new NullPointerException();
             }
             checkByteStringIsUtf8(value);
-
+            bitField0_ |= 0x00000001;
             value_ = value;
             onChanged();
             return this;
@@ -899,7 +1002,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          */
         @java.lang.Override
         public boolean hasScore() {
-            return ((bitField0_ & 0x00000001) != 0);
+            return ((bitField0_ & 0x00000002) != 0);
         }
 
         /**
@@ -928,7 +1031,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * @return This builder for chaining.
          */
         public Builder setScore(float value) {
-            bitField0_ |= 0x00000001;
+            bitField0_ |= 0x00000002;
             score_ = value;
             onChanged();
             return this;
@@ -944,7 +1047,7 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
          * @return This builder for chaining.
          */
         public Builder clearScore() {
-            bitField0_ = (bitField0_ & ~0x00000001);
+            bitField0_ = (bitField0_ & ~0x00000002);
             score_ = 0F;
             onChanged();
             return this;
@@ -1108,6 +1211,127 @@ public final class SegmentValue extends com.google.protobuf.GeneratedMessageV3 i
         public Builder putAllExtension(java.util.Map<java.lang.String,java.lang.String> values) {
             internalGetMutableExtension().getMutableMap().putAll(values);
             return this;
+        }
+
+        private datawave.annotation.protobuf.v1.VectorPayload vector_;
+        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.VectorPayload,datawave.annotation.protobuf.v1.VectorPayload.Builder,datawave.annotation.protobuf.v1.VectorPayloadOrBuilder> vectorBuilder_;
+
+        /**
+         * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+         *
+         * @return Whether the vector field is set.
+         */
+        public boolean hasVector() {
+            return vectorBuilder_ != null || vector_ != null;
+        }
+
+        /**
+         * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+         *
+         * @return The vector.
+         */
+        public datawave.annotation.protobuf.v1.VectorPayload getVector() {
+            if (vectorBuilder_ == null) {
+                return vector_ == null ? datawave.annotation.protobuf.v1.VectorPayload.getDefaultInstance() : vector_;
+            } else {
+                return vectorBuilder_.getMessage();
+            }
+        }
+
+        /**
+         * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+         */
+        public Builder setVector(datawave.annotation.protobuf.v1.VectorPayload value) {
+            if (vectorBuilder_ == null) {
+                if (value == null) {
+                    throw new NullPointerException();
+                }
+                vector_ = value;
+                onChanged();
+            } else {
+                vectorBuilder_.setMessage(value);
+            }
+
+            return this;
+        }
+
+        /**
+         * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+         */
+        public Builder setVector(datawave.annotation.protobuf.v1.VectorPayload.Builder builderForValue) {
+            if (vectorBuilder_ == null) {
+                vector_ = builderForValue.build();
+                onChanged();
+            } else {
+                vectorBuilder_.setMessage(builderForValue.build());
+            }
+
+            return this;
+        }
+
+        /**
+         * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+         */
+        public Builder mergeVector(datawave.annotation.protobuf.v1.VectorPayload value) {
+            if (vectorBuilder_ == null) {
+                if (vector_ != null) {
+                    vector_ = datawave.annotation.protobuf.v1.VectorPayload.newBuilder(vector_).mergeFrom(value).buildPartial();
+                } else {
+                    vector_ = value;
+                }
+                onChanged();
+            } else {
+                vectorBuilder_.mergeFrom(value);
+            }
+
+            return this;
+        }
+
+        /**
+         * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+         */
+        public Builder clearVector() {
+            if (vectorBuilder_ == null) {
+                vector_ = null;
+                onChanged();
+            } else {
+                vector_ = null;
+                vectorBuilder_ = null;
+            }
+
+            return this;
+        }
+
+        /**
+         * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+         */
+        public datawave.annotation.protobuf.v1.VectorPayload.Builder getVectorBuilder() {
+
+            onChanged();
+            return getVectorFieldBuilder().getBuilder();
+        }
+
+        /**
+         * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+         */
+        public datawave.annotation.protobuf.v1.VectorPayloadOrBuilder getVectorOrBuilder() {
+            if (vectorBuilder_ != null) {
+                return vectorBuilder_.getMessageOrBuilder();
+            } else {
+                return vector_ == null ? datawave.annotation.protobuf.v1.VectorPayload.getDefaultInstance() : vector_;
+            }
+        }
+
+        /**
+         * <code>.datawave.annotation.protobuf.v1.VectorPayload vector = 5;</code>
+         */
+        private com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.VectorPayload,datawave.annotation.protobuf.v1.VectorPayload.Builder,datawave.annotation.protobuf.v1.VectorPayloadOrBuilder> getVectorFieldBuilder() {
+            if (vectorBuilder_ == null) {
+                vectorBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<datawave.annotation.protobuf.v1.VectorPayload,datawave.annotation.protobuf.v1.VectorPayload.Builder,datawave.annotation.protobuf.v1.VectorPayloadOrBuilder>(
+                                getVector(), getParentForChildren(), isClean());
+                vector_ = null;
+            }
+            return vectorBuilder_;
         }
 
         @java.lang.Override

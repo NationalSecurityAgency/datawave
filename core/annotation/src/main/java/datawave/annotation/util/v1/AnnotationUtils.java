@@ -380,6 +380,11 @@ public class AnnotationUtils {
 
     @SuppressWarnings("UnstableApiUsage")
     public static String calculateSegmentValueHash(SegmentValue v) {
+        if (v.hasVector()) {
+            // Match the producer's embedding space identity, with a discriminator separating vectors from scalar values.
+            return Hashing.murmur3_32_fixed().newHasher().putByte((byte) 1).putUnencodedChars(v.getVector().getEmbeddingSpaceId()).hash().toString()
+                            .toUpperCase();
+        }
         return Hashing.murmur3_32_fixed().newHasher().putUnencodedChars(v.getValue()).hash().toString().toUpperCase();
     }
 
